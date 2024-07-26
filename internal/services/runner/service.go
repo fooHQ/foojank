@@ -24,17 +24,17 @@ func (s *Service) Start(ctx context.Context) error {
 	for {
 		select {
 		case msg := <-s.args.InputCh:
-			src := string(msg.Data)
+			src := string(msg.Data())
 			// TODO: configure risor
 			// TODO: return stdout/stderr
 			_, err := risor.Eval(ctx, src)
 			if err != nil {
 				// TODO: use ReplyError
-				msg.Reply(ctx, []byte(err.Error()))
+				_ = msg.Reply([]byte(err.Error()))
 				continue
 			}
 
-			msg.Reply(ctx, []byte("OK"))
+			_ = msg.Reply([]byte("OK"))
 
 		case <-ctx.Done():
 			return nil
