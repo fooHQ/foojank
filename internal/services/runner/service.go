@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/foojank/foojank/internal/services/connector"
 	"github.com/risor-io/risor"
+	risoros "github.com/risor-io/risor/os"
 )
 
 type Arguments struct {
@@ -24,17 +25,20 @@ func (s *Service) Start(ctx context.Context) error {
 	for {
 		select {
 		case msg := <-s.args.InputCh:
+			stdout := risoros.NewBufferFile(nil)
+			opts := []risoros.Option{
+				risoros.WithStdout(stdout),
+			}
+			virt := risoros.NewVirtualOS(ctx, opts...)
+			ctx = risoros.WithOS(ctx, virt)
 			src := string(msg.Data())
-			// TODO: configure risor
-			// TODO: return stdout/stderr
 			_, err := risor.Eval(ctx, src)
 			if err != nil {
-				// TODO: use ReplyError
-				_ = msg.Reply([]byte(err.Error()))
+				_ = msg.ReplyError("400", err.Error(), nil)
 				continue
 			}
 
-			_ = msg.Reply([]byte("OK"))
+			_ = msg.Reply(stdout.Bytes())
 
 		case <-ctx.Done():
 			return nil
