@@ -13,3 +13,7 @@ generate:
 .PHONY: shrink
 shrink: build
 	upx --lzma ${OUTPUT}
+
+.PHONY: run
+run:
+	go run -tags debug ./cmd/vessel

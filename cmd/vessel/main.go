@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/foojank/foojank/config"
+	"github.com/foojank/foojank/internal/log"
 	"github.com/foojank/foojank/internal/services/connector"
 	"github.com/foojank/foojank/internal/services/runner"
 	"github.com/nats-io/nats.go"
@@ -12,6 +13,10 @@ import (
 )
 
 func main() {
+	log.Debug("started")
+	log.Debug("url=%s user=%s", config.NatsURL, config.NatsUser)
+	defer log.Debug("stopped")
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
@@ -25,8 +30,8 @@ func main() {
 
 	nc, err := opts.Connect()
 	if err != nil {
-		// TODO: remove panic
-		panic(err)
+		log.Debug("cannot connect to NATS: %v", err)
+		return
 	}
 
 	connectorOutCh := make(chan connector.Message, 65535)
@@ -48,7 +53,7 @@ func main() {
 
 	err = group.Wait()
 	if err != nil {
-		// TODO: remove panic
-		panic(err)
+		log.Debug("%v", err)
+		return
 	}
 }
