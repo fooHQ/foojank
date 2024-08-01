@@ -1,0 +1,11 @@
+{
+  "nats": {
+	"url": "wss://localhost",
+	"user": "usr1",
+	"password": "passwd1"
+  },
+  "connector": {
+	"name": "vessel",
+	"version": "0.1.0"
+  }
+}

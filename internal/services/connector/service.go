@@ -7,13 +7,9 @@ import (
 	"strings"
 )
 
-const (
-	// TODO: pass as args!
-	Name    string = "vessel"
-	Version string = "0.1.0"
-)
-
 type Arguments struct {
+	Name       string
+	Version    string
 	Connection *nats.Conn
 	OutputCh   chan<- Message
 }
@@ -30,15 +26,15 @@ func New(args Arguments) *Service {
 
 func (s *Service) Start(ctx context.Context) error {
 	ms, err := micro.AddService(s.args.Connection, micro.Config{
-		Name:    Name,
-		Version: Version,
+		Name:    s.args.Name,
+		Version: s.args.Version,
 	})
 	if err != nil {
 		return err
 	}
 	defer ms.Stop()
 
-	rpcSubject := strings.Join([]string{micro.APIPrefix, "RPC", Name, ms.Info().ID}, ".")
+	rpcSubject := strings.Join([]string{micro.APIPrefix, "RPC", s.args.Name, ms.Info().ID}, ".")
 	err = ms.AddEndpoint("rpc", micro.ContextHandler(ctx, s.handler), micro.WithEndpointSubject(rpcSubject))
 	if err != nil {
 		return err

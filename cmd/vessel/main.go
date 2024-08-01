@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/foojank/foojank/config"
 	"github.com/foojank/foojank/internal/services/connector"
 	"github.com/foojank/foojank/internal/services/runner"
 	"github.com/nats-io/nats.go"
@@ -15,9 +16,9 @@ func main() {
 	defer cancel()
 
 	opts := nats.Options{
-		Url:            "SERVER",
-		User:           "USER",
-		Password:       "PASSWORD",
+		Url:            config.NatsURL,
+		User:           config.NatsUser,
+		Password:       config.NatsPassword,
 		AllowReconnect: true,
 		MaxReconnect:   -1,
 	}
@@ -33,6 +34,8 @@ func main() {
 	group, groupCtx := errgroup.WithContext(ctx)
 	group.Go(func() error {
 		return connector.New(connector.Arguments{
+			Name:       config.ConnectorName,
+			Version:    config.ConnectorVersion,
 			Connection: nc,
 			OutputCh:   connectorOutCh,
 		}).Start(groupCtx)
