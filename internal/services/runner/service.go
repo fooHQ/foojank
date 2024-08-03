@@ -26,11 +26,8 @@ func (s *Service) Start(ctx context.Context) error {
 		select {
 		case msg := <-s.args.InputCh:
 			stdout := risoros.NewBufferFile(nil)
-			opts := []risoros.Option{
-				risoros.WithStdout(stdout),
-			}
-			virt := risoros.NewVirtualOS(ctx, opts...)
-			ctx = risoros.WithOS(ctx, virt)
+			ros := NewOS(ctx, stdout)
+			ctx = risoros.WithOS(ctx, ros)
 			src := string(msg.Data())
 			_, err := risor.Eval(ctx, src)
 			if err != nil {
