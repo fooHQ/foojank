@@ -20,4 +20,4 @@ generate:
 
 .PHONY: run
 run:
-	go run -tags debug ./cmd/vessel
+	CGO_ENABLED=1 go run -race -tags debug ./cmd/vessel

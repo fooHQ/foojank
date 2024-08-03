@@ -80,12 +80,12 @@ type CreateWorkerResponse capnp.Struct
 const CreateWorkerResponse_TypeID = 0xa0a1e306e1a52cac
 
 func NewCreateWorkerResponse(s *capnp.Segment) (CreateWorkerResponse, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0})
 	return CreateWorkerResponse(st), err
 }
 
 func NewRootCreateWorkerResponse(s *capnp.Segment) (CreateWorkerResponse, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0})
 	return CreateWorkerResponse(st), err
 }
 
@@ -121,22 +121,12 @@ func (s CreateWorkerResponse) Message() *capnp.Message {
 func (s CreateWorkerResponse) Segment() *capnp.Segment {
 	return capnp.Struct(s).Segment()
 }
-func (s CreateWorkerResponse) Id() (string, error) {
-	p, err := capnp.Struct(s).Ptr(0)
-	return p.Text(), err
+func (s CreateWorkerResponse) Id() uint64 {
+	return capnp.Struct(s).Uint64(0)
 }
 
-func (s CreateWorkerResponse) HasId() bool {
-	return capnp.Struct(s).HasPtr(0)
-}
-
-func (s CreateWorkerResponse) IdBytes() ([]byte, error) {
-	p, err := capnp.Struct(s).Ptr(0)
-	return p.TextBytes(), err
-}
-
-func (s CreateWorkerResponse) SetId(v string) error {
-	return capnp.Struct(s).SetText(0, v)
+func (s CreateWorkerResponse) SetId(v uint64) {
+	capnp.Struct(s).SetUint64(0, v)
 }
 
 // CreateWorkerResponse_List is a list of CreateWorkerResponse.
@@ -144,7 +134,7 @@ type CreateWorkerResponse_List = capnp.StructList[CreateWorkerResponse]
 
 // NewCreateWorkerResponse creates a new list of CreateWorkerResponse.
 func NewCreateWorkerResponse_List(s *capnp.Segment, sz int32) (CreateWorkerResponse_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1}, sz)
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0}, sz)
 	return capnp.StructList[CreateWorkerResponse](l), err
 }
 
@@ -156,18 +146,172 @@ func (f CreateWorkerResponse_Future) Struct() (CreateWorkerResponse, error) {
 	return CreateWorkerResponse(p.Struct()), err
 }
 
+type GetWorkerRequest capnp.Struct
+
+// GetWorkerRequest_TypeID is the unique identifier for the type GetWorkerRequest.
+const GetWorkerRequest_TypeID = 0xefd403356091c80a
+
+func NewGetWorkerRequest(s *capnp.Segment) (GetWorkerRequest, error) {
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0})
+	return GetWorkerRequest(st), err
+}
+
+func NewRootGetWorkerRequest(s *capnp.Segment) (GetWorkerRequest, error) {
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0})
+	return GetWorkerRequest(st), err
+}
+
+func ReadRootGetWorkerRequest(msg *capnp.Message) (GetWorkerRequest, error) {
+	root, err := msg.Root()
+	return GetWorkerRequest(root.Struct()), err
+}
+
+func (s GetWorkerRequest) String() string {
+	str, _ := text.Marshal(0xefd403356091c80a, capnp.Struct(s))
+	return str
+}
+
+func (s GetWorkerRequest) EncodeAsPtr(seg *capnp.Segment) capnp.Ptr {
+	return capnp.Struct(s).EncodeAsPtr(seg)
+}
+
+func (GetWorkerRequest) DecodeFromPtr(p capnp.Ptr) GetWorkerRequest {
+	return GetWorkerRequest(capnp.Struct{}.DecodeFromPtr(p))
+}
+
+func (s GetWorkerRequest) ToPtr() capnp.Ptr {
+	return capnp.Struct(s).ToPtr()
+}
+func (s GetWorkerRequest) IsValid() bool {
+	return capnp.Struct(s).IsValid()
+}
+
+func (s GetWorkerRequest) Message() *capnp.Message {
+	return capnp.Struct(s).Message()
+}
+
+func (s GetWorkerRequest) Segment() *capnp.Segment {
+	return capnp.Struct(s).Segment()
+}
+func (s GetWorkerRequest) Id() uint64 {
+	return capnp.Struct(s).Uint64(0)
+}
+
+func (s GetWorkerRequest) SetId(v uint64) {
+	capnp.Struct(s).SetUint64(0, v)
+}
+
+// GetWorkerRequest_List is a list of GetWorkerRequest.
+type GetWorkerRequest_List = capnp.StructList[GetWorkerRequest]
+
+// NewGetWorkerRequest creates a new list of GetWorkerRequest.
+func NewGetWorkerRequest_List(s *capnp.Segment, sz int32) (GetWorkerRequest_List, error) {
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0}, sz)
+	return capnp.StructList[GetWorkerRequest](l), err
+}
+
+// GetWorkerRequest_Future is a wrapper for a GetWorkerRequest promised by a client call.
+type GetWorkerRequest_Future struct{ *capnp.Future }
+
+func (f GetWorkerRequest_Future) Struct() (GetWorkerRequest, error) {
+	p, err := f.Future.Ptr()
+	return GetWorkerRequest(p.Struct()), err
+}
+
+type GetWorkerResponse capnp.Struct
+
+// GetWorkerResponse_TypeID is the unique identifier for the type GetWorkerResponse.
+const GetWorkerResponse_TypeID = 0xcedd0be75e2ec289
+
+func NewGetWorkerResponse(s *capnp.Segment) (GetWorkerResponse, error) {
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
+	return GetWorkerResponse(st), err
+}
+
+func NewRootGetWorkerResponse(s *capnp.Segment) (GetWorkerResponse, error) {
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
+	return GetWorkerResponse(st), err
+}
+
+func ReadRootGetWorkerResponse(msg *capnp.Message) (GetWorkerResponse, error) {
+	root, err := msg.Root()
+	return GetWorkerResponse(root.Struct()), err
+}
+
+func (s GetWorkerResponse) String() string {
+	str, _ := text.Marshal(0xcedd0be75e2ec289, capnp.Struct(s))
+	return str
+}
+
+func (s GetWorkerResponse) EncodeAsPtr(seg *capnp.Segment) capnp.Ptr {
+	return capnp.Struct(s).EncodeAsPtr(seg)
+}
+
+func (GetWorkerResponse) DecodeFromPtr(p capnp.Ptr) GetWorkerResponse {
+	return GetWorkerResponse(capnp.Struct{}.DecodeFromPtr(p))
+}
+
+func (s GetWorkerResponse) ToPtr() capnp.Ptr {
+	return capnp.Struct(s).ToPtr()
+}
+func (s GetWorkerResponse) IsValid() bool {
+	return capnp.Struct(s).IsValid()
+}
+
+func (s GetWorkerResponse) Message() *capnp.Message {
+	return capnp.Struct(s).Message()
+}
+
+func (s GetWorkerResponse) Segment() *capnp.Segment {
+	return capnp.Struct(s).Segment()
+}
+func (s GetWorkerResponse) ServiceId() (string, error) {
+	p, err := capnp.Struct(s).Ptr(0)
+	return p.Text(), err
+}
+
+func (s GetWorkerResponse) HasServiceId() bool {
+	return capnp.Struct(s).HasPtr(0)
+}
+
+func (s GetWorkerResponse) ServiceIdBytes() ([]byte, error) {
+	p, err := capnp.Struct(s).Ptr(0)
+	return p.TextBytes(), err
+}
+
+func (s GetWorkerResponse) SetServiceId(v string) error {
+	return capnp.Struct(s).SetText(0, v)
+}
+
+// GetWorkerResponse_List is a list of GetWorkerResponse.
+type GetWorkerResponse_List = capnp.StructList[GetWorkerResponse]
+
+// NewGetWorkerResponse creates a new list of GetWorkerResponse.
+func NewGetWorkerResponse_List(s *capnp.Segment, sz int32) (GetWorkerResponse_List, error) {
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1}, sz)
+	return capnp.StructList[GetWorkerResponse](l), err
+}
+
+// GetWorkerResponse_Future is a wrapper for a GetWorkerResponse promised by a client call.
+type GetWorkerResponse_Future struct{ *capnp.Future }
+
+func (f GetWorkerResponse_Future) Struct() (GetWorkerResponse, error) {
+	p, err := f.Future.Ptr()
+	return GetWorkerResponse(p.Struct()), err
+}
+
 type DestroyWorkerRequest capnp.Struct
 
 // DestroyWorkerRequest_TypeID is the unique identifier for the type DestroyWorkerRequest.
 const DestroyWorkerRequest_TypeID = 0xe66541250dc00ccd
 
 func NewDestroyWorkerRequest(s *capnp.Segment) (DestroyWorkerRequest, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0})
 	return DestroyWorkerRequest(st), err
 }
 
 func NewRootDestroyWorkerRequest(s *capnp.Segment) (DestroyWorkerRequest, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0})
 	return DestroyWorkerRequest(st), err
 }
 
@@ -203,22 +347,12 @@ func (s DestroyWorkerRequest) Message() *capnp.Message {
 func (s DestroyWorkerRequest) Segment() *capnp.Segment {
 	return capnp.Struct(s).Segment()
 }
-func (s DestroyWorkerRequest) Id() (string, error) {
-	p, err := capnp.Struct(s).Ptr(0)
-	return p.Text(), err
+func (s DestroyWorkerRequest) Id() uint64 {
+	return capnp.Struct(s).Uint64(0)
 }
 
-func (s DestroyWorkerRequest) HasId() bool {
-	return capnp.Struct(s).HasPtr(0)
-}
-
-func (s DestroyWorkerRequest) IdBytes() ([]byte, error) {
-	p, err := capnp.Struct(s).Ptr(0)
-	return p.TextBytes(), err
-}
-
-func (s DestroyWorkerRequest) SetId(v string) error {
-	return capnp.Struct(s).SetText(0, v)
+func (s DestroyWorkerRequest) SetId(v uint64) {
+	capnp.Struct(s).SetUint64(0, v)
 }
 
 // DestroyWorkerRequest_List is a list of DestroyWorkerRequest.
@@ -226,7 +360,7 @@ type DestroyWorkerRequest_List = capnp.StructList[DestroyWorkerRequest]
 
 // NewDestroyWorkerRequest creates a new list of DestroyWorkerRequest.
 func NewDestroyWorkerRequest_List(s *capnp.Segment, sz int32) (DestroyWorkerRequest_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1}, sz)
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0}, sz)
 	return capnp.StructList[DestroyWorkerRequest](l), err
 }
 
@@ -238,37 +372,128 @@ func (f DestroyWorkerRequest_Future) Struct() (DestroyWorkerRequest, error) {
 	return DestroyWorkerRequest(p.Struct()), err
 }
 
+type DestroyWorkerResponse capnp.Struct
+
+// DestroyWorkerResponse_TypeID is the unique identifier for the type DestroyWorkerResponse.
+const DestroyWorkerResponse_TypeID = 0xaf87f588c4828158
+
+func NewDestroyWorkerResponse(s *capnp.Segment) (DestroyWorkerResponse, error) {
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0})
+	return DestroyWorkerResponse(st), err
+}
+
+func NewRootDestroyWorkerResponse(s *capnp.Segment) (DestroyWorkerResponse, error) {
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0})
+	return DestroyWorkerResponse(st), err
+}
+
+func ReadRootDestroyWorkerResponse(msg *capnp.Message) (DestroyWorkerResponse, error) {
+	root, err := msg.Root()
+	return DestroyWorkerResponse(root.Struct()), err
+}
+
+func (s DestroyWorkerResponse) String() string {
+	str, _ := text.Marshal(0xaf87f588c4828158, capnp.Struct(s))
+	return str
+}
+
+func (s DestroyWorkerResponse) EncodeAsPtr(seg *capnp.Segment) capnp.Ptr {
+	return capnp.Struct(s).EncodeAsPtr(seg)
+}
+
+func (DestroyWorkerResponse) DecodeFromPtr(p capnp.Ptr) DestroyWorkerResponse {
+	return DestroyWorkerResponse(capnp.Struct{}.DecodeFromPtr(p))
+}
+
+func (s DestroyWorkerResponse) ToPtr() capnp.Ptr {
+	return capnp.Struct(s).ToPtr()
+}
+func (s DestroyWorkerResponse) IsValid() bool {
+	return capnp.Struct(s).IsValid()
+}
+
+func (s DestroyWorkerResponse) Message() *capnp.Message {
+	return capnp.Struct(s).Message()
+}
+
+func (s DestroyWorkerResponse) Segment() *capnp.Segment {
+	return capnp.Struct(s).Segment()
+}
+
+// DestroyWorkerResponse_List is a list of DestroyWorkerResponse.
+type DestroyWorkerResponse_List = capnp.StructList[DestroyWorkerResponse]
+
+// NewDestroyWorkerResponse creates a new list of DestroyWorkerResponse.
+func NewDestroyWorkerResponse_List(s *capnp.Segment, sz int32) (DestroyWorkerResponse_List, error) {
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0}, sz)
+	return capnp.StructList[DestroyWorkerResponse](l), err
+}
+
+// DestroyWorkerResponse_Future is a wrapper for a DestroyWorkerResponse promised by a client call.
+type DestroyWorkerResponse_Future struct{ *capnp.Future }
+
+func (f DestroyWorkerResponse_Future) Struct() (DestroyWorkerResponse, error) {
+	p, err := f.Future.Ptr()
+	return DestroyWorkerResponse(p.Struct()), err
+}
+
 type Message capnp.Struct
 type Message_action Message
+type Message_response Message
 type Message_action_Which uint16
 
 const (
 	Message_action_Which_createWorker  Message_action_Which = 0
 	Message_action_Which_destroyWorker Message_action_Which = 1
+	Message_action_Which_getWorker     Message_action_Which = 2
 )
 
 func (w Message_action_Which) String() string {
-	const s = "createWorkerdestroyWorker"
+	const s = "createWorkerdestroyWorkergetWorker"
 	switch w {
 	case Message_action_Which_createWorker:
 		return s[0:12]
 	case Message_action_Which_destroyWorker:
 		return s[12:25]
+	case Message_action_Which_getWorker:
+		return s[25:34]
 
 	}
 	return "Message_action_Which(" + strconv.FormatUint(uint64(w), 10) + ")"
+}
+
+type Message_response_Which uint16
+
+const (
+	Message_response_Which_createWorker  Message_response_Which = 0
+	Message_response_Which_destroyWorker Message_response_Which = 1
+	Message_response_Which_getWorker     Message_response_Which = 2
+)
+
+func (w Message_response_Which) String() string {
+	const s = "createWorkerdestroyWorkergetWorker"
+	switch w {
+	case Message_response_Which_createWorker:
+		return s[0:12]
+	case Message_response_Which_destroyWorker:
+		return s[12:25]
+	case Message_response_Which_getWorker:
+		return s[25:34]
+
+	}
+	return "Message_response_Which(" + strconv.FormatUint(uint64(w), 10) + ")"
 }
 
 // Message_TypeID is the unique identifier for the type Message.
 const Message_TypeID = 0xd270ea7f372f79cd
 
 func NewMessage(s *capnp.Segment) (Message, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1})
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 2})
 	return Message(st), err
 }
 
 func NewRootMessage(s *capnp.Segment) (Message, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1})
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 2})
 	return Message(st), err
 }
 
@@ -384,12 +609,156 @@ func (s Message_action) NewDestroyWorker() (DestroyWorkerRequest, error) {
 	return ss, err
 }
 
+func (s Message_action) GetWorker() (GetWorkerRequest, error) {
+	if capnp.Struct(s).Uint16(0) != 2 {
+		panic("Which() != getWorker")
+	}
+	p, err := capnp.Struct(s).Ptr(0)
+	return GetWorkerRequest(p.Struct()), err
+}
+
+func (s Message_action) HasGetWorker() bool {
+	if capnp.Struct(s).Uint16(0) != 2 {
+		return false
+	}
+	return capnp.Struct(s).HasPtr(0)
+}
+
+func (s Message_action) SetGetWorker(v GetWorkerRequest) error {
+	capnp.Struct(s).SetUint16(0, 2)
+	return capnp.Struct(s).SetPtr(0, capnp.Struct(v).ToPtr())
+}
+
+// NewGetWorker sets the getWorker field to a newly
+// allocated GetWorkerRequest struct, preferring placement in s's segment.
+func (s Message_action) NewGetWorker() (GetWorkerRequest, error) {
+	capnp.Struct(s).SetUint16(0, 2)
+	ss, err := NewGetWorkerRequest(capnp.Struct(s).Segment())
+	if err != nil {
+		return GetWorkerRequest{}, err
+	}
+	err = capnp.Struct(s).SetPtr(0, capnp.Struct(ss).ToPtr())
+	return ss, err
+}
+
+func (s Message) Response() Message_response { return Message_response(s) }
+
+func (s Message_response) Which() Message_response_Which {
+	return Message_response_Which(capnp.Struct(s).Uint16(2))
+}
+func (s Message_response) IsValid() bool {
+	return capnp.Struct(s).IsValid()
+}
+
+func (s Message_response) Message() *capnp.Message {
+	return capnp.Struct(s).Message()
+}
+
+func (s Message_response) Segment() *capnp.Segment {
+	return capnp.Struct(s).Segment()
+}
+func (s Message_response) CreateWorker() (CreateWorkerResponse, error) {
+	if capnp.Struct(s).Uint16(2) != 0 {
+		panic("Which() != createWorker")
+	}
+	p, err := capnp.Struct(s).Ptr(1)
+	return CreateWorkerResponse(p.Struct()), err
+}
+
+func (s Message_response) HasCreateWorker() bool {
+	if capnp.Struct(s).Uint16(2) != 0 {
+		return false
+	}
+	return capnp.Struct(s).HasPtr(1)
+}
+
+func (s Message_response) SetCreateWorker(v CreateWorkerResponse) error {
+	capnp.Struct(s).SetUint16(2, 0)
+	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
+}
+
+// NewCreateWorker sets the createWorker field to a newly
+// allocated CreateWorkerResponse struct, preferring placement in s's segment.
+func (s Message_response) NewCreateWorker() (CreateWorkerResponse, error) {
+	capnp.Struct(s).SetUint16(2, 0)
+	ss, err := NewCreateWorkerResponse(capnp.Struct(s).Segment())
+	if err != nil {
+		return CreateWorkerResponse{}, err
+	}
+	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
+	return ss, err
+}
+
+func (s Message_response) DestroyWorker() (DestroyWorkerResponse, error) {
+	if capnp.Struct(s).Uint16(2) != 1 {
+		panic("Which() != destroyWorker")
+	}
+	p, err := capnp.Struct(s).Ptr(1)
+	return DestroyWorkerResponse(p.Struct()), err
+}
+
+func (s Message_response) HasDestroyWorker() bool {
+	if capnp.Struct(s).Uint16(2) != 1 {
+		return false
+	}
+	return capnp.Struct(s).HasPtr(1)
+}
+
+func (s Message_response) SetDestroyWorker(v DestroyWorkerResponse) error {
+	capnp.Struct(s).SetUint16(2, 1)
+	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
+}
+
+// NewDestroyWorker sets the destroyWorker field to a newly
+// allocated DestroyWorkerResponse struct, preferring placement in s's segment.
+func (s Message_response) NewDestroyWorker() (DestroyWorkerResponse, error) {
+	capnp.Struct(s).SetUint16(2, 1)
+	ss, err := NewDestroyWorkerResponse(capnp.Struct(s).Segment())
+	if err != nil {
+		return DestroyWorkerResponse{}, err
+	}
+	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
+	return ss, err
+}
+
+func (s Message_response) GetWorker() (GetWorkerResponse, error) {
+	if capnp.Struct(s).Uint16(2) != 2 {
+		panic("Which() != getWorker")
+	}
+	p, err := capnp.Struct(s).Ptr(1)
+	return GetWorkerResponse(p.Struct()), err
+}
+
+func (s Message_response) HasGetWorker() bool {
+	if capnp.Struct(s).Uint16(2) != 2 {
+		return false
+	}
+	return capnp.Struct(s).HasPtr(1)
+}
+
+func (s Message_response) SetGetWorker(v GetWorkerResponse) error {
+	capnp.Struct(s).SetUint16(2, 2)
+	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
+}
+
+// NewGetWorker sets the getWorker field to a newly
+// allocated GetWorkerResponse struct, preferring placement in s's segment.
+func (s Message_response) NewGetWorker() (GetWorkerResponse, error) {
+	capnp.Struct(s).SetUint16(2, 2)
+	ss, err := NewGetWorkerResponse(capnp.Struct(s).Segment())
+	if err != nil {
+		return GetWorkerResponse{}, err
+	}
+	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
+	return ss, err
+}
+
 // Message_List is a list of Message.
 type Message_List = capnp.StructList[Message]
 
 // NewMessage creates a new list of Message.
 func NewMessage_List(s *capnp.Segment, sz int32) (Message_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1}, sz)
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 2}, sz)
 	return capnp.StructList[Message](l), err
 }
 
@@ -415,32 +784,68 @@ func (p Message_action_Future) CreateWorker() CreateWorkerRequest_Future {
 func (p Message_action_Future) DestroyWorker() DestroyWorkerRequest_Future {
 	return DestroyWorkerRequest_Future{Future: p.Future.Field(0, nil)}
 }
+func (p Message_action_Future) GetWorker() GetWorkerRequest_Future {
+	return GetWorkerRequest_Future{Future: p.Future.Field(0, nil)}
+}
+func (p Message_Future) Response() Message_response_Future { return Message_response_Future{p.Future} }
 
-const schema_dcccaa5d36aa8b70 = "x\xda\x84\x91\xb1\x8b\x13A\x14\xc6\xdf7\xb3\x9bH\xd8" +
-	"\xc5l6\x16\xa6\x09\x88\x82\x82&\xc6\x88\xc2\"\xac\xa2" +
-	"\xad\x90\x11$\x95\xc5\x92\x0c\x12\xc5\xccfw\x83\xa4\xb2" +
-	"\xb2\x12\xcb\x80\x95\xa8`\x13,\xfd\x03\xfc\x03\x0cBl" +
-	"m\xe4\xe0\x8a\xeb\xaeLssl\xb2\xb9\xe4B \xdd" +
-	"c\xe6{\xdf\xfb\xbd\xef\x15\xff<4\x1av\x95\x13\x13" +
-	"W\xcd\x9c.\x8c\xaf\x1c\xff\xfd4\xffLN\x09:\xfc" +
-	"0\xb9\xf7b\xf2\xfb\x1f\x19y\xa2\xe6\x10w\xe0\xbeG" +
-	"\x9e\xb8\xfeq\xf3\xfb\xff\xdc\xc1\xd7/\xe7U&RY" +
-	"\x00\x0f\xee -\xdd7\xf0\x09\xda\x99\xb4/\x7f\xab\xcb" +
-	"\x9f$*\x80\x9e\x8e\xea\xf7\xdf\x1d\x853z\x8e<\x18" +
-	"Q\xf3#\x0a \xb8c\xbc\xa5\x8d_Q\xc2\xb6\xb3;" +
-	"\xc7\xcc5YZ\x81\xa5\xc6S\xeb\x97}\xed\x91<\xdc" +
-	"Ea2\x0f\xee\xa5\x85\xd8a>\xdd\xd2a\xa4\x12U" +
-	"\x0f#\xae\x12U\xeb\x04a?\xf4\x1eG2Hd[" +
-	"E\xafe\xf4LV\x07C\x19'\xadt\xec>\xa9\x1f" +
-	"\x87\xaa\x1f\xcb\x16 \x0cn\x10\x19 r\xec\x0a\x91\xb8" +
-	"\xc0!\xca\x0c\xbc\xd7\x85E\x0c\x16\xedt{*\xe38" +
-	"x)kA'\xe9\xa9\xfe\xa2\xcd\xb0\xb4^\xd8\xdcx" +
-	"E$\xaes\x88\xbb\x0c6Nt\x19\xe9k#\"\x12" +
-	"\xb79\xc4\x03\x06\xdd\xc9`\xe8b\x8a\x83\xe2\xfah\x04" +
-	"\x14\x09\xba+\xe3$R\xa36UU\xa68\x8b*S" +
-	"\xac\xa0\xd86\x14\xd6[a\xe3t\x8e\xed\x11\xf3\x97\xbc" +
-	"\xbb6z\x92M\\\x06\xe4\xcbU\x96\xfb\xf39\x0d\x00" +
-	"\x00\xff\xff\xe4F\xb7\x0d"
+// Message_response_Future is a wrapper for a Message_response promised by a client call.
+type Message_response_Future struct{ *capnp.Future }
+
+func (f Message_response_Future) Struct() (Message_response, error) {
+	p, err := f.Future.Ptr()
+	return Message_response(p.Struct()), err
+}
+func (p Message_response_Future) CreateWorker() CreateWorkerResponse_Future {
+	return CreateWorkerResponse_Future{Future: p.Future.Field(1, nil)}
+}
+func (p Message_response_Future) DestroyWorker() DestroyWorkerResponse_Future {
+	return DestroyWorkerResponse_Future{Future: p.Future.Field(1, nil)}
+}
+func (p Message_response_Future) GetWorker() GetWorkerResponse_Future {
+	return GetWorkerResponse_Future{Future: p.Future.Field(1, nil)}
+}
+
+const schema_dcccaa5d36aa8b70 = "x\xda\x94\x93OHTQ\x14\xc6\xcfw\xef\x1bGm" +
+	"\x86|\xbeY\xe4\xd0 I.\x84\xd2\xcc,\x18\x88\xe9" +
+	"\x8f\x11E\x82W\x12\xdd\x14\x0e\xe3E,\xf0=\xdf{" +
+	"\x16.BlS\x11-\\\x04\xad\xa2?\xb4\x91@\x82" +
+	"6-\x82\x88\x88\x16f`\xb5\xcb\x85\x04\x05A\x84\x8b" +
+	"\x16-\xf4\xc6}\xbe\x99q\xec\x99\xb5{\xdc\xf7\xdd\xef" +
+	"\x9c\xdf=\xdf\xd9w\x05G\x8c\xf6\xe4\xa4AL\x1c\x88" +
+	"U\xa9\xda\xdbM\xcb\xef\xef\xfc\xbaKf=\x94ss" +
+	"\xe6\xe0\xb9\x99\xb9Od\xc4\x89:\x9a\xd9~X\x9d," +
+	"N\\=\xde\xf3h\xa9\xea\xf3\xfd{$\xea\xb1Qf" +
+	"\xb2,\xac],NdeX\x8e\xa0\x06\xa6\xae\xbe\xba" +
+	"\xfe\xf3\xdal\x84\xe5av\x0cVw`i\xce\xf47" +
+	"<h\x93OI\xa4\x01\xf5v\xa2\xed\xd0\xe47g\x81" +
+	"\xfaX\x1c\x9c\xa8\xa3\x85\xd5\x82`\xb5\xb3Y\x82\x9ak" +
+	"x\xb8{\xfe\xdd\xec\xeb(-\xd0\xf1\x91\xa5\xb5v1" +
+	"\xd0\xdex\xd9z\xfe\xeb\xb6\xc5\xf9\xca\xea1\xe8\xf2S" +
+	"\xbc\x09\xd64\xd7\xad\xde\xe2\xba\xd5\x92U%W,\xa0" +
+	"y\xc2\x17\xac\xe7\x81\xf8\x19\xbf\xac\xc5\x89\x17\xc9\xe6\xa3" +
+	"\xf2K\xd4#,\xf1,\xac\xe5@\xfc=p\xae}3" +
+	"=\xd8\xc9?\xfc\x88\x12'\x8d4\xac\x8c\xfe\xb4\x1a\x8c" +
+	"\x1c\xedU\x8ek\xfbv\x9b\xe3r\xdb\xb7[\x0byg" +
+	"\xd4\xc9\x1ewe\xde\x97\xfd\xb6{Q\xba\xbd\xb2ql" +
+	"\\z~\x8fv\xdaJ\x9a\xf3\x1c{\xd4\x93=\x800" +
+	"\xb8Ad\x80\xc8L\xa6\x89D5\x87H1\xf0\x91!" +
+	"\xd4\x10C\x0d\x95\xdd\x8c\xb2[\x97\xf4|\xd7\x9e(\xda" +
+	"\xad\xb9\xd1&\xa5\xbb\xa5\xe7\xe5\x87ek\xbe\xe0\x8f\xd8" +
+	"\xa3D\"\xc1\x8d\x84RA\xcd\x13\x17\x88D\x17\x87\xe8" +
+	"aHbU\xa5\xa0O\xbb]\"q\x86C\x0c0$" +
+	"\xd9\x8aJ\x81\x11\x99}\xbdD\xe2,\x87\x18dP\x85" +
+	"\x90\x87\xb6\xeb\x16PW\xce(\x01u\x045\x14\xb6H" +
+	"\x8dv\xa8(\x8d&T\x0cK?\x00 \x04\xf7\x8b\xb3" +
+	"\x08\xff\xfe\x05\xc4\x0d\x80\xb9'5\xc9N\xa5\x90\xd2i" +
+	"\xac`\xc9`U\x1f\x1b\x1b`2lE\x1f\xc7\xb6\xa4" +
+	")\xed\xd2\xa64\xa5\x05\x8a\xa4)\x05|s\x9a\x93\xe1" +
+	"\x85\xb5\xf9\xc5\xff\x8cCo0*\x88\x1d\x0c\xca\x93\xee" +
+	"\xa5\x91\x82<E\x18B\x82\x18\x12\xeb<\xd9\xc6\x17B" +
+	"\xe0T\xad\x9d\x80\xf2\x0e\x9b-Yb\x00\xd6\xad\xaai" +
+	"\x9e&\x96[\x0b\x86r\x8b9\"\x8a\xea\xb72s9" +
+	"YL\xfb\x7f$8\x9a~l\\\xf2\x7ft\xfa\x1d\x00" +
+	"\x00\xff\xff\x8b\x95}\xcb"
 
 func RegisterSchema(reg *schemas.Registry) {
 	reg.Register(&schemas.Schema{
@@ -448,9 +853,13 @@ func RegisterSchema(reg *schemas.Registry) {
 		Nodes: []uint64{
 			0x9ef998d3f122950a,
 			0xa0a1e306e1a52cac,
+			0xaf87f588c4828158,
 			0xb4652fa21957aa11,
+			0xc6afcfce24a319cc,
+			0xcedd0be75e2ec289,
 			0xd270ea7f372f79cd,
 			0xe66541250dc00ccd,
+			0xefd403356091c80a,
 		},
 		Compressed: true,
 	})

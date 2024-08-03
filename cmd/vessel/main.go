@@ -5,7 +5,8 @@ import (
 	"github.com/foojank/foojank/config"
 	"github.com/foojank/foojank/internal/log"
 	"github.com/foojank/foojank/internal/services/connector"
-	"github.com/foojank/foojank/internal/services/runner"
+	"github.com/foojank/foojank/internal/services/decoder"
+	"github.com/foojank/foojank/internal/services/scheduler"
 	"github.com/nats-io/nats.go"
 	"golang.org/x/sync/errgroup"
 	"os"
@@ -35,6 +36,7 @@ func main() {
 	}
 
 	connectorOutCh := make(chan connector.Message, 65535)
+	decoderOutCh := make(chan decoder.Message, 65535)
 
 	group, groupCtx := errgroup.WithContext(ctx)
 	group.Go(func() error {
@@ -46,8 +48,15 @@ func main() {
 		}).Start(groupCtx)
 	})
 	group.Go(func() error {
-		return runner.New(runner.Arguments{
-			InputCh: connectorOutCh,
+		return decoder.New(decoder.Arguments{
+			InputCh:  connectorOutCh,
+			OutputCh: decoderOutCh,
+		}).Start(groupCtx)
+	})
+	group.Go(func() error {
+		return scheduler.New(scheduler.Arguments{
+			Connection: nc,
+			InputCh:    decoderOutCh,
 		}).Start(groupCtx)
 	})
 
