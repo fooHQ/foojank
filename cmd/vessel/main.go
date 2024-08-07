@@ -11,9 +11,21 @@ import (
 	"golang.org/x/sync/errgroup"
 	"os"
 	"os/signal"
+	"os/user"
+	"runtime"
 )
 
 func main() {
+	usr, err := user.Current()
+	if err != nil {
+		log.Debug("cannot determine current user")
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		log.Debug("cannot determine hostname")
+	}
+
 	log.Debug("started")
 	log.Debug("url=%s user=%s", config.NatsURL, config.NatsUser)
 	defer log.Debug("stopped")
@@ -41,8 +53,13 @@ func main() {
 	group, groupCtx := errgroup.WithContext(ctx)
 	group.Go(func() error {
 		return connector.New(connector.Arguments{
-			Name:       config.ConnectorName,
-			Version:    config.ConnectorVersion,
+			Name:    config.ConnectorName,
+			Version: config.ConnectorVersion,
+			Metadata: map[string]string{
+				"os":       runtime.GOOS,
+				"user":     usr.Username,
+				"hostname": hostname,
+			},
 			Connection: nc,
 			OutputCh:   connectorOutCh,
 		}).Start(groupCtx)

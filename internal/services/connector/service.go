@@ -10,6 +10,7 @@ import (
 type Arguments struct {
 	Name       string
 	Version    string
+	Metadata   map[string]string
 	Connection *nats.Conn
 	OutputCh   chan<- Message
 }
@@ -26,8 +27,9 @@ func New(args Arguments) *Service {
 
 func (s *Service) Start(ctx context.Context) error {
 	ms, err := micro.AddService(s.args.Connection, micro.Config{
-		Name:    s.args.Name,
-		Version: s.args.Version,
+		Name:     s.args.Name,
+		Version:  s.args.Version,
+		Metadata: s.args.Metadata,
 	})
 	if err != nil {
 		return err
