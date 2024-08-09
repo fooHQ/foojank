@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"github.com/foojank/foojank/internal/log"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
 	"github.com/risor-io/risor"
@@ -18,33 +19,38 @@ type Arguments struct {
 
 type Service struct {
 	args   Arguments
-	stdout *risoros.BufferFile
-	stdin  *risoros.BufferFile
+	stdin  risoros.File
+	stdout risoros.File
 }
 
 func New(args Arguments) *Service {
 	return &Service{
 		args:   args,
-		stdout: risoros.NewBufferFile(nil),
-		stdin:  risoros.NewBufferFile(nil), // TODO: this is actually not thread-safe!!!
+		stdin:  NewFile(),
+		stdout: NewFile(),
 	}
 }
 
 func (s *Service) Start(ctx context.Context) error {
 	defer func() {
 		r := recover()
+		// TODO: this can probably deadlock with the scheduler! Investigate!
 		s.args.EventCh <- EventWorkerStopped{
 			WorkerID: s.args.ID,
 			Reason:   r,
 		}
 	}()
 
-	ros := NewOS(ctx, s.stdout) // TODO: add stdin
+	ros := NewOS(ctx, s.stdin, s.stdout)
 	ctx = risoros.WithOS(ctx, ros)
 
+	stdoutSubject := nats.NewInbox()
 	ms, err := micro.AddService(s.args.Connection, micro.Config{
 		Name:    s.args.Name,
 		Version: s.args.Version,
+		Metadata: map[string]string{
+			"stdout": stdoutSubject,
+		},
 	})
 	if err != nil {
 		return err
@@ -52,16 +58,40 @@ func (s *Service) Start(ctx context.Context) error {
 	defer ms.Stop()
 
 	dataSubject := nats.NewInbox()
-	stdinSubject := nats.NewInbox()
 	err = ms.AddEndpoint("data", micro.ContextHandler(ctx, s.handleData), micro.WithEndpointSubject(dataSubject))
 	if err != nil {
 		return err
 	}
+
+	stdinSubject := nats.NewInbox()
 	err = ms.AddEndpoint("stdin", micro.ContextHandler(ctx, s.handleStdin), micro.WithEndpointSubject(stdinSubject))
 	if err != nil {
 		return err
 	}
 
+	// TODO: rewrite to a service!
+	go func() {
+		for ctx.Err() == nil {
+			b := make([]byte, 2048)
+			_, err := s.stdout.Read(b)
+			if err != nil {
+				log.Debug("cannot read from stdout")
+				return
+			}
+
+			msg := &nats.Msg{
+				Subject: stdoutSubject,
+				Data:    b,
+			}
+			err = s.args.Connection.PublishMsg(msg)
+			if err != nil {
+				log.Debug("cannot publish to stdout subject")
+				return
+			}
+		}
+	}()
+
+	// TODO: use select watching for ctx.Done()!
 	s.args.EventCh <- EventWorkerStarted{
 		WorkerID:  s.args.ID,
 		ServiceID: ms.Info().ID,
@@ -72,16 +102,20 @@ func (s *Service) Start(ctx context.Context) error {
 }
 
 func (s *Service) handleData(ctx context.Context, req micro.Request) {
+	_ = req.Respond(nil)
 	src := string(req.Data())
+	log.Debug("before eval")
 	_, err := risor.Eval(ctx, src)
+	log.Debug("after eval")
 	if err != nil {
-		_ = req.Error("400", err.Error(), nil)
+		_, _ = s.stdout.Write([]byte(err.Error()))
 		return
 	}
-
-	_ = req.Respond(s.stdout.Bytes())
 }
 
 func (s *Service) handleStdin(ctx context.Context, req micro.Request) {
-	// TODO
+	_ = req.Respond(nil)
+	log.Debug("before input: %q", string(req.Data()))
+	_, _ = s.stdin.Write(req.Data())
+	log.Debug("after input")
 }
