@@ -28,7 +28,7 @@ func New(args Arguments) *Service {
 func (s *Service) Start(ctx context.Context) error {
 	var workerID uint64
 	var workers = make(map[uint64]state)
-	var eventCh = make(chan worker.Event, 512)
+	var eventCh = make(chan worker.Event)
 
 loop:
 	for {
