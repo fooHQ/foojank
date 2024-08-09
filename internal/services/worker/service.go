@@ -7,6 +7,7 @@ import (
 	"github.com/nats-io/nats.go/micro"
 	"github.com/risor-io/risor"
 	risoros "github.com/risor-io/risor/os"
+	"golang.org/x/sync/errgroup"
 )
 
 type Arguments struct {
@@ -34,7 +35,8 @@ func New(args Arguments) *Service {
 func (s *Service) Start(ctx context.Context) error {
 	defer func() {
 		r := recover()
-		// TODO: this can probably deadlock with the scheduler! Investigate!
+		// This must not be used in select along with ctx.
+		// Doing so would prevent sending the event up to the scheduler, ultimately causing a deadlock.
 		s.args.EventCh <- EventWorkerStopped{
 			WorkerID: s.args.ID,
 			Reason:   r,
@@ -69,14 +71,15 @@ func (s *Service) Start(ctx context.Context) error {
 		return err
 	}
 
-	// TODO: rewrite to a service!
-	go func() {
-		for ctx.Err() == nil {
+	group, groupCtx := errgroup.WithContext(ctx)
+	// TODO: rewrite as a service!
+	group.Go(func() error {
+		for groupCtx.Err() == nil {
 			b := make([]byte, 2048)
 			_, err := s.stdout.Read(b)
 			if err != nil {
 				log.Debug("cannot read from stdout")
-				return
+				continue
 			}
 
 			msg := &nats.Msg{
@@ -86,19 +89,22 @@ func (s *Service) Start(ctx context.Context) error {
 			err = s.args.Connection.PublishMsg(msg)
 			if err != nil {
 				log.Debug("cannot publish to stdout subject")
-				return
+				continue
 			}
 		}
-	}()
+		return nil
+	})
 
-	// TODO: use select watching for ctx.Done()!
-	s.args.EventCh <- EventWorkerStarted{
+	select {
+	case s.args.EventCh <- EventWorkerStarted{
 		WorkerID:  s.args.ID,
 		ServiceID: ms.Info().ID,
+	}:
+	case <-ctx.Done():
+		return nil
 	}
 
-	<-ctx.Done()
-	return nil
+	return group.Wait()
 }
 
 func (s *Service) handleData(ctx context.Context, req micro.Request) {
