@@ -44,7 +44,7 @@ func (s *Service) Start(ctx context.Context) error {
 	}()
 
 	ros := NewOS(ctx, s.stdin, s.stdout)
-	ctx = risoros.WithOS(ctx, ros)
+	ctx = ros.Context()
 
 	stdoutSubject := nats.NewInbox()
 	ms, err := micro.AddService(s.args.Connection, micro.Config{
