@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/foojank/foojank/config"
+	"github.com/foojank/foojank/internal/config"
 	"github.com/foojank/foojank/internal/log"
 	"github.com/foojank/foojank/internal/services/vessel"
 	"github.com/foojank/foojank/internal/services/vessel/connector"

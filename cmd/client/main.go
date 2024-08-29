@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/foojank/foojank/config"
+	"github.com/foojank/foojank/internal/config"
 	"github.com/foojank/foojank/proto"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
