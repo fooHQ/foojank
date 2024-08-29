@@ -4,11 +4,11 @@ import (
 	"context"
 	"github.com/foojank/foojank/config"
 	"github.com/foojank/foojank/internal/log"
+	"github.com/foojank/foojank/internal/services/vessel"
 	"github.com/foojank/foojank/internal/services/vessel/connector"
 	"github.com/foojank/foojank/internal/services/vessel/decoder"
 	"github.com/foojank/foojank/internal/services/vessel/scheduler"
 	"github.com/nats-io/nats.go"
-	"golang.org/x/sync/errgroup"
 	"os"
 	"os/signal"
 	"os/user"
@@ -50,9 +50,9 @@ func main() {
 	connectorOutCh := make(chan connector.Message, 65535)
 	decoderOutCh := make(chan decoder.Message, 65535)
 
-	group, groupCtx := errgroup.WithContext(ctx)
-	group.Go(func() error {
-		return connector.New(connector.Arguments{
+	err = vessel.New(vessel.Arguments{
+		Connection: nc,
+		Connector: connector.Arguments{
 			Name:    config.ConnectorName,
 			Version: config.ConnectorVersion,
 			Metadata: map[string]string{
@@ -62,22 +62,16 @@ func main() {
 			},
 			Connection: nc,
 			OutputCh:   connectorOutCh,
-		}).Start(groupCtx)
-	})
-	group.Go(func() error {
-		return decoder.New(decoder.Arguments{
+		},
+		Decoder: decoder.Arguments{
 			InputCh:  connectorOutCh,
 			OutputCh: decoderOutCh,
-		}).Start(groupCtx)
-	})
-	group.Go(func() error {
-		return scheduler.New(scheduler.Arguments{
+		},
+		Scheduler: scheduler.Arguments{
 			Connection: nc,
 			InputCh:    decoderOutCh,
-		}).Start(groupCtx)
-	})
-
-	err = group.Wait()
+		},
+	}).Start(ctx)
 	if err != nil {
 		log.Debug("%v", err)
 		return
