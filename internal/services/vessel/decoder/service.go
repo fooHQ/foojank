@@ -4,7 +4,7 @@ import (
 	"capnproto.org/go/capnp/v3"
 	"context"
 	"github.com/foojank/foojank/internal/log"
-	"github.com/foojank/foojank/internal/services/connector"
+	"github.com/foojank/foojank/internal/services/vessel/connector"
 	"github.com/foojank/foojank/proto"
 )
 

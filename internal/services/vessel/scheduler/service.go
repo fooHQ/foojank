@@ -3,8 +3,8 @@ package scheduler
 import (
 	"context"
 	"github.com/foojank/foojank/internal/log"
-	"github.com/foojank/foojank/internal/services/decoder"
-	"github.com/foojank/foojank/internal/services/worker"
+	"github.com/foojank/foojank/internal/services/vessel/decoder"
+	"github.com/foojank/foojank/internal/services/vessel/worker"
 	"github.com/nats-io/nats.go"
 	"sync"
 )
