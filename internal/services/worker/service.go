@@ -74,12 +74,12 @@ func (s *Service) Start(ctx context.Context) error {
 	group, groupCtx := errgroup.WithContext(ctx)
 	// TODO: rewrite as a service!
 	group.Go(func() error {
-		for groupCtx.Err() == nil {
+		for {
 			b := make([]byte, 2048)
 			_, err := s.stdout.Read(b)
 			if err != nil {
-				log.Debug("cannot read from stdout")
-				continue
+				log.Debug("cannot read from stdout: %v", err)
+				break
 			}
 
 			msg := &nats.Msg{
@@ -88,7 +88,7 @@ func (s *Service) Start(ctx context.Context) error {
 			}
 			err = s.args.Connection.PublishMsg(msg)
 			if err != nil {
-				log.Debug("cannot publish to stdout subject")
+				log.Debug("cannot publish to stdout subject: %v", err)
 				continue
 			}
 		}
@@ -104,6 +104,8 @@ func (s *Service) Start(ctx context.Context) error {
 		return nil
 	}
 
+	<-groupCtx.Done()
+	_ = s.stdout.Close()
 	return group.Wait()
 }
 
@@ -114,7 +116,11 @@ func (s *Service) handleData(ctx context.Context, req micro.Request) {
 	_, err := risor.Eval(ctx, src)
 	log.Debug("after eval")
 	if err != nil {
-		_, _ = s.stdout.Write([]byte(err.Error()))
+		_, err := s.stdout.Write([]byte(err.Error()))
+		if err != nil {
+			log.Debug("cannot write to stdout: %v", err)
+			return
+		}
 		return
 	}
 }
