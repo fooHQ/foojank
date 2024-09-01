@@ -10,10 +10,10 @@ import (
 )
 
 type Arguments struct {
+	Name       string
+	Version    string
+	Metadata   map[string]string
 	Connection *nats.Conn
-	Connector  connector.Arguments
-	Decoder    decoder.Arguments
-	Scheduler  scheduler.Arguments
 }
 
 type Service struct {
@@ -27,15 +27,30 @@ func New(args Arguments) *Service {
 }
 
 func (s *Service) Start(ctx context.Context) error {
+	connectorOutCh := make(chan connector.Message, 65535)
+	decoderOutCh := make(chan decoder.Message, 65535)
+
 	group, groupCtx := errgroup.WithContext(ctx)
 	group.Go(func() error {
-		return connector.New(s.args.Connector).Start(groupCtx)
+		return connector.New(connector.Arguments{
+			Name:       s.args.Name,
+			Version:    s.args.Version,
+			Metadata:   s.args.Metadata,
+			Connection: s.args.Connection,
+			OutputCh:   connectorOutCh,
+		}).Start(groupCtx)
 	})
 	group.Go(func() error {
-		return decoder.New(s.args.Decoder).Start(groupCtx)
+		return decoder.New(decoder.Arguments{
+			InputCh:  connectorOutCh,
+			OutputCh: decoderOutCh,
+		}).Start(groupCtx)
 	})
 	group.Go(func() error {
-		return scheduler.New(s.args.Scheduler).Start(groupCtx)
+		return scheduler.New(scheduler.Arguments{
+			Connection: s.args.Connection,
+			InputCh:    decoderOutCh,
+		}).Start(groupCtx)
 	})
 
 	return group.Wait()
