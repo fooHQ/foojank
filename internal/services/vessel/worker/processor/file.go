@@ -1,4 +1,4 @@
-package worker
+package processor
 
 import (
 	"github.com/risor-io/risor/os"

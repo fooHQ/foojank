@@ -437,6 +437,155 @@ func (f DestroyWorkerResponse_Future) Struct() (DestroyWorkerResponse, error) {
 	return DestroyWorkerResponse(p.Struct()), err
 }
 
+type ExecuteRequest capnp.Struct
+
+// ExecuteRequest_TypeID is the unique identifier for the type ExecuteRequest.
+const ExecuteRequest_TypeID = 0xb0d29ba9b094b66c
+
+func NewExecuteRequest(s *capnp.Segment) (ExecuteRequest, error) {
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
+	return ExecuteRequest(st), err
+}
+
+func NewRootExecuteRequest(s *capnp.Segment) (ExecuteRequest, error) {
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
+	return ExecuteRequest(st), err
+}
+
+func ReadRootExecuteRequest(msg *capnp.Message) (ExecuteRequest, error) {
+	root, err := msg.Root()
+	return ExecuteRequest(root.Struct()), err
+}
+
+func (s ExecuteRequest) String() string {
+	str, _ := text.Marshal(0xb0d29ba9b094b66c, capnp.Struct(s))
+	return str
+}
+
+func (s ExecuteRequest) EncodeAsPtr(seg *capnp.Segment) capnp.Ptr {
+	return capnp.Struct(s).EncodeAsPtr(seg)
+}
+
+func (ExecuteRequest) DecodeFromPtr(p capnp.Ptr) ExecuteRequest {
+	return ExecuteRequest(capnp.Struct{}.DecodeFromPtr(p))
+}
+
+func (s ExecuteRequest) ToPtr() capnp.Ptr {
+	return capnp.Struct(s).ToPtr()
+}
+func (s ExecuteRequest) IsValid() bool {
+	return capnp.Struct(s).IsValid()
+}
+
+func (s ExecuteRequest) Message() *capnp.Message {
+	return capnp.Struct(s).Message()
+}
+
+func (s ExecuteRequest) Segment() *capnp.Segment {
+	return capnp.Struct(s).Segment()
+}
+func (s ExecuteRequest) Data() ([]byte, error) {
+	p, err := capnp.Struct(s).Ptr(0)
+	return []byte(p.Data()), err
+}
+
+func (s ExecuteRequest) HasData() bool {
+	return capnp.Struct(s).HasPtr(0)
+}
+
+func (s ExecuteRequest) SetData(v []byte) error {
+	return capnp.Struct(s).SetData(0, v)
+}
+
+// ExecuteRequest_List is a list of ExecuteRequest.
+type ExecuteRequest_List = capnp.StructList[ExecuteRequest]
+
+// NewExecuteRequest creates a new list of ExecuteRequest.
+func NewExecuteRequest_List(s *capnp.Segment, sz int32) (ExecuteRequest_List, error) {
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1}, sz)
+	return capnp.StructList[ExecuteRequest](l), err
+}
+
+// ExecuteRequest_Future is a wrapper for a ExecuteRequest promised by a client call.
+type ExecuteRequest_Future struct{ *capnp.Future }
+
+func (f ExecuteRequest_Future) Struct() (ExecuteRequest, error) {
+	p, err := f.Future.Ptr()
+	return ExecuteRequest(p.Struct()), err
+}
+
+type ExecuteResponse capnp.Struct
+
+// ExecuteResponse_TypeID is the unique identifier for the type ExecuteResponse.
+const ExecuteResponse_TypeID = 0xe90efdeb78e6cc91
+
+func NewExecuteResponse(s *capnp.Segment) (ExecuteResponse, error) {
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0})
+	return ExecuteResponse(st), err
+}
+
+func NewRootExecuteResponse(s *capnp.Segment) (ExecuteResponse, error) {
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0})
+	return ExecuteResponse(st), err
+}
+
+func ReadRootExecuteResponse(msg *capnp.Message) (ExecuteResponse, error) {
+	root, err := msg.Root()
+	return ExecuteResponse(root.Struct()), err
+}
+
+func (s ExecuteResponse) String() string {
+	str, _ := text.Marshal(0xe90efdeb78e6cc91, capnp.Struct(s))
+	return str
+}
+
+func (s ExecuteResponse) EncodeAsPtr(seg *capnp.Segment) capnp.Ptr {
+	return capnp.Struct(s).EncodeAsPtr(seg)
+}
+
+func (ExecuteResponse) DecodeFromPtr(p capnp.Ptr) ExecuteResponse {
+	return ExecuteResponse(capnp.Struct{}.DecodeFromPtr(p))
+}
+
+func (s ExecuteResponse) ToPtr() capnp.Ptr {
+	return capnp.Struct(s).ToPtr()
+}
+func (s ExecuteResponse) IsValid() bool {
+	return capnp.Struct(s).IsValid()
+}
+
+func (s ExecuteResponse) Message() *capnp.Message {
+	return capnp.Struct(s).Message()
+}
+
+func (s ExecuteResponse) Segment() *capnp.Segment {
+	return capnp.Struct(s).Segment()
+}
+func (s ExecuteResponse) Code() int64 {
+	return int64(capnp.Struct(s).Uint64(0))
+}
+
+func (s ExecuteResponse) SetCode(v int64) {
+	capnp.Struct(s).SetUint64(0, uint64(v))
+}
+
+// ExecuteResponse_List is a list of ExecuteResponse.
+type ExecuteResponse_List = capnp.StructList[ExecuteResponse]
+
+// NewExecuteResponse creates a new list of ExecuteResponse.
+func NewExecuteResponse_List(s *capnp.Segment, sz int32) (ExecuteResponse_List, error) {
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0}, sz)
+	return capnp.StructList[ExecuteResponse](l), err
+}
+
+// ExecuteResponse_Future is a wrapper for a ExecuteResponse promised by a client call.
+type ExecuteResponse_Future struct{ *capnp.Future }
+
+func (f ExecuteResponse_Future) Struct() (ExecuteResponse, error) {
+	p, err := f.Future.Ptr()
+	return ExecuteResponse(p.Struct()), err
+}
+
 type Message capnp.Struct
 type Message_action Message
 type Message_response Message
@@ -446,10 +595,11 @@ const (
 	Message_action_Which_createWorker  Message_action_Which = 0
 	Message_action_Which_destroyWorker Message_action_Which = 1
 	Message_action_Which_getWorker     Message_action_Which = 2
+	Message_action_Which_execute       Message_action_Which = 3
 )
 
 func (w Message_action_Which) String() string {
-	const s = "createWorkerdestroyWorkergetWorker"
+	const s = "createWorkerdestroyWorkergetWorkerexecute"
 	switch w {
 	case Message_action_Which_createWorker:
 		return s[0:12]
@@ -457,6 +607,8 @@ func (w Message_action_Which) String() string {
 		return s[12:25]
 	case Message_action_Which_getWorker:
 		return s[25:34]
+	case Message_action_Which_execute:
+		return s[34:41]
 
 	}
 	return "Message_action_Which(" + strconv.FormatUint(uint64(w), 10) + ")"
@@ -468,10 +620,11 @@ const (
 	Message_response_Which_createWorker  Message_response_Which = 0
 	Message_response_Which_destroyWorker Message_response_Which = 1
 	Message_response_Which_getWorker     Message_response_Which = 2
+	Message_response_Which_execute       Message_response_Which = 3
 )
 
 func (w Message_response_Which) String() string {
-	const s = "createWorkerdestroyWorkergetWorker"
+	const s = "createWorkerdestroyWorkergetWorkerexecute"
 	switch w {
 	case Message_response_Which_createWorker:
 		return s[0:12]
@@ -479,6 +632,8 @@ func (w Message_response_Which) String() string {
 		return s[12:25]
 	case Message_response_Which_getWorker:
 		return s[25:34]
+	case Message_response_Which_execute:
+		return s[34:41]
 
 	}
 	return "Message_response_Which(" + strconv.FormatUint(uint64(w), 10) + ")"
@@ -641,6 +796,38 @@ func (s Message_action) NewGetWorker() (GetWorkerRequest, error) {
 	return ss, err
 }
 
+func (s Message_action) Execute() (ExecuteRequest, error) {
+	if capnp.Struct(s).Uint16(0) != 3 {
+		panic("Which() != execute")
+	}
+	p, err := capnp.Struct(s).Ptr(0)
+	return ExecuteRequest(p.Struct()), err
+}
+
+func (s Message_action) HasExecute() bool {
+	if capnp.Struct(s).Uint16(0) != 3 {
+		return false
+	}
+	return capnp.Struct(s).HasPtr(0)
+}
+
+func (s Message_action) SetExecute(v ExecuteRequest) error {
+	capnp.Struct(s).SetUint16(0, 3)
+	return capnp.Struct(s).SetPtr(0, capnp.Struct(v).ToPtr())
+}
+
+// NewExecute sets the execute field to a newly
+// allocated ExecuteRequest struct, preferring placement in s's segment.
+func (s Message_action) NewExecute() (ExecuteRequest, error) {
+	capnp.Struct(s).SetUint16(0, 3)
+	ss, err := NewExecuteRequest(capnp.Struct(s).Segment())
+	if err != nil {
+		return ExecuteRequest{}, err
+	}
+	err = capnp.Struct(s).SetPtr(0, capnp.Struct(ss).ToPtr())
+	return ss, err
+}
+
 func (s Message) Response() Message_response { return Message_response(s) }
 
 func (s Message_response) Which() Message_response_Which {
@@ -753,6 +940,38 @@ func (s Message_response) NewGetWorker() (GetWorkerResponse, error) {
 	return ss, err
 }
 
+func (s Message_response) Execute() (ExecuteResponse, error) {
+	if capnp.Struct(s).Uint16(2) != 3 {
+		panic("Which() != execute")
+	}
+	p, err := capnp.Struct(s).Ptr(1)
+	return ExecuteResponse(p.Struct()), err
+}
+
+func (s Message_response) HasExecute() bool {
+	if capnp.Struct(s).Uint16(2) != 3 {
+		return false
+	}
+	return capnp.Struct(s).HasPtr(1)
+}
+
+func (s Message_response) SetExecute(v ExecuteResponse) error {
+	capnp.Struct(s).SetUint16(2, 3)
+	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
+}
+
+// NewExecute sets the execute field to a newly
+// allocated ExecuteResponse struct, preferring placement in s's segment.
+func (s Message_response) NewExecute() (ExecuteResponse, error) {
+	capnp.Struct(s).SetUint16(2, 3)
+	ss, err := NewExecuteResponse(capnp.Struct(s).Segment())
+	if err != nil {
+		return ExecuteResponse{}, err
+	}
+	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
+	return ss, err
+}
+
 // Message_List is a list of Message.
 type Message_List = capnp.StructList[Message]
 
@@ -787,6 +1006,9 @@ func (p Message_action_Future) DestroyWorker() DestroyWorkerRequest_Future {
 func (p Message_action_Future) GetWorker() GetWorkerRequest_Future {
 	return GetWorkerRequest_Future{Future: p.Future.Field(0, nil)}
 }
+func (p Message_action_Future) Execute() ExecuteRequest_Future {
+	return ExecuteRequest_Future{Future: p.Future.Field(0, nil)}
+}
 func (p Message_Future) Response() Message_response_Future { return Message_response_Future{p.Future} }
 
 // Message_response_Future is a wrapper for a Message_response promised by a client call.
@@ -805,47 +1027,58 @@ func (p Message_response_Future) DestroyWorker() DestroyWorkerResponse_Future {
 func (p Message_response_Future) GetWorker() GetWorkerResponse_Future {
 	return GetWorkerResponse_Future{Future: p.Future.Field(1, nil)}
 }
+func (p Message_response_Future) Execute() ExecuteResponse_Future {
+	return ExecuteResponse_Future{Future: p.Future.Field(1, nil)}
+}
 
-const schema_dcccaa5d36aa8b70 = "x\xda\x94\x93OHTQ\x14\xc6\xcfw\xef\x1bGm" +
-	"\x86|\xbeY\xe4\xd0 I.\x84\xd2\xcc,\x18\x88\xe9" +
-	"\x8f\x11E\x82W\x12\xdd\x14\x0e\xe3E,\xf0=\xdf{" +
-	"\x16.BlS\x11-\\\x04\xad\xa2?\xb4\x91@\x82" +
-	"6-\x82\x88\x88\x16f`\xb5\xcb\x85\x04\x05A\x84\x8b" +
-	"\x16-\xf4\xc6}\xbe\x99q\xec\x99\xb5{\xdc\xf7\xdd\xef" +
-	"\x9c\xdf=\xdf\xd9w\x05G\x8c\xf6\xe4\xa4AL\x1c\x88" +
-	"U\xa9\xda\xdbM\xcb\xef\xef\xfc\xbaKf=\x94ss" +
-	"\xe6\xe0\xb9\x99\xb9Od\xc4\x89:\x9a\xd9~X\x9d," +
-	"N\\=\xde\xf3h\xa9\xea\xf3\xfd{$\xea\xb1Qf" +
-	"\xb2,\xac],NdeX\x8e\xa0\x06\xa6\xae\xbe\xba" +
-	"\xfe\xf3\xdal\x84\xe5av\x0cVw`i\xce\xf47" +
-	"<h\x93OI\xa4\x01\xf5v\xa2\xed\xd0\xe47g\x81" +
-	"\xfaX\x1c\x9c\xa8\xa3\x85\xd5\x82`\xb5\xb3Y\x82\x9ak" +
-	"x\xb8{\xfe\xdd\xec\xeb(-\xd0\xf1\x91\xa5\xb5v1" +
-	"\xd0\xdex\xd9z\xfe\xeb\xb6\xc5\xf9\xca\xea1\xe8\xf2S" +
-	"\xbc\x09\xd64\xd7\xad\xde\xe2\xba\xd5\x92U%W,\xa0" +
-	"y\xc2\x17\xac\xe7\x81\xf8\x19\xbf\xac\xc5\x89\x17\xc9\xe6\xa3" +
-	"\xf2K\xd4#,\xf1,\xac\xe5@\xfc=p\xae}3" +
-	"=\xd8\xc9?\xfc\x88\x12'\x8d4\xac\x8c\xfe\xb4\x1a\x8c" +
-	"\x1c\xedU\x8ek\xfbv\x9b\xe3r\xdb\xb7[\x0byg" +
-	"\xd4\xc9\x1ewe\xde\x97\xfd\xb6{Q\xba\xbd\xb2ql" +
-	"\\z~\x8fv\xdaJ\x9a\xf3\x1c{\xd4\x93=\x800" +
-	"\xb8Ad\x80\xc8L\xa6\x89D5\x87H1\xf0\x91!" +
-	"\xd4\x10C\x0d\x95\xdd\x8c\xb2[\x97\xf4|\xd7\x9e(\xda" +
-	"\xad\xb9\xd1&\xa5\xbb\xa5\xe7\xe5\x87ek\xbe\xe0\x8f\xd8" +
-	"\xa3D\"\xc1\x8d\x84RA\xcd\x13\x17\x88D\x17\x87\xe8" +
-	"aHbU\xa5\xa0O\xbb]\"q\x86C\x0c0$" +
-	"\xd9\x8aJ\x81\x11\x99}\xbdD\xe2,\x87\x18dP\x85" +
-	"\x90\x87\xb6\xeb\x16PW\xce(\x01u\x045\x14\xb6H" +
-	"\x8dv\xa8(\x8d&T\x0cK?\x00 \x04\xf7\x8b\xb3" +
-	"\x08\xff\xfe\x05\xc4\x0d\x80\xb9'5\xc9N\xa5\x90\xd2i" +
-	"\xac`\xc9`U\x1f\x1b\x1b`2lE\x1f\xc7\xb6\xa4" +
-	")\xed\xd2\xa64\xa5\x05\x8a\xa4)\x05|s\x9a\x93\xe1" +
-	"\x85\xb5\xf9\xc5\xff\x8cCo0*\x88\x1d\x0c\xca\x93\xee" +
-	"\xa5\x91\x82<E\x18B\x82\x18\x12\xeb<\xd9\xc6\x17B" +
-	"\xe0T\xad\x9d\x80\xf2\x0e\x9b-Yb\x00\xd6\xad\xaai" +
-	"\x9e&\x96[\x0b\x86r\x8b9\"\x8a\xea\xb72s9" +
-	"YL\xfb\x7f$8\x9a~l\\\xf2\x7ft\xfa\x1d\x00" +
-	"\x00\xff\xff\x8b\x95}\xcb"
+const schema_dcccaa5d36aa8b70 = "x\xda\x94\x94_h\x14W\x14\xc6\xcf\xb9w&\x9bl" +
+	"w\xba;\xbd\xfb\xd0\x94\x86\xd0\xd2<\xb4\xb4IKi" +
+	"\x0b\xa1\x90\xfe\xa5\xb4P\xf0\x06$\xbe(\x19v/q" +
+	"5\xee\xcc\xce\xccj\x16\x0cQA4\x88\x0f\x01\x05E" +
+	"\x14\x13\xc9C\x82\x90<\x88\xcf\"*>\xc4\x88\xd1\xbc" +
+	"\x04}P!\xc1\xf8 \x11|\x08ds\xe5N6\x9b" +
+	"\xdd\xcd$\xea\xdbp\xe7\x9b\xdf=\xdf\x99\xf3\x9d\xefg" +
+	"\xf17\xed\x07\xa3M\x07\xc2\x7f\xd5\xebd\xf4\xec\x97K" +
+	"\x0f\xcf-_\x023\x86\xd295\xfe\xf3\xee\xf1\xa9\xc7" +
+	"\xa0E\x00~\xec'\x04\xd9 \x89\x00\x95W\xbf\x1d}" +
+	"Z\xf7|\xf82\xf0\x18\xd6\xca\x04\x89\"\xcb\x93\x08\x00" +
+	"\xcb\x91\x0e@\xb9\xeb\xe8\xb1['\xdf\x9c\x98\x08A\x0e" +
+	"\x91O\x90\x0d\x07\xc8\xde\xebg&\xc7.\xccLV\xab" +
+	"tT\x9c~2\x17\\\x0c\xecx@4\xc7\xbb\x1aG" +
+	"\xda\xc45\xe0IDy\xaf\xd0\xf6\xcb\xc0\xa23\x03;" +
+	"I\x045\x006J\xe6\x00\xd9\x18Y\x00\x94S\x8dW" +
+	"\xbe\x9a\xbe?q'L\x8a\xc8\x06\xe9\" ;M\x95" +
+	"t\xf0f\xeb\x9e\x85\x8f\x9eL\x87Up@{\xcd\x0a" +
+	"\xaad\x96\xd7T\x05ePu\x03\xf4\xa0\xc8\xf3\xda\x08" +
+	"\x1b\x0e\xc4\x17\xb5CJ\x1c\xbba\xb4\xfc.\xe6\xc3\xba" +
+	"u[\x8b\"\x9b\x0d\xc4\x0f\x02\xf2\xd0\xd4|\xdf\xcb\xe2" +
+	"\xc7/B\xc4lI{\xc6\x8a\xc1\xd3r\xa0\x8d\xde\x1d" +
+	"\xea\xfe\x89>z\x15\xa6m\xd4\x17Y\x8b\xae\x9e\xbe\xd0" +
+	";\xe0;\xe9\xb8\xb6o\xb7\xa6,\xead\x9d\xf6?]" +
+	"a\xf9\xa2\xcbv\xf7\x0b\xb7S\xe4\xf2\xc2\xf3a\x87B" +
+	"l-\xf2\x1c;\xeb\x09P2\xaeQ\x0d@C\x00\xd3" +
+	"\xf8\x0c\x80\xd7S\xe4I\x824\x93\xc6\x06 \xd8\x005" +
+	"\xa0\xbf\x84\xe7\xbbv\xa1\x8a\x84\xa2\xf2>\xa2d\x7f\xf7" +
+	"\x89T\xde\x17A=\xd4\xf3k.\xfaf\xe3\xa2x\xda" +
+	"\xf2-4\x80\xa0\x015\x8c\xff\x85\xe7Y=\xa2\xd5J" +
+	"\xf9\x19jgy\x82j1)\x03\x82\xb5\x0f\x80wS" +
+	"\xe4\xbd\x04\x0d\\\x95IT\xa7\x19\x17\x80\xef\xa5\xc8}" +
+	"\x82\x06)\xca$\x12\x003\xd7\x09\xc0\x1d\x8a\xfc0A" +
+	"\x83\xae\xc8$R\x00\xb3\xf0\x07\x00\xf7)\xf2#\x04e" +
+	"\xaa\xd4\x1d\x88+W\x98\xd8H\x0e &\x00e\xba\xe4" +
+	"\x1a\x9a\xed\x92\xa2<\x07%E\x8f\xf0\x83\x9e\x00\x06\xdf" +
+	"\xaf\xff\xcc\xb5\xb7\x03b\xad\x1d\x98\xd8\x88F\xe9\xbbP" +
+	"\xc7\xae\xf0\x9c\xb8\xfaE\xca\xf3\xe7RbRe\xa1\xca" +
+	"u\x13\xae\xaac\xbd\xc6v\x13)\xaa\xe3\xba\x1a\xdfM" +
+	"tE\x1dG\xdei\xbc\xbc\x0c\xb64^\xde\x00\xa1\xc6" +
+	"\xcb\xb9\xdbd\xbc\x9c\x850\xe3\xff\x94 j\xa2\x9a\x83" +
+	"\xe1\xac\x99\x18\xe5%F\x91\x7fJPz\xc2=\x98I" +
+	"\x89\x7f\x01\xd3\x18\x03\x82\xb1\x0a\x1a\xae\xb71b\xf5\x04" +
+	"\x8cz\xc5\xc0\x8a5c~\xdd\x0e\x04\x11+\xd6\x89i" +
+	"\xfe\x07\xa4C\x8d\x99\x9d\x95n9\x1d\xb0\xed\xe4\xaf\x05" +
+	"\xed\x03#T\x9d\x0d\xcf\xb1#\x9b\xadV\x86#e\xa7" +
+	"\x05\xea@P\xdf\xa6c\xb9\xb8*\xe5\xbd\x0ay\x1b\x00" +
+	"\x00\xff\xff\xbc\xcb\xc8\xfc"
 
 func RegisterSchema(reg *schemas.Registry) {
 	reg.Register(&schemas.Schema{
@@ -854,11 +1087,13 @@ func RegisterSchema(reg *schemas.Registry) {
 			0x9ef998d3f122950a,
 			0xa0a1e306e1a52cac,
 			0xaf87f588c4828158,
+			0xb0d29ba9b094b66c,
 			0xb4652fa21957aa11,
 			0xc6afcfce24a319cc,
 			0xcedd0be75e2ec289,
 			0xd270ea7f372f79cd,
 			0xe66541250dc00ccd,
+			0xe90efdeb78e6cc91,
 			0xefd403356091c80a,
 		},
 		Compressed: true,

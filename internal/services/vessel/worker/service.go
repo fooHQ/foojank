@@ -2,33 +2,28 @@ package worker
 
 import (
 	"context"
-	"github.com/foojank/foojank/internal/log"
+	"github.com/foojank/foojank/internal/services/vessel/worker/connector"
+	"github.com/foojank/foojank/internal/services/vessel/worker/decoder"
+	"github.com/foojank/foojank/internal/services/vessel/worker/processor"
 	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nats.go/micro"
-	"github.com/risor-io/risor"
-	risoros "github.com/risor-io/risor/os"
 	"golang.org/x/sync/errgroup"
 )
 
 type Arguments struct {
-	Connection *nats.Conn
-	EventCh    chan<- Event
 	ID         uint64
 	Name       string
 	Version    string
+	Connection *nats.Conn
+	EventCh    chan<- Event
 }
 
 type Service struct {
-	args   Arguments
-	stdin  risoros.File
-	stdout risoros.File
+	args Arguments
 }
 
 func New(args Arguments) *Service {
 	return &Service{
-		args:   args,
-		stdin:  NewFile(),
-		stdout: NewFile(),
+		args: args,
 	}
 }
 
@@ -43,91 +38,67 @@ func (s *Service) Start(ctx context.Context) error {
 		}
 	}()
 
-	ros := NewOS(ctx, s.stdin, s.stdout)
-	ctx = ros.Context()
-
-	stdoutSubject := nats.NewInbox()
-	ms, err := micro.AddService(s.args.Connection, micro.Config{
-		Name:    s.args.Name,
-		Version: s.args.Version,
-		Metadata: map[string]string{
-			"stdout": stdoutSubject,
-		},
-	})
-	if err != nil {
-		return err
-	}
-	defer ms.Stop()
-
+	// TODO: allow these to be configured from the outside
 	dataSubject := nats.NewInbox()
-	err = ms.AddEndpoint("data", micro.ContextHandler(ctx, s.handleData), micro.WithEndpointSubject(dataSubject))
-	if err != nil {
-		return err
-	}
-
 	stdinSubject := nats.NewInbox()
-	err = ms.AddEndpoint("stdin", micro.ContextHandler(ctx, s.handleStdin), micro.WithEndpointSubject(stdinSubject))
-	if err != nil {
-		return err
-	}
+	stdoutSubject := nats.NewInbox()
+
+	connectorIDCh := make(chan string, 1)
+	connectorOutCh := make(chan connector.Message, 65535)
+	decoderDataCh := make(chan decoder.Message, 65535)
+	decoderStdinCh := make(chan decoder.Message, 65535)
 
 	group, groupCtx := errgroup.WithContext(ctx)
-	// TODO: rewrite as a service!
 	group.Go(func() error {
-		for {
-			b := make([]byte, 2048)
-			_, err := s.stdout.Read(b)
-			if err != nil {
-				log.Debug("cannot read from stdout: %v", err)
-				break
-			}
-
-			msg := &nats.Msg{
-				Subject: stdoutSubject,
-				Data:    b,
-			}
-			err = s.args.Connection.PublishMsg(msg)
-			if err != nil {
-				log.Debug("cannot publish to stdout subject: %v", err)
-				continue
-			}
-		}
-		return nil
+		return connector.New(connector.Arguments{
+			Name:    s.args.Name,
+			Version: s.args.Version,
+			Metadata: map[string]string{
+				// TODO: progname
+				// TODO: args
+				// TODO: environ?
+				"stdout": stdoutSubject,
+			},
+			StdinSubject: stdinSubject,
+			DataSubject:  dataSubject,
+			Connection:   s.args.Connection,
+			IDCh:         connectorIDCh,
+			OutputCh:     connectorOutCh,
+		}).Start(groupCtx)
 	})
+	group.Go(func() error {
+		return decoder.New(decoder.Arguments{
+			DataSubject: dataSubject,
+			InputCh:     connectorOutCh,
+			DataCh:      decoderDataCh,
+			StdinCh:     decoderStdinCh,
+		}).Start(groupCtx)
+	})
+	group.Go(func() error {
+		return processor.New(processor.Arguments{
+			Connection:    s.args.Connection,
+			StdoutSubject: stdoutSubject,
+			DataCh:        decoderDataCh,
+			StdinCh:       decoderStdinCh,
+		}).Start(groupCtx)
+	})
+
+	var id string
+	select {
+	case v := <-connectorIDCh:
+		id = v
+	case <-ctx.Done():
+		return nil
+	}
 
 	select {
 	case s.args.EventCh <- EventWorkerStarted{
 		WorkerID:  s.args.ID,
-		ServiceID: ms.Info().ID,
+		ServiceID: id,
 	}:
 	case <-ctx.Done():
 		return nil
 	}
 
-	<-groupCtx.Done()
-	_ = s.stdout.Close()
 	return group.Wait()
-}
-
-func (s *Service) handleData(ctx context.Context, req micro.Request) {
-	_ = req.Respond(nil)
-	src := string(req.Data())
-	log.Debug("before eval")
-	_, err := risor.Eval(ctx, src)
-	log.Debug("after eval")
-	if err != nil {
-		_, err := s.stdout.Write([]byte(err.Error()))
-		if err != nil {
-			log.Debug("cannot write to stdout: %v", err)
-			return
-		}
-		return
-	}
-}
-
-func (s *Service) handleStdin(ctx context.Context, req micro.Request) {
-	_ = req.Respond(nil)
-	log.Debug("before input: %q", string(req.Data()))
-	_, _ = s.stdin.Write(req.Data())
-	log.Debug("after input")
 }

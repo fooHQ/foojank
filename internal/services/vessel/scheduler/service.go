@@ -106,11 +106,11 @@ loop:
 func (s *Service) createWorker(ctx context.Context, workerID uint64, eventCh chan<- worker.Event) *worker.Service {
 	log.Debug("creating a new worker id=%d", workerID)
 	w := worker.New(worker.Arguments{
-		Connection: s.args.Connection,
-		EventCh:    eventCh,
 		ID:         workerID,
 		Name:       "vessel-worker", // TODO: configurable
 		Version:    "0.1.0",         // TODO: configurable
+		Connection: s.args.Connection,
+		EventCh:    eventCh,
 	})
 
 	s.wg.Add(1)
