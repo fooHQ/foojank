@@ -38,7 +38,6 @@ func (s *Service) Start(ctx context.Context) error {
 			b := make([]byte, 4096)
 			_, err := stdout.Read(b)
 			if err != nil {
-				log.Debug("cannot read from stdout: %v", err)
 				break
 			}
 
@@ -54,6 +53,15 @@ func (s *Service) Start(ctx context.Context) error {
 		}
 		return nil
 	})
+	// Wait for context closure and then close stdin and stdout files.
+	// This unblocks (cancels) any potential pending writes/reads to/from the files
+	// and allows the service to shutdown gracefully.
+	group.Go(func() error {
+		<-ctx.Done()
+		_ = stdin.Close()
+		_ = stdout.Close()
+		return nil
+	})
 
 loop:
 	for {
@@ -67,14 +75,12 @@ loop:
 				_, err := risor.Eval(ctx, src)
 				log.Debug("after eval")
 				if err != nil {
-					_, err := stdout.Write([]byte(err.Error()))
-					if err != nil {
-						log.Debug("cannot write to stdout: %v", err)
-						continue
-					}
-					continue
+					_, _ = stdout.Write([]byte(err.Error()))
 				}
-				// TODO: send back return code!
+
+				_ = msg.Reply(decoder.ExecuteResponse{
+					Code: 0,
+				})
 			}
 
 		case msg := <-s.args.StdinCh:
@@ -88,6 +94,5 @@ loop:
 		}
 	}
 
-	_ = stdout.Close()
 	return group.Wait()
 }
