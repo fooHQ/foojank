@@ -4,13 +4,13 @@ import (
 	"context"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
-	"strings"
 )
 
 type Arguments struct {
 	Name       string
 	Version    string
 	Metadata   map[string]string
+	RpcSubject string
 	Connection *nats.Conn
 	OutputCh   chan<- Message
 }
@@ -36,8 +36,7 @@ func (s *Service) Start(ctx context.Context) error {
 	}
 	defer ms.Stop()
 
-	rpcSubject := strings.Join([]string{micro.APIPrefix, "RPC", s.args.Name, ms.Info().ID}, ".")
-	err = ms.AddEndpoint("rpc", micro.ContextHandler(ctx, s.handler), micro.WithEndpointSubject(rpcSubject))
+	err = ms.AddEndpoint("rpc", micro.ContextHandler(ctx, s.handler), micro.WithEndpointSubject(s.args.RpcSubject))
 	if err != nil {
 		return err
 	}
