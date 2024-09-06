@@ -18,6 +18,10 @@ build/dev:
 generate:
 	go generate ./...
 
-.PHONY: run
-run:
+.PHONY: run/vessel
+run/vessel:
 	CGO_ENABLED=1 go run -race -tags debug ./cmd/vessel
+
+.PHONY: run/client
+run/client:
+	CGO_ENABLED=1 go run -race -tags debug ./cmd/client
