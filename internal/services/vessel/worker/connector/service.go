@@ -13,7 +13,7 @@ type Arguments struct {
 	StdinSubject string
 	DataSubject  string
 	Connection   *nats.Conn
-	IDCh         chan<- string
+	InfoCh       chan<- InfoMessage
 	OutputCh     chan<- Message
 }
 
@@ -48,8 +48,12 @@ func (s *Service) Start(ctx context.Context) error {
 		return err
 	}
 
+	info := InfoMessage{
+		serviceName: ms.Info().Name,
+		serviceID:   ms.Info().ID,
+	}
 	select {
-	case s.args.IDCh <- ms.Info().ID:
+	case s.args.InfoCh <- info:
 	case <-ctx.Done():
 		return nil
 	}

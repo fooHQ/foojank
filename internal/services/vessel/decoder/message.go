@@ -84,5 +84,6 @@ type GetWorkerRequest struct {
 }
 
 type GetWorkerResponse struct {
-	ServiceID string
+	ServiceName string
+	ServiceID   string
 }

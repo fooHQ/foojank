@@ -21,3 +21,16 @@ func (m Message) Reply(data []byte) error {
 func (m Message) ReplyError(code string, description string, data []byte) error {
 	return m.req.Error(code, description, data)
 }
+
+type InfoMessage struct {
+	serviceName string
+	serviceID   string
+}
+
+func (m InfoMessage) ServiceName() string {
+	return m.serviceName
+}
+
+func (m InfoMessage) ServiceID() string {
+	return m.serviceID
+}

@@ -16,7 +16,8 @@ struct GetWorkerRequest {
 }
 
 struct GetWorkerResponse {
-    serviceId @0 :Text;
+    serviceName @0 :Text;
+    serviceId @1 :Text;
 }
 
 struct DestroyWorkerRequest {

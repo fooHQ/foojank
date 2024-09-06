@@ -105,7 +105,7 @@ func (s *Service) Start(ctx context.Context) error {
 				}
 
 			case GetWorkerResponse:
-				rootMsg, err = newGetWorkerResponse(rootMsg, v.ServiceID)
+				rootMsg, err = newGetWorkerResponse(rootMsg, v.ServiceName, v.ServiceID)
 				if err != nil {
 					log.Debug("cannot create a response message: %v", err)
 					_ = msg.Request().ReplyError("500", err.Error(), nil)
@@ -177,8 +177,13 @@ func newDestroyWorkerResponse(root proto.Message) (proto.Message, error) {
 	return root, nil
 }
 
-func newGetWorkerResponse(root proto.Message, serviceID string) (proto.Message, error) {
+func newGetWorkerResponse(root proto.Message, serviceName, serviceID string) (proto.Message, error) {
 	respMsg, err := proto.NewGetWorkerResponse(root.Segment())
+	if err != nil {
+		return proto.Message{}, err
+	}
+
+	err = respMsg.SetServiceName(serviceName)
 	if err != nil {
 		return proto.Message{}, err
 	}

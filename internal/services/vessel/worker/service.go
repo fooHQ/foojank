@@ -43,7 +43,7 @@ func (s *Service) Start(ctx context.Context) error {
 	stdinSubject := nats.NewInbox()
 	stdoutSubject := nats.NewInbox()
 
-	connectorIDCh := make(chan string, 1)
+	connectorInfoCh := make(chan connector.InfoMessage, 1)
 	connectorOutCh := make(chan connector.Message, 65535)
 	decoderDataCh := make(chan decoder.Message, 65535)
 	decoderStdinCh := make(chan decoder.Message, 65535)
@@ -62,7 +62,7 @@ func (s *Service) Start(ctx context.Context) error {
 			StdinSubject: stdinSubject,
 			DataSubject:  dataSubject,
 			Connection:   s.args.Connection,
-			IDCh:         connectorIDCh,
+			InfoCh:       connectorInfoCh,
 			OutputCh:     connectorOutCh,
 		}).Start(groupCtx)
 	})
@@ -83,18 +83,19 @@ func (s *Service) Start(ctx context.Context) error {
 		}).Start(groupCtx)
 	})
 
-	var id string
+	var info connector.InfoMessage
 	select {
-	case v := <-connectorIDCh:
-		id = v
+	case v := <-connectorInfoCh:
+		info = v
 	case <-ctx.Done():
 		return nil
 	}
 
 	select {
 	case s.args.EventCh <- EventWorkerStarted{
-		WorkerID:  s.args.ID,
-		ServiceID: id,
+		WorkerID:    s.args.ID,
+		ServiceName: info.ServiceName(),
+		ServiceID:   info.ServiceID(),
 	}:
 	case <-ctx.Done():
 		return nil

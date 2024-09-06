@@ -66,7 +66,8 @@ loop:
 				}
 
 				_ = msg.Reply(decoder.GetWorkerResponse{
-					ServiceID: workers[v.ID].ServiceID(),
+					ServiceName: workers[v.ID].ServiceName(),
+					ServiceID:   workers[v.ID].ServiceID(),
 				})
 			}
 
@@ -75,9 +76,10 @@ loop:
 			case worker.EventWorkerStarted:
 				log.Debug("%#v", v)
 				workers[v.WorkerID] = state{
-					w:         workers[v.WorkerID].w,
-					serviceID: v.ServiceID,
-					cancel:    workers[v.WorkerID].cancel,
+					w:           workers[v.WorkerID].w,
+					serviceName: v.ServiceName,
+					serviceID:   v.ServiceID,
+					cancel:      workers[v.WorkerID].cancel,
 				}
 
 			case worker.EventWorkerStopped:
@@ -127,9 +129,14 @@ func (s *Service) createWorker(ctx context.Context, workerID uint64, eventCh cha
 }
 
 type state struct {
-	w         *worker.Service
-	serviceID string
-	cancel    context.CancelFunc
+	w           *worker.Service
+	serviceName string
+	serviceID   string
+	cancel      context.CancelFunc
+}
+
+func (s state) ServiceName() string {
+	return s.serviceName
 }
 
 func (s state) ServiceID() string {
