@@ -3,6 +3,7 @@ package vessel
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
 )
@@ -39,13 +40,13 @@ type Endpoint struct {
 	subject string
 }
 
-type Info struct {
+type Service struct {
 	ID        ID
 	Metadata  map[string]string
 	Endpoints map[string]Endpoint
 }
 
-func (c *Client) Discover(ctx context.Context, serviceName string) ([]Info, error) {
+func (c *Client) Discover(ctx context.Context, serviceName string) ([]Service, error) {
 	subject, err := micro.ControlSubject(micro.InfoVerb, serviceName, "")
 	if err != nil {
 		return nil, err
@@ -68,7 +69,7 @@ func (c *Client) Discover(ctx context.Context, serviceName string) ([]Info, erro
 		return nil, err
 	}
 
-	var results []Info
+	var results []Service
 loop:
 	for {
 		select {
@@ -88,7 +89,7 @@ loop:
 	return results, nil
 }
 
-func (c *Client) GetInfo(ctx context.Context, id ID) (Info, error) {
+func (c *Client) GetInfo(ctx context.Context, id ID) (Service, error) {
 	subject := id.infoSubject()
 	msg := &nats.Msg{
 		Subject: subject,
@@ -96,20 +97,25 @@ func (c *Client) GetInfo(ctx context.Context, id ID) (Info, error) {
 	}
 	resp, err := c.nc.RequestMsgWithContext(ctx, msg)
 	if err != nil {
-		return Info{}, err
+		return Service{}, err
 	}
 
 	return c.parseInfo(resp.Data)
 }
 
-func (c *Client) CreateWorker(ctx context.Context, e Endpoint) (uint64, error) {
+func (c *Client) CreateWorker(ctx context.Context, s Service) (uint64, error) {
 	b, err := NewCreateWorkerRequest()
 	if err != nil {
 		return 0, err
 	}
 
+	rpcEndpoint, ok := s.Endpoints["rpc"]
+	if !ok {
+		return 0, errors.New("rpc endpoint not found")
+	}
+
 	msg := &nats.Msg{
-		Subject: e.subject,
+		Subject: rpcEndpoint.subject,
 		Reply:   nats.NewInbox(),
 		Data:    b,
 	}
@@ -126,14 +132,19 @@ func (c *Client) CreateWorker(ctx context.Context, e Endpoint) (uint64, error) {
 	return workerID, nil
 }
 
-func (c *Client) GetWorker(ctx context.Context, e Endpoint, workerID uint64) (ID, error) {
+func (c *Client) GetWorker(ctx context.Context, s Service, workerID uint64) (ID, error) {
 	b, err := NewGetWorkerRequest(workerID)
 	if err != nil {
 		return ID{}, err
 	}
 
+	rpcEndpoint, ok := s.Endpoints["rpc"]
+	if !ok {
+		return ID{}, errors.New("rpc endpoint not found")
+	}
+
 	msg := &nats.Msg{
-		Subject: e.subject,
+		Subject: rpcEndpoint.subject,
 		Reply:   nats.NewInbox(),
 		Data:    b,
 	}
@@ -153,11 +164,11 @@ func (c *Client) GetWorker(ctx context.Context, e Endpoint, workerID uint64) (ID
 	}, nil
 }
 
-func (c *Client) parseInfo(b []byte) (Info, error) {
+func (c *Client) parseInfo(b []byte) (Service, error) {
 	var data micro.Info
 	err := json.Unmarshal(b, &data)
 	if err != nil {
-		return Info{}, err
+		return Service{}, err
 	}
 
 	metadata := make(map[string]string, len(data.Metadata))
@@ -173,7 +184,7 @@ func (c *Client) parseInfo(b []byte) (Info, error) {
 		}
 	}
 
-	return Info{
+	return Service{
 		ID: ID{
 			serviceName: data.Name,
 			serviceID:   data.ID,
