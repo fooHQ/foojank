@@ -56,3 +56,30 @@ func NewGetWorkerRequest(id uint64) ([]byte, error) {
 
 	return msg.Message().Marshal()
 }
+
+func NewExecuteRequest(data []byte) ([]byte, error) {
+	arena := capnp.SingleSegment(nil)
+	_, seg, err := capnp.NewMessage(arena)
+	if err != nil {
+		return nil, err
+	}
+
+	msg, err := proto.NewRootMessage(seg)
+	if err != nil {
+		return nil, err
+	}
+
+	msgExecute, err := proto.NewExecuteRequest(seg)
+	if err != nil {
+		return nil, err
+	}
+
+	_ = msgExecute.SetData(data)
+
+	err = msg.Action().SetExecute(msgExecute)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}

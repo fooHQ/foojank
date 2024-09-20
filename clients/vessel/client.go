@@ -164,6 +164,94 @@ func (c *Client) GetWorker(ctx context.Context, s Service, workerID uint64) (ID,
 	}, nil
 }
 
+func (c *Client) Execute(ctx context.Context, s Service, stdin <-chan []byte, stdout chan<- []byte, data []byte) (int64, error) {
+	b, err := NewExecuteRequest(data)
+	if err != nil {
+		return 0, err
+	}
+
+	dataEndpoint, ok := s.Endpoints["data"]
+	if !ok {
+		return 0, errors.New("rpc endpoint not found")
+	}
+
+	stdinEndpoint, ok := s.Endpoints["stdin"]
+	if !ok {
+		return 0, errors.New("stdin endpoint not found")
+	}
+
+	stdoutSubject, ok := s.Metadata["stdout"]
+	if !ok {
+		return 0, errors.New("stdout subject not found")
+	}
+
+	msgCh := make(chan *nats.Msg, 1024)
+	sub, err := c.nc.ChanSubscribe(stdoutSubject, msgCh)
+	if err != nil {
+		return 0, err
+	}
+	defer sub.Drain()
+
+	// Start stdout messages passthrough
+	go func() {
+		// TODO: handle graceful shutdown!
+		// TODO: drain msgCh channel!
+		for {
+			select {
+			case msg := <-msgCh:
+				select {
+				case stdout <- msg.Data:
+				case <-ctx.Done():
+					return
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	// Start stdin messages passthrough
+	go func() {
+		// TODO: handle graceful shutdown!
+		// TODO: drain msgCh channel!
+		for {
+			select {
+			case line := <-stdin:
+				msg := &nats.Msg{
+					Subject: stdinEndpoint.subject,
+					Reply:   nats.NewInbox(),
+					Data:    line,
+				}
+				err := c.nc.PublishMsg(msg)
+				if err != nil {
+					// TODO: handle error!
+					return
+				}
+
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	msg := &nats.Msg{
+		Subject: dataEndpoint.subject,
+		Reply:   nats.NewInbox(),
+		Data:    b,
+	}
+	resp, err := c.nc.RequestMsgWithContext(ctx, msg)
+	if err != nil {
+		return 0, err
+	}
+
+	code, err := ParseExecuteResponse(resp.Data)
+	if err != nil {
+		return 0, err
+	}
+
+	return code, nil
+}
+
 func (c *Client) parseInfo(b []byte) (Service, error) {
 	var data micro.Info
 	err := json.Unmarshal(b, &data)

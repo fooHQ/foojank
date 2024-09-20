@@ -52,3 +52,22 @@ func ParseGetWorkerResponse(b []byte) (string, string, error) {
 
 	return serviceName, serviceID, nil
 }
+
+func ParseExecuteResponse(b []byte) (int64, error) {
+	capMsg, err := capnp.Unmarshal(b)
+	if err != nil {
+		return 0, err
+	}
+
+	message, err := proto.ReadRootMessage(capMsg)
+	if err != nil {
+		return 0, err
+	}
+
+	v, err := message.Response().Execute()
+	if err != nil {
+		return 0, err
+	}
+
+	return v.Code(), nil
+}
