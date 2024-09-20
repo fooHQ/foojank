@@ -1,18 +1,14 @@
 package commands
 
 import (
-	"capnproto.org/go/capnp/v3"
-	"encoding/json"
-	"github.com/foojank/foojank/proto"
-	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nats.go/micro"
+	"bufio"
+	"fmt"
+	vesselcli "github.com/foojank/foojank/clients/vessel"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/term"
-	"io"
 	"os"
 )
 
-func NewRunCommand(nc *nats.Conn) *cli.Command {
+func NewRunCommand(vessel *vesselcli.Client) *cli.Command {
 	return &cli.Command{
 		Name: "run",
 		Flags: []cli.Flag{
@@ -25,283 +21,396 @@ func NewRunCommand(nc *nats.Conn) *cli.Command {
 				Required: true,
 			},
 		},
-		Action: newRunCommandAction(nc),
+		Action: newRunCommandAction(vessel),
 	}
 }
 
-func newRunCommandAction(nc *nats.Conn) cli.ActionFunc {
+func newRunCommandAction(vessel *vesselcli.Client) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		ctx := c.Context
-		var id = c.String("id")
-		var workerID uint64
+		id := c.String("id")
+		script := c.String("script")
 
-		{
-			arena := capnp.SingleSegment(nil)
-			_, seg, err := capnp.NewMessage(arena)
-			if err != nil {
-				panic(err)
-			}
+		// TODO: make configurable!
+		var serviceName = "vessel"
 
-			msg, err := proto.NewRootMessage(seg)
-			if err != nil {
-				panic(err)
-			}
-
-			msgCreateWorker, err := proto.NewCreateWorkerRequest(seg)
-			if err != nil {
-				panic(err)
-			}
-
-			err = msg.Action().SetCreateWorker(msgCreateWorker)
-			if err != nil {
-				panic(err)
-			}
-
-			b, err := msg.Message().Marshal()
-			if err != nil {
-				panic(err)
-			}
-
-			reqMsg := &nats.Msg{
-				Subject: "$SRV.RPC.vessel." + id,
-				Reply:   nats.NewInbox(),
-				Data:    b,
-			}
-			respMsg, err := nc.RequestMsgWithContext(ctx, reqMsg)
-			if err != nil {
-				panic(err)
-			}
-
-			capMsg, err := capnp.Unmarshal(respMsg.Data)
-			if err != nil {
-				panic(err)
-			}
-
-			message, err := proto.ReadRootMessage(capMsg)
-			if err != nil {
-				panic(err)
-			}
-
-			v, err := message.Response().CreateWorker()
-			if err != nil {
-				panic(err)
-			}
-
-			workerID = v.Id()
+		info, err := vessel.GetInfo(ctx, vesselcli.NewID(serviceName, id))
+		if err != nil {
+			return err
 		}
 
-		var serviceID string
+		wid, err := vessel.CreateWorker(ctx, info)
+		if err != nil {
+			return err
+		}
 
-		{
-			arena := capnp.SingleSegment(nil)
-			_, seg, err := capnp.NewMessage(arena)
+		workerID, err := vessel.GetWorker(ctx, info, wid)
+		if err != nil {
+			return err
+		}
+
+		worker, err := vessel.GetInfo(ctx, workerID)
+		if err != nil {
+			return err
+		}
+
+		stdinCh := make(chan []byte, 128)
+		stdoutCh := make(chan []byte, 1024)
+		cmdExitCh := make(chan int64, 1)
+
+		// TODO: handle graceful shutdown!
+		go func() {
+			select {
+			case line := <-stdoutCh:
+				fmt.Println(string(line))
+			case <-ctx.Done():
+				return
+			}
+		}()
+
+		// TODO: handle graceful shutdown!
+		go func() {
+			code, err := vessel.Execute(ctx, worker, stdinCh, stdoutCh, []byte(script))
 			if err != nil {
-				panic(err)
+				// TODO: handle error!
 			}
+			cmdExitCh <- code
+		}()
 
-			msg, err := proto.NewRootMessage(seg)
+	loop:
+		for {
+			r := bufio.NewReader(os.Stdin)
+			line, err := r.ReadBytes('\n')
 			if err != nil {
-				panic(err)
+				// TODO
+				/*switch {
+				case errors.Is(err, io.EOF):
+					return err
+				case errors.Is(err, os.ErrDeadlineExceeded):
+					isTimeout = true
+				default:
+					return err
+				}*/
+				return err
 			}
 
-			msgGetWorker, err := proto.NewGetWorkerRequest(seg)
-			if err != nil {
-				panic(err)
-			}
-
-			msgGetWorker.SetId(workerID)
-
-			err = msg.Action().SetGetWorker(msgGetWorker)
-			if err != nil {
-				panic(err)
-			}
-
-			b, err := msg.Message().Marshal()
-			if err != nil {
-				panic(err)
-			}
-
-			reqMsg := &nats.Msg{
-				Subject: "$SRV.RPC.vessel." + id,
-				Reply:   nats.NewInbox(),
-				Data:    b,
-			}
-			respMsg, err := nc.RequestMsgWithContext(ctx, reqMsg)
-			if err != nil {
-				panic(err)
-			}
-
-			errHeader := respMsg.Header.Get(micro.ErrorHeader)
-			if errHeader != "" {
-				println("err", errHeader)
+			select {
+			case stdinCh <- line:
+			case <-ctx.Done():
 				return nil
+			default:
 			}
 
-			capMsg, err := capnp.Unmarshal(respMsg.Data)
-			if err != nil {
-				panic(err)
-			}
-
-			message, err := proto.ReadRootMessage(capMsg)
-			if err != nil {
-				panic(err)
-			}
-
-			v, err := message.Response().GetWorker()
-			if err != nil {
-				panic(err)
-			}
-
-			serviceID, err = v.ServiceId()
-			if err != nil {
-				panic(err)
+			select {
+			case <-cmdExitCh:
+				break loop
+			case <-ctx.Done():
+				return nil
+			default:
 			}
 		}
 
-		var stdin string
-		var stdout string
-		var data string
+		return cli.Exit("", 0)
 
-		{
-			inbox := nats.NewInbox()
-			msgCh := make(chan *nats.Msg, 512)
-			sub, err := nc.ChanSubscribe(inbox, msgCh)
-			if err != nil {
-				panic(err)
-			}
-			defer sub.Drain()
-
-			// TODO: service name is configurable in the agent!
-			subject, err := micro.ControlSubject(micro.InfoVerb, "vessel-worker", serviceID)
-			if err != nil {
-				panic(err)
-			}
-
-			reqMsg := &nats.Msg{
-				Subject: subject,
-				Reply:   inbox,
-			}
-			resp, err := nc.RequestMsgWithContext(ctx, reqMsg)
-			if err != nil {
-				panic(err)
-			}
-
-			var info micro.Info
-			err = json.Unmarshal(resp.Data, &info)
-			if err != nil {
-				panic(err)
-			}
-
-			stdout = info.Metadata["stdout"]
-			for _, endpoint := range info.Endpoints {
-				if endpoint.Name == "stdin" {
-					stdin = endpoint.Subject
-					continue
-				}
-				if endpoint.Name == "data" {
-					data = endpoint.Subject
-					continue
-				}
-			}
-		}
-
-		var script = c.String("script")
-
-		{
-			msgCh := make(chan *nats.Msg, 512)
-			sub, err := nc.ChanSubscribe(stdout, msgCh)
-			if err != nil {
-				panic(err)
-			}
-			defer sub.Drain()
-
-			// TODO: check if terminal!
-			oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
-			if err != nil {
-				panic(err)
-			}
-			defer term.Restore(int(os.Stdin.Fd()), oldState)
-
-			term := term.NewTerminal(os.Stdin, "")
-
-			// Start console write (stdout)!
-			go func() {
-				for {
-					select {
-					case msg := <-msgCh:
-						_, _ = term.Write(msg.Data)
-					case <-ctx.Done():
-						return
-					}
-				}
-			}()
-
-			go func() {
+		/*
+			{
 				arena := capnp.SingleSegment(nil)
 				_, seg, err := capnp.NewMessage(arena)
 				if err != nil {
-					panic(err)
+					return err
 				}
 
 				msg, err := proto.NewRootMessage(seg)
 				if err != nil {
-					panic(err)
+					return err
 				}
 
-				msgExecute, err := proto.NewExecuteRequest(seg)
+				msgCreateWorker, err := proto.NewCreateWorkerRequest(seg)
 				if err != nil {
-					panic(err)
+					return err
 				}
 
-				_ = msgExecute.SetData([]byte(script))
-
-				err = msg.Action().SetExecute(msgExecute)
+				err = msg.Action().SetCreateWorker(msgCreateWorker)
 				if err != nil {
-					panic(err)
+					return err
 				}
 
 				b, err := msg.Message().Marshal()
 				if err != nil {
-					panic(err)
+					return err
 				}
 
 				reqMsg := &nats.Msg{
-					Subject: data,
+					Subject: "$SRV.RPC.vessel." + id,
 					Reply:   nats.NewInbox(),
 					Data:    b,
 				}
-				_, err = nc.RequestMsgWithContext(ctx, reqMsg)
+				respMsg, err := nc.RequestMsgWithContext(ctx, reqMsg)
 				if err != nil {
-					panic(err)
+					return err
 				}
-			}()
 
-			for {
-				line, err := term.ReadLine()
+				capMsg, err := capnp.Unmarshal(respMsg.Data)
 				if err != nil {
-					if err != io.EOF {
-						panic(err)
-					}
+					return err
+				}
+
+				message, err := proto.ReadRootMessage(capMsg)
+				if err != nil {
+					return err
+				}
+
+				v, err := message.Response().CreateWorker()
+				if err != nil {
+					return err
+				}
+
+				workerID = v.Id()
+			}
+
+			var serviceID string
+
+			{
+				arena := capnp.SingleSegment(nil)
+				_, seg, err := capnp.NewMessage(arena)
+				if err != nil {
+					return err
+				}
+
+				msg, err := proto.NewRootMessage(seg)
+				if err != nil {
+					return err
+				}
+
+				msgGetWorker, err := proto.NewGetWorkerRequest(seg)
+				if err != nil {
+					return err
+				}
+
+				msgGetWorker.SetId(workerID)
+
+				err = msg.Action().SetGetWorker(msgGetWorker)
+				if err != nil {
+					return err
+				}
+
+				b, err := msg.Message().Marshal()
+				if err != nil {
+					return err
+				}
+
+				reqMsg := &nats.Msg{
+					Subject: "$SRV.RPC.vessel." + id,
+					Reply:   nats.NewInbox(),
+					Data:    b,
+				}
+				respMsg, err := nc.RequestMsgWithContext(ctx, reqMsg)
+				if err != nil {
+					return err
+				}
+
+				errHeader := respMsg.Header.Get(micro.ErrorHeader)
+				if errHeader != "" {
+					println("err", errHeader)
 					return nil
 				}
 
-				// Adds back the newline eaten by ReadLine.
-				line += "\n"
-
-				reqMsg := &nats.Msg{
-					Subject: stdin,
-					Reply:   nats.NewInbox(),
-					Data:    []byte(line),
-				}
-				err = nc.PublishMsg(reqMsg)
+				capMsg, err := capnp.Unmarshal(respMsg.Data)
 				if err != nil {
-					panic(err)
+					return err
+				}
+
+				message, err := proto.ReadRootMessage(capMsg)
+				if err != nil {
+					return err
+				}
+
+				v, err := message.Response().GetWorker()
+				if err != nil {
+					return err
+				}
+
+				serviceID, err = v.ServiceId()
+				if err != nil {
+					return err
 				}
 			}
 
-			return nil
-		}
+			var stdinSubject string
+			var stdoutSubject string
+			var data string
 
-		return nil
+			{
+				inbox := nats.NewInbox()
+				msgCh := make(chan *nats.Msg, 512)
+				sub, err := nc.ChanSubscribe(inbox, msgCh)
+				if err != nil {
+					return err
+				}
+				defer sub.Drain()
+
+				// TODO: service name is configurable in the agent!
+				subject, err := micro.ControlSubject(micro.InfoVerb, "vessel-worker", serviceID)
+				if err != nil {
+					return err
+				}
+
+				reqMsg := &nats.Msg{
+					Subject: subject,
+					Reply:   inbox,
+				}
+				resp, err := nc.RequestMsgWithContext(ctx, reqMsg)
+				if err != nil {
+					return err
+				}
+
+				var info micro.Info
+				err = json.Unmarshal(resp.Data, &info)
+				if err != nil {
+					return err
+				}
+
+				stdoutSubject = info.Metadata["stdout"]
+				for _, endpoint := range info.Endpoints {
+					if endpoint.Name == "stdin" {
+						stdinSubject = endpoint.Subject
+						continue
+					}
+					if endpoint.Name == "data" {
+						data = endpoint.Subject
+						continue
+					}
+				}
+			}
+
+			var script = c.String("script")
+
+			{
+				msgCh := make(chan *nats.Msg, 512)
+				sub, err := nc.ChanSubscribe(stdoutSubject, msgCh)
+				if err != nil {
+					return err
+				}
+				defer sub.Drain()
+
+				// TODO: not compatible with windows!
+				stdin := os.NewFile(uintptr(syscall.Stdin), "stdin")
+				fd := int(stdin.Fd())
+
+				origState, err := xterm.GetState(fd)
+				if err != nil {
+					panic(err)
+				}
+				defer xterm.Restore(fd, origState)
+
+				term := xterm.NewTerminal(stdin, "")
+
+				// Start console write (stdout)!
+				go func() {
+					for {
+						select {
+						case msg := <-msgCh:
+							_, _ = term.Write(msg.Data)
+						case <-ctx.Done():
+							return
+						}
+					}
+				}()
+
+				go func() {
+					arena := capnp.SingleSegment(nil)
+					_, seg, err := capnp.NewMessage(arena)
+					if err != nil {
+						// TODO: log error!
+						return
+					}
+
+					msg, err := proto.NewRootMessage(seg)
+					if err != nil {
+						// TODO: log error!
+						return
+					}
+
+					msgExecute, err := proto.NewExecuteRequest(seg)
+					if err != nil {
+						// TODO: log error!
+						return
+					}
+
+					_ = msgExecute.SetData([]byte(script))
+
+					err = msg.Action().SetExecute(msgExecute)
+					if err != nil {
+						// TODO: log error!
+					}
+
+					b, err := msg.Message().Marshal()
+					if err != nil {
+						// TODO: log error!
+						return
+					}
+
+					reqMsg := &nats.Msg{
+						Subject: data,
+						Reply:   nats.NewInbox(),
+						Data:    b,
+					}
+					_, err = nc.RequestMsgWithContext(ctx, reqMsg)
+					if err != nil {
+						// TODO: log error!
+						return
+					}
+
+					_, _ = term.Write([]byte("done!"))
+				}()
+
+				for {
+					// TODO: check if terminal!
+					oldState, err := xterm.MakeRaw(fd)
+					if err != nil {
+						return err
+					}
+
+					err = stdin.SetDeadline(time.Now().Add(3 * time.Second))
+					if err != nil {
+						return err
+					}
+
+					isTimeout := false
+					line, err := term.ReadLine()
+					if err != nil {
+						switch {
+						case errors.Is(err, io.EOF):
+							return err
+						case errors.Is(err, os.ErrDeadlineExceeded):
+							isTimeout = true
+						default:
+							return err
+						}
+					}
+
+					err = xterm.Restore(fd, oldState)
+					if err != nil {
+						return err
+					}
+
+					if isTimeout {
+						continue
+					}
+
+					// Adds back the newline eaten by ReadLine.
+					line += "\n"
+
+					reqMsg := &nats.Msg{
+						Subject: stdinSubject,
+						Reply:   nats.NewInbox(),
+						Data:    []byte(line),
+					}
+					err = nc.PublishMsg(reqMsg)
+					if err != nil {
+						return err
+					}
+				}
+			}*/
 	}
 }

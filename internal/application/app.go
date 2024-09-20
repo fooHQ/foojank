@@ -1,25 +1,21 @@
 package application
 
 import (
+	"github.com/foojank/foojank/clients/vessel"
 	"github.com/foojank/foojank/internal/application/commands"
-	"github.com/nats-io/nats.go"
 	"github.com/urfave/cli/v2"
 )
 
-func New(nc *nats.Conn) *cli.App {
+func New(vessel *vessel.Client) *cli.App {
 	return &cli.App{
-		Name:        "foojank",
-		HelpName:    "foojank",
-		Usage:       "BLABLA 1",
-		UsageText:   "BLABLA 2",
-		Args:        false,
-		ArgsUsage:   "AAAA",
-		Version:     "0.1.0", // TODO: from config!
-		Description: "DDDDD",
+		Name:     "foojank",
+		HelpName: "foojank",
+		Usage:    "Control connected agents",
+		Args:     true,
+		Version:  "0.1.0", // TODO: from config!
 		Commands: []*cli.Command{
-			commands.NewListCommand(nc),
-			commands.NewRunCommand(nc),
-			commands.NewExitCommand(),
+			commands.NewListCommand(vessel),
+			commands.NewRunCommand(vessel),
 		},
 		CommandNotFound: func(c *cli.Context, s string) {
 			// TODO: refactor!

@@ -1,71 +1,37 @@
 package commands
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nats.go/micro"
+	vesselcli "github.com/foojank/foojank/clients/vessel"
 	"github.com/urfave/cli/v2"
 	"time"
 )
 
-func NewListCommand(nc *nats.Conn) *cli.Command {
+func NewListCommand(vessel *vesselcli.Client) *cli.Command {
 	return &cli.Command{
 		Name:   "list",
-		Action: newListCommandAction(nc),
+		Action: newListCommandAction(vessel),
 	}
 }
 
-func newListCommandAction(nc *nats.Conn) cli.ActionFunc {
+func newListCommandAction(vessel *vesselcli.Client) cli.ActionFunc {
 	return func(c *cli.Context) error {
-		ctx := c.Context
-		inbox := nats.NewInbox()
-		msgCh := make(chan *nats.Msg, 1024)
-		sub, err := nc.ChanSubscribe(inbox, msgCh)
-		if err != nil {
-			return err
-		}
-		defer sub.Drain()
+		// TODO: configurable timeout!
+		ctx, cancel := context.WithTimeout(c.Context, 2*time.Second)
+		defer cancel()
 
-		// TODO: configurable service name!
-		subject, err := micro.ControlSubject(micro.InfoVerb, "vessel", "")
+		// TODO: make serviceName configurable!
+		serviceName := "vessel"
+		result, err := vessel.Discover(ctx, serviceName)
 		if err != nil {
 			return err
 		}
 
-		reqMsg := &nats.Msg{
-			Subject: subject,
-			Reply:   inbox,
-		}
-		err = nc.PublishMsg(reqMsg)
-		if err != nil {
-			return err
+		for i := range result {
+			fmt.Printf("%#v\n", result[i])
 		}
 
-		for {
-			select {
-			case msg := <-msgCh:
-				if len(msg.Data) == 0 {
-					continue
-				}
-
-				var data micro.Info
-				err := json.Unmarshal(msg.Data, &data)
-				if err != nil {
-					return err
-				}
-
-				username := data.Metadata["user"]
-				hostname := data.Metadata["hostname"]
-				osName := data.Metadata["os"]
-				fmt.Printf("ID: %s WHO: %s@%s OS: %s\n", data.ID, username, hostname, osName)
-
-			case <-time.After(1 * time.Second): // TODO: configurable timeout!
-				return nil
-
-			case <-ctx.Done():
-				return nil
-			}
-		}
+		return nil
 	}
 }

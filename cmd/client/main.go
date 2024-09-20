@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"github.com/foojank/foojank/clients/vessel"
+	"github.com/foojank/foojank/internal/application"
 	"github.com/foojank/foojank/internal/config"
-	"github.com/foojank/foojank/internal/services/client"
 	"github.com/nats-io/nats.go"
 	"log"
+	"os"
 	"os/signal"
 	"syscall"
 )
@@ -27,11 +30,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = client.New(client.Arguments{
-		Connection: nc,
-	}).Start(ctx)
+	vesselCli := vessel.New(nc)
+	app := application.New(vesselCli)
+	err = app.RunContext(ctx, os.Args)
 	if err != nil {
-		panic(err)
+		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
 	}
-
 }
