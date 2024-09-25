@@ -53,6 +53,20 @@ func (s *Service) Start(ctx context.Context) error {
 		}
 		return nil
 	})
+	group.Go(func() error {
+		for {
+			select {
+			case msg := <-s.args.StdinCh:
+				b := msg.Data().([]byte)
+				log.Debug("before input: %q", string(b))
+				_, _ = stdin.Write(b)
+				log.Debug("after input")
+
+			case <-ctx.Done():
+				return nil
+			}
+		}
+	})
 	// Wait for context closure and then close stdin and stdout files.
 	// This unblocks (cancels) any potential pending writes/reads to/from the files
 	// and allows the service to shutdown gracefully.
@@ -82,12 +96,6 @@ loop:
 					Code: 0,
 				})
 			}
-
-		case msg := <-s.args.StdinCh:
-			b := msg.Data().([]byte)
-			log.Debug("before input: %q", string(b))
-			_, _ = stdin.Write(b)
-			log.Debug("after input")
 
 		case <-ctx.Done():
 			break loop
