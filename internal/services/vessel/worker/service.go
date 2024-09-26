@@ -5,6 +5,7 @@ import (
 	"github.com/foojank/foojank/internal/services/vessel/worker/connector"
 	"github.com/foojank/foojank/internal/services/vessel/worker/decoder"
 	"github.com/foojank/foojank/internal/services/vessel/worker/processor"
+	"github.com/foojank/foojank/internal/services/vessel/worker/publisher"
 	"github.com/nats-io/nats.go"
 	"golang.org/x/sync/errgroup"
 )
@@ -47,6 +48,7 @@ func (s *Service) Start(ctx context.Context) error {
 	connectorOutCh := make(chan connector.Message, 65535)
 	decoderDataCh := make(chan decoder.Message, 65535)
 	decoderStdinCh := make(chan decoder.Message, 65535)
+	processorStdoutCh := make(chan []byte, 1024)
 
 	group, groupCtx := errgroup.WithContext(ctx)
 	group.Go(func() error {
@@ -76,10 +78,16 @@ func (s *Service) Start(ctx context.Context) error {
 	})
 	group.Go(func() error {
 		return processor.New(processor.Arguments{
-			Connection:    s.args.Connection,
-			StdoutSubject: stdoutSubject,
-			DataCh:        decoderDataCh,
-			StdinCh:       decoderStdinCh,
+			DataCh:   decoderDataCh,
+			StdinCh:  decoderStdinCh,
+			StdoutCh: processorStdoutCh,
+		}).Start(groupCtx)
+	})
+	group.Go(func() error {
+		return publisher.New(publisher.Arguments{
+			Connection: s.args.Connection,
+			Subject:    stdoutSubject,
+			InputCh:    processorStdoutCh,
 		}).Start(groupCtx)
 	})
 

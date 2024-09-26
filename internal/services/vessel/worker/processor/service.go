@@ -4,16 +4,14 @@ import (
 	"context"
 	"github.com/foojank/foojank/internal/log"
 	"github.com/foojank/foojank/internal/services/vessel/worker/decoder"
-	"github.com/nats-io/nats.go"
 	"github.com/risor-io/risor"
 	"golang.org/x/sync/errgroup"
 )
 
 type Arguments struct {
-	Connection    *nats.Conn
-	StdoutSubject string
-	DataCh        <-chan decoder.Message
-	StdinCh       <-chan decoder.Message
+	DataCh   <-chan decoder.Message
+	StdinCh  <-chan decoder.Message
+	StdoutCh chan<- []byte
 }
 
 type Service struct {
@@ -41,14 +39,10 @@ func (s *Service) Start(ctx context.Context) error {
 				break
 			}
 
-			msg := &nats.Msg{
-				Subject: s.args.StdoutSubject,
-				Data:    b,
-			}
-			err = s.args.Connection.PublishMsg(msg)
-			if err != nil {
-				log.Debug("cannot publish to stdout subject: %v", err)
-				continue
+			select {
+			case s.args.StdoutCh <- b:
+			case <-ctx.Done():
+				return nil
 			}
 		}
 		return nil
