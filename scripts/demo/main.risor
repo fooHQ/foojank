@@ -1,0 +1,58 @@
+func read_line(f) {
+	buf := byte_slice(255)
+	for {
+		printf("> ")
+		line := string(f.read(buf))
+		if !strings.contains(line, '\n') {
+			continue
+		}
+		return line[:-1]
+	}
+}
+
+func cmd_loop(args) {
+    for i := 0; i < 10; i++ {
+        printf("%d\n", i+1)
+        time.sleep(0.5)
+    }
+}
+
+func cmd_cd(args) {
+    if len(args) > 1 {
+        os.chdir(args[1])
+    }
+}
+
+func cmd_pwd(args) {
+    printf("%s\n", os.getwd())
+}
+
+func cmd_exit(args) {
+    printf("Bye!\n")
+    os.exit(0)
+}
+
+func cmd_die(args) {
+    printf("Ouch!\n")
+    os.exit(1)
+}
+
+for {
+	line := read_line(os.stdin)
+	args := strings.split(line, " ")
+	switch args[0] {
+	case "loop":
+	    cmd_loop(args)
+	case "cd":
+	    cmd_cd(args)
+	case "pwd":
+	    cmd_pwd(args)
+	case "exit":
+	    cmd_exit(args)
+    case "die":
+        cmd_die(args)
+	default:
+		printf("unknown command: %q\n", line)
+	}
+}
+
