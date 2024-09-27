@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	vesselcli "github.com/foojank/foojank/clients/vessel"
+	"github.com/muesli/cancelreader"
 	"github.com/urfave/cli/v2"
 	"os"
+	"sync"
 )
 
 func NewRunCommand(vessel *vesselcli.Client) *cli.Command {
@@ -56,61 +58,57 @@ func newRunCommandAction(vessel *vesselcli.Client) cli.ActionFunc {
 
 		stdinCh := make(chan []byte, 128)
 		stdoutCh := make(chan []byte, 1024)
-		cmdExitCh := make(chan int64, 1)
+		exitCh := make(chan int64, 1)
 
-		// TODO: handle graceful shutdown!
+		var wg sync.WaitGroup
+		wg.Add(1)
 		go func() {
-			select {
-			case line := <-stdoutCh:
-				fmt.Println(string(line))
-			case <-ctx.Done():
-				return
+			defer wg.Done()
+			for {
+				select {
+				case line, ok := <-stdoutCh:
+					if !ok {
+						return
+					}
+					fmt.Print(string(line))
+				}
 			}
 		}()
 
-		// TODO: handle graceful shutdown!
+		r, err := cancelreader.NewReader(os.Stdin)
+		if err != nil {
+			return err
+		}
+
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			code, err := vessel.Execute(ctx, worker, stdinCh, stdoutCh, []byte(script))
 			if err != nil {
 				// TODO: handle error!
+				//  return error message + code (define which codes should be used!)
 			}
-			cmdExitCh <- code
+
+			_ = r.Cancel()
+			exitCh <- code
 		}()
 
-	loop:
-		for {
-			r := bufio.NewReader(os.Stdin)
-			line, err := r.ReadBytes('\n')
-			if err != nil {
-				// TODO
-				/*switch {
-				case errors.Is(err, io.EOF):
-					return err
-				case errors.Is(err, os.ErrDeadlineExceeded):
-					isTimeout = true
-				default:
-					return err
-				}*/
-				return err
-			}
+		scan := bufio.NewScanner(r)
 
+		for scan.Scan() {
+			line := scan.Text() + "\n"
 			select {
-			case stdinCh <- line:
-			case <-ctx.Done():
-				return nil
-			default:
-			}
-
-			select {
-			case <-cmdExitCh:
-				break loop
+			case stdinCh <- []byte(line):
 			case <-ctx.Done():
 				return nil
 			default:
 			}
 		}
 
-		return cli.Exit("", 0)
+		close(stdoutCh)
+		wg.Wait()
+		code := <-exitCh
+		return cli.Exit("", int(code))
 
 		/*
 			{
