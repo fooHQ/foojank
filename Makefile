@@ -31,3 +31,7 @@ run/vessel:
 .PHONY: run/client
 run/client:
 	CGO_ENABLED=1 go run -race -tags debug ./cmd/client
+
+.PHONY: test
+test:
+	CGO_ENABLED=1 go test -race ./...
