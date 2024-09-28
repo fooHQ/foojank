@@ -1,7 +1,6 @@
 package decoder
 
 import (
-	"capnproto.org/go/capnp/v3"
 	"context"
 	"github.com/foojank/foojank/internal/log"
 	"github.com/foojank/foojank/internal/services/vessel/connector"
@@ -30,37 +29,30 @@ func (s *Service) Start(ctx context.Context) error {
 	for {
 		select {
 		case msg := <-s.args.InputCh:
-			capMsg, err := capnp.Unmarshal(msg.Data())
-			if err != nil {
-				log.Debug("cannot decode input data: %v", err)
-				_ = msg.ReplyError(errcodes.ErrInvalidProto, "", nil)
-				continue
-			}
-
-			message, err := proto.ReadRootMessage(capMsg)
+			parsed, err := proto.ParseAction(msg.Data())
 			if err != nil {
 				log.Debug("cannot decode scheduler action message: %v", err)
-				_ = msg.ReplyError(errcodes.ErrInvalidRootMessage, "", nil)
+				_ = msg.ReplyError(errcodes.ErrInvalidMessage, "", nil)
 				continue
 			}
 
-			action := message.Action()
 			var data any
-			switch {
-			case action.HasCreateWorker():
+			switch v := parsed.(type) {
+			case proto.CreateWorkerRequest:
 				data = CreateWorkerRequest{}
-			case action.HasDestroyWorker():
-				v, _ := action.DestroyWorker()
+
+			case proto.DestroyWorkerRequest:
 				data = DestroyWorkerRequest{
-					ID: v.Id(),
+					ID: v.ID,
 				}
-			case action.HasGetWorker():
-				v, _ := action.GetWorker()
+
+			case proto.GetWorkerRequest:
 				data = GetWorkerRequest{
-					ID: v.Id(),
+					ID: v.ID,
 				}
+
 			default:
-				log.Debug("invalid scheduler action message")
+				log.Debug("invalid scheduler action message: %T", parsed)
 				_ = msg.ReplyError(errcodes.ErrInvalidAction, "", nil)
 				continue
 			}
@@ -83,48 +75,26 @@ func (s *Service) Start(ctx context.Context) error {
 				continue
 			}
 
-			rootMsg, err := newRootMessage()
-			if err != nil {
-				log.Debug("cannot create a root message: %v", err)
-				_ = msg.Request().ReplyError("500", err.Error(), nil)
-				continue
-			}
-
-			data := msg.Data()
-			switch v := data.(type) {
+			var b []byte
+			var err error
+			switch v := msg.Data().(type) {
 			case CreateWorkerResponse:
-				rootMsg, err = newCreateWorkerResponse(rootMsg, v.ID)
-				if err != nil {
-					log.Debug("cannot create a response message: %v", err)
-					_ = msg.Request().ReplyError("500", err.Error(), nil)
-					continue
-				}
+				b, err = proto.NewCreateWorkerResponse(v.ID)
 
 			case DestroyWorkerResponse:
-				rootMsg, err = newDestroyWorkerResponse(rootMsg)
-				if err != nil {
-					log.Debug("cannot create a response message: %v", err)
-					_ = msg.Request().ReplyError("500", err.Error(), nil)
-					continue
-				}
+				b, err = proto.NewDestroyWorkerResponse()
 
 			case GetWorkerResponse:
-				rootMsg, err = newGetWorkerResponse(rootMsg, v.ServiceName, v.ServiceID)
-				if err != nil {
-					log.Debug("cannot create a response message: %v", err)
-					_ = msg.Request().ReplyError("500", err.Error(), nil)
-					continue
-				}
+				b, err = proto.NewGetWorkerResponse(v.ServiceName, v.ServiceID)
 
 			default:
-				log.Debug("unknown response type: %T", v)
+				log.Debug("invalid scheduler response message: %T", msg.Data())
+				_ = msg.Request().ReplyError(errcodes.ErrInvalidResponse, "", nil)
 				continue
 			}
-
-			b, err := rootMsg.Message().Marshal()
 			if err != nil {
-				log.Debug("cannot marshal the message: %v", err)
-				_ = msg.Request().ReplyError("500", err.Error(), nil)
+				log.Debug("cannot create a scheduler response message: %v", err)
+				_ = msg.Request().ReplyError(errcodes.ErrNewResponseFailed, err.Error(), nil)
 				continue
 			}
 
@@ -134,73 +104,4 @@ func (s *Service) Start(ctx context.Context) error {
 			return nil
 		}
 	}
-}
-
-func newRootMessage() (proto.Message, error) {
-	arena := capnp.SingleSegment(nil)
-	_, seg, err := capnp.NewMessage(arena)
-	if err != nil {
-		return proto.Message{}, err
-	}
-
-	rootMsg, err := proto.NewRootMessage(seg)
-	if err != nil {
-		return proto.Message{}, err
-	}
-
-	return rootMsg, nil
-}
-
-func newCreateWorkerResponse(root proto.Message, id uint64) (proto.Message, error) {
-	respMsg, err := proto.NewCreateWorkerResponse(root.Segment())
-	if err != nil {
-		return proto.Message{}, err
-	}
-
-	respMsg.SetId(id)
-
-	err = root.Response().SetCreateWorker(respMsg)
-	if err != nil {
-		return proto.Message{}, err
-	}
-
-	return root, nil
-}
-
-func newDestroyWorkerResponse(root proto.Message) (proto.Message, error) {
-	respMsg, err := proto.NewDestroyWorkerResponse(root.Segment())
-	if err != nil {
-		return proto.Message{}, err
-	}
-
-	err = root.Response().SetDestroyWorker(respMsg)
-	if err != nil {
-		return proto.Message{}, err
-	}
-
-	return root, nil
-}
-
-func newGetWorkerResponse(root proto.Message, serviceName, serviceID string) (proto.Message, error) {
-	respMsg, err := proto.NewGetWorkerResponse(root.Segment())
-	if err != nil {
-		return proto.Message{}, err
-	}
-
-	err = respMsg.SetServiceName(serviceName)
-	if err != nil {
-		return proto.Message{}, err
-	}
-
-	err = respMsg.SetServiceId(serviceID)
-	if err != nil {
-		return proto.Message{}, err
-	}
-
-	err = root.Response().SetGetWorker(respMsg)
-	if err != nil {
-		return proto.Message{}, err
-	}
-
-	return root, nil
 }

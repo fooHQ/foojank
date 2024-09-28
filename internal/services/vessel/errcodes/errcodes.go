@@ -1,7 +1,11 @@
 package errcodes
 
 const (
-	ErrInvalidProto       = "400001"
-	ErrInvalidRootMessage = "400002"
-	ErrInvalidAction      = "400003"
+	ErrInvalidMessage = "400001"
+	ErrInvalidAction  = "400002"
+)
+
+const (
+	ErrInvalidResponse   = "500001"
+	ErrNewResponseFailed = "500002"
 )
