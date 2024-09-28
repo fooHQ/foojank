@@ -5,7 +5,3 @@ const (
 	ErrInvalidRootMessage = "400002"
 	ErrInvalidAction      = "400003"
 )
-
-const (
-	Err
-)
