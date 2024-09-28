@@ -1,20 +1,20 @@
-package vessel
+package proto
 
 import (
-	"capnproto.org/go/capnp/v3"
-	"github.com/foojank/foojank/proto"
+	capnplib "capnproto.org/go/capnp/v3"
+	"github.com/foojank/foojank/proto/capnp"
 )
 
-func NewMessage() (proto.Message, error) {
-	arena := capnp.SingleSegment(nil)
-	_, seg, err := capnp.NewMessage(arena)
+func NewMessage() (capnp.Message, error) {
+	arena := capnplib.SingleSegment(nil)
+	_, seg, err := capnplib.NewMessage(arena)
 	if err != nil {
-		return proto.Message{}, err
+		return capnp.Message{}, err
 	}
 
-	msg, err := proto.NewRootMessage(seg)
+	msg, err := capnp.NewRootMessage(seg)
 	if err != nil {
-		return proto.Message{}, err
+		return capnp.Message{}, err
 	}
 
 	return msg, nil
@@ -26,7 +26,7 @@ func NewCreateWorkerRequest() ([]byte, error) {
 		return nil, err
 	}
 
-	msgCreateWorker, err := proto.NewCreateWorkerRequest(msg.Segment())
+	msgCreateWorker, err := capnp.NewCreateWorkerRequest(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func NewDestroyWorkerRequest(id uint64) ([]byte, error) {
 		return nil, err
 	}
 
-	msgDestroyWorker, err := proto.NewDestroyWorkerRequest(msg.Segment())
+	msgDestroyWorker, err := capnp.NewDestroyWorkerRequest(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func NewGetWorkerRequest(id uint64) ([]byte, error) {
 		return nil, err
 	}
 
-	msgGetWorker, err := proto.NewGetWorkerRequest(msg.Segment())
+	msgGetWorker, err := capnp.NewGetWorkerRequest(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func NewExecuteRequest(data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	msgExecute, err := proto.NewExecuteRequest(msg.Segment())
+	msgExecute, err := capnp.NewExecuteRequest(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func NewDummyRequest() ([]byte, error) {
 		return nil, err
 	}
 
-	msgDummy, err := proto.NewDummyRequest(msg.Segment())
+	msgDummy, err := capnp.NewDummyRequest(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
