@@ -118,7 +118,17 @@ func NewDummyRequest() ([]byte, error) {
 		return nil, err
 	}
 
-	msg, err := proto.NewRootDummyRequest(seg)
+	msg, err := proto.NewRootMessage(seg)
+	if err != nil {
+		return nil, err
+	}
+
+	msgDummy, err := proto.NewDummyRequest(seg)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msg.Action().SetDummyRequest(msgDummy)
 	if err != nil {
 		return nil, err
 	}

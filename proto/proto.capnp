@@ -42,11 +42,12 @@ struct Message {
         destroyWorker @1 :DestroyWorkerRequest;
         getWorker @2 :GetWorkerRequest;
         execute @3 :ExecuteRequest;
+        dummyRequest @4 :DummyRequest;
     }
     response :union {
-        createWorker @4 :CreateWorkerResponse;
-        destroyWorker @5 :DestroyWorkerResponse;
-        getWorker @6 :GetWorkerResponse;
-        execute @7 :ExecuteResponse;
+        createWorker @5 :CreateWorkerResponse;
+        destroyWorker @6 :DestroyWorkerResponse;
+        getWorker @7 :GetWorkerResponse;
+        execute @8 :ExecuteResponse;
     }
 }
