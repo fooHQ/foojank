@@ -5,23 +5,8 @@ import (
 	"github.com/foojank/foojank/proto/capnp"
 )
 
-func NewMessage() (capnp.Message, error) {
-	arena := capnplib.SingleSegment(nil)
-	_, seg, err := capnplib.NewMessage(arena)
-	if err != nil {
-		return capnp.Message{}, err
-	}
-
-	msg, err := capnp.NewRootMessage(seg)
-	if err != nil {
-		return capnp.Message{}, err
-	}
-
-	return msg, nil
-}
-
 func NewCreateWorkerRequest() ([]byte, error) {
-	msg, err := NewMessage()
+	msg, err := newMessage()
 	if err != nil {
 		return nil, err
 	}
@@ -39,8 +24,29 @@ func NewCreateWorkerRequest() ([]byte, error) {
 	return msg.Message().Marshal()
 }
 
+func NewCreateWorkerResponse(id uint64) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgCreateWorker, err := capnp.NewCreateWorkerResponse(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	msgCreateWorker.SetId(id)
+
+	err = msg.Response().SetCreateWorker(msgCreateWorker)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
 func NewDestroyWorkerRequest(id uint64) ([]byte, error) {
-	msg, err := NewMessage()
+	msg, err := newMessage()
 	if err != nil {
 		return nil, err
 	}
@@ -60,8 +66,24 @@ func NewDestroyWorkerRequest(id uint64) ([]byte, error) {
 	return msg.Message().Marshal()
 }
 
+func NewDestroyWorkerResponse() ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgDestroyWorker, err := capnp.NewDestroyWorkerResponse(msg.Segment())
+
+	err = msg.Response().SetDestroyWorker(msgDestroyWorker)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
 func NewGetWorkerRequest(id uint64) ([]byte, error) {
-	msg, err := NewMessage()
+	msg, err := newMessage()
 	if err != nil {
 		return nil, err
 	}
@@ -81,8 +103,37 @@ func NewGetWorkerRequest(id uint64) ([]byte, error) {
 	return msg.Message().Marshal()
 }
 
+func NewGetWorkerResponse(serviceName, serviceID string) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgGetWorker, err := capnp.NewGetWorkerResponse(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgGetWorker.SetServiceName(serviceName)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgGetWorker.SetServiceId(serviceID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msg.Response().SetGetWorker(msgGetWorker)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
 func NewExecuteRequest(data []byte) ([]byte, error) {
-	msg, err := NewMessage()
+	msg, err := newMessage()
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +154,7 @@ func NewExecuteRequest(data []byte) ([]byte, error) {
 }
 
 func NewDummyRequest() ([]byte, error) {
-	msg, err := NewMessage()
+	msg, err := newMessage()
 	if err != nil {
 		return nil, err
 	}
@@ -119,4 +170,19 @@ func NewDummyRequest() ([]byte, error) {
 	}
 
 	return msg.Message().Marshal()
+}
+
+func newMessage() (capnp.Message, error) {
+	arena := capnplib.SingleSegment(nil)
+	_, seg, err := capnplib.NewMessage(arena)
+	if err != nil {
+		return capnp.Message{}, err
+	}
+
+	msg, err := capnp.NewRootMessage(seg)
+	if err != nil {
+		return capnp.Message{}, err
+	}
+
+	return msg, nil
 }
