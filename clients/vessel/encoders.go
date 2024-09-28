@@ -5,19 +5,28 @@ import (
 	"github.com/foojank/foojank/proto"
 )
 
-func NewCreateWorkerRequest() ([]byte, error) {
+func NewMessage() (proto.Message, error) {
 	arena := capnp.SingleSegment(nil)
 	_, seg, err := capnp.NewMessage(arena)
 	if err != nil {
-		return nil, err
+		return proto.Message{}, err
 	}
 
 	msg, err := proto.NewRootMessage(seg)
 	if err != nil {
+		return proto.Message{}, err
+	}
+
+	return msg, nil
+}
+
+func NewCreateWorkerRequest() ([]byte, error) {
+	msg, err := NewMessage()
+	if err != nil {
 		return nil, err
 	}
 
-	msgCreateWorker, err := proto.NewCreateWorkerRequest(seg)
+	msgCreateWorker, err := proto.NewCreateWorkerRequest(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
@@ -31,18 +40,12 @@ func NewCreateWorkerRequest() ([]byte, error) {
 }
 
 func NewDestroyWorkerRequest(id uint64) ([]byte, error) {
-	arena := capnp.SingleSegment(nil)
-	_, seg, err := capnp.NewMessage(arena)
+	msg, err := NewMessage()
 	if err != nil {
 		return nil, err
 	}
 
-	msg, err := proto.NewRootMessage(seg)
-	if err != nil {
-		return nil, err
-	}
-
-	msgDestroyWorker, err := proto.NewDestroyWorkerRequest(seg)
+	msgDestroyWorker, err := proto.NewDestroyWorkerRequest(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
@@ -58,18 +61,12 @@ func NewDestroyWorkerRequest(id uint64) ([]byte, error) {
 }
 
 func NewGetWorkerRequest(id uint64) ([]byte, error) {
-	arena := capnp.SingleSegment(nil)
-	_, seg, err := capnp.NewMessage(arena)
+	msg, err := NewMessage()
 	if err != nil {
 		return nil, err
 	}
 
-	msg, err := proto.NewRootMessage(seg)
-	if err != nil {
-		return nil, err
-	}
-
-	msgGetWorker, err := proto.NewGetWorkerRequest(seg)
+	msgGetWorker, err := proto.NewGetWorkerRequest(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
@@ -85,18 +82,12 @@ func NewGetWorkerRequest(id uint64) ([]byte, error) {
 }
 
 func NewExecuteRequest(data []byte) ([]byte, error) {
-	arena := capnp.SingleSegment(nil)
-	_, seg, err := capnp.NewMessage(arena)
+	msg, err := NewMessage()
 	if err != nil {
 		return nil, err
 	}
 
-	msg, err := proto.NewRootMessage(seg)
-	if err != nil {
-		return nil, err
-	}
-
-	msgExecute, err := proto.NewExecuteRequest(seg)
+	msgExecute, err := proto.NewExecuteRequest(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
@@ -112,18 +103,12 @@ func NewExecuteRequest(data []byte) ([]byte, error) {
 }
 
 func NewDummyRequest() ([]byte, error) {
-	arena := capnp.SingleSegment(nil)
-	_, seg, err := capnp.NewMessage(arena)
+	msg, err := NewMessage()
 	if err != nil {
 		return nil, err
 	}
 
-	msg, err := proto.NewRootMessage(seg)
-	if err != nil {
-		return nil, err
-	}
-
-	msgDummy, err := proto.NewDummyRequest(seg)
+	msgDummy, err := proto.NewDummyRequest(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
