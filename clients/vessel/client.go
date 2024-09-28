@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/foojank/foojank/proto"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
 )
@@ -104,7 +105,7 @@ func (c *Client) GetInfo(ctx context.Context, id ID) (Service, error) {
 }
 
 func (c *Client) CreateWorker(ctx context.Context, s Service) (uint64, error) {
-	b, err := NewCreateWorkerRequest()
+	b, err := proto.NewCreateWorkerRequest()
 	if err != nil {
 		return 0, err
 	}
@@ -124,16 +125,21 @@ func (c *Client) CreateWorker(ctx context.Context, s Service) (uint64, error) {
 		return 0, err
 	}
 
-	workerID, err := ParseCreateWorkerResponse(resp.Data)
+	parsed, err := proto.ParseResponse(resp.Data)
 	if err != nil {
 		return 0, err
 	}
 
-	return workerID, nil
+	v, ok := parsed.(proto.CreateWorkerResponse)
+	if !ok {
+		return 0, errors.New("invalid response type")
+	}
+
+	return v.ID, nil
 }
 
 func (c *Client) GetWorker(ctx context.Context, s Service, workerID uint64) (ID, error) {
-	b, err := NewGetWorkerRequest(workerID)
+	b, err := proto.NewGetWorkerRequest(workerID)
 	if err != nil {
 		return ID{}, err
 	}
@@ -153,19 +159,24 @@ func (c *Client) GetWorker(ctx context.Context, s Service, workerID uint64) (ID,
 		return ID{}, err
 	}
 
-	serviceName, serviceID, err := ParseGetWorkerResponse(resp.Data)
+	parsed, err := proto.ParseResponse(resp.Data)
 	if err != nil {
 		return ID{}, err
 	}
 
+	v, ok := parsed.(proto.GetWorkerResponse)
+	if !ok {
+		return ID{}, errors.New("invalid response type")
+	}
+
 	return ID{
-		serviceName: serviceName,
-		serviceID:   serviceID,
+		serviceName: v.ServiceName,
+		serviceID:   v.ServiceID,
 	}, nil
 }
 
 func (c *Client) Execute(ctx context.Context, s Service, stdin <-chan []byte, stdout chan<- []byte, data []byte) (int64, error) {
-	b, err := NewExecuteRequest(data)
+	b, err := proto.NewExecuteRequest(data)
 	if err != nil {
 		return 0, err
 	}
@@ -244,12 +255,17 @@ func (c *Client) Execute(ctx context.Context, s Service, stdin <-chan []byte, st
 		return 0, err
 	}
 
-	code, err := ParseExecuteResponse(resp.Data)
+	parsed, err := proto.ParseResponse(resp.Data)
 	if err != nil {
 		return 0, err
 	}
 
-	return code, nil
+	v, ok := parsed.(proto.ExecuteResponse)
+	if !ok {
+		return 0, err
+	}
+
+	return v.Code, nil
 }
 
 func (c *Client) parseInfo(b []byte) (Service, error) {
