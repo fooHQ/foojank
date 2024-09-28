@@ -65,6 +65,7 @@ func TestService(t *testing.T) {
 		inputCh <- msg
 		outMsg := <-outputCh
 		assert.IsType(t, DestroyWorkerRequest{}, outMsg.Data())
+		assert.EqualValues(t, 1, outMsg.Data().(DestroyWorkerRequest).ID)
 	}
 
 	{
@@ -79,6 +80,7 @@ func TestService(t *testing.T) {
 		inputCh <- msg
 		outMsg := <-outputCh
 		assert.IsType(t, GetWorkerRequest{}, outMsg.Data())
+		assert.EqualValues(t, 1, outMsg.Data().(GetWorkerRequest).ID)
 	}
 
 	{
