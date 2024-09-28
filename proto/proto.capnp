@@ -34,6 +34,8 @@ struct ExecuteResponse {
     code @0 :Int64;
 }
 
+struct DummyRequest {}
+
 struct Message {
     action :union {
         createWorker @0 :CreateWorkerRequest;

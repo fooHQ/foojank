@@ -83,3 +83,18 @@ func NewExecuteRequest(data []byte) ([]byte, error) {
 
 	return msg.Message().Marshal()
 }
+
+func NewDummyRequest() ([]byte, error) {
+	arena := capnp.SingleSegment(nil)
+	_, seg, err := capnp.NewMessage(arena)
+	if err != nil {
+		return nil, err
+	}
+
+	msg, err := proto.NewRootDummyRequest(seg)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
