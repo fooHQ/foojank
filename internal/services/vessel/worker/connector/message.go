@@ -6,6 +6,12 @@ type Message struct {
 	req micro.Request
 }
 
+func NewMessage(req micro.Request) Message {
+	return Message{
+		req: req,
+	}
+}
+
 func (m Message) Subject() string {
 	return m.req.Subject()
 }
