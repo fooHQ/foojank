@@ -53,12 +53,16 @@ func (s *Service) Start(ctx context.Context) error {
 				data = DestroyWorkerRequest{
 					ID: v.Id(),
 				}
-
 			case action.HasGetWorker():
 				v, _ := action.GetWorker()
 				data = GetWorkerRequest{
 					ID: v.Id(),
 				}
+			default:
+				log.Debug("invalid scheduler action message")
+				// TODO: avoid hardcoding strings!
+				_ = msg.ReplyError("400", "invalid scheduler action message", nil)
+				continue
 			}
 
 			select {
