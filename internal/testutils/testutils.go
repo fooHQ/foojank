@@ -29,7 +29,7 @@ func (r Request) RespondJSON(a any, opt ...micro.RespondOpt) error {
 }
 
 func (r Request) Error(code, description string, data []byte, opts ...micro.RespondOpt) error {
-	s := fmt.Sprintf("error %s: %s", code, description)
+	s := fmt.Sprintf("%s: %s", code, description)
 	r.ResponseCh <- []byte(s)
 	return nil
 }

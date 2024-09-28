@@ -5,6 +5,7 @@ import (
 	"context"
 	"github.com/foojank/foojank/internal/log"
 	"github.com/foojank/foojank/internal/services/vessel/connector"
+	"github.com/foojank/foojank/internal/services/vessel/errcodes"
 	"github.com/foojank/foojank/proto"
 )
 
@@ -32,14 +33,14 @@ func (s *Service) Start(ctx context.Context) error {
 			capMsg, err := capnp.Unmarshal(msg.Data())
 			if err != nil {
 				log.Debug("cannot decode input data: %v", err)
-				_ = msg.ReplyError("400", err.Error(), nil)
+				_ = msg.ReplyError(errcodes.ErrInvalidProto, "", nil)
 				continue
 			}
 
 			message, err := proto.ReadRootMessage(capMsg)
 			if err != nil {
 				log.Debug("cannot decode scheduler action message: %v", err)
-				_ = msg.ReplyError("400", err.Error(), nil)
+				_ = msg.ReplyError(errcodes.ErrInvalidRootMessage, "", nil)
 				continue
 			}
 
@@ -60,8 +61,7 @@ func (s *Service) Start(ctx context.Context) error {
 				}
 			default:
 				log.Debug("invalid scheduler action message")
-				// TODO: avoid hardcoding strings!
-				_ = msg.ReplyError("400", "invalid scheduler action message", nil)
+				_ = msg.ReplyError(errcodes.ErrInvalidAction, "", nil)
 				continue
 			}
 

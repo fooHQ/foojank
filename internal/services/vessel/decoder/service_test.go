@@ -5,6 +5,7 @@ import (
 	"context"
 	"github.com/foojank/foojank/clients/vessel"
 	"github.com/foojank/foojank/internal/services/vessel/connector"
+	"github.com/foojank/foojank/internal/services/vessel/errcodes"
 	"github.com/foojank/foojank/internal/testutils"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -35,7 +36,7 @@ func TestService(t *testing.T) {
 		msg := connector.NewMessage(req)
 		inputCh <- msg
 		respMsg := <-responseCh
-		assert.True(t, bytes.HasPrefix(respMsg, []byte("error")))
+		assert.True(t, bytes.HasPrefix(respMsg, []byte(errcodes.ErrInvalidProto)))
 	}
 
 	{
@@ -91,6 +92,6 @@ func TestService(t *testing.T) {
 		msg := connector.NewMessage(req)
 		inputCh <- msg
 		respMsg := <-responseCh
-		assert.True(t, bytes.HasPrefix(respMsg, []byte("error")))
+		assert.True(t, bytes.HasPrefix(respMsg, []byte(errcodes.ErrInvalidAction)))
 	}
 }
