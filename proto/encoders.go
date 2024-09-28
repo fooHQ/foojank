@@ -153,6 +153,27 @@ func NewExecuteRequest(data []byte) ([]byte, error) {
 	return msg.Message().Marshal()
 }
 
+func NewExecuteResponse(code int64) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgExecute, err := capnp.NewExecuteResponse(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	msgExecute.SetCode(code)
+
+	err = msg.Response().SetExecute(msgExecute)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
 func NewDummyRequest() ([]byte, error) {
 	msg, err := newMessage()
 	if err != nil {
