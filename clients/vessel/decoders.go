@@ -5,15 +5,22 @@ import (
 	"github.com/foojank/foojank/proto"
 )
 
-// TODO: parse root message (exported function!) DRY!
-
-func ParseCreateWorkerRequest(b []byte) error {
+func ParseMessage(b []byte) (proto.Message, error) {
 	capMsg, err := capnp.Unmarshal(b)
 	if err != nil {
-		return err
+		return proto.Message{}, err
 	}
 
 	message, err := proto.ReadRootMessage(capMsg)
+	if err != nil {
+		return proto.Message{}, err
+	}
+
+	return message, nil
+}
+
+func ParseCreateWorkerRequest(b []byte) error {
+	message, err := ParseMessage(b)
 	if err != nil {
 		return err
 	}
@@ -27,12 +34,7 @@ func ParseCreateWorkerRequest(b []byte) error {
 }
 
 func ParseCreateWorkerResponse(b []byte) (uint64, error) {
-	capMsg, err := capnp.Unmarshal(b)
-	if err != nil {
-		return 0, err
-	}
-
-	message, err := proto.ReadRootMessage(capMsg)
+	message, err := ParseMessage(b)
 	if err != nil {
 		return 0, err
 	}
@@ -46,12 +48,7 @@ func ParseCreateWorkerResponse(b []byte) (uint64, error) {
 }
 
 func ParseGetWorkerRequest(b []byte) (uint64, error) {
-	capMsg, err := capnp.Unmarshal(b)
-	if err != nil {
-		return 0, err
-	}
-
-	message, err := proto.ReadRootMessage(capMsg)
+	message, err := ParseMessage(b)
 	if err != nil {
 		return 0, err
 	}
@@ -65,12 +62,7 @@ func ParseGetWorkerRequest(b []byte) (uint64, error) {
 }
 
 func ParseGetWorkerResponse(b []byte) (string, string, error) {
-	capMsg, err := capnp.Unmarshal(b)
-	if err != nil {
-		return "", "", err
-	}
-
-	message, err := proto.ReadRootMessage(capMsg)
+	message, err := ParseMessage(b)
 	if err != nil {
 		return "", "", err
 	}
@@ -94,12 +86,7 @@ func ParseGetWorkerResponse(b []byte) (string, string, error) {
 }
 
 func ParseExecuteRequest(b []byte) ([]byte, error) {
-	capMsg, err := capnp.Unmarshal(b)
-	if err != nil {
-		return nil, err
-	}
-
-	message, err := proto.ReadRootMessage(capMsg)
+	message, err := ParseMessage(b)
 	if err != nil {
 		return nil, err
 	}
@@ -118,12 +105,7 @@ func ParseExecuteRequest(b []byte) ([]byte, error) {
 }
 
 func ParseExecuteResponse(b []byte) (int64, error) {
-	capMsg, err := capnp.Unmarshal(b)
-	if err != nil {
-		return 0, err
-	}
-
-	message, err := proto.ReadRootMessage(capMsg)
+	message, err := ParseMessage(b)
 	if err != nil {
 		return 0, err
 	}
