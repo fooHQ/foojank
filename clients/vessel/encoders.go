@@ -30,6 +30,33 @@ func NewCreateWorkerRequest() ([]byte, error) {
 	return msg.Message().Marshal()
 }
 
+func NewDestroyWorkerRequest(id uint64) ([]byte, error) {
+	arena := capnp.SingleSegment(nil)
+	_, seg, err := capnp.NewMessage(arena)
+	if err != nil {
+		return nil, err
+	}
+
+	msg, err := proto.NewRootMessage(seg)
+	if err != nil {
+		return nil, err
+	}
+
+	msgDestroyWorker, err := proto.NewDestroyWorkerRequest(seg)
+	if err != nil {
+		return nil, err
+	}
+
+	msgDestroyWorker.SetId(id)
+
+	err = msg.Action().SetDestroyWorker(msgDestroyWorker)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
 func NewGetWorkerRequest(id uint64) ([]byte, error) {
 	arena := capnp.SingleSegment(nil)
 	_, seg, err := capnp.NewMessage(arena)
