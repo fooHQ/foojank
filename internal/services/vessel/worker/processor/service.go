@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+	"github.com/foojank/foojank/internal/engine/os"
 	"github.com/foojank/foojank/internal/log"
 	"github.com/foojank/foojank/internal/services/vessel/worker/decoder"
 	"github.com/risor-io/risor"
@@ -25,9 +26,9 @@ func New(args Arguments) *Service {
 }
 
 func (s *Service) Start(ctx context.Context) error {
-	stdin := NewFile()
-	stdout := NewFile()
-	ros := NewOS(ctx, stdin, stdout)
+	stdin := os.NewFile()
+	stdout := os.NewFile()
+	ros := os.New(ctx, stdin, stdout)
 	ctx = ros.Context()
 
 	group, _ := errgroup.WithContext(ctx)

@@ -1,4 +1,4 @@
-package processor
+package os
 
 import (
 	"context"
@@ -15,7 +15,7 @@ type OS struct {
 	stdout risoros.File
 }
 
-func NewOS(ctx context.Context, stdin, stdout risoros.File) *OS {
+func New(ctx context.Context, stdin, stdout risoros.File) *OS {
 	ctx, cancel := context.WithCancel(ctx)
 	return &OS{
 		SimpleOS: risoros.NewSimpleOS(ctx),
