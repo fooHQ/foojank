@@ -49,17 +49,17 @@ type Service struct {
 	Endpoints map[string]Endpoint
 }
 
-func (c *Client) Discover(ctx context.Context, serviceName string) ([]Service, error) {
+func (c *Client) Discover(ctx context.Context, serviceName string, outputCh chan<- Service) error {
 	subject, err := micro.ControlSubject(micro.InfoVerb, serviceName, "")
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	inbox := nats.NewInbox()
 	msgCh := make(chan *nats.Msg, 1024)
 	sub, err := c.nc.ChanSubscribe(inbox, msgCh)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer sub.Drain()
 
@@ -69,11 +69,9 @@ func (c *Client) Discover(ctx context.Context, serviceName string) ([]Service, e
 	}
 	err = c.nc.PublishMsg(reqMsg)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var results []Service
-loop:
 	for {
 		select {
 		case msg := <-msgCh:
@@ -82,14 +80,16 @@ loop:
 				continue
 			}
 
-			results = append(results, res)
+			select {
+			case outputCh <- res:
+			case <-ctx.Done():
+				return nil
+			}
 
 		case <-ctx.Done():
-			break loop
+			return nil
 		}
 	}
-
-	return results, nil
 }
 
 func (c *Client) GetInfo(ctx context.Context, id ID) (Service, error) {
