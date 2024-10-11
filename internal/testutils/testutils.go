@@ -54,6 +54,8 @@ func NewNatsServer(port int) *server.Server {
 	opts := natsserver.DefaultTestOptions
 	opts.NoLog = false
 	opts.Port = port
+	opts.JetStream = true
+	opts.StoreDir = "/tmp/nats-server"
 	return natsserver.RunServer(&opts)
 }
 
