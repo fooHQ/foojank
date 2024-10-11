@@ -17,19 +17,28 @@ func NewListCommand(vessel *vesselcli.Client) *cli.Command {
 
 func newListCommandAction(vessel *vesselcli.Client) cli.ActionFunc {
 	return func(c *cli.Context) error {
-		// TODO: configurable timeout!
-		ctx, cancel := context.WithTimeout(c.Context, 2*time.Second)
-		defer cancel()
-
 		// TODO: make serviceName configurable!
 		serviceName := "vessel"
-		result, err := vessel.Discover(ctx, serviceName)
+		// TODO: configurable timeout!
+		timeout := 3 * time.Second
+
+		ctx, cancel := context.WithTimeout(c.Context, timeout)
+		defer cancel()
+
+		outputCh := make(chan vesselcli.Service)
+		go func() {
+			select {
+			case service := <-outputCh:
+				fmt.Printf("%#v\n", service)
+
+			case <-ctx.Done():
+				return
+			}
+		}()
+
+		err := vessel.Discover(ctx, serviceName, outputCh)
 		if err != nil {
 			return err
-		}
-
-		for i := range result {
-			fmt.Printf("%#v\n", result[i])
 		}
 
 		return nil
