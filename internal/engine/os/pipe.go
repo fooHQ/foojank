@@ -7,28 +7,28 @@ import (
 	"time"
 )
 
-// TODO: Rename to Pipe!
+var _ risoros.File = Pipe{}
 
-var _ risoros.File = File{}
-
-type File struct {
+// Pipe implements Risor's os.File interface.
+// The type is backed by Go's io.Pipe therefore it allows concurrent read/write.
+type Pipe struct {
 	r *io.PipeReader
 	w *io.PipeWriter
 }
 
-func NewFile() File {
+func NewPipe() Pipe {
 	r, w := io.Pipe()
-	return File{
+	return Pipe{
 		r: r,
 		w: w,
 	}
 }
 
-func (f File) Write(p []byte) (n int, err error) {
+func (f Pipe) Write(p []byte) (n int, err error) {
 	return f.w.Write(p)
 }
 
-func (f File) Stat() (fs.FileInfo, error) {
+func (f Pipe) Stat() (fs.FileInfo, error) {
 	return risoros.NewFileInfo(risoros.GenericFileInfoOpts{
 		Name:    "grr",
 		Size:    0,
@@ -38,11 +38,11 @@ func (f File) Stat() (fs.FileInfo, error) {
 	}), nil
 }
 
-func (f File) Read(p []byte) (int, error) {
+func (f Pipe) Read(p []byte) (int, error) {
 	return f.r.Read(p)
 }
 
-func (f File) Close() error {
+func (f Pipe) Close() error {
 	err := f.w.Close()
 	if err != nil {
 		return err

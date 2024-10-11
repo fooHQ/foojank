@@ -26,8 +26,8 @@ func New(args Arguments) *Service {
 }
 
 func (s *Service) Start(ctx context.Context) error {
-	stdin := os.NewFile()
-	stdout := os.NewFile()
+	stdin := os.NewPipe()
+	stdout := os.NewPipe()
 	ros := os.New(ctx, stdin, stdout)
 	ctx = ros.Context()
 
