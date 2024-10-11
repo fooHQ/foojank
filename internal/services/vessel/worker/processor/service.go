@@ -84,18 +84,18 @@ loop:
 				input := string(v.Data)
 				code, err := s.engine.Build(ctx, input)
 				if err != nil {
-					_, _ = stdout.Write([]byte(err.Error()))
-					_ = msg.Reply(decoder.ExecuteResponse{
-						Code: 2,
-					})
+					log.Debug(err.Error())
+					// TODO: define errcode!
+					_ = msg.ReplyError("400", err.Error(), "")
 					continue
 				}
 
 				log.Debug("before eval")
 				_, err = s.engine.Eval(ctx, code)
 				if err != nil {
-					_, _ = stdout.Write([]byte(err.Error()))
-					// It's okay to fallthrough as we are sending exit code later.
+					log.Debug(err.Error())
+					// TODO: define errcode!
+					_ = msg.ReplyError("400", err.Error(), "")
 				}
 				log.Debug("after eval")
 
