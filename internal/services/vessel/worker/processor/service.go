@@ -2,10 +2,10 @@ package processor
 
 import (
 	"context"
+	"github.com/foojank/foojank/internal/engine"
 	"github.com/foojank/foojank/internal/engine/os"
 	"github.com/foojank/foojank/internal/log"
 	"github.com/foojank/foojank/internal/services/vessel/worker/decoder"
-	"github.com/risor-io/risor"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -16,12 +16,14 @@ type Arguments struct {
 }
 
 type Service struct {
-	args Arguments
+	args   Arguments
+	engine *engine.Engine
 }
 
 func New(args Arguments) *Service {
 	return &Service{
-		args: args,
+		args:   args,
+		engine: engine.New(),
 	}
 }
 
@@ -79,13 +81,23 @@ loop:
 			data := msg.Data()
 			switch v := data.(type) {
 			case decoder.ExecuteRequest:
-				src := string(v.Data)
-				log.Debug("before eval")
-				_, err := risor.Eval(ctx, src)
-				log.Debug("after eval")
+				input := string(v.Data)
+				code, err := s.engine.Build(ctx, input)
 				if err != nil {
 					_, _ = stdout.Write([]byte(err.Error()))
+					_ = msg.Reply(decoder.ExecuteResponse{
+						Code: 2,
+					})
+					continue
 				}
+
+				log.Debug("before eval")
+				_, err = s.engine.Eval(ctx, code)
+				if err != nil {
+					_, _ = stdout.Write([]byte(err.Error()))
+					// It's okay to fallthrough as we are sending exit code later.
+				}
+				log.Debug("after eval")
 
 				_ = msg.Reply(decoder.ExecuteResponse{
 					Code: 0,
