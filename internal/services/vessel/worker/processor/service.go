@@ -5,6 +5,7 @@ import (
 	"github.com/foojank/foojank/internal/engine"
 	"github.com/foojank/foojank/internal/engine/os"
 	"github.com/foojank/foojank/internal/log"
+	"github.com/foojank/foojank/internal/services/vessel/errcodes"
 	"github.com/foojank/foojank/internal/services/vessel/worker/decoder"
 	"golang.org/x/sync/errgroup"
 )
@@ -85,8 +86,7 @@ loop:
 				code, err := s.engine.Build(ctx, input)
 				if err != nil {
 					log.Debug(err.Error())
-					// TODO: define errcode!
-					_ = msg.ReplyError("400", err.Error(), "")
+					_ = msg.ReplyError(errcodes.ErrEngineBuild, err.Error(), "")
 					continue
 				}
 
@@ -94,8 +94,7 @@ loop:
 				_, err = s.engine.Eval(ctx, code)
 				if err != nil {
 					log.Debug(err.Error())
-					// TODO: define errcode!
-					_ = msg.ReplyError("400", err.Error(), "")
+					_ = msg.ReplyError(errcodes.ErrEngineEval, err.Error(), "")
 				}
 				log.Debug("after eval")
 
