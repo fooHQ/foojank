@@ -29,13 +29,13 @@ func NewRunCommand(vessel *vesselcli.Client) *cli.Command {
 
 func newRunCommandAction(vessel *vesselcli.Client) cli.ActionFunc {
 	return func(c *cli.Context) error {
-		ctx := c.Context
 		id := c.String("id")
 		script := c.String("script")
 
 		// TODO: make configurable!
 		var serviceName = "vessel"
 
+		ctx := c.Context
 		info, err := vessel.GetInfo(ctx, vesselcli.NewID(serviceName, id))
 		if err != nil {
 			return err
@@ -61,6 +61,7 @@ func newRunCommandAction(vessel *vesselcli.Client) cli.ActionFunc {
 		exitCh := make(chan int64, 1)
 
 		var wg sync.WaitGroup
+
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -89,14 +90,14 @@ func newRunCommandAction(vessel *vesselcli.Client) cli.ActionFunc {
 				//  return error message + code (define which codes should be used!)
 			}
 
+			// Cancel stdin scanner to unblock the main loop.
 			_ = r.Cancel()
 			exitCh <- code
 		}()
 
-		scan := bufio.NewScanner(r)
-
-		for scan.Scan() {
-			line := scan.Text() + "\n"
+		scanner := bufio.NewScanner(r)
+		for scanner.Scan() {
+			line := scanner.Text() + "\n"
 			select {
 			case stdinCh <- []byte(line):
 			case <-ctx.Done():
@@ -107,8 +108,13 @@ func newRunCommandAction(vessel *vesselcli.Client) cli.ActionFunc {
 
 		close(stdoutCh)
 		wg.Wait()
+
 		code := <-exitCh
-		return cli.Exit("", int(code))
+		if code != 0 {
+			return cli.Exit("", int(code))
+		}
+
+		return nil
 
 		/*
 			{
