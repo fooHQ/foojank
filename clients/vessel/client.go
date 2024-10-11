@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/foojank/foojank/proto"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
@@ -97,7 +98,7 @@ func (c *Client) GetInfo(ctx context.Context, id ID) (Service, error) {
 		Subject: subject,
 		Reply:   nats.NewInbox(),
 	}
-	resp, err := c.nc.RequestMsgWithContext(ctx, msg)
+	resp, err := c.request(ctx, msg)
 	if err != nil {
 		return Service{}, err
 	}
@@ -121,7 +122,7 @@ func (c *Client) CreateWorker(ctx context.Context, s Service) (uint64, error) {
 		Reply:   nats.NewInbox(),
 		Data:    b,
 	}
-	resp, err := c.nc.RequestMsgWithContext(ctx, msg)
+	resp, err := c.request(ctx, msg)
 	if err != nil {
 		return 0, err
 	}
@@ -155,7 +156,7 @@ func (c *Client) GetWorker(ctx context.Context, s Service, workerID uint64) (ID,
 		Reply:   nats.NewInbox(),
 		Data:    b,
 	}
-	resp, err := c.nc.RequestMsgWithContext(ctx, msg)
+	resp, err := c.request(ctx, msg)
 	if err != nil {
 		return ID{}, err
 	}
@@ -259,21 +260,17 @@ func (c *Client) Execute(ctx context.Context, s Service, stdin <-chan []byte, st
 		Reply:   nats.NewInbox(),
 		Data:    b,
 	}
-	resp, respErr := c.nc.RequestMsgWithContext(ctx, msg)
+	resp, respErr := c.request(ctx, msg)
 
 	// From this point we know the worker has already responded to our request therefore we can
 	// drain the channel and proceed to the shutdown.
-	err = sub.Drain()
-	if err != nil {
-		return 0, err
-	}
-
+	_ = sub.Drain()
 	cancel()
 	wg.Wait()
 
 	// Delayed error handling
 	if respErr != nil {
-		return 0, err
+		return 0, respErr
 	}
 
 	parsed, err := proto.ParseResponse(resp.Data)
@@ -287,6 +284,21 @@ func (c *Client) Execute(ctx context.Context, s Service, stdin <-chan []byte, st
 	}
 
 	return v.Code, nil
+}
+
+func (c *Client) request(ctx context.Context, msg *nats.Msg) (*nats.Msg, error) {
+	resp, err := c.nc.RequestMsgWithContext(ctx, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	code := resp.Header.Get(micro.ErrorCodeHeader)
+	errMsg := resp.Header.Get(micro.ErrorHeader)
+	if code != "" || errMsg != "" {
+		return nil, fmt.Errorf("[%s] %s", code, errMsg)
+	}
+
+	return resp, nil
 }
 
 func (c *Client) parseInfo(b []byte) (Service, error) {
