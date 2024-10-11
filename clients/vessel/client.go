@@ -7,6 +7,7 @@ import (
 	"github.com/foojank/foojank/proto"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
+	"sync"
 )
 
 type Client struct {
@@ -203,28 +204,36 @@ func (c *Client) Execute(ctx context.Context, s Service, stdin <-chan []byte, st
 	}
 	defer sub.Drain()
 
+	var wg sync.WaitGroup
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	// Start stdout messages passthrough
+	wg.Add(1)
 	go func() {
-		// TODO: handle graceful shutdown!
-		// TODO: drain msgCh channel!
-		for {
+		defer wg.Done()
+		for loop := true; loop; {
 			select {
 			case msg := <-msgCh:
-				select {
-				case stdout <- msg.Data:
-				case <-ctx.Done():
-					return
-				}
+				stdout <- msg.Data
+
 			case <-ctx.Done():
-				return
+				loop = false
+				continue
 			}
+		}
+
+		// Drain the message channel
+		close(msgCh)
+		for msg := range msgCh {
+			stdout <- msg.Data
 		}
 	}()
 
 	// Start stdin messages passthrough
+	wg.Add(1)
 	go func() {
-		// TODO: handle graceful shutdown!
-		// TODO: drain msgCh channel!
+		defer wg.Done()
 		for {
 			select {
 			case line := <-stdin:
@@ -250,8 +259,20 @@ func (c *Client) Execute(ctx context.Context, s Service, stdin <-chan []byte, st
 		Reply:   nats.NewInbox(),
 		Data:    b,
 	}
-	resp, err := c.nc.RequestMsgWithContext(ctx, msg)
+	resp, respErr := c.nc.RequestMsgWithContext(ctx, msg)
+
+	// From this point we know the worker has already responded to our request therefore we can
+	// drain the channel and proceed to the shutdown.
+	err = sub.Drain()
 	if err != nil {
+		return 0, err
+	}
+
+	cancel()
+	wg.Wait()
+
+	// Delayed error handling
+	if respErr != nil {
 		return 0, err
 	}
 
