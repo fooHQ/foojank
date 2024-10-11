@@ -1,13 +1,15 @@
 package os
 
 import (
-	"github.com/risor-io/risor/os"
+	risoros "github.com/risor-io/risor/os"
 	"io"
 	"io/fs"
 	"time"
 )
 
-var _ os.File = File{}
+// TODO: Rename to Pipe!
+
+var _ risoros.File = File{}
 
 type File struct {
 	r *io.PipeReader
@@ -27,7 +29,7 @@ func (f File) Write(p []byte) (n int, err error) {
 }
 
 func (f File) Stat() (fs.FileInfo, error) {
-	return os.NewFileInfo(os.GenericFileInfoOpts{
+	return risoros.NewFileInfo(risoros.GenericFileInfoOpts{
 		Name:    "grr",
 		Size:    0,
 		Mode:    0,
