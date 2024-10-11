@@ -10,7 +10,7 @@ func New(vessel *vessel.Client) *cli.App {
 	return &cli.App{
 		Name:     "foojank",
 		HelpName: "foojank",
-		Usage:    "Control connected agents",
+		Usage:    "Command & Control connected agents",
 		Args:     true,
 		Version:  "0.1.0", // TODO: from config!
 		Commands: []*cli.Command{
