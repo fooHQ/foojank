@@ -86,6 +86,7 @@ func newRunCommandAction(vessel *vesselcli.Client) cli.ActionFunc {
 			defer wg.Done()
 			code, err := vessel.Execute(ctx, worker, stdinCh, stdoutCh, []byte(script))
 			if err != nil {
+				fmt.Printf("%v\n", err)
 				// TODO: handle error!
 				//  return error message + code (define which codes should be used!)
 			}
