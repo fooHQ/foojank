@@ -1,4 +1,4 @@
-package commands
+package agents
 
 import (
 	"bufio"
@@ -22,6 +22,10 @@ func NewRunCommand(vessel *vesselcli.Client) *cli.Command {
 				Name:     "script",
 				Required: true,
 			},
+			&cli.StringFlag{
+				Name:  "service-name",
+				Value: "vessel",
+			},
 		},
 		Action: newRunCommandAction(vessel),
 	}
@@ -31,9 +35,7 @@ func newRunCommandAction(vessel *vesselcli.Client) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		id := c.String("id")
 		script := c.String("script")
-
-		// TODO: make configurable!
-		var serviceName = "vessel"
+		serviceName := c.String("service-name")
 
 		ctx := c.Context
 		info, err := vessel.GetInfo(ctx, vesselcli.NewID(serviceName, id))
