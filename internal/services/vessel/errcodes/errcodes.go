@@ -3,8 +3,8 @@ package errcodes
 const (
 	ErrInvalidMessage = "400001"
 	ErrInvalidAction  = "400002"
-	ErrEngineBuild    = "400008"
-	ErrEngineEval     = "400009"
+	ErrEngineUnpack   = "400008"
+	ErrEngineRun      = "400009"
 )
 
 const (
