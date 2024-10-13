@@ -1,12 +1,14 @@
 package processor
 
 import (
+	"bytes"
 	"context"
 	"github.com/foojank/foojank/internal/engine"
 	"github.com/foojank/foojank/internal/engine/os"
 	"github.com/foojank/foojank/internal/log"
 	"github.com/foojank/foojank/internal/services/vessel/errcodes"
 	"github.com/foojank/foojank/internal/services/vessel/worker/decoder"
+	"github.com/risor-io/risor"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -17,14 +19,12 @@ type Arguments struct {
 }
 
 type Service struct {
-	args   Arguments
-	engine *engine.Engine
+	args Arguments
 }
 
 func New(args Arguments) *Service {
 	return &Service{
-		args:   args,
-		engine: engine.New(),
+		args: args,
 	}
 }
 
@@ -82,21 +82,22 @@ loop:
 			data := msg.Data()
 			switch v := data.(type) {
 			case decoder.ExecuteRequest:
-				input := string(v.Data)
-				code, err := s.engine.Build(ctx, input)
+				b := bytes.NewReader(v.Data)
+				eng, err := engine.Unpack(ctx, b, b.Size(), risor.NewConfig())
 				if err != nil {
 					log.Debug(err.Error())
-					_ = msg.ReplyError(errcodes.ErrEngineBuild, err.Error(), "")
+					_ = msg.ReplyError(errcodes.ErrEngineUnpack, err.Error(), "")
 					continue
 				}
 
-				log.Debug("before eval")
-				_, err = s.engine.Eval(ctx, code)
+				log.Debug("before run")
+				_, err = eng.Run(ctx)
 				if err != nil {
 					log.Debug(err.Error())
-					_ = msg.ReplyError(errcodes.ErrEngineEval, err.Error(), "")
+					_ = msg.ReplyError(errcodes.ErrEngineRun, err.Error(), "")
+					continue
 				}
-				log.Debug("after eval")
+				log.Debug("after run")
 
 				_ = msg.Reply(decoder.ExecuteResponse{
 					Code: 0,
