@@ -1,0 +1,5 @@
+func command(args) {
+    if len(args) > 0 {
+        os.chdir(args[0])
+    }
+}

@@ -1,0 +1,16 @@
+func command(args){
+    if len(args) == 0 {
+        args.append(".")
+    }
+
+    for _, f := range args {
+        if len(args) > 1 {
+            printf("%s:\n", f)
+        }
+
+        contents := ls(f)
+        for i := range contents {
+            print(contents[i].name)
+        }
+    }
+}

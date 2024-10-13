@@ -1,0 +1,3 @@
+func command(args) {
+    printf("%s\n", os.getwd())
+}

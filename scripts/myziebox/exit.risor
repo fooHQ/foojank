@@ -1,0 +1,3 @@
+func command(args) {
+    os.exit(0)
+}

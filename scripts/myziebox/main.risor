@@ -1,0 +1,60 @@
+import ls
+import exit
+import cd
+import pwd
+
+func read_line(f) {
+	buf := byte_slice(255)
+	for {
+		printf("> ")
+		line := string(f.read(buf))
+		if !strings.contains(line, '\n') {
+			continue
+		}
+		return line[:-1]
+	}
+}
+
+var commands = {
+    "ls": ls.command,
+    "exit": exit.command,
+    "cd": cd.command,
+    "pwd": pwd.command,
+}
+
+func help_builtin(args) {
+    printf("Commands: ")
+    cmds := keys(commands)
+    for _, cmd := range cmds {
+        printf("%s ", cmd)
+    }
+    printf("\n")
+}
+
+var builtins = {
+    "help": help_builtin,
+}
+
+func main() {
+    for {
+        line := read_line(os.stdin)
+        args := strings.split(line, " ")
+        c := args[0]
+
+        if len(args) > 1 {
+            args = args[1:]
+        } else {
+            args = []
+        }
+
+        if c in commands {
+            commands[c](args)
+        } else if c in builtins {
+            builtins[c](args)
+        } else {
+            printf("unknown command '%s'\n", c)
+        }
+    }
+}
+
+main()
