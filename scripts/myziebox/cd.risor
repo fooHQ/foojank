@@ -1,5 +1,7 @@
 func command(args) {
+    dir := os.user_home_dir()
     if len(args) > 0 {
-        os.chdir(args[0])
+        dir = args[0]
     }
+    os.chdir(dir)
 }
