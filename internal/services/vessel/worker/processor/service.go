@@ -8,7 +8,6 @@ import (
 	"github.com/foojank/foojank/internal/log"
 	"github.com/foojank/foojank/internal/services/vessel/errcodes"
 	"github.com/foojank/foojank/internal/services/vessel/worker/decoder"
-	"github.com/risor-io/risor"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -83,7 +82,7 @@ loop:
 			switch v := data.(type) {
 			case decoder.ExecuteRequest:
 				b := bytes.NewReader(v.Data)
-				eng, err := engine.Unpack(ctx, b, b.Size(), risor.NewConfig())
+				eng, err := engine.Unpack(ctx, b, b.Size())
 				if err != nil {
 					log.Debug(err.Error())
 					_ = msg.ReplyError(errcodes.ErrEngineUnpack, err.Error(), "")

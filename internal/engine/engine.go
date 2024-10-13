@@ -14,12 +14,11 @@ import (
 
 type Engine struct {
 	opts     *risor.Config
-	importer *importers.ZipImporter
 	bootCode *compiler.Code
 }
 
-// TODO: do not use risor.Config as a parameter as it requires dependent modules to import risor as a dependency!
-func Unpack(ctx context.Context, reader io.ReaderAt, size int64, opts *risor.Config) (*Engine, error) {
+func Unpack(ctx context.Context, reader io.ReaderAt, size int64) (*Engine, error) {
+	opts := risor.NewConfig()
 	imp, err := importers.NewZipImporter(reader, size, opts.CompilerOpts()...)
 	if err != nil {
 		return nil, err
@@ -36,9 +35,13 @@ func Unpack(ctx context.Context, reader io.ReaderAt, size int64, opts *risor.Con
 		return nil, err
 	}
 
+	// Recreate risor config but include the custom importer this time.
+	opts = risor.NewConfig(
+		risor.WithImporter(imp),
+	)
+
 	return &Engine{
 		opts:     opts,
-		importer: imp,
 		bootCode: code,
 	}, nil
 }
