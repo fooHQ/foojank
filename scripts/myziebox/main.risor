@@ -31,8 +31,16 @@ func help_builtin(args) {
     printf("\n")
 }
 
+func looper_builtin(args) {
+    for i := 0; i < 10; i++ {
+        print(i+1)
+        time.sleep(0.8)
+    }
+}
+
 var builtins = {
     "help": help_builtin,
+    "looper": looper_builtin,
 }
 
 func main() {
