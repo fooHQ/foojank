@@ -56,9 +56,17 @@ func main() {
         }
 
         if c in commands {
-            commands[c](args)
+            try(func(){
+                commands[c](args)
+            }, func(err){
+                print(err)
+            })
         } else if c in builtins {
-            builtins[c](args)
+            try(func(){
+                builtins[c](args)
+            }, func(err){
+                print(err)
+            })
         } else {
             printf("unknown command '%s'\n", c)
         }
