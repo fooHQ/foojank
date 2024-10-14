@@ -1,6 +1,6 @@
 using Go = import "/go.capnp";
 @0xdcccaa5d36aa8b70;
-$Go.package("proto");
+$Go.package("capnp");
 $Go.import("github.com/foojank/foojank/proto/capnp");
 
 struct CreateWorkerRequest {
