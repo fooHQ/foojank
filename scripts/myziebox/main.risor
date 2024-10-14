@@ -2,6 +2,7 @@ import ls
 import exit
 import cd
 import pwd
+import env
 
 func read_line(f) {
 	buf := byte_slice(255)
@@ -20,6 +21,7 @@ var commands = {
     "exit": exit.command,
     "cd": cd.command,
     "pwd": pwd.command,
+    "env": env.command,
 }
 
 func help_builtin(args) {
