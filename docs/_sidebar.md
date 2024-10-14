@@ -1,4 +1,6 @@
 - Getting started
+
+- Operator guides
   - [Installation](installation.md)
 
 - Developer guides
