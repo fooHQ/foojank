@@ -1,0 +1,12 @@
+name: Workflow
+on: [push]
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: repo
+      - uses: actions/setup-go@v2
+      - run: make test
+        working-directory: repo
