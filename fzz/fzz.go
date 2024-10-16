@@ -20,7 +20,7 @@ func Build(src, name string) error {
 		return err
 	}
 
-	f, err := os.CreateTemp(".", "fzz*.fzz")
+	f, err := os.CreateTemp(".", "fzz*."+fileExt)
 	if err != nil {
 		return err
 	}
