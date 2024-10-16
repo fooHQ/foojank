@@ -1,4 +1,4 @@
-package agents
+package agent
 
 import (
 	vesselcli "github.com/foojank/foojank/clients/vessel"
@@ -7,7 +7,7 @@ import (
 
 func NewRootCommand(vessel *vesselcli.Client) *cli.Command {
 	return &cli.Command{
-		Name:        "agents",
+		Name:        "agent",
 		Description: "Command & control installed agents.",
 		Subcommands: []*cli.Command{
 			NewListCommand(vessel),

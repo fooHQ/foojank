@@ -2,7 +2,7 @@ package application
 
 import (
 	"github.com/foojank/foojank/clients/vessel"
-	"github.com/foojank/foojank/internal/application/commands/agents"
+	"github.com/foojank/foojank/internal/application/commands/agent"
 	_package "github.com/foojank/foojank/internal/application/commands/package"
 	"github.com/urfave/cli/v2"
 )
@@ -15,7 +15,7 @@ func New(vessel *vessel.Client) *cli.App {
 		Args:     true,
 		Version:  "0.1.0", // TODO: from config!
 		Commands: []*cli.Command{
-			agents.NewRootCommand(vessel),
+			agent.NewRootCommand(vessel),
 			_package.NewRootCommand(),
 		},
 		CommandNotFound: func(c *cli.Context, s string) {
