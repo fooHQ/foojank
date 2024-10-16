@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"github.com/foojank/foojank/clients/vessel"
 	"github.com/foojank/foojank/internal/application"
@@ -18,9 +19,13 @@ func main() {
 	defer cancel()
 
 	opts := nats.Options{
-		Url:            config.NatsURL,
-		User:           config.NatsUser,
-		Password:       config.NatsPassword,
+		Url:      config.NatsURL,
+		User:     config.NatsUser,
+		Password: config.NatsPassword,
+		// TODO: delete before the release!
+		TLSConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
 		AllowReconnect: true,
 		MaxReconnect:   -1,
 	}
