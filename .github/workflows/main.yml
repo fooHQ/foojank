@@ -1,12 +1,23 @@
 name: Workflow
-on: [push]
+on: [push, pull_request]
 jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: repo
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v5
       - run: make test
         working-directory: repo
+  linter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: repo
+      - uses: actions/setup-go@v5
+      - uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.61
+          working-directory: repo
