@@ -9,6 +9,7 @@ require (
 	github.com/muesli/cancelreader v0.2.2
 	github.com/nats-io/nats-server/v2 v2.10.21
 	github.com/nats-io/nats.go v1.37.0
+	github.com/otiai10/copy v1.14.0
 	github.com/risor-io/risor v1.7.0
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.27.5
