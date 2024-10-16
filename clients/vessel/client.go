@@ -61,7 +61,9 @@ func (c *Client) Discover(ctx context.Context, serviceName string, outputCh chan
 	if err != nil {
 		return err
 	}
-	defer sub.Drain()
+	defer func() {
+		_ = sub.Drain()
+	}()
 
 	reqMsg := &nats.Msg{
 		Subject: subject,
@@ -203,7 +205,9 @@ func (c *Client) Execute(ctx context.Context, s Service, stdin <-chan []byte, st
 	if err != nil {
 		return 0, err
 	}
-	defer sub.Drain()
+	defer func() {
+		_ = sub.Drain()
+	}()
 
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(ctx)

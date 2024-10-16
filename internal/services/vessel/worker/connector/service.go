@@ -2,6 +2,7 @@ package connector
 
 import (
 	"context"
+	"github.com/foojank/foojank/internal/log"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
 )
@@ -36,7 +37,13 @@ func (s *Service) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer ms.Stop()
+	defer func() {
+		err := ms.Stop()
+		if err != nil {
+			log.Debug(err.Error())
+			return
+		}
+	}()
 
 	err = ms.AddEndpoint("data", micro.ContextHandler(ctx, s.handler), micro.WithEndpointSubject(s.args.DataSubject))
 	if err != nil {

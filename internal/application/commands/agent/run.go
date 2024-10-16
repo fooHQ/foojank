@@ -81,14 +81,8 @@ func newRunCommandAction(vessel *vesselcli.Client) cli.ActionFunc {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for {
-				select {
-				case line, ok := <-stdoutCh:
-					if !ok {
-						return
-					}
-					fmt.Print(string(line))
-				}
+			for line := range stdoutCh {
+				fmt.Print(string(line))
 			}
 		}()
 
