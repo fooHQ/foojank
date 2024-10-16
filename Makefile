@@ -35,3 +35,6 @@ run/client:
 .PHONY: test
 test:
 	CGO_ENABLED=1 go test -race ./...
+
+.PHONY: docker/dev
+docker/dev:

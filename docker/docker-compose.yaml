@@ -1,0 +1,17 @@
+version: "3"
+services:
+  nats:
+    image: docker.io/nats:latest
+    command: -c /etc/nats/nats-server.conf
+    volumes:
+      - "./nats-server.conf:/etc/nats/nats-server.conf"
+
+  caddy:
+    image: docker.io/caddy:latest
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./Caddyfile:/etc/caddy/Caddyfile"
