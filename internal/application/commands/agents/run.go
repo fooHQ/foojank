@@ -7,6 +7,7 @@ import (
 	"github.com/muesli/cancelreader"
 	"github.com/urfave/cli/v2"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -36,6 +37,19 @@ func newRunCommandAction(vessel *vesselcli.Client) cli.ActionFunc {
 		id := c.String("id")
 		script := c.String("script")
 		serviceName := c.String("service-name")
+
+		var data []byte
+		var err error
+		if strings.HasPrefix(script, ".") || strings.HasPrefix(script, "/") {
+			data, err = os.ReadFile(script)
+		} else {
+			panic("reading script from project root is not supported")
+		}
+
+		// Check ReadFile error
+		if err != nil {
+			return err
+		}
 
 		ctx := c.Context
 		info, err := vessel.GetInfo(ctx, vesselcli.NewID(serviceName, id))
@@ -86,7 +100,7 @@ func newRunCommandAction(vessel *vesselcli.Client) cli.ActionFunc {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			code, err := vessel.Execute(ctx, worker, stdinCh, stdoutCh, []byte(script))
+			code, err := vessel.Execute(ctx, worker, stdinCh, stdoutCh, data)
 			if err != nil {
 				fmt.Printf("%v\n", err)
 				// TODO: handle error!
