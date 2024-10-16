@@ -73,6 +73,9 @@ func NewDestroyWorkerResponse() ([]byte, error) {
 	}
 
 	msgDestroyWorker, err := capnp.NewDestroyWorkerResponse(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
 
 	err = msg.Response().SetDestroyWorker(msgDestroyWorker)
 	if err != nil {
