@@ -8,7 +8,11 @@ import (
 
 const fileExt = "fzz"
 
-func Build(src, name string) error {
+func NewFilename(name string) string {
+	return name + "." + fileExt
+}
+
+func Build(src, dst string) error {
 	tmpDir, err := os.MkdirTemp(".", "fzz*")
 	if err != nil {
 		return err
@@ -42,8 +46,7 @@ func Build(src, name string) error {
 		return err
 	}
 
-	name = name + "." + fileExt
-	err = os.Rename(f.Name(), name)
+	err = os.Rename(f.Name(), dst)
 	if err != nil {
 		return err
 	}
