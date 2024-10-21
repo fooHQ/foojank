@@ -33,7 +33,8 @@ func newBuildCommandAction() cli.ActionFunc {
 			return fmt.Errorf("command expects an argument")
 		}
 
-		err := fzz.Build(src, name)
+		dst := fzz.NewFilename(name)
+		err := fzz.Build(src, dst)
 		if err != nil {
 			return err
 		}
