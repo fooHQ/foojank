@@ -9,7 +9,7 @@ import (
 
 func TestBuild(t *testing.T) {
 	out := NewFilename("helo")
-	err := Build("testdata/helo/", out)
+	err := Build("testdata/helo", out)
 	assert.NoError(t, err)
 
 	zr, err := zip.OpenReader(out)
@@ -27,4 +27,16 @@ func TestBuildIsEmpty(t *testing.T) {
 	out := NewFilename("empty")
 	err = Build(src, out)
 	assert.ErrorIs(t, err, ErrIsEmpty)
+}
+
+func TestBuildMissingMain(t *testing.T) {
+	out := NewFilename("helo")
+	err := Build("testdata/nomain", out)
+	assert.ErrorIs(t, err, ErrMissingMain)
+}
+
+func TestBuildInvalidMain(t *testing.T) {
+	out := NewFilename("helo")
+	err := Build("testdata/noregmain", out)
+	assert.ErrorIs(t, err, ErrInvalidMain)
 }

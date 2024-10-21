@@ -6,10 +6,13 @@ import (
 	"github.com/otiai10/copy"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 var (
-	ErrIsEmpty = errors.New("directory is empty")
+	ErrIsEmpty     = errors.New("directory is empty")
+	ErrInvalidMain = errors.New("main file is not a regular file")
+	ErrMissingMain = errors.New("main file is missing")
 )
 
 const fileExt = "fzz"
@@ -19,13 +22,14 @@ func NewFilename(name string) string {
 }
 
 func Build(src, dst string) error {
-	empty, err := isEmpty(src)
+	err := isEmpty(src)
 	if err != nil {
 		return err
 	}
 
-	if empty {
-		return ErrIsEmpty
+	err = isMain(src)
+	if err != nil {
+		return err
 	}
 
 	tmpDir, err := os.MkdirTemp(".", "fzz*")
@@ -69,17 +73,52 @@ func Build(src, dst string) error {
 	return nil
 }
 
-func isEmpty(dir string) (bool, error) {
+func isEmpty(dir string) error {
 	f, err := os.Open(dir)
 	if err != nil {
-		return false, err
+		return err
 	}
 	defer f.Close()
 
 	_, err = f.Readdirnames(1)
 	if err == io.EOF {
-		return true, nil
+		return ErrIsEmpty
 	}
 
-	return false, err
+	return err
+}
+
+func isMain(dir string) error {
+	f, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	files, err := f.Readdirnames(-1)
+	if err != nil {
+		if err != io.EOF {
+			return err
+		}
+		return ErrMissingMain
+	}
+
+	for _, name := range files {
+		if name != "main.risor" && name != "main.rsr" {
+			continue
+		}
+
+		info, err := os.Stat(filepath.Join(dir, name))
+		if err != nil {
+			return err
+		}
+
+		if !info.Mode().IsRegular() {
+			return ErrInvalidMain
+		}
+
+		return nil
+	}
+
+	return ErrMissingMain
 }
