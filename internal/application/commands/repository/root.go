@@ -16,14 +16,8 @@ func NewRootCommand(args Arguments) *cli.Command {
 		Name:        "repository",
 		Description: "Manage file repositories.",
 		Subcommands: []*cli.Command{
-			NewCreateCommand(CreateArguments{
-				Logger:     args.Logger,
-				Repository: args.Repository,
-			}),
-			NewListCommand(ListArguments{
-				Logger:     args.Logger,
-				Repository: args.Repository,
-			}),
+			NewCreateCommand(CreateArguments(args)),
+			NewListCommand(ListArguments(args)),
 		},
 		HideHelpCommand: true,
 	}

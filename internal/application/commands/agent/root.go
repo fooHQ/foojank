@@ -16,14 +16,8 @@ func NewRootCommand(args Arguments) *cli.Command {
 		Name:        "agent",
 		Description: "Command & control installed agents.",
 		Subcommands: []*cli.Command{
-			NewListCommand(ListArguments{
-				Logger: args.Logger,
-				Vessel: args.Vessel,
-			}),
-			NewRunCommand(RunArguments{
-				Logger: args.Logger,
-				Vessel: args.Vessel,
-			}),
+			NewListCommand(ListArguments(args)),
+			NewRunCommand(RunArguments(args)),
 		},
 		HideHelpCommand: true,
 	}

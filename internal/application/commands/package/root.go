@@ -14,9 +14,7 @@ func NewRootCommand(args Arguments) *cli.Command {
 		Name:        "package",
 		Description: "Manage fzz packages.",
 		Subcommands: []*cli.Command{
-			NewBuildCommand(BuildArguments{
-				Logger: args.Logger,
-			}),
+			NewBuildCommand(BuildArguments(args)),
 		},
 		HideHelpCommand: true,
 	}
