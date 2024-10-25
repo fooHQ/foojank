@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/foojank/foojank/clients/repository"
 	"github.com/foojank/foojank/clients/vessel"
 	"github.com/foojank/foojank/internal/application"
 	"github.com/foojank/foojank/internal/config"
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 	"log"
 	"os"
 	"os/signal"
@@ -35,8 +37,14 @@ func main() {
 		log.Fatal(err)
 	}
 
+	js, err := jetstream.New(nc)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	vesselCli := vessel.New(nc)
-	app := application.New(vesselCli)
+	repoCli := repository.New(js)
+	app := application.New(vesselCli, repoCli)
 	err = app.RunContext(ctx, os.Args)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)

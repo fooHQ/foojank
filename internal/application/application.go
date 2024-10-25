@@ -1,13 +1,15 @@
 package application
 
 import (
+	repoCli "github.com/foojank/foojank/clients/repository"
 	"github.com/foojank/foojank/clients/vessel"
 	"github.com/foojank/foojank/internal/application/commands/agent"
 	_package "github.com/foojank/foojank/internal/application/commands/package"
+	"github.com/foojank/foojank/internal/application/commands/repository"
 	"github.com/urfave/cli/v2"
 )
 
-func New(vessel *vessel.Client) *cli.App {
+func New(vessel *vessel.Client, repo *repoCli.Client) *cli.App {
 	return &cli.App{
 		Name:     "foojank",
 		HelpName: "foojank",
@@ -17,6 +19,7 @@ func New(vessel *vessel.Client) *cli.App {
 		Commands: []*cli.Command{
 			agent.NewRootCommand(vessel),
 			_package.NewRootCommand(),
+			repository.NewRootCommand(repo),
 		},
 		CommandNotFound: func(c *cli.Context, s string) {
 			// TODO: refactor!
