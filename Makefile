@@ -18,7 +18,7 @@ build/client/prod:
 
 .PHONY: build/client/dev
 build/client/dev:
-	go build -tags debug -o build/client ./cmd/vessel
+	go build -tags debug -o build/client ./cmd/client
 
 .PHONY: generate
 generate:
