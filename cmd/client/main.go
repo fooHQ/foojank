@@ -42,7 +42,7 @@ func main() {
 			logger.Info("reconnected to NATS", "server", config.NatsURL, "user", config.NatsUser)
 		},
 		DisconnectedErrCB: func(conn *nats.Conn, err error) {
-			logger.Info("disconnected from NATS", "error", err, "server", config.NatsURL, "user", config.NatsUser)
+			logger.Warn("disconnected from NATS", "error", err, "server", config.NatsURL, "user", config.NatsUser)
 		},
 	}
 
