@@ -5,12 +5,18 @@ import (
 	"log/slog"
 )
 
-func NewRootCommand(logger *slog.Logger) *cli.Command {
+type Arguments struct {
+	Logger *slog.Logger
+}
+
+func NewRootCommand(args Arguments) *cli.Command {
 	return &cli.Command{
 		Name:        "package",
 		Description: "Manage fzz packages.",
 		Subcommands: []*cli.Command{
-			NewBuildCommand(),
+			NewBuildCommand(BuildArguments{
+				Logger: args.Logger,
+			}),
 		},
 		HideHelpCommand: true,
 	}

@@ -4,14 +4,19 @@ import (
 	"fmt"
 	"github.com/foojank/foojank/fzz"
 	"github.com/urfave/cli/v2"
+	"log/slog"
 	"path/filepath"
 )
 
-func NewBuildCommand() *cli.Command {
+type BuildArguments struct {
+	Logger *slog.Logger
+}
+
+func NewBuildCommand(args BuildArguments) *cli.Command {
 	return &cli.Command{
 		Name:        "build",
 		Description: "Build a package",
-		Action:      newBuildCommandAction(),
+		Action:      newBuildCommandAction(args),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name: "name",
@@ -20,7 +25,7 @@ func NewBuildCommand() *cli.Command {
 	}
 }
 
-func newBuildCommandAction() cli.ActionFunc {
+func newBuildCommandAction(args BuildArguments) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		name := c.String("name")
 		src := c.Args().Get(0)

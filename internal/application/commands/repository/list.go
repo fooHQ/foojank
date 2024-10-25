@@ -4,19 +4,25 @@ import (
 	"fmt"
 	"github.com/foojank/foojank/clients/repository"
 	"github.com/urfave/cli/v2"
+	"log/slog"
 )
 
-func NewListCommand(repo *repository.Client) *cli.Command {
+type ListArguments struct {
+	Logger     *slog.Logger
+	Repository *repository.Client
+}
+
+func NewListCommand(args ListArguments) *cli.Command {
 	return &cli.Command{
 		Name:        "list",
 		Description: "List repositories",
-		Action:      newListCommandAction(repo),
+		Action:      newListCommandAction(args),
 	}
 }
 
-func newListCommandAction(repo *repository.Client) cli.ActionFunc {
+func newListCommandAction(args ListArguments) cli.ActionFunc {
 	return func(c *cli.Context) error {
-		repos, err := repo.List(c.Context)
+		repos, err := args.Repository.List(c.Context)
 		if err != nil {
 			return err
 		}

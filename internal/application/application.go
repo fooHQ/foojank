@@ -10,7 +10,13 @@ import (
 	"log/slog"
 )
 
-func New(logger *slog.Logger, vessel *vessel.Client, repo *repoCli.Client) *cli.App {
+type Arguments struct {
+	Logger     *slog.Logger
+	Vessel     *vessel.Client
+	Repository *repoCli.Client
+}
+
+func New(args Arguments) *cli.App {
 	return &cli.App{
 		Name:     "foojank",
 		HelpName: "foojank",
@@ -18,9 +24,17 @@ func New(logger *slog.Logger, vessel *vessel.Client, repo *repoCli.Client) *cli.
 		Args:     true,
 		Version:  "0.1.0", // TODO: from config!
 		Commands: []*cli.Command{
-			agent.NewRootCommand(logger, vessel),
-			_package.NewRootCommand(logger),
-			repository.NewRootCommand(logger, repo),
+			agent.NewRootCommand(agent.Arguments{
+				Logger: args.Logger,
+				Vessel: args.Vessel,
+			}),
+			_package.NewRootCommand(_package.Arguments{
+				Logger: args.Logger,
+			}),
+			repository.NewRootCommand(repository.Arguments{
+				Logger:     args.Logger,
+				Repository: args.Repository,
+			}),
 		},
 		CommandNotFound: func(c *cli.Context, s string) {
 			// TODO: refactor!

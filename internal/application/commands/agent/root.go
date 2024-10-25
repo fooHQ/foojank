@@ -1,18 +1,29 @@
 package agent
 
 import (
-	vesselcli "github.com/foojank/foojank/clients/vessel"
+	"github.com/foojank/foojank/clients/vessel"
 	"github.com/urfave/cli/v2"
 	"log/slog"
 )
 
-func NewRootCommand(logger *slog.Logger, vessel *vesselcli.Client) *cli.Command {
+type Arguments struct {
+	Logger *slog.Logger
+	Vessel *vessel.Client
+}
+
+func NewRootCommand(args Arguments) *cli.Command {
 	return &cli.Command{
 		Name:        "agent",
 		Description: "Command & control installed agents.",
 		Subcommands: []*cli.Command{
-			NewListCommand(vessel),
-			NewRunCommand(vessel),
+			NewListCommand(ListArguments{
+				Logger: args.Logger,
+				Vessel: args.Vessel,
+			}),
+			NewRunCommand(RunArguments{
+				Logger: args.Logger,
+				Vessel: args.Vessel,
+			}),
 		},
 		HideHelpCommand: true,
 	}

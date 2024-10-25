@@ -3,15 +3,21 @@ package agent
 import (
 	"bufio"
 	"fmt"
-	vesselcli "github.com/foojank/foojank/clients/vessel"
+	"github.com/foojank/foojank/clients/vessel"
 	"github.com/muesli/cancelreader"
 	"github.com/urfave/cli/v2"
+	"log/slog"
 	"os"
 	"strings"
 	"sync"
 )
 
-func NewRunCommand(vessel *vesselcli.Client) *cli.Command {
+type RunArguments struct {
+	Logger *slog.Logger
+	Vessel *vessel.Client
+}
+
+func NewRunCommand(args RunArguments) *cli.Command {
 	return &cli.Command{
 		Name: "run",
 		Flags: []cli.Flag{
@@ -28,11 +34,11 @@ func NewRunCommand(vessel *vesselcli.Client) *cli.Command {
 				Value: "vessel",
 			},
 		},
-		Action: newRunCommandAction(vessel),
+		Action: newRunCommandAction(args),
 	}
 }
 
-func newRunCommandAction(vessel *vesselcli.Client) cli.ActionFunc {
+func newRunCommandAction(args RunArguments) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		id := c.String("id")
 		script := c.String("script")
@@ -52,22 +58,22 @@ func newRunCommandAction(vessel *vesselcli.Client) cli.ActionFunc {
 		}
 
 		ctx := c.Context
-		info, err := vessel.GetInfo(ctx, vesselcli.NewID(serviceName, id))
+		info, err := args.Vessel.GetInfo(ctx, vessel.NewID(serviceName, id))
 		if err != nil {
 			return err
 		}
 
-		wid, err := vessel.CreateWorker(ctx, info)
+		wid, err := args.Vessel.CreateWorker(ctx, info)
 		if err != nil {
 			return err
 		}
 
-		workerID, err := vessel.GetWorker(ctx, info, wid)
+		workerID, err := args.Vessel.GetWorker(ctx, info, wid)
 		if err != nil {
 			return err
 		}
 
-		worker, err := vessel.GetInfo(ctx, workerID)
+		worker, err := args.Vessel.GetInfo(ctx, workerID)
 		if err != nil {
 			return err
 		}
@@ -94,7 +100,7 @@ func newRunCommandAction(vessel *vesselcli.Client) cli.ActionFunc {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			code, err := vessel.Execute(ctx, worker, stdinCh, stdoutCh, data)
+			code, err := args.Vessel.Execute(ctx, worker, stdinCh, stdoutCh, data)
 			if err != nil {
 				fmt.Printf("%v\n", err)
 				// TODO: handle error!

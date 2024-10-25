@@ -3,17 +3,23 @@ package repository
 import (
 	"github.com/foojank/foojank/clients/repository"
 	"github.com/urfave/cli/v2"
+	"log/slog"
 )
 
-func NewCopyCommand(repo *repository.Client) *cli.Command {
+type CopyArguments struct {
+	Logger     *slog.Logger
+	Repository *repository.Client
+}
+
+func NewCopyCommand(args CopyArguments) *cli.Command {
 	return &cli.Command{
 		Name:        "copy",
 		Description: "Copy file from/to a repository",
-		Action:      newCopyCommandAction(repo),
+		Action:      newCopyCommandAction(args),
 	}
 }
 
-func newCopyCommandAction(repo *repository.Client) cli.ActionFunc {
+func newCopyCommandAction(args CopyArguments) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		// Possible cases:
 		// [local -> repository]

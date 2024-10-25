@@ -6,13 +6,24 @@ import (
 	"log/slog"
 )
 
-func NewRootCommand(logger *slog.Logger, repo *repository.Client) *cli.Command {
+type Arguments struct {
+	Logger     *slog.Logger
+	Repository *repository.Client
+}
+
+func NewRootCommand(args Arguments) *cli.Command {
 	return &cli.Command{
 		Name:        "repository",
 		Description: "Manage file repositories.",
 		Subcommands: []*cli.Command{
-			NewCreateCommand(repo),
-			NewListCommand(repo),
+			NewCreateCommand(CreateArguments{
+				Logger:     args.Logger,
+				Repository: args.Repository,
+			}),
+			NewListCommand(ListArguments{
+				Logger:     args.Logger,
+				Repository: args.Repository,
+			}),
 		},
 		HideHelpCommand: true,
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/foojank/foojank/clients/vessel"
 	"github.com/foojank/foojank/internal/application"
 	"github.com/foojank/foojank/internal/config"
-	tint "github.com/lmittmann/tint"
+	"github.com/lmittmann/tint"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"log/slog"
@@ -58,11 +58,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = application.New(
-		logger,
-		vessel.New(nc),
-		repository.New(js),
-	).RunContext(ctx, os.Args)
+	err = application.New(application.Arguments{
+		Logger:     logger,
+		Vessel:     vessel.New(nc),
+		Repository: repository.New(js),
+	}).RunContext(ctx, os.Args)
 	if err != nil {
 		// Error logging is done inside each command no need to have a logger in this place.
 		os.Exit(1)
