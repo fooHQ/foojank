@@ -6,6 +6,7 @@ toolchain go1.22.3
 
 require (
 	capnproto.org/go/capnp/v3 v3.0.1-alpha.2
+	github.com/lmittmann/tint v1.0.5
 	github.com/muesli/cancelreader v0.2.2
 	github.com/nats-io/nats-server/v2 v2.10.21
 	github.com/nats-io/nats.go v1.37.0

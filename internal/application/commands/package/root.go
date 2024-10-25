@@ -2,9 +2,10 @@ package _package
 
 import (
 	"github.com/urfave/cli/v2"
+	"log/slog"
 )
 
-func NewRootCommand() *cli.Command {
+func NewRootCommand(logger *slog.Logger) *cli.Command {
 	return &cli.Command{
 		Name:        "package",
 		Description: "Manage fzz packages.",

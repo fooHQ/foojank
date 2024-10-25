@@ -7,9 +7,10 @@ import (
 	_package "github.com/foojank/foojank/internal/application/commands/package"
 	"github.com/foojank/foojank/internal/application/commands/repository"
 	"github.com/urfave/cli/v2"
+	"log/slog"
 )
 
-func New(vessel *vessel.Client, repo *repoCli.Client) *cli.App {
+func New(logger *slog.Logger, vessel *vessel.Client, repo *repoCli.Client) *cli.App {
 	return &cli.App{
 		Name:     "foojank",
 		HelpName: "foojank",
@@ -17,9 +18,9 @@ func New(vessel *vessel.Client, repo *repoCli.Client) *cli.App {
 		Args:     true,
 		Version:  "0.1.0", // TODO: from config!
 		Commands: []*cli.Command{
-			agent.NewRootCommand(vessel),
-			_package.NewRootCommand(),
-			repository.NewRootCommand(repo),
+			agent.NewRootCommand(logger, vessel),
+			_package.NewRootCommand(logger),
+			repository.NewRootCommand(logger, repo),
 		},
 		CommandNotFound: func(c *cli.Context, s string) {
 			// TODO: refactor!

@@ -3,9 +3,10 @@ package agent
 import (
 	vesselcli "github.com/foojank/foojank/clients/vessel"
 	"github.com/urfave/cli/v2"
+	"log/slog"
 )
 
-func NewRootCommand(vessel *vesselcli.Client) *cli.Command {
+func NewRootCommand(logger *slog.Logger, vessel *vesselcli.Client) *cli.Command {
 	return &cli.Command{
 		Name:        "agent",
 		Description: "Command & control installed agents.",
