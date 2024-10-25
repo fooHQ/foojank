@@ -1,6 +1,7 @@
 package application
 
 import (
+	"fmt"
 	repoCli "github.com/foojank/foojank/clients/repository"
 	"github.com/foojank/foojank/clients/vessel"
 	"github.com/foojank/foojank/internal/application/commands/agent"
@@ -8,6 +9,7 @@ import (
 	"github.com/foojank/foojank/internal/application/commands/repository"
 	"github.com/urfave/cli/v2"
 	"log/slog"
+	"os"
 )
 
 type Arguments struct {
@@ -37,8 +39,9 @@ func New(args Arguments) *cli.App {
 			}),
 		},
 		CommandNotFound: func(c *cli.Context, s string) {
-			// TODO: refactor!
-			println("unknown command")
+			msg := fmt.Sprintf("unknown command '%s'", s)
+			args.Logger.Error(msg)
+			os.Exit(1)
 		},
 		HideHelpCommand: true,
 	}
