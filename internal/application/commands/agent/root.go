@@ -17,7 +17,7 @@ func NewRootCommand(args Arguments) *cli.Command {
 		Description: "Command & control installed agents.",
 		Subcommands: []*cli.Command{
 			NewListCommand(ListArguments(args)),
-			NewRunCommand(RunArguments(args)),
+			NewExecCommand(ExecArguments(args)),
 		},
 		HideHelpCommand: true,
 	}

@@ -12,14 +12,14 @@ import (
 	"sync"
 )
 
-type RunArguments struct {
+type ExecArguments struct {
 	Logger *slog.Logger
 	Vessel *vessel.Client
 }
 
-func NewRunCommand(args RunArguments) *cli.Command {
+func NewExecCommand(args ExecArguments) *cli.Command {
 	return &cli.Command{
-		Name: "run",
+		Name: "execute",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:     "id",
@@ -34,11 +34,11 @@ func NewRunCommand(args RunArguments) *cli.Command {
 				Value: "vessel",
 			},
 		},
-		Action: newRunCommandAction(args),
+		Action: newExecuteCommandAction(args),
 	}
 }
 
-func newRunCommandAction(args RunArguments) cli.ActionFunc {
+func newExecuteCommandAction(args ExecArguments) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		id := c.String("id")
 		script := c.String("script")
