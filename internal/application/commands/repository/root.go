@@ -18,6 +18,7 @@ func NewRootCommand(args Arguments) *cli.Command {
 		Subcommands: []*cli.Command{
 			NewCreateCommand(CreateArguments(args)),
 			NewListCommand(ListArguments(args)),
+			NewCopyCommand(CopyArguments(args)),
 		},
 		HideHelpCommand: true,
 	}
