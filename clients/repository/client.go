@@ -36,6 +36,7 @@ func (c *Client) Delete(ctx context.Context, repository string) error {
 	return nil
 }
 
+// TODO: return *Repository
 func (c *Client) List(ctx context.Context) ([]Repository, error) {
 	var result []Repository
 	for r := range c.js.ObjectStores(ctx).Status() {
@@ -64,6 +65,31 @@ func (c *Client) PutFile(ctx context.Context, repository, filename string, reade
 	return nil
 }
 
+func (c *Client) GetFile(ctx context.Context, repository, filename string) (*File, error) {
+	s, err := c.js.ObjectStore(ctx, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := s.Get(ctx, filename)
+	if err != nil {
+		return nil, err
+	}
+
+	info, err := res.Info()
+	if err != nil {
+		return nil, err
+	}
+
+	return &File{
+		object:   res,
+		Name:     info.Name,
+		Size:     info.Size,
+		Modified: info.ModTime,
+	}, nil
+}
+
+// TODO: return *File
 func (c *Client) ListFiles(ctx context.Context, repository string) ([]File, error) {
 	s, err := c.js.ObjectStore(ctx, repository)
 	if err != nil {
