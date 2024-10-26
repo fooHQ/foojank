@@ -28,30 +28,18 @@ func (c *Client) Create(ctx context.Context, name, description string) error {
 }
 
 func (c *Client) List(ctx context.Context) ([]Repository, error) {
-	listener := c.js.ObjectStores(ctx)
 	var result []Repository
-loop:
-	for {
-		select {
-		case status, ok := <-listener.Status():
-			if !ok {
-				break loop
-			}
-
-			result = append(result, Repository{
-				Name:        status.Bucket(),
-				Description: status.Description(),
-				Size:        status.Size(),
-			})
-
-		case <-ctx.Done():
-			break loop
-		}
+	for status := range c.js.ObjectStores(ctx).Status() {
+		result = append(result, Repository{
+			Name:        status.Bucket(),
+			Description: status.Description(),
+			Size:        status.Size(),
+		})
 	}
 	return result, nil
 }
 
-func (c *Client) Push(ctx context.Context, repository, filename string, reader io.Reader) error {
+func (c *Client) Put(ctx context.Context, repository, filename string, reader io.Reader) error {
 	s, err := c.js.ObjectStore(ctx, repository)
 	if err != nil {
 		return err
