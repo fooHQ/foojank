@@ -45,7 +45,6 @@ func Parse(input string) (Path, error) {
 	parts := strings.SplitN(input, ":", 2)
 	repo := strings.TrimSpace(parts[0])
 	filePath := strings.TrimSpace(parts[1])
-	// TODO: cleanup filePath (it must always be an absolute path!)
 
 	if repo == "" || filePath == "" {
 		return Path{}, errors.New("repository and path cannot be empty")
