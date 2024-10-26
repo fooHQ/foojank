@@ -15,14 +15,32 @@ type ListArguments struct {
 func NewListCommand(args ListArguments) *cli.Command {
 	return &cli.Command{
 		Name:        "list",
-		Description: "List repositories",
+		Args:        true,
+		ArgsUsage:   "[repository]",
+		Description: "List repositories or their contents.",
 		Action:      newListCommandAction(args),
 	}
 }
 
 func newListCommandAction(args ListArguments) cli.ActionFunc {
 	return func(c *cli.Context) error {
-		repos, err := args.Repository.List(c.Context)
+		ctx := c.Context
+
+		if c.Args().Len() > 0 {
+			for _, r := range c.Args().Slice() {
+				files, err := args.Repository.ListFiles(ctx, r)
+				if err != nil {
+					err := fmt.Errorf("cannot list contents of repository '%s': %v", r, err)
+					args.Logger.Error(err.Error())
+					return err
+				}
+
+				fmt.Printf("%#v\n", files)
+			}
+			return nil
+		}
+
+		repos, err := args.Repository.List(ctx)
 		if err != nil {
 			return err
 		}
