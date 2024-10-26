@@ -38,11 +38,11 @@ func (c *Client) Delete(ctx context.Context, repository string) error {
 
 func (c *Client) List(ctx context.Context) ([]Repository, error) {
 	var result []Repository
-	for status := range c.js.ObjectStores(ctx).Status() {
+	for r := range c.js.ObjectStores(ctx).Status() {
 		result = append(result, Repository{
-			Name:        status.Bucket(),
-			Description: status.Description(),
-			Size:        status.Size(),
+			Name:        r.Bucket(),
+			Description: r.Description(),
+			Size:        r.Size(),
 		})
 	}
 	return result, nil
