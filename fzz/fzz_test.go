@@ -9,6 +9,7 @@ import (
 
 func TestBuild(t *testing.T) {
 	out := NewFilename("helo")
+	defer os.Remove(out)
 	err := Build("testdata/helo", out)
 	assert.NoError(t, err)
 
