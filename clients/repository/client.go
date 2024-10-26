@@ -28,6 +28,14 @@ func (c *Client) Create(ctx context.Context, name, description string) error {
 	return nil
 }
 
+func (c *Client) Delete(ctx context.Context, repository string) error {
+	err := c.js.DeleteObjectStore(ctx, repository)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *Client) List(ctx context.Context) ([]Repository, error) {
 	var result []Repository
 	for status := range c.js.ObjectStores(ctx).Status() {
