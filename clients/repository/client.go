@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"github.com/nats-io/nats.go/jetstream"
 	"io"
 )
@@ -53,6 +54,36 @@ func (c *Client) Put(ctx context.Context, repository, filename string, reader io
 	}
 
 	return nil
+}
+
+func (c *Client) ListFiles(ctx context.Context, repository string) ([]File, error) {
+	s, err := c.js.ObjectStore(ctx, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	files, err := s.List(ctx)
+	if err != nil {
+		if errors.Is(err, jetstream.ErrNoObjectsFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var result []File
+	for i := range files {
+		if files[i].Deleted {
+			continue
+		}
+
+		result = append(result, File{
+			Name:     files[i].Name,
+			Size:     files[i].Size,
+			Modified: files[i].ModTime,
+		})
+	}
+
+	return result, nil
 }
 
 /*func (c *Client) Get(ctx context.Context, name string) error {
