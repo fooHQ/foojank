@@ -93,9 +93,11 @@ func newCopyCommandAction(args CopyArguments) cli.ActionFunc {
 				_ = f.Close()
 			}()
 
-			filename := dstPath.FilePath
+			var filename string
 			if dstPath.IsDir() {
-				filename = filepath.Join(dstPath.FilePath, srcPath.Base())
+				filename = filepath.Join("/", dstPath.FilePath, srcPath.Base())
+			} else {
+				filename = filepath.Join("/", dstPath.FilePath)
 			}
 
 			args.Logger.Debug("put local file to a remote repository", "src", srcPath, "repository", dstPath.Repository, "dst", filename)
