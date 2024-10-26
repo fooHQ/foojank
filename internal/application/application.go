@@ -39,7 +39,7 @@ func New(args Arguments) *cli.App {
 			}),
 		},
 		CommandNotFound: func(c *cli.Context, s string) {
-			msg := fmt.Sprintf("unknown command '%s'", s)
+			msg := fmt.Sprintf("command '%s %s' does not exist", c.Command.Name, s)
 			args.Logger.Error(msg)
 			os.Exit(1)
 		},
