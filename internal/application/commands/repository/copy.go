@@ -100,7 +100,7 @@ func newCopyCommandAction(args CopyArguments) cli.ActionFunc {
 
 			args.Logger.Debug("put local file to a remote repository", "src", srcPath, "repository", dstPath.Repository, "dst", filename)
 
-			err = args.Repository.Put(ctx, dstPath.Repository, filename, f)
+			err = args.Repository.PutFile(ctx, dstPath.Repository, filename, f)
 			if err != nil {
 				err := fmt.Errorf("cannot put local file '%s' to a remote repository '%s' as '%s': %v", srcPath, dstPath.Repository, filename, err)
 				args.Logger.Error(err.Error())

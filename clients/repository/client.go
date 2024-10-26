@@ -40,7 +40,7 @@ func (c *Client) List(ctx context.Context) ([]Repository, error) {
 	return result, nil
 }
 
-func (c *Client) Put(ctx context.Context, repository, filename string, reader io.Reader) error {
+func (c *Client) PutFile(ctx context.Context, repository, filename string, reader io.Reader) error {
 	s, err := c.js.ObjectStore(ctx, repository)
 	if err != nil {
 		return err
