@@ -122,8 +122,6 @@ func newExecuteCommandAction(args ExecArguments) cli.ActionFunc {
 			if err != nil {
 				err := fmt.Errorf("execute request failed: %v", err)
 				args.Logger.Error(err.Error())
-				// TODO: handle error!
-				//  return error message + code (define which codes should be used!)
 			}
 
 			// Cancel stdin scanner to unblock the main loop.
