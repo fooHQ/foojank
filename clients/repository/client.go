@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"github.com/nats-io/nats.go/jetstream"
@@ -75,6 +76,12 @@ func (c *Client) GetFile(ctx context.Context, repository, filename string) (*Fil
 	if err != nil {
 		return nil, err
 	}
+	defer res.Close()
+
+	b, err := io.ReadAll(res)
+	if err != nil {
+		return nil, err
+	}
 
 	info, err := res.Info()
 	if err != nil {
@@ -82,7 +89,7 @@ func (c *Client) GetFile(ctx context.Context, repository, filename string) (*Fil
 	}
 
 	return &File{
-		object:   res,
+		b:        bytes.NewReader(b),
 		Name:     info.Name,
 		Size:     info.Size,
 		Modified: info.ModTime,

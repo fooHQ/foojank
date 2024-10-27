@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/nats-io/nats.go/jetstream"
+	"bytes"
 	"io"
 	"time"
 )
@@ -12,22 +12,28 @@ type Repository struct {
 	Size        uint64
 }
 
-var _ io.Reader = &File{}
+var (
+	_ io.Reader   = &File{}
+	_ io.ReaderAt = &File{}
+)
 
 type File struct {
-	object   jetstream.ObjectResult
+	b        *bytes.Reader
 	Name     string
 	Size     uint64
 	Modified time.Time
 }
 
 func (f *File) Read(b []byte) (int, error) {
-	if f.object == nil {
+	if f.b == nil {
 		return 0, io.EOF
 	}
-	return f.object.Read(b)
+	return f.b.Read(b)
 }
 
-func (f *File) Close() error {
-	return f.object.Close()
+func (f *File) ReadAt(b []byte, off int64) (int, error) {
+	if f.b == nil {
+		return 0, io.EOF
+	}
+	return f.b.ReadAt(b, off)
 }
