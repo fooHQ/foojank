@@ -3,8 +3,8 @@ package config
 
 const (
 	NatsURL = "wss://localhost"
-	NatsUser = "usr1"
-	NatsPassword = "passwd1"
+	NatsUser = "vessel"
+	NatsPassword = "vesselpassword"
 )
 
 const (

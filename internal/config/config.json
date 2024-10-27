@@ -1,8 +1,8 @@
 {
   "nats": {
 	"url": "wss://localhost",
-	"user": "usr1",
-	"password": "passwd1"
+	"user": "vessel",
+	"password": "vesselpassword"
   },
   "connector": {
 	"name": "vessel",
