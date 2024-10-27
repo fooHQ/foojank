@@ -13,6 +13,8 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:        "create",
 		Description: "Create a repository",
+		Args:        true,
+		ArgsUsage:   "<name>",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name: "description",
@@ -42,15 +44,20 @@ func action(c *cli.Context) error {
 
 func createAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 	return func(c *cli.Context) error {
+		cnt := c.Args().Len()
+		if cnt != 1 {
+			err := fmt.Errorf("command '%s' expects the following arguments: %s", c.Command.Name, c.Command.ArgsUsage)
+			logger.Error(err.Error())
+			return err
+		}
+
 		name := c.Args().Get(0)
 		description := c.String("description")
 
-		if name == "" {
-			return fmt.Errorf("command expects an argument")
-		}
-
 		err := client.Create(c.Context, name, description)
 		if err != nil {
+			err := fmt.Errorf("cannot create repository '%s': %v", name, err)
+			logger.Error(err.Error())
 			return err
 		}
 
