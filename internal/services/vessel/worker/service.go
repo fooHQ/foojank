@@ -49,9 +49,9 @@ func (s *Service) Start(ctx context.Context) error {
 	stdoutSubject := nats.NewInbox()
 
 	connectorInfoCh := make(chan connector.InfoMessage, 1)
-	connectorOutCh := make(chan connector.Message, 65535)
-	decoderDataCh := make(chan decoder.Message, 65535)
-	decoderStdinCh := make(chan decoder.Message, 65535)
+	connectorOutCh := make(chan connector.Message)
+	decoderDataCh := make(chan decoder.Message)
+	decoderStdinCh := make(chan decoder.Message)
 	processorStdoutCh := make(chan []byte, 1024)
 
 	group, groupCtx := errgroup.WithContext(ctx)

@@ -31,8 +31,8 @@ func New(args Arguments) *Service {
 func (s *Service) Start(ctx context.Context) error {
 	rpcSubject := nats.NewInbox()
 
-	connectorOutCh := make(chan connector.Message, 65535)
-	decoderOutCh := make(chan decoder.Message, 65535)
+	connectorOutCh := make(chan connector.Message)
+	decoderOutCh := make(chan decoder.Message)
 
 	group, groupCtx := errgroup.WithContext(ctx)
 	group.Go(func() error {

@@ -26,7 +26,7 @@ func New(args Arguments) *Service {
 }
 
 func (s *Service) Start(ctx context.Context) error {
-	responseCh := make(chan MessageResponse, 65535)
+	responseCh := make(chan MessageResponse)
 
 	for {
 		select {
