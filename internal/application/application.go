@@ -50,9 +50,9 @@ func New(args Arguments) *cli.App {
 			},
 		},
 		Commands: []*cli.Command{
-			agent.NewRootCommand(),
-			_package.NewRootCommand(),
-			repository.NewRootCommand(),
+			agent.NewCommand(),
+			_package.NewCommand(),
+			repository.NewCommand(),
 		},
 		CommandNotFound: func(c *cli.Context, s string) {
 			msg := fmt.Sprintf("command '%s %s' does not exist", c.Command.Name, s)

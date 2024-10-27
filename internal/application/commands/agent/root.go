@@ -6,7 +6,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func NewRootCommand() *cli.Command {
+func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:        "agent",
 		Description: "Command & control installed agents.",
