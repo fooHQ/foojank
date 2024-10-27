@@ -16,6 +16,8 @@ func NewBuildCommand(args BuildArguments) *cli.Command {
 	return &cli.Command{
 		Name:        "build",
 		Description: "Build a package",
+		Args:        true,
+		ArgsUsage:   "<dir>",
 		Action:      newBuildCommandAction(args),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -27,20 +29,24 @@ func NewBuildCommand(args BuildArguments) *cli.Command {
 
 func newBuildCommandAction(args BuildArguments) cli.ActionFunc {
 	return func(c *cli.Context) error {
-		name := c.String("name")
-		src := c.Args().Get(0)
-
-		if name == "" {
-			name = filepath.Base(src)
+		cnt := c.Args().Len()
+		if cnt != 1 {
+			err := fmt.Errorf("command '%s' expects the following arguments: %s", c.Command.Name, c.Command.ArgsUsage)
+			args.Logger.Error(err.Error())
+			return err
 		}
 
-		if src == "" {
-			return fmt.Errorf("command expects an argument")
+		src := c.Args().Get(0)
+		name := c.String("name")
+		if name == "" {
+			name = filepath.Base(src)
 		}
 
 		dst := fzz.NewFilename(name)
 		err := fzz.Build(src, dst)
 		if err != nil {
+			err := fmt.Errorf("cannot build a package: %v", err)
+			args.Logger.Error(err.Error())
 			return err
 		}
 
