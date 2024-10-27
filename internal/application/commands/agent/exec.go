@@ -58,7 +58,11 @@ func newExecuteCommandAction(args ExecArguments) cli.ActionFunc {
 			return err
 		}
 
-		// TODO: check is directory!
+		if pkgPath.IsDir() {
+			err := fmt.Errorf("path '%s' is a directory", pkgPath)
+			args.Logger.Error(err.Error())
+			return err
+		}
 
 		ctx := c.Context
 
