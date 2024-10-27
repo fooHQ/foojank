@@ -2,24 +2,16 @@ package application
 
 import (
 	"fmt"
-	repoCli "github.com/foojank/foojank/clients/repository"
-	"github.com/foojank/foojank/clients/vessel"
+	"github.com/foojank/foojank/internal/application/actions"
 	"github.com/foojank/foojank/internal/application/commands/agent"
 	_package "github.com/foojank/foojank/internal/application/commands/package"
 	"github.com/foojank/foojank/internal/application/commands/repository"
 	"github.com/foojank/foojank/internal/application/flags"
 	"github.com/urfave/cli/v2"
-	"log/slog"
 	"os"
 )
 
-type Arguments struct {
-	Logger     *slog.Logger
-	Vessel     *vessel.Client
-	Repository *repoCli.Client
-}
-
-func New(args Arguments) *cli.App {
+func New() *cli.App {
 	return &cli.App{
 		Name:     "foojank",
 		HelpName: "foojank",
@@ -55,8 +47,9 @@ func New(args Arguments) *cli.App {
 			repository.NewCommand(),
 		},
 		CommandNotFound: func(c *cli.Context, s string) {
+			logger := actions.NewLogger(c)
 			msg := fmt.Sprintf("command '%s %s' does not exist", c.Command.Name, s)
-			args.Logger.Error(msg)
+			logger.Error(msg)
 			os.Exit(1)
 		},
 		HideHelpCommand: true,
