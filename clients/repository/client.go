@@ -37,11 +37,10 @@ func (c *Client) Delete(ctx context.Context, repository string) error {
 	return nil
 }
 
-// TODO: return *Repository
-func (c *Client) List(ctx context.Context) ([]Repository, error) {
-	var result []Repository
+func (c *Client) List(ctx context.Context) ([]*Repository, error) {
+	var result []*Repository
 	for r := range c.js.ObjectStores(ctx).Status() {
-		result = append(result, Repository{
+		result = append(result, &Repository{
 			Name:        r.Bucket(),
 			Description: r.Description(),
 			Size:        r.Size(),
@@ -96,8 +95,7 @@ func (c *Client) GetFile(ctx context.Context, repository, filename string) (*Fil
 	}, nil
 }
 
-// TODO: return *File
-func (c *Client) ListFiles(ctx context.Context, repository string) ([]File, error) {
+func (c *Client) ListFiles(ctx context.Context, repository string) ([]*File, error) {
 	s, err := c.js.ObjectStore(ctx, repository)
 	if err != nil {
 		return nil, err
@@ -111,13 +109,13 @@ func (c *Client) ListFiles(ctx context.Context, repository string) ([]File, erro
 		return nil, err
 	}
 
-	var result []File
+	var result []*File
 	for i := range files {
 		if files[i].Deleted {
 			continue
 		}
 
-		result = append(result, File{
+		result = append(result, &File{
 			Name:     files[i].Name,
 			Size:     files[i].Size,
 			Modified: files[i].ModTime,
