@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"github.com/foojank/foojank/clients/vessel"
 	"github.com/foojank/foojank/internal/application/path"
@@ -66,21 +67,29 @@ func newExecuteCommandAction(args ExecArguments) cli.ActionFunc {
 
 		ctx := c.Context
 
-		info, err := args.Vessel.GetInfo(ctx, vessel.NewID(serviceName, id))
+		service, err := args.Vessel.GetInfo(ctx, vessel.NewID(serviceName, id))
 		if err != nil {
 			err := fmt.Errorf("get info request failed: %v", err)
 			args.Logger.Error(err.Error())
 			return err
 		}
 
-		wid, err := args.Vessel.CreateWorker(ctx, info)
+		wid, err := args.Vessel.CreateWorker(ctx, service)
 		if err != nil {
 			err := fmt.Errorf("create worker request failed: %v", err)
 			args.Logger.Error(err.Error())
 			return err
 		}
 
-		workerID, err := args.Vessel.GetWorker(ctx, info, wid)
+		defer func() {
+			err := args.Vessel.DestroyWorker(context.Background(), service, wid)
+			if err != nil {
+				err := fmt.Errorf("destroy worker request failed: %v", err)
+				args.Logger.Error(err.Error())
+			}
+		}()
+
+		workerID, err := args.Vessel.GetWorker(ctx, service, wid)
 		if err != nil {
 			err := fmt.Errorf("get worker request failed: %v", err)
 			args.Logger.Error(err.Error())
@@ -134,8 +143,6 @@ func newExecuteCommandAction(args ExecArguments) cli.ActionFunc {
 			line := scanner.Text() + "\n"
 			select {
 			case stdinCh <- []byte(line):
-			case <-ctx.Done():
-				return nil
 			default:
 			}
 		}
