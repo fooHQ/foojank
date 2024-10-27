@@ -179,6 +179,40 @@ func (c *Client) GetWorker(ctx context.Context, s Service, workerID uint64) (ID,
 	}, nil
 }
 
+func (c *Client) DestroyWorker(ctx context.Context, s Service, workerID uint64) error {
+	b, err := proto.NewDestroyWorkerRequest(workerID)
+	if err != nil {
+		return err
+	}
+
+	rpcEndpoint, ok := s.Endpoints["rpc"]
+	if !ok {
+		return errors.New("rpc endpoint not found")
+	}
+
+	msg := &nats.Msg{
+		Subject: rpcEndpoint.subject,
+		Reply:   nats.NewInbox(),
+		Data:    b,
+	}
+	resp, err := c.request(ctx, msg)
+	if err != nil {
+		return err
+	}
+
+	parsed, err := proto.ParseResponse(resp.Data)
+	if err != nil {
+		return err
+	}
+
+	_, ok = parsed.(proto.DestroyWorkerResponse)
+	if !ok {
+		return errors.New("invalid response type")
+	}
+
+	return nil
+}
+
 func (c *Client) Execute(ctx context.Context, s Service, repository, filePath string, stdin <-chan []byte, stdout chan<- []byte) (int64, error) {
 	b, err := proto.NewExecuteRequest(repository, filePath)
 	if err != nil {
