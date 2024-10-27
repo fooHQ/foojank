@@ -173,7 +173,8 @@ func parseGetWorkerResponse(message capnp.Message) (GetWorkerResponse, error) {
 }
 
 type ExecuteRequest struct {
-	Data []byte
+	Repository string
+	FilePath   string
 }
 
 func parseExecuteRequest(message capnp.Message) (ExecuteRequest, error) {
@@ -182,13 +183,19 @@ func parseExecuteRequest(message capnp.Message) (ExecuteRequest, error) {
 		return ExecuteRequest{}, err
 	}
 
-	data, err := v.Data()
+	repository, err := v.Repository()
+	if err != nil {
+		return ExecuteRequest{}, err
+	}
+
+	filePath, err := v.FilePath()
 	if err != nil {
 		return ExecuteRequest{}, err
 	}
 
 	return ExecuteRequest{
-		Data: data,
+		Repository: repository,
+		FilePath:   filePath,
 	}, nil
 }
 

@@ -27,7 +27,8 @@ struct DestroyWorkerRequest {
 struct DestroyWorkerResponse {}
 
 struct ExecuteRequest {
-    data @0 :Data;
+    repository @0 :Text;
+    filePath @1 :Text;
 }
 
 struct ExecuteResponse {
