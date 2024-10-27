@@ -61,15 +61,20 @@ loop:
 				_ = msg.Reply(decoder.DestroyWorkerResponse{})
 
 			case decoder.GetWorkerRequest:
-				_, ok := workers[v.ID]
+				w, ok := workers[v.ID]
 				if !ok {
 					_ = msg.ReplyError("400", "worker does not exist", nil)
 					continue
 				}
 
+				if w.ServiceID() == "" {
+					_ = msg.ReplyError("400", "worker is starting", nil)
+					continue
+				}
+
 				_ = msg.Reply(decoder.GetWorkerResponse{
-					ServiceName: workers[v.ID].ServiceName(),
-					ServiceID:   workers[v.ID].ServiceID(),
+					ServiceName: w.ServiceName(),
+					ServiceID:   w.ServiceID(),
 				})
 			}
 
