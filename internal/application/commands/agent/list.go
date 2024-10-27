@@ -53,7 +53,8 @@ func newListCommandAction(args ListArguments) cli.ActionFunc {
 
 		err := args.Vessel.Discover(ctx, serviceName, outputCh)
 		if err != nil {
-			args.Logger.Error("discovery request failed", "error", err)
+			err := fmt.Errorf("discovery request failed: %v", err)
+			args.Logger.Error(err.Error())
 			return err
 		}
 

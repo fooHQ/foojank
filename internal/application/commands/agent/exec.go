@@ -64,26 +64,29 @@ func newExecuteCommandAction(args ExecArguments) cli.ActionFunc {
 
 		info, err := args.Vessel.GetInfo(ctx, vessel.NewID(serviceName, id))
 		if err != nil {
-			// TODO: create a single error message!
-			args.Logger.Error("get info request failed", "error", err)
+			err := fmt.Errorf("get info request failed: %v", err)
+			args.Logger.Error(err.Error())
 			return err
 		}
 
 		wid, err := args.Vessel.CreateWorker(ctx, info)
 		if err != nil {
-			args.Logger.Error("create worker request failed", "error", err)
+			err := fmt.Errorf("create worker request failed: %v", err)
+			args.Logger.Error(err.Error())
 			return err
 		}
 
 		workerID, err := args.Vessel.GetWorker(ctx, info, wid)
 		if err != nil {
-			args.Logger.Error("get worker request failed", "error", err)
+			err := fmt.Errorf("get worker request failed: %v", err)
+			args.Logger.Error(err.Error())
 			return err
 		}
 
 		worker, err := args.Vessel.GetInfo(ctx, workerID)
 		if err != nil {
-			args.Logger.Error("get info request failed", "error", err)
+			err := fmt.Errorf("get info request failed: %v", err)
+			args.Logger.Error(err.Error())
 			return err
 		}
 
@@ -103,7 +106,8 @@ func newExecuteCommandAction(args ExecArguments) cli.ActionFunc {
 
 		r, err := cancelreader.NewReader(os.Stdin)
 		if err != nil {
-			args.Logger.Error("cannot create a cancel reader", "error", err)
+			err := fmt.Errorf("cannot create a standard input reader %v", err)
+			args.Logger.Error(err.Error())
 			return err
 		}
 
@@ -112,7 +116,8 @@ func newExecuteCommandAction(args ExecArguments) cli.ActionFunc {
 			defer wg.Done()
 			code, err := args.Vessel.Execute(ctx, worker, pkgPath.Repository, pkgPath.FilePath, stdinCh, stdoutCh)
 			if err != nil {
-				args.Logger.Error("execute request failed", "error", err)
+				err := fmt.Errorf("execute request failed: %v", err)
+				args.Logger.Error(err.Error())
 				// TODO: handle error!
 				//  return error message + code (define which codes should be used!)
 			}
