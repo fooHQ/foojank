@@ -6,11 +6,13 @@ import (
 	"github.com/foojank/foojank/internal/services/vessel/decoder"
 	"github.com/foojank/foojank/internal/services/vessel/worker"
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 	"sync"
 )
 
 type Arguments struct {
 	Connection *nats.Conn
+	Stream     jetstream.JetStream
 	InputCh    <-chan decoder.Message
 }
 
@@ -112,6 +114,7 @@ func (s *Service) createWorker(ctx context.Context, workerID uint64, eventCh cha
 		Name:       "vessel-worker", // TODO: configurable
 		Version:    "0.1.0",         // TODO: configurable
 		Connection: s.args.Connection,
+		Stream:     s.args.Stream,
 		EventCh:    eventCh,
 	})
 

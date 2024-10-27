@@ -7,6 +7,7 @@ import (
 	"github.com/foojank/foojank/internal/log"
 	"github.com/foojank/foojank/internal/services/vessel"
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 	"os"
 	"os/signal"
 	"os/user"
@@ -49,6 +50,12 @@ func main() {
 		return
 	}
 
+	js, err := jetstream.New(nc)
+	if err != nil {
+		log.Debug("cannot enable JetStream: %v", err)
+		return
+	}
+
 	err = vessel.New(vessel.Arguments{
 		Name:    config.ConnectorName,
 		Version: config.ConnectorVersion,
@@ -58,6 +65,7 @@ func main() {
 			"hostname": hostname,
 		},
 		Connection: nc,
+		Stream:     js,
 	}).Start(ctx)
 	if err != nil {
 		log.Debug("%v", err)

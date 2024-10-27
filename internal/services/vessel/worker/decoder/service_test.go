@@ -43,7 +43,7 @@ func TestService(t *testing.T) {
 	}
 
 	{
-		b, err := proto.NewExecuteRequest([]byte("print"))
+		b, err := proto.NewExecuteRequest("foojank1", "/scripts/test.fzz")
 		assert.NoError(t, err)
 		req := testutils.Request{
 			FSubject:   "data",

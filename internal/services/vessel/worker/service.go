@@ -2,11 +2,13 @@ package worker
 
 import (
 	"context"
+	"github.com/foojank/foojank/clients/repository"
 	"github.com/foojank/foojank/internal/services/vessel/worker/connector"
 	"github.com/foojank/foojank/internal/services/vessel/worker/decoder"
 	"github.com/foojank/foojank/internal/services/vessel/worker/processor"
 	"github.com/foojank/foojank/internal/services/vessel/worker/publisher"
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -15,6 +17,7 @@ type Arguments struct {
 	Name       string
 	Version    string
 	Connection *nats.Conn
+	Stream     jetstream.JetStream
 	EventCh    chan<- Event
 }
 
@@ -39,6 +42,7 @@ func (s *Service) Start(ctx context.Context) error {
 		}
 	}()
 
+	repo := repository.New(s.args.Stream)
 	// TODO: allow these to be configured from the outside
 	dataSubject := nats.NewInbox()
 	stdinSubject := nats.NewInbox()
@@ -78,9 +82,10 @@ func (s *Service) Start(ctx context.Context) error {
 	})
 	group.Go(func() error {
 		return processor.New(processor.Arguments{
-			DataCh:   decoderDataCh,
-			StdinCh:  decoderStdinCh,
-			StdoutCh: processorStdoutCh,
+			DataCh:     decoderDataCh,
+			StdinCh:    decoderStdinCh,
+			StdoutCh:   processorStdoutCh,
+			Repository: repo,
 		}).Start(groupCtx)
 	})
 	group.Go(func() error {

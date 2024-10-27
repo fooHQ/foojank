@@ -43,7 +43,8 @@ func (s *Service) Start(ctx context.Context) error {
 				switch v := parsed.(type) {
 				case proto.ExecuteRequest:
 					data = ExecuteRequest{
-						Data: v.Data,
+						Repository: v.Repository,
+						FilePath:   v.FilePath,
 					}
 
 				default:
