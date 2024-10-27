@@ -1,8 +1,8 @@
 package processor
 
 import (
-	"bytes"
 	"context"
+	"github.com/foojank/foojank/clients/repository"
 	"github.com/foojank/foojank/internal/engine"
 	"github.com/foojank/foojank/internal/engine/os"
 	"github.com/foojank/foojank/internal/log"
@@ -12,9 +12,10 @@ import (
 )
 
 type Arguments struct {
-	DataCh   <-chan decoder.Message
-	StdinCh  <-chan decoder.Message
-	StdoutCh chan<- []byte
+	DataCh     <-chan decoder.Message
+	StdinCh    <-chan decoder.Message
+	StdoutCh   chan<- []byte
+	Repository *repository.Client
 }
 
 type Service struct {
@@ -81,8 +82,16 @@ loop:
 			data := msg.Data()
 			switch v := data.(type) {
 			case decoder.ExecuteRequest:
-				b := bytes.NewReader(v.Data)
-				eng, err := engine.Unpack(ctx, b, b.Size())
+				log.Debug("before load package %s:%s", v.Repository, v.FilePath)
+				file, err := s.args.Repository.GetFile(ctx, v.Repository, v.FilePath)
+				if err != nil {
+					log.Debug(err.Error())
+					_ = msg.ReplyError(errcodes.ErrRepositoryGetFile, err.Error(), "")
+					continue
+				}
+				log.Debug("after load package %s:%s", v.Repository, v.FilePath)
+
+				eng, err := engine.Unpack(ctx, file, int64(file.Size))
 				if err != nil {
 					log.Debug(err.Error())
 					_ = msg.ReplyError(errcodes.ErrEngineUnpack, err.Error(), "")
