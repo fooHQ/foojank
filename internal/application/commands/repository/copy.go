@@ -50,14 +50,16 @@ func newCopyCommandAction(args CopyArguments) cli.ActionFunc {
 		src := files[0]
 		srcPath, err := path.Parse(src)
 		if err != nil {
-			args.Logger.Error("invalid file path", "error", err)
+			err := fmt.Errorf("invalid file path '%s': %v", src, err)
+			args.Logger.Error(err.Error())
 			return err
 		}
 
 		dst := files[len(files)-1]
 		dstPath, err := path.Parse(dst)
 		if err != nil {
-			args.Logger.Error("invalid destination path", "error", err)
+			err := fmt.Errorf("invalid destination path '%s': %v", dst, err)
+			args.Logger.Error(err.Error())
 			return err
 		}
 
