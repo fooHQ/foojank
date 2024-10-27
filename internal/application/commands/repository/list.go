@@ -35,7 +35,9 @@ func newListCommandAction(args ListArguments) cli.ActionFunc {
 					return err
 				}
 
-				fmt.Printf("%#v\n", files)
+				for _, file := range files {
+					fmt.Printf("%#v\n", file)
+				}
 			}
 			return nil
 		}
