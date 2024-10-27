@@ -179,15 +179,15 @@ func (c *Client) GetWorker(ctx context.Context, s Service, workerID uint64) (ID,
 	}, nil
 }
 
-func (c *Client) Execute(ctx context.Context, s Service, stdin <-chan []byte, stdout chan<- []byte, data []byte) (int64, error) {
-	b, err := proto.NewExecuteRequest(data)
+func (c *Client) Execute(ctx context.Context, s Service, repository, filePath string, stdin <-chan []byte, stdout chan<- []byte) (int64, error) {
+	b, err := proto.NewExecuteRequest(repository, filePath)
 	if err != nil {
 		return 0, err
 	}
 
 	dataEndpoint, ok := s.Endpoints["data"]
 	if !ok {
-		return 0, errors.New("rpc endpoint not found")
+		return 0, errors.New("data endpoint not found")
 	}
 
 	stdinEndpoint, ok := s.Endpoints["stdin"]
