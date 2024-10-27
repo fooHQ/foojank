@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/foojank/foojank/clients/vessel"
+	"github.com/foojank/foojank/internal/application/path"
 	"github.com/muesli/cancelreader"
 	"github.com/urfave/cli/v2"
 	"log/slog"
 	"os"
-	"strings"
 	"sync"
 )
 
@@ -19,16 +19,10 @@ type ExecArguments struct {
 
 func NewExecCommand(args ExecArguments) *cli.Command {
 	return &cli.Command{
-		Name: "execute",
+		Name:      "execute",
+		Args:      true,
+		ArgsUsage: "<id> <package-path>",
 		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:     "id",
-				Required: true,
-			},
-			&cli.StringFlag{
-				Name:     "script",
-				Required: true,
-			},
 			&cli.StringFlag{
 				Name:  "service-name",
 				Value: "vessel",
@@ -40,27 +34,37 @@ func NewExecCommand(args ExecArguments) *cli.Command {
 
 func newExecuteCommandAction(args ExecArguments) cli.ActionFunc {
 	return func(c *cli.Context) error {
-		id := c.String("id")
-		script := c.String("script")
-		serviceName := c.String("service-name")
-
-		var data []byte
-		var err error
-		if strings.HasPrefix(script, ".") || strings.HasPrefix(script, "/") {
-			data, err = os.ReadFile(script)
-		} else {
-			panic("reading script from project root is not supported")
-		}
-
-		// Check ReadFile error
-		if err != nil {
-			args.Logger.Error("cannot read script file", "file", script, "error", err)
+		cnt := c.Args().Len()
+		if cnt != 2 {
+			err := fmt.Errorf("command '%s' expects the following arguments: %s", c.Command.Name, c.Command.ArgsUsage)
+			args.Logger.Error(err.Error())
 			return err
 		}
 
+		id := c.Args().Get(0)
+		serviceName := c.String("service-name")
+
+		pkg := c.Args().Get(1)
+		pkgPath, err := path.Parse(pkg)
+		if err != nil {
+			err := fmt.Errorf("invalid package path '%s': %v", pkg, err)
+			args.Logger.Error(err.Error())
+			return err
+		}
+
+		if pkgPath.IsLocal() {
+			err := fmt.Errorf("path '%s' is a local path, executing packages is only possible from a repository", pkgPath)
+			args.Logger.Error(err.Error())
+			return err
+		}
+
+		// TODO: check is directory!
+
 		ctx := c.Context
+
 		info, err := args.Vessel.GetInfo(ctx, vessel.NewID(serviceName, id))
 		if err != nil {
+			// TODO: create a single error message!
 			args.Logger.Error("get info request failed", "error", err)
 			return err
 		}
@@ -106,7 +110,7 @@ func newExecuteCommandAction(args ExecArguments) cli.ActionFunc {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			code, err := args.Vessel.Execute(ctx, worker, stdinCh, stdoutCh, data)
+			code, err := args.Vessel.Execute(ctx, worker, pkgPath.Repository, pkgPath.FilePath, stdinCh, stdoutCh)
 			if err != nil {
 				args.Logger.Error("execute request failed", "error", err)
 				// TODO: handle error!
