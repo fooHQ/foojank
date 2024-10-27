@@ -7,6 +7,7 @@ import (
 	"github.com/foojank/foojank/internal/application/commands/agent"
 	_package "github.com/foojank/foojank/internal/application/commands/package"
 	"github.com/foojank/foojank/internal/application/commands/repository"
+	"github.com/foojank/foojank/internal/application/flags"
 	"github.com/urfave/cli/v2"
 	"log/slog"
 	"os"
@@ -22,21 +23,36 @@ func New(args Arguments) *cli.App {
 	return &cli.App{
 		Name:     "foojank",
 		HelpName: "foojank",
-		Usage:    "Manage and control foojank agents",
+		Usage:    "A cross-platform command and control (C2) framework",
 		Args:     true,
 		Version:  "0.1.0", // TODO: from config!
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    flags.Server,
+				Usage:   "URL of a NATS server",
+				Value:   "wss://localhost",
+				Aliases: []string{"s"},
+			},
+			&cli.StringFlag{
+				Name:    flags.User,
+				Usage:   "authenticate to the server as user",
+				Aliases: []string{"u"},
+			},
+			&cli.StringFlag{
+				Name:    flags.Password,
+				Usage:   "set user password",
+				Aliases: []string{"p"},
+			},
+			&cli.IntFlag{
+				Name:  flags.LogLevel,
+				Usage: "set log level",
+				Value: 0,
+			},
+		},
 		Commands: []*cli.Command{
-			agent.NewRootCommand(agent.Arguments{
-				Logger: args.Logger,
-				Vessel: args.Vessel,
-			}),
-			_package.NewRootCommand(_package.Arguments{
-				Logger: args.Logger,
-			}),
-			repository.NewRootCommand(repository.Arguments{
-				Logger:     args.Logger,
-				Repository: args.Repository,
-			}),
+			agent.NewRootCommand(),
+			_package.NewRootCommand(),
+			repository.NewRootCommand(),
 		},
 		CommandNotFound: func(c *cli.Context, s string) {
 			msg := fmt.Sprintf("command '%s %s' does not exist", c.Command.Name, s)

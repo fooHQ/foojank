@@ -1,20 +1,16 @@
 package _package
 
 import (
+	"github.com/foojank/foojank/internal/application/commands/package/build"
 	"github.com/urfave/cli/v2"
-	"log/slog"
 )
 
-type Arguments struct {
-	Logger *slog.Logger
-}
-
-func NewRootCommand(args Arguments) *cli.Command {
+func NewRootCommand() *cli.Command {
 	return &cli.Command{
 		Name:        "package",
 		Description: "Manage fzz packages.",
 		Subcommands: []*cli.Command{
-			NewBuildCommand(BuildArguments(args)),
+			build.NewCommand(),
 		},
 		HideHelpCommand: true,
 	}

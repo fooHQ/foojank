@@ -1,31 +1,46 @@
-package repository
+package copy
 
 import (
 	"fmt"
 	"github.com/foojank/foojank/clients/repository"
+	"github.com/foojank/foojank/internal/application/actions"
 	"github.com/foojank/foojank/internal/application/path"
+	"github.com/nats-io/nats.go/jetstream"
 	"github.com/urfave/cli/v2"
 	"log/slog"
 	"os"
 	"path/filepath"
 )
 
-type CopyArguments struct {
-	Logger     *slog.Logger
-	Repository *repository.Client
-}
-
-func NewCopyCommand(args CopyArguments) *cli.Command {
+func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:        "copy",
 		Args:        true,
 		ArgsUsage:   "<file-path> <destination-path>",
 		Description: "Copy file from/to a repository",
-		Action:      newCopyCommandAction(args),
+		Action:      action,
 	}
 }
 
-func newCopyCommandAction(args CopyArguments) cli.ActionFunc {
+func action(c *cli.Context) error {
+	logger := actions.NewLogger(c)
+	nc, err := actions.NewNATSConnection(c, logger)
+	if err != nil {
+		return err
+	}
+
+	js, err := jetstream.New(nc)
+	if err != nil {
+		err := fmt.Errorf("cannot create a JetStream context: %v", err)
+		logger.Error(err.Error())
+		return err
+	}
+
+	client := repository.New(js)
+	return copyAction(logger, client)(c)
+}
+
+func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 	// Possible use cases:
 	// [Destination is a repository]
 	// ./path/to/file repository:/                      => repository:/path/to/file
@@ -42,7 +57,7 @@ func newCopyCommandAction(args CopyArguments) cli.ActionFunc {
 		cnt := c.Args().Len()
 		if cnt != 2 {
 			err := fmt.Errorf("command '%s' expects the following arguments: %s", c.Command.Name, c.Command.ArgsUsage)
-			args.Logger.Error(err.Error())
+			logger.Error(err.Error())
 			return err
 		}
 
@@ -51,7 +66,7 @@ func newCopyCommandAction(args CopyArguments) cli.ActionFunc {
 		srcPath, err := path.Parse(src)
 		if err != nil {
 			err := fmt.Errorf("invalid file path '%s': %v", src, err)
-			args.Logger.Error(err.Error())
+			logger.Error(err.Error())
 			return err
 		}
 
@@ -59,25 +74,25 @@ func newCopyCommandAction(args CopyArguments) cli.ActionFunc {
 		dstPath, err := path.Parse(dst)
 		if err != nil {
 			err := fmt.Errorf("invalid destination path '%s': %v", dst, err)
-			args.Logger.Error(err.Error())
+			logger.Error(err.Error())
 			return err
 		}
 
 		if srcPath.IsDir() {
 			err := fmt.Errorf("file '%s' is a directory, copying directories is currently not supported", srcPath)
-			args.Logger.Error(err.Error())
+			logger.Error(err.Error())
 			return err
 		}
 
 		if srcPath.IsLocal() && dstPath.IsLocal() {
 			err := fmt.Errorf("both paths are local paths, this operation is currently not supported")
-			args.Logger.Error(err.Error())
+			logger.Error(err.Error())
 			return err
 		}
 
 		if !srcPath.IsLocal() && !dstPath.IsLocal() {
 			err := fmt.Errorf("both paths are repository paths, this operation is currently not supported")
-			args.Logger.Error(err.Error())
+			logger.Error(err.Error())
 			return err
 		}
 
@@ -88,7 +103,7 @@ func newCopyCommandAction(args CopyArguments) cli.ActionFunc {
 			f, err := os.Open(srcPath.FilePath)
 			if err != nil {
 				err := fmt.Errorf("cannot open local file: %v", err)
-				args.Logger.Error(err.Error())
+				logger.Error(err.Error())
 				return err
 			}
 			defer func() {
@@ -102,12 +117,12 @@ func newCopyCommandAction(args CopyArguments) cli.ActionFunc {
 				filename = filepath.Join("/", dstPath.FilePath)
 			}
 
-			args.Logger.Debug("put local file to a remote repository", "src", srcPath, "repository", dstPath.Repository, "dst", filename)
+			logger.Debug("put local file to a remote repository", "src", srcPath, "repository", dstPath.Repository, "dst", filename)
 
-			err = args.Repository.PutFile(ctx, dstPath.Repository, filename, f)
+			err = client.PutFile(ctx, dstPath.Repository, filename, f)
 			if err != nil {
 				err := fmt.Errorf("cannot put local file '%s' to a remote repository '%s' as '%s': %v", srcPath, dstPath.Repository, filename, err)
-				args.Logger.Error(err.Error())
+				logger.Error(err.Error())
 				return err
 			}
 

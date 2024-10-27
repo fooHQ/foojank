@@ -1,10 +1,11 @@
-package agent
+package exec
 
 import (
 	"bufio"
 	"context"
 	"fmt"
 	"github.com/foojank/foojank/clients/vessel"
+	"github.com/foojank/foojank/internal/application/actions"
 	"github.com/foojank/foojank/internal/application/path"
 	"github.com/muesli/cancelreader"
 	"github.com/urfave/cli/v2"
@@ -13,12 +14,7 @@ import (
 	"sync"
 )
 
-type ExecArguments struct {
-	Logger *slog.Logger
-	Vessel *vessel.Client
-}
-
-func NewExecCommand(args ExecArguments) *cli.Command {
+func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "execute",
 		Args:      true,
@@ -29,16 +25,27 @@ func NewExecCommand(args ExecArguments) *cli.Command {
 				Value: "vessel",
 			},
 		},
-		Action: newExecuteCommandAction(args),
+		Action: action,
 	}
 }
 
-func newExecuteCommandAction(args ExecArguments) cli.ActionFunc {
+func action(c *cli.Context) error {
+	logger := actions.NewLogger(c)
+	nc, err := actions.NewNATSConnection(c, logger)
+	if err != nil {
+		return err
+	}
+
+	client := vessel.New(nc)
+	return execAction(logger, client)(c)
+}
+
+func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		cnt := c.Args().Len()
 		if cnt != 2 {
 			err := fmt.Errorf("command '%s' expects the following arguments: %s", c.Command.Name, c.Command.ArgsUsage)
-			args.Logger.Error(err.Error())
+			logger.Error(err.Error())
 			return err
 		}
 
@@ -49,57 +56,57 @@ func newExecuteCommandAction(args ExecArguments) cli.ActionFunc {
 		pkgPath, err := path.Parse(pkg)
 		if err != nil {
 			err := fmt.Errorf("invalid package path '%s': %v", pkg, err)
-			args.Logger.Error(err.Error())
+			logger.Error(err.Error())
 			return err
 		}
 
 		if pkgPath.IsLocal() {
 			err := fmt.Errorf("path '%s' is a local path, executing packages is only possible from a repository", pkgPath)
-			args.Logger.Error(err.Error())
+			logger.Error(err.Error())
 			return err
 		}
 
 		if pkgPath.IsDir() {
 			err := fmt.Errorf("path '%s' is a directory", pkgPath)
-			args.Logger.Error(err.Error())
+			logger.Error(err.Error())
 			return err
 		}
 
 		ctx := c.Context
 
-		service, err := args.Vessel.GetInfo(ctx, vessel.NewID(serviceName, id))
+		service, err := client.GetInfo(ctx, vessel.NewID(serviceName, id))
 		if err != nil {
 			err := fmt.Errorf("get info request failed: %v", err)
-			args.Logger.Error(err.Error())
+			logger.Error(err.Error())
 			return err
 		}
 
-		wid, err := args.Vessel.CreateWorker(ctx, service)
+		wid, err := client.CreateWorker(ctx, service)
 		if err != nil {
 			err := fmt.Errorf("create worker request failed: %v", err)
-			args.Logger.Error(err.Error())
+			logger.Error(err.Error())
 			return err
 		}
 
 		defer func() {
-			err := args.Vessel.DestroyWorker(context.Background(), service, wid)
+			err := client.DestroyWorker(context.Background(), service, wid)
 			if err != nil {
 				err := fmt.Errorf("destroy worker request failed: %v", err)
-				args.Logger.Error(err.Error())
+				logger.Error(err.Error())
 			}
 		}()
 
-		workerID, err := args.Vessel.GetWorker(ctx, service, wid)
+		workerID, err := client.GetWorker(ctx, service, wid)
 		if err != nil {
 			err := fmt.Errorf("get worker request failed: %v", err)
-			args.Logger.Error(err.Error())
+			logger.Error(err.Error())
 			return err
 		}
 
-		worker, err := args.Vessel.GetInfo(ctx, workerID)
+		worker, err := client.GetInfo(ctx, workerID)
 		if err != nil {
 			err := fmt.Errorf("get info request failed: %v", err)
-			args.Logger.Error(err.Error())
+			logger.Error(err.Error())
 			return err
 		}
 
@@ -120,17 +127,17 @@ func newExecuteCommandAction(args ExecArguments) cli.ActionFunc {
 		r, err := cancelreader.NewReader(os.Stdin)
 		if err != nil {
 			err := fmt.Errorf("cannot create a standard input reader %v", err)
-			args.Logger.Error(err.Error())
+			logger.Error(err.Error())
 			return err
 		}
 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			code, err := args.Vessel.Execute(ctx, worker, pkgPath.Repository, pkgPath.FilePath, stdinCh, stdoutCh)
+			code, err := client.Execute(ctx, worker, pkgPath.Repository, pkgPath.FilePath, stdinCh, stdoutCh)
 			if err != nil {
 				err := fmt.Errorf("execute request failed: %v", err)
-				args.Logger.Error(err.Error())
+				logger.Error(err.Error())
 			}
 
 			// Cancel stdin scanner to unblock the main loop.

@@ -1,24 +1,19 @@
-package agent
+package list
 
 import (
 	"context"
 	"fmt"
 	"github.com/foojank/foojank/clients/vessel"
+	"github.com/foojank/foojank/internal/application/actions"
 	"github.com/urfave/cli/v2"
 	"log/slog"
 	"time"
 )
 
-type ListArguments struct {
-	Logger *slog.Logger
-	Vessel *vessel.Client
-}
-
-func NewListCommand(args ListArguments) *cli.Command {
+func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:        "list",
 		Description: "List connected agents. The command broadcasts a service discovery message to agents with the specified service name and expects the response to arrive in a given time. Try changing the service name or increasing the default timeout if you are not seeing any connected agents.",
-		Action:      newListCommandAction(args),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "service-name",
@@ -29,10 +24,22 @@ func NewListCommand(args ListArguments) *cli.Command {
 				Value: 3 * time.Second,
 			},
 		},
+		Action: action,
 	}
 }
 
-func newListCommandAction(args ListArguments) cli.ActionFunc {
+func action(c *cli.Context) error {
+	logger := actions.NewLogger(c)
+	nc, err := actions.NewNATSConnection(c, logger)
+	if err != nil {
+		return err
+	}
+
+	client := vessel.New(nc)
+	return listAction(logger, client)(c)
+}
+
+func listAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		serviceName := c.String("service-name")
 		timeout := c.Duration("timeout")
@@ -51,10 +58,10 @@ func newListCommandAction(args ListArguments) cli.ActionFunc {
 			}
 		}()
 
-		err := args.Vessel.Discover(ctx, serviceName, outputCh)
+		err := client.Discover(ctx, serviceName, outputCh)
 		if err != nil {
 			err := fmt.Errorf("discovery request failed: %v", err)
-			args.Logger.Error(err.Error())
+			logger.Error(err.Error())
 			return err
 		}
 

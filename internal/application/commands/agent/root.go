@@ -1,23 +1,18 @@
 package agent
 
 import (
-	"github.com/foojank/foojank/clients/vessel"
+	"github.com/foojank/foojank/internal/application/commands/agent/exec"
+	"github.com/foojank/foojank/internal/application/commands/agent/list"
 	"github.com/urfave/cli/v2"
-	"log/slog"
 )
 
-type Arguments struct {
-	Logger *slog.Logger
-	Vessel *vessel.Client
-}
-
-func NewRootCommand(args Arguments) *cli.Command {
+func NewRootCommand() *cli.Command {
 	return &cli.Command{
 		Name:        "agent",
 		Description: "Command & control installed agents.",
 		Subcommands: []*cli.Command{
-			NewListCommand(ListArguments(args)),
-			NewExecCommand(ExecArguments(args)),
+			list.NewCommand(),
+			exec.NewCommand(),
 		},
 		HideHelpCommand: true,
 	}

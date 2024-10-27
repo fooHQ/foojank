@@ -1,24 +1,20 @@
 package repository
 
 import (
-	"github.com/foojank/foojank/clients/repository"
+	"github.com/foojank/foojank/internal/application/commands/repository/copy"
+	"github.com/foojank/foojank/internal/application/commands/repository/create"
+	"github.com/foojank/foojank/internal/application/commands/repository/list"
 	"github.com/urfave/cli/v2"
-	"log/slog"
 )
 
-type Arguments struct {
-	Logger     *slog.Logger
-	Repository *repository.Client
-}
-
-func NewRootCommand(args Arguments) *cli.Command {
+func NewRootCommand() *cli.Command {
 	return &cli.Command{
 		Name:        "repository",
 		Description: "Manage file repositories.",
 		Subcommands: []*cli.Command{
-			NewCreateCommand(CreateArguments(args)),
-			NewListCommand(ListArguments(args)),
-			NewCopyCommand(CopyArguments(args)),
+			create.NewCommand(),
+			list.NewCommand(),
+			copy.NewCommand(),
 		},
 		HideHelpCommand: true,
 	}
