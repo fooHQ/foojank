@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/foojank/foojank/internal/log"
 	"github.com/foojank/foojank/internal/services/vessel/decoder"
+	"github.com/foojank/foojank/internal/services/vessel/errcodes"
 	"github.com/foojank/foojank/internal/services/vessel/worker"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
@@ -53,7 +54,7 @@ loop:
 			case decoder.DestroyWorkerRequest:
 				_, ok := workers[v.ID]
 				if !ok {
-					_ = msg.ReplyError("400", "worker does not exist", nil)
+					_ = msg.ReplyError(errcodes.ErrWorkerNotFound, "worker does not exist", nil)
 					continue
 				}
 
@@ -63,12 +64,12 @@ loop:
 			case decoder.GetWorkerRequest:
 				w, ok := workers[v.ID]
 				if !ok {
-					_ = msg.ReplyError("400", "worker does not exist", nil)
+					_ = msg.ReplyError(errcodes.ErrWorkerNotFound, "worker does not exist", nil)
 					continue
 				}
 
 				if w.ServiceID() == "" {
-					_ = msg.ReplyError("400", "worker is starting", nil)
+					_ = msg.ReplyError(errcodes.ErrWorkerStarting, "worker is starting", nil)
 					continue
 				}
 

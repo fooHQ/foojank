@@ -6,6 +6,8 @@ const (
 	ErrEngineUnpack      = "400008"
 	ErrEngineRun         = "400009"
 	ErrRepositoryGetFile = "400010"
+	ErrWorkerNotFound    = "400011"
+	ErrWorkerStarting    = "400012"
 )
 
 const (
