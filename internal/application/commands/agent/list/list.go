@@ -44,19 +44,15 @@ func listAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 		serviceName := c.String("service-name")
 		timeout := c.Duration("timeout")
 
-		ctx, cancel := context.WithTimeout(c.Context, timeout)
-		defer cancel()
-
 		outputCh := make(chan vessel.Service)
 		go func() {
-			select {
-			case service := <-outputCh:
+			for service := range outputCh {
 				fmt.Printf("%#v\n", service)
-
-			case <-ctx.Done():
-				return
 			}
 		}()
+
+		ctx, cancel := context.WithTimeout(c.Context, timeout)
+		defer cancel()
 
 		err := client.Discover(ctx, serviceName, outputCh)
 		if err != nil {
@@ -64,6 +60,8 @@ func listAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 			logger.Error(err.Error())
 			return err
 		}
+
+		close(outputCh)
 
 		return nil
 	}
