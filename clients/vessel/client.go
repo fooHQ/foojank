@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/foojank/foojank/proto"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
@@ -47,6 +46,15 @@ type Service struct {
 	ID        ID
 	Metadata  map[string]string
 	Endpoints map[string]Endpoint
+}
+
+type Error struct {
+	Code    string
+	Message string
+}
+
+func (e *Error) Error() string {
+	return e.Message + " " + "(" + e.Code + ")"
 }
 
 func (c *Client) Discover(ctx context.Context, serviceName string, outputCh chan<- Service) error {
@@ -333,7 +341,11 @@ func (c *Client) request(ctx context.Context, msg *nats.Msg) (*nats.Msg, error) 
 	code := resp.Header.Get(micro.ErrorCodeHeader)
 	errMsg := resp.Header.Get(micro.ErrorHeader)
 	if code != "" || errMsg != "" {
-		return nil, fmt.Errorf("[%s] %s", code, errMsg)
+		err := &Error{
+			Code:    code,
+			Message: errMsg,
+		}
+		return nil, err
 	}
 
 	return resp, nil
