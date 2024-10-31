@@ -1,0 +1,5 @@
+Execute command tells an agent to execute a script stored in a package.
+
+The client attempts to discover the agent by sending a discovery message to a NATS subject `$SRV.INFO.<service-name>.<id>`
+expecting a response. If your agents have been compiled using a custom service name, you can tell the client to use that name with
+`--service-name`.
