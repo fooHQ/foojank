@@ -3,15 +3,18 @@ package exec
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/foojank/foojank/clients/vessel"
 	"github.com/foojank/foojank/internal/application/actions"
 	"github.com/foojank/foojank/internal/application/path"
+	"github.com/foojank/foojank/internal/services/vessel/errcodes"
 	"github.com/muesli/cancelreader"
 	"github.com/urfave/cli/v2"
 	"log/slog"
 	"os"
 	"sync"
+	"time"
 )
 
 func NewCommand() *cli.Command {
@@ -96,11 +99,23 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 			}
 		}()
 
-		workerID, err := client.GetWorker(ctx, service, wid)
-		if err != nil {
-			err := fmt.Errorf("get worker request failed: %v", err)
-			logger.Error(err.Error())
-			return err
+		var attempts = 3
+		var workerID vessel.ID
+		for attempt := range attempts + 1 {
+			var err error
+			workerID, err = client.GetWorker(ctx, service, wid)
+			if err != nil {
+				var errVessel *vessel.Error
+				if errors.As(err, &errVessel) && errVessel.Code == errcodes.ErrWorkerStarting && attempt < attempts {
+					logger.Debug("get worker request failed (attempt %d/%d): %v", attempt, attempts, err)
+					time.Sleep(300 * time.Millisecond)
+					continue
+				}
+
+				err := fmt.Errorf("get worker request failed: %v", err)
+				logger.Error(err.Error())
+				return err
+			}
 		}
 
 		worker, err := client.GetInfo(ctx, workerID)
