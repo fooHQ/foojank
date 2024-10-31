@@ -107,7 +107,7 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 			if err != nil {
 				var errVessel *vessel.Error
 				if errors.As(err, &errVessel) && errVessel.Code == errcodes.ErrWorkerStarting && attempt < attempts {
-					logger.Debug("get worker request failed (attempt %d/%d): %v", attempt, attempts, err)
+					logger.Debug("get worker request failed", "attempt", attempt, "attempts", attempts, "error", err)
 					time.Sleep(300 * time.Millisecond)
 					continue
 				}
