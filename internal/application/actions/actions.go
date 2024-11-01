@@ -14,7 +14,7 @@ import (
 
 func CommandNotFound(ctx context.Context, c *cli.Command, s string) {
 	logger := NewLogger(ctx, c)
-	msg := fmt.Sprintf("command '%s %s' does not exist", c.Name, s)
+	msg := fmt.Sprintf("command '%s %s' does not exist", c.FullName(), s)
 	logger.Error(msg)
 	os.Exit(1)
 }
