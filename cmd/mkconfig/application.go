@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/foojank/foojank"
 	"github.com/goccy/go-yaml"
 	"github.com/urfave/cli/v3"
 	"os"
@@ -28,6 +29,10 @@ func NewApplication() *cli.Command {
 			err = yaml.Unmarshal(b, &data)
 			if err != nil {
 				return err
+			}
+
+			if data.Service.Version == "" {
+				data.Service.Version = foojank.Version()
 			}
 
 			template := NewTemplate()

@@ -1,6 +1,7 @@
 package application
 
 import (
+	"github.com/foojank/foojank"
 	"github.com/foojank/foojank/internal/application/actions"
 	"github.com/foojank/foojank/internal/application/commands/agent"
 	_package "github.com/foojank/foojank/internal/application/commands/package"
@@ -13,7 +14,7 @@ func New() *cli.Command {
 	return &cli.Command{
 		Name:    "foojank",
 		Usage:   "A cross-platform command and control (C2) framework",
-		Version: "0.1.0", // TODO: from config!
+		Version: foojank.Version(),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    flags.Server,
