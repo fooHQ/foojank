@@ -1,12 +1,13 @@
 package copy
 
 import (
+	"context"
 	"fmt"
 	"github.com/foojank/foojank/clients/repository"
 	"github.com/foojank/foojank/internal/application/actions"
 	"github.com/foojank/foojank/internal/application/path"
 	"github.com/nats-io/nats.go/jetstream"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -14,17 +15,17 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:        "copy",
-		Args:        true,
+		Name: "copy",
+		//Args:        true,
 		ArgsUsage:   "<file-path> <destination-path>",
 		Description: "Copy file from/to a repository",
 		Action:      action,
 	}
 }
 
-func action(c *cli.Context) error {
-	logger := actions.NewLogger(c)
-	nc, err := actions.NewNATSConnection(c, logger)
+func action(ctx context.Context, c *cli.Command) error {
+	logger := actions.NewLogger(ctx, c)
+	nc, err := actions.NewNATSConnection(ctx, c, logger)
 	if err != nil {
 		return err
 	}
@@ -37,7 +38,7 @@ func action(c *cli.Context) error {
 	}
 
 	client := repository.New(js)
-	return copyAction(logger, client)(c)
+	return copyAction(logger, client)(ctx, c)
 }
 
 func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
@@ -53,10 +54,10 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 	// [Destination is a local directory]
 	// repository:/path/to/file ./ => file
 	// repository:/path/to/file repository:/path/to/file ./ => file (!!! SHOW WARNING THAT THIS WILL OVERWRITE THE FIRST FILE !!!)
-	return func(c *cli.Context) error {
+	return func(ctx context.Context, c *cli.Command) error {
 		cnt := c.Args().Len()
 		if cnt != 2 {
-			err := fmt.Errorf("command '%s' expects the following arguments: %s", c.Command.Name, c.Command.ArgsUsage)
+			err := fmt.Errorf("command '%s' expects the following arguments: %s", c.Name, c.ArgsUsage)
 			logger.Error(err.Error())
 			return err
 		}
@@ -95,8 +96,6 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 			logger.Error(err.Error())
 			return err
 		}
-
-		ctx := c.Context
 
 		// Copy local file to a remote repository
 		if srcPath.IsLocal() {

@@ -1,16 +1,17 @@
 package actions
 
 import (
+	"context"
 	"crypto/tls"
 	"github.com/foojank/foojank/internal/application/flags"
 	"github.com/lmittmann/tint"
 	"github.com/nats-io/nats.go"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"log/slog"
 	"os"
 )
 
-func NewLogger(c *cli.Context) *slog.Logger {
+func NewLogger(ctx context.Context, c *cli.Command) *slog.Logger {
 	level := c.Int(flags.LogLevel)
 	return slog.New(tint.NewHandler(os.Stderr, &tint.Options{
 		Level:   slog.Level(level),
@@ -18,7 +19,7 @@ func NewLogger(c *cli.Context) *slog.Logger {
 	}))
 }
 
-func NewNATSConnection(c *cli.Context, logger *slog.Logger) (*nats.Conn, error) {
+func NewNATSConnection(ctx context.Context, c *cli.Command, logger *slog.Logger) (*nats.Conn, error) {
 	server := c.String(flags.Server)
 	user := c.String(flags.User)
 	password := c.String(flags.Password)

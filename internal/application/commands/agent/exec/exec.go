@@ -11,7 +11,7 @@ import (
 	"github.com/foojank/foojank/internal/application/path"
 	"github.com/foojank/foojank/internal/services/vessel/errcodes"
 	"github.com/muesli/cancelreader"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"log/slog"
 	"os"
 	"sync"
@@ -25,8 +25,8 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:        "execute",
 		Description: description,
-		Args:        true,
-		ArgsUsage:   "<id> <package-path>",
+		//Args:        true,
+		ArgsUsage: "<id> <package-path>",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "service-name",
@@ -37,22 +37,22 @@ func NewCommand() *cli.Command {
 	}
 }
 
-func action(c *cli.Context) error {
-	logger := actions.NewLogger(c)
-	nc, err := actions.NewNATSConnection(c, logger)
+func action(ctx context.Context, c *cli.Command) error {
+	logger := actions.NewLogger(ctx, c)
+	nc, err := actions.NewNATSConnection(ctx, c, logger)
 	if err != nil {
 		return err
 	}
 
 	client := vessel.New(nc)
-	return execAction(logger, client)(c)
+	return execAction(logger, client)(ctx, c)
 }
 
 func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
-	return func(c *cli.Context) error {
+	return func(ctx context.Context, c *cli.Command) error {
 		cnt := c.Args().Len()
 		if cnt != 2 {
-			err := fmt.Errorf("command '%s' expects the following arguments: %s", c.Command.Name, c.Command.ArgsUsage)
+			err := fmt.Errorf("command '%s' expects the following arguments: %s", c.Name, c.ArgsUsage)
 			logger.Error(err.Error())
 			return err
 		}
@@ -79,8 +79,6 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 			logger.Error(err.Error())
 			return err
 		}
-
-		ctx := c.Context
 
 		service, err := client.GetInfo(ctx, vessel.NewID(serviceName, id))
 		if err != nil {

@@ -1,27 +1,28 @@
 package list
 
 import (
+	"context"
 	"fmt"
 	"github.com/foojank/foojank/clients/repository"
 	"github.com/foojank/foojank/internal/application/actions"
 	"github.com/nats-io/nats.go/jetstream"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"log/slog"
 )
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:        "list",
-		Args:        true,
+		Name: "list",
+		//Args:        true,
 		ArgsUsage:   "[repository]",
 		Description: "List repositories or their contents.",
 		Action:      action,
 	}
 }
 
-func action(c *cli.Context) error {
-	logger := actions.NewLogger(c)
-	nc, err := actions.NewNATSConnection(c, logger)
+func action(ctx context.Context, c *cli.Command) error {
+	logger := actions.NewLogger(ctx, c)
+	nc, err := actions.NewNATSConnection(ctx, c, logger)
 	if err != nil {
 		return err
 	}
@@ -34,13 +35,11 @@ func action(c *cli.Context) error {
 	}
 
 	client := repository.New(js)
-	return listAction(logger, client)(c)
+	return listAction(logger, client)(ctx, c)
 }
 
 func listAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
-	return func(c *cli.Context) error {
-		ctx := c.Context
-
+	return func(ctx context.Context, c *cli.Command) error {
 		if c.Args().Len() > 0 {
 			for _, r := range c.Args().Slice() {
 				files, err := client.ListFiles(ctx, r)

@@ -1,10 +1,11 @@
 package build
 
 import (
+	"context"
 	"fmt"
 	"github.com/foojank/foojank/fzz"
 	"github.com/foojank/foojank/internal/application/actions"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"log/slog"
 	"path/filepath"
 )
@@ -13,8 +14,8 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:        "build",
 		Description: "Build a package",
-		Args:        true,
-		ArgsUsage:   "<dir>",
+		//Args:        true,
+		ArgsUsage: "<dir>",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name: "name",
@@ -24,16 +25,16 @@ func NewCommand() *cli.Command {
 	}
 }
 
-func action(c *cli.Context) error {
-	logger := actions.NewLogger(c)
-	return buildAction(logger)(c)
+func action(ctx context.Context, c *cli.Command) error {
+	logger := actions.NewLogger(ctx, c)
+	return buildAction(logger)(ctx, c)
 }
 
 func buildAction(logger *slog.Logger) cli.ActionFunc {
-	return func(c *cli.Context) error {
+	return func(ctx context.Context, c *cli.Command) error {
 		cnt := c.Args().Len()
 		if cnt != 1 {
-			err := fmt.Errorf("command '%s' expects the following arguments: %s", c.Command.Name, c.Command.ArgsUsage)
+			err := fmt.Errorf("command '%s' expects the following arguments: %s", c.Name, c.ArgsUsage)
 			logger.Error(err.Error())
 			return err
 		}

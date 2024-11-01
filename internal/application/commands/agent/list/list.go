@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/foojank/foojank/clients/vessel"
 	"github.com/foojank/foojank/internal/application/actions"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"log/slog"
 	"time"
 )
@@ -28,19 +28,19 @@ func NewCommand() *cli.Command {
 	}
 }
 
-func action(c *cli.Context) error {
-	logger := actions.NewLogger(c)
-	nc, err := actions.NewNATSConnection(c, logger)
+func action(ctx context.Context, c *cli.Command) error {
+	logger := actions.NewLogger(ctx, c)
+	nc, err := actions.NewNATSConnection(ctx, c, logger)
 	if err != nil {
 		return err
 	}
 
 	client := vessel.New(nc)
-	return listAction(logger, client)(c)
+	return listAction(logger, client)(ctx, c)
 }
 
 func listAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
-	return func(c *cli.Context) error {
+	return func(ctx context.Context, c *cli.Command) error {
 		serviceName := c.String("service-name")
 		timeout := c.Duration("timeout")
 
@@ -51,7 +51,7 @@ func listAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 			}
 		}()
 
-		ctx, cancel := context.WithTimeout(c.Context, timeout)
+		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
 
 		err := client.Discover(ctx, serviceName, outputCh)

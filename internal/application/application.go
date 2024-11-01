@@ -1,23 +1,20 @@
 package application
 
 import (
-	"fmt"
-	"github.com/foojank/foojank/internal/application/actions"
 	"github.com/foojank/foojank/internal/application/commands/agent"
 	_package "github.com/foojank/foojank/internal/application/commands/package"
 	"github.com/foojank/foojank/internal/application/commands/repository"
 	"github.com/foojank/foojank/internal/application/flags"
-	"github.com/urfave/cli/v2"
-	"os"
+	"github.com/urfave/cli/v3"
 )
 
-func New() *cli.App {
-	return &cli.App{
-		Name:     "foojank",
-		HelpName: "foojank",
-		Usage:    "A cross-platform command and control (C2) framework",
-		Args:     true,
-		Version:  "0.1.0", // TODO: from config!
+func New() *cli.Command {
+	return &cli.Command{
+		Name: "foojank",
+		//HelpName: "foojank",
+		Usage: "A cross-platform command and control (C2) framework",
+		//Args:     true,
+		Version: "0.1.0", // TODO: from config!
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    flags.Server,
@@ -46,12 +43,12 @@ func New() *cli.App {
 			_package.NewCommand(),
 			repository.NewCommand(),
 		},
-		CommandNotFound: func(c *cli.Context, s string) {
+		/*CommandNotFound: func(c *cli.Context, s string) {
 			logger := actions.NewLogger(c)
 			msg := fmt.Sprintf("command '%s %s' does not exist", c.Command.Name, s)
 			logger.Error(msg)
 			os.Exit(1)
-		},
+		},*/
 		HideHelpCommand: true,
 	}
 }

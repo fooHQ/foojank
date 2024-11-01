@@ -1,11 +1,12 @@
 package create
 
 import (
+	"context"
 	"fmt"
 	"github.com/foojank/foojank/clients/repository"
 	"github.com/foojank/foojank/internal/application/actions"
 	"github.com/nats-io/nats.go/jetstream"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"log/slog"
 )
 
@@ -13,8 +14,8 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:        "create",
 		Description: "Create a repository",
-		Args:        true,
-		ArgsUsage:   "<name>",
+		//Args:        true,
+		ArgsUsage: "<name>",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name: "description",
@@ -24,9 +25,9 @@ func NewCommand() *cli.Command {
 	}
 }
 
-func action(c *cli.Context) error {
-	logger := actions.NewLogger(c)
-	nc, err := actions.NewNATSConnection(c, logger)
+func action(ctx context.Context, c *cli.Command) error {
+	logger := actions.NewLogger(ctx, c)
+	nc, err := actions.NewNATSConnection(ctx, c, logger)
 	if err != nil {
 		return err
 	}
@@ -39,14 +40,14 @@ func action(c *cli.Context) error {
 	}
 
 	client := repository.New(js)
-	return createAction(logger, client)(c)
+	return createAction(logger, client)(ctx, c)
 }
 
 func createAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
-	return func(c *cli.Context) error {
+	return func(ctx context.Context, c *cli.Command) error {
 		cnt := c.Args().Len()
 		if cnt != 1 {
-			err := fmt.Errorf("command '%s' expects the following arguments: %s", c.Command.Name, c.Command.ArgsUsage)
+			err := fmt.Errorf("command '%s' expects the following arguments: %s", c.Name, c.ArgsUsage)
 			logger.Error(err.Error())
 			return err
 		}
@@ -54,7 +55,7 @@ func createAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc
 		name := c.Args().Get(0)
 		description := c.String("description")
 
-		err := client.Create(c.Context, name, description)
+		err := client.Create(ctx, name, description)
 		if err != nil {
 			err := fmt.Errorf("cannot create repository '%s': %v", name, err)
 			logger.Error(err.Error())
