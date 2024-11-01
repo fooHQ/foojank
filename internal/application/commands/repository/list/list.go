@@ -12,10 +12,11 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:        "list",
-		ArgsUsage:   "[repository]",
-		Description: "List repositories or their contents.",
-		Action:      action,
+		Name:      "list",
+		ArgsUsage: "[repository]",
+		Usage:     "list repositories or their contents",
+		Action:    action,
+		Aliases:   []string{"ls"},
 	}
 }
 

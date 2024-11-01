@@ -12,9 +12,9 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:        "create",
-		Description: "Create a repository",
-		ArgsUsage:   "<name>",
+		Name:      "create",
+		ArgsUsage: "<name>",
+		Usage:     "create a new repository",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name: "description",

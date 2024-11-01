@@ -15,10 +15,11 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:        "copy",
-		ArgsUsage:   "<file-path> <destination-path>",
-		Description: "Copy file from/to a repository",
-		Action:      action,
+		Name:      "copy",
+		ArgsUsage: "<file-path> <destination-path>",
+		Usage:     "copy files between local filesystem and a repository",
+		Action:    action,
+		Aliases:   []string{"cp"},
 	}
 }
 

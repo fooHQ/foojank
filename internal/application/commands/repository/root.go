@@ -12,7 +12,7 @@ import (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:        "repository",
-		Description: "Manage file repositories.",
+		Description: "Manage repositories.",
 		Commands: []*cli.Command{
 			create.NewCommand(),
 			destroy.NewCommand(),

@@ -12,9 +12,9 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:        "destroy",
-		ArgsUsage:   "[repository]",
-		Description: "Destroy a repository.",
+		Name:      "destroy",
+		ArgsUsage: "[repository]",
+		Usage:     "destroy an empty repository",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "force",
