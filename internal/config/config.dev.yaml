@@ -1,0 +1,9 @@
+server:
+  url: wss://localhost
+  username: vessel
+  password: vesselpassword
+  # Skips TLS verification
+  insecure: true
+service:
+  name: vessel
+  version: 1.0.0
