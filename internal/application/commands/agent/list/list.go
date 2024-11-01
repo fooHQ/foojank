@@ -12,8 +12,8 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:        "list",
-		Description: "List connected agents. The command broadcasts a service discovery message to agents with the specified service name and expects the response to arrive in a given time. Try changing the service name or increasing the default timeout if you are not seeing any connected agents.",
+		Name:  "list",
+		Usage: "List active agents",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "service-name",
@@ -24,7 +24,8 @@ func NewCommand() *cli.Command {
 				Value: 3 * time.Second,
 			},
 		},
-		Action: action,
+		Action:  action,
+		Aliases: []string{"ls"},
 	}
 }
 

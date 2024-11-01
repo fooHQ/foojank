@@ -55,7 +55,7 @@ func NewNATSConnection(ctx context.Context, c *cli.Command, logger *slog.Logger)
 
 	nc, err := opts.Connect()
 	if err != nil {
-		logger.Error("cannot connect to NATS server", "error", err, "server", server, "username", user)
+		logger.Error("cannot connect to NATS server", "server", server, "username", user, "error", err)
 		return nil, err
 	}
 

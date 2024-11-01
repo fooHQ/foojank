@@ -12,12 +12,13 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:        "build",
-		Description: "Build a package",
-		ArgsUsage:   "<dir>",
+		Name:      "build",
+		ArgsUsage: "<dir>",
+		Usage:     "Build a new package",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name: "name",
+				Name:  "name",
+				Usage: "set output name",
 			},
 		},
 		Action: action,

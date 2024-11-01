@@ -14,11 +14,11 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "destroy",
 		ArgsUsage: "[repository]",
-		Usage:     "destroy an empty repository",
+		Usage:     "Destroy an empty repository",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "force",
-				Usage:   "force delete non-empty repository",
+				Usage:   "force delete of non-empty repository",
 				Aliases: []string{"f"},
 			},
 		},

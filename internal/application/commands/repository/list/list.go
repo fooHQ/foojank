@@ -14,7 +14,7 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "list",
 		ArgsUsage: "[repository]",
-		Usage:     "list repositories or their contents",
+		Usage:     "List repositories or their contents",
 		Action:    action,
 		Aliases:   []string{"ls"},
 	}

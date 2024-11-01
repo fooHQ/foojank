@@ -3,7 +3,6 @@ package exec
 import (
 	"bufio"
 	"context"
-	_ "embed"
 	"errors"
 	"fmt"
 	"github.com/foojank/foojank/clients/vessel"
@@ -18,21 +17,19 @@ import (
 	"time"
 )
 
-//go:embed "description.txt"
-var description string
-
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:        "execute",
-		Description: description,
-		ArgsUsage:   "<id> <package-path>",
+		Name:      "execute",
+		ArgsUsage: "<id> <package-path>",
+		Usage:     "Run a script on an agent",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "service-name",
 				Value: "vessel",
 			},
 		},
-		Action: action,
+		Action:  action,
+		Aliases: []string{"exec"},
 	}
 }
 

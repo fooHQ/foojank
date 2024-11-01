@@ -17,7 +17,7 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "copy",
 		ArgsUsage: "<file-path> <destination-path>",
-		Usage:     "copy files between local filesystem and a repository",
+		Usage:     "Copy files between local filesystem and a repository",
 		Action:    action,
 		Aliases:   []string{"cp"},
 	}

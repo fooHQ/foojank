@@ -9,8 +9,8 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:        "agent",
-		Description: "Command & control installed agents.",
+		Name:  "agent",
+		Usage: "Manage agents",
 		Commands: []*cli.Command{
 			list.NewCommand(),
 			exec.NewCommand(),

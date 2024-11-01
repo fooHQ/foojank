@@ -11,8 +11,8 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:        "repository",
-		Description: "Manage repositories.",
+		Name:  "repository",
+		Usage: "Manage repositories",
 		Commands: []*cli.Command{
 			create.NewCommand(),
 			destroy.NewCommand(),

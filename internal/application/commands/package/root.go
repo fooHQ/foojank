@@ -8,8 +8,8 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:        "package",
-		Description: "Manage fzz packages.",
+		Name:  "package",
+		Usage: "Manage packages",
 		Commands: []*cli.Command{
 			build.NewCommand(),
 		},
