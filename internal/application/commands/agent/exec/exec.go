@@ -25,8 +25,7 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:        "execute",
 		Description: description,
-		//Args:        true,
-		ArgsUsage: "<id> <package-path>",
+		ArgsUsage:   "<id> <package-path>",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "service-name",

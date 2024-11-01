@@ -15,8 +15,7 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name: "copy",
-		//Args:        true,
+		Name:        "copy",
 		ArgsUsage:   "<file-path> <destination-path>",
 		Description: "Copy file from/to a repository",
 		Action:      action,

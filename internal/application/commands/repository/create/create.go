@@ -14,8 +14,7 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:        "create",
 		Description: "Create a repository",
-		//Args:        true,
-		ArgsUsage: "<name>",
+		ArgsUsage:   "<name>",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name: "description",

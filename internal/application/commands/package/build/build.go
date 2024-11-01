@@ -14,8 +14,7 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:        "build",
 		Description: "Build a package",
-		//Args:        true,
-		ArgsUsage: "<dir>",
+		ArgsUsage:   "<dir>",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name: "name",
