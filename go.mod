@@ -6,6 +6,7 @@ toolchain go1.22.3
 
 require (
 	capnproto.org/go/capnp/v3 v3.0.1-alpha.2
+	github.com/goccy/go-yaml v1.13.2
 	github.com/lmittmann/tint v1.0.5
 	github.com/muesli/cancelreader v0.2.2
 	github.com/nats-io/nats-server/v2 v2.10.21
@@ -20,8 +21,11 @@ require (
 require (
 	github.com/colega/zeropool v0.0.0-20230505084239-6fb4a4f75381 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/fatih/color v1.18.0 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/minio/highwayhash v1.0.3 // indirect
 	github.com/nats-io/jwt/v2 v2.7.2 // indirect
 	github.com/nats-io/nkeys v0.4.7 // indirect
