@@ -53,6 +53,9 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
 		id := c.Args().Get(0)
 		serviceName := c.String("service-name")
 
@@ -149,7 +152,7 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 		go func() {
 			defer wg.Done()
 			code, err := client.Execute(ctx, worker, pkgPath.Repository, pkgPath.FilePath, stdinCh, stdoutCh)
-			if err != nil {
+			if err != nil && !errors.Is(err, context.Canceled) {
 				err := fmt.Errorf("execute request failed: %v", err)
 				logger.Error(err.Error())
 			}
@@ -168,6 +171,7 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 			}
 		}
 
+		cancel()
 		close(stdoutCh)
 		wg.Wait()
 
