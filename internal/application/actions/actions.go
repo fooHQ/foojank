@@ -43,19 +43,19 @@ func NewNATSConnection(ctx context.Context, c *cli.Command, logger *slog.Logger)
 		AllowReconnect: true,
 		MaxReconnect:   -1,
 		ConnectedCB: func(conn *nats.Conn) {
-			logger.Info("connected to NATS", "server", server, "user", user)
+			logger.Info("connected to NATS", "server", server, "username", user)
 		},
 		ReconnectedCB: func(conn *nats.Conn) {
-			logger.Info("reconnected to NATS", "server", server, "user", user)
+			logger.Info("reconnected to NATS", "server", server, "username", user)
 		},
 		DisconnectedErrCB: func(conn *nats.Conn, err error) {
-			logger.Warn("disconnected from NATS", "error", err, "server", server, "user", user)
+			logger.Warn("disconnected from NATS", "error", err, "server", server, "username", user)
 		},
 	}
 
 	nc, err := opts.Connect()
 	if err != nil {
-		logger.Error("cannot connect to NATS server", "error", err, "server", server, "user", user)
+		logger.Error("cannot connect to NATS server", "error", err, "server", server, "username", user)
 		return nil, err
 	}
 
