@@ -21,7 +21,7 @@ func NewLogger(ctx context.Context, c *cli.Command) *slog.Logger {
 
 func NewNATSConnection(ctx context.Context, c *cli.Command, logger *slog.Logger) (*nats.Conn, error) {
 	server := c.String(flags.Server)
-	user := c.String(flags.User)
+	user := c.String(flags.Username)
 	password := c.String(flags.Password)
 	opts := nats.Options{
 		Url:      server,

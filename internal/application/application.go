@@ -23,7 +23,7 @@ func New() *cli.Command {
 				Aliases: []string{"s"},
 			},
 			&cli.StringFlag{
-				Name:    flags.User,
+				Name:    flags.Username,
 				Usage:   "authenticate to the server as user",
 				Aliases: []string{"u"},
 			},

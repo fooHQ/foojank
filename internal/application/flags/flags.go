@@ -2,7 +2,7 @@ package flags
 
 const (
 	Server   = "server"
-	User     = "user"
+	Username = "username"
 	Password = "password"
 	LogLevel = "log-level"
 )
