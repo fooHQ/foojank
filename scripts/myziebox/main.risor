@@ -49,7 +49,11 @@ func main() {
     for {
         line := read_line(os.stdin)
         args := strings.split(line, " ")
-        c := args[0]
+        c := strings.trim_space(args[0])
+
+        if c == "" {
+            continue
+        }
 
         if len(args) > 1 {
             args = args[1:]
