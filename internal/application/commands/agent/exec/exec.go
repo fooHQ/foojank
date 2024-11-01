@@ -39,6 +39,13 @@ func NewCommand() *cli.Command {
 
 func action(ctx context.Context, c *cli.Command) error {
 	logger := actions.NewLogger(ctx, c)
+
+	if c.Args().Len() != 2 {
+		err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
+		logger.Error(err.Error())
+		return err
+	}
+
 	nc, err := actions.NewNATSConnection(ctx, c, logger)
 	if err != nil {
 		return err
@@ -50,13 +57,6 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		cnt := c.Args().Len()
-		if cnt != 2 {
-			err := fmt.Errorf("command '%s' expects the following arguments: %s", c.Name, c.ArgsUsage)
-			logger.Error(err.Error())
-			return err
-		}
-
 		id := c.Args().Get(0)
 		serviceName := c.String("service-name")
 

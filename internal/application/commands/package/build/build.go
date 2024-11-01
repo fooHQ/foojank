@@ -27,18 +27,18 @@ func NewCommand() *cli.Command {
 
 func action(ctx context.Context, c *cli.Command) error {
 	logger := actions.NewLogger(ctx, c)
+
+	if c.Args().Len() != 1 {
+		err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
+		logger.Error(err.Error())
+		return err
+	}
+
 	return buildAction(logger)(ctx, c)
 }
 
 func buildAction(logger *slog.Logger) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		cnt := c.Args().Len()
-		if cnt != 1 {
-			err := fmt.Errorf("command '%s' expects the following arguments: %s", c.Name, c.ArgsUsage)
-			logger.Error(err.Error())
-			return err
-		}
-
 		src := c.Args().Get(0)
 		name := c.String("name")
 		if name == "" {
