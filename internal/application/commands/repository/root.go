@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"github.com/foojank/foojank/internal/application/actions"
 	"github.com/foojank/foojank/internal/application/commands/repository/copy"
 	"github.com/foojank/foojank/internal/application/commands/repository/create"
 	"github.com/foojank/foojank/internal/application/commands/repository/list"
@@ -16,6 +17,7 @@ func NewCommand() *cli.Command {
 			list.NewCommand(),
 			copy.NewCommand(),
 		},
+		CommandNotFound: actions.CommandNotFound,
 		HideHelpCommand: true,
 	}
 }

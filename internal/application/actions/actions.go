@@ -3,6 +3,7 @@ package actions
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"github.com/foojank/foojank/internal/application/flags"
 	"github.com/lmittmann/tint"
 	"github.com/nats-io/nats.go"
@@ -10,6 +11,13 @@ import (
 	"log/slog"
 	"os"
 )
+
+func CommandNotFound(ctx context.Context, c *cli.Command, s string) {
+	logger := NewLogger(ctx, c)
+	msg := fmt.Sprintf("command '%s %s' does not exist", c.Name, s)
+	logger.Error(msg)
+	os.Exit(1)
+}
 
 func NewLogger(ctx context.Context, c *cli.Command) *slog.Logger {
 	level := c.Int(flags.LogLevel)

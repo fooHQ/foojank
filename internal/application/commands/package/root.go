@@ -1,6 +1,7 @@
 package _package
 
 import (
+	"github.com/foojank/foojank/internal/application/actions"
 	"github.com/foojank/foojank/internal/application/commands/package/build"
 	"github.com/urfave/cli/v3"
 )
@@ -12,6 +13,7 @@ func NewCommand() *cli.Command {
 		Commands: []*cli.Command{
 			build.NewCommand(),
 		},
+		CommandNotFound: actions.CommandNotFound,
 		HideHelpCommand: true,
 	}
 }

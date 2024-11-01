@@ -1,6 +1,7 @@
 package application
 
 import (
+	"github.com/foojank/foojank/internal/application/actions"
 	"github.com/foojank/foojank/internal/application/commands/agent"
 	_package "github.com/foojank/foojank/internal/application/commands/package"
 	"github.com/foojank/foojank/internal/application/commands/repository"
@@ -43,12 +44,7 @@ func New() *cli.Command {
 			_package.NewCommand(),
 			repository.NewCommand(),
 		},
-		/*CommandNotFound: func(c *cli.Context, s string) {
-			logger := actions.NewLogger(c)
-			msg := fmt.Sprintf("command '%s %s' does not exist", c.Command.Name, s)
-			logger.Error(msg)
-			os.Exit(1)
-		},*/
+		CommandNotFound: actions.CommandNotFound,
 		HideHelpCommand: true,
 	}
 }
