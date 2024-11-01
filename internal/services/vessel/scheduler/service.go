@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"github.com/foojank/foojank/internal/config"
 	"github.com/foojank/foojank/internal/log"
 	"github.com/foojank/foojank/internal/services/vessel/decoder"
 	"github.com/foojank/foojank/internal/services/vessel/errcodes"
@@ -117,8 +118,8 @@ func (s *Service) createWorker(ctx context.Context, workerID uint64, eventCh cha
 	log.Debug("creating a new worker id=%d", workerID)
 	w := worker.New(worker.Arguments{
 		ID:         workerID,
-		Name:       "vessel-worker", // TODO: configurable
-		Version:    "0.1.0",         // TODO: configurable
+		Name:       config.ServiceWorkerName,
+		Version:    config.ServiceVersion,
 		Connection: s.args.Connection,
 		Stream:     s.args.Stream,
 		EventCh:    eventCh,

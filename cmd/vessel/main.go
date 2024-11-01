@@ -26,16 +26,16 @@ func main() {
 	}
 
 	log.Debug("started")
-	log.Debug("url=%s user=%s", config.NatsURL, config.NatsUser)
+	log.Debug("url=%s user=%s", config.ServerURL, config.ServerUsername)
 	defer log.Debug("stopped")
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
 	opts := nats.Options{
-		Url:      config.NatsURL,
-		User:     config.NatsUser,
-		Password: config.NatsPassword,
+		Url:      config.ServerURL,
+		User:     config.ServerUsername,
+		Password: config.ServerPassword,
 		// TODO: delete before the release!
 		TLSConfig: &tls.Config{
 			InsecureSkipVerify: true,
@@ -57,8 +57,8 @@ func main() {
 	}
 
 	err = vessel.New(vessel.Arguments{
-		Name:    config.ConnectorName,
-		Version: config.ConnectorVersion,
+		Name:    config.ServiceName,
+		Version: config.ServiceVersion,
 		Metadata: map[string]string{
 			"os":       runtime.GOOS,
 			"user":     usr.Username,
