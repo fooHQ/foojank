@@ -95,6 +95,20 @@ func (c *Client) GetFile(ctx context.Context, repository, filename string) (*Fil
 	}, nil
 }
 
+func (c *Client) DeleteFile(ctx context.Context, repository, filename string) error {
+	s, err := c.js.ObjectStore(ctx, repository)
+	if err != nil {
+		return err
+	}
+
+	err = s.Delete(ctx, filename)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
 func (c *Client) ListFiles(ctx context.Context, repository string) ([]*File, error) {
 	s, err := c.js.ObjectStore(ctx, repository)
 	if err != nil {
