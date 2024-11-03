@@ -43,7 +43,7 @@ func NewNATSConnection(ctx context.Context, c *cli.Command, logger *slog.Logger)
 		AllowReconnect: true,
 		MaxReconnect:   -1,
 		ConnectedCB: func(conn *nats.Conn) {
-			logger.Info("connected to NATS", "server", server, "username", user)
+			logger.Debug("connected to NATS", "server", server, "username", user)
 		},
 		ReconnectedCB: func(conn *nats.Conn) {
 			logger.Info("reconnected to NATS", "server", server, "username", user)
