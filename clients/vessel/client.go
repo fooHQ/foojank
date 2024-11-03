@@ -25,6 +25,10 @@ type ID struct {
 	serviceID   string
 }
 
+func (i ID) String() string {
+	return i.serviceName + "." + i.serviceID
+}
+
 func (i ID) infoSubject() string {
 	subject, _ := micro.ControlSubject(micro.InfoVerb, i.serviceName, i.serviceID)
 	return subject
