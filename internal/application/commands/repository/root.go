@@ -6,6 +6,7 @@ import (
 	"github.com/foojank/foojank/internal/application/commands/repository/create"
 	"github.com/foojank/foojank/internal/application/commands/repository/destroy"
 	"github.com/foojank/foojank/internal/application/commands/repository/list"
+	"github.com/foojank/foojank/internal/application/commands/repository/remove"
 	"github.com/urfave/cli/v3"
 )
 
@@ -18,6 +19,7 @@ func NewCommand() *cli.Command {
 			destroy.NewCommand(),
 			list.NewCommand(),
 			copy.NewCommand(),
+			remove.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		HideHelpCommand: true,
