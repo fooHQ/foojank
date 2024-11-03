@@ -138,14 +138,3 @@ func (c *Client) ListFiles(ctx context.Context, repository string) ([]*File, err
 
 	return result, nil
 }
-
-/*func (c *Client) Get(ctx context.Context, name string) error {
-	s, err := c.js.ObjectStore(ctx, name)
-	if err != nil {
-		return err
-	}
-
-	c.js.ObjectStores()
-
-	o.GetInfo()
-}*/
