@@ -2,7 +2,7 @@ package decoder
 
 import (
 	"context"
-	"github.com/foojank/foojank/internal/services/vessel/connector"
+	"github.com/foohq/foojank/internal/services/vessel/connector"
 )
 
 type Message struct {

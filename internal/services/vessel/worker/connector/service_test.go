@@ -2,7 +2,7 @@ package connector
 
 import (
 	"context"
-	"github.com/foojank/foojank/internal/testutils"
+	"github.com/foohq/foojank/internal/testutils"
 	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"

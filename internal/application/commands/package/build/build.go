@@ -3,8 +3,8 @@ package build
 import (
 	"context"
 	"fmt"
-	"github.com/foojank/foojank/fzz"
-	"github.com/foojank/foojank/internal/application/actions"
+	"github.com/foohq/foojank/fzz"
+	"github.com/foohq/foojank/internal/application/actions"
 	"github.com/urfave/cli/v3"
 	"log/slog"
 	"path/filepath"

@@ -3,7 +3,7 @@ package proto
 import (
 	capnplib "capnproto.org/go/capnp/v3"
 	"errors"
-	"github.com/foojank/foojank/proto/capnp"
+	"github.com/foohq/foojank/proto/capnp"
 )
 
 var (

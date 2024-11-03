@@ -2,11 +2,11 @@ package scheduler
 
 import (
 	"context"
-	"github.com/foojank/foojank/internal/config"
-	"github.com/foojank/foojank/internal/log"
-	"github.com/foojank/foojank/internal/services/vessel/decoder"
-	"github.com/foojank/foojank/internal/services/vessel/errcodes"
-	"github.com/foojank/foojank/internal/services/vessel/worker"
+	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/log"
+	"github.com/foohq/foojank/internal/services/vessel/decoder"
+	"github.com/foohq/foojank/internal/services/vessel/errcodes"
+	"github.com/foohq/foojank/internal/services/vessel/worker"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"sync"

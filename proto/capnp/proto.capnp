@@ -1,7 +1,7 @@
 using Go = import "/go.capnp";
 @0xdcccaa5d36aa8b70;
 $Go.package("capnp");
-$Go.import("github.com/foojank/foojank/proto/capnp");
+$Go.import("github.com/foohq/foojank/proto/capnp");
 
 struct CreateWorkerRequest {
     # Add configurable subjects: stdin, rpc

@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/foojank/foojank/internal/application"
+	"github.com/foohq/foojank/internal/application"
 	"os"
 	"os/signal"
 	"syscall"

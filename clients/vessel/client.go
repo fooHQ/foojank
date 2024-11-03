@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/foojank/foojank/proto"
+	"github.com/foohq/foojank/proto"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
 	"sync"

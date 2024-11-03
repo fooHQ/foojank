@@ -13,9 +13,9 @@ $ sudo apt install git make gcc golang upx
 ## Clone the repository
 
 ```shell
-$ git clone https://github.com/foojank/foojank
+$ git clone https://github.com/foohq/foojank
 # or via ssh:
-$ git clone git@github.com:foojank/foojank.git
+$ git clone git@github.com:foohq/foojank.git
 ```
 
 ## Build the executables

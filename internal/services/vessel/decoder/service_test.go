@@ -3,10 +3,10 @@ package decoder
 import (
 	"bytes"
 	"context"
-	"github.com/foojank/foojank/internal/services/vessel/connector"
-	"github.com/foojank/foojank/internal/services/vessel/errcodes"
-	"github.com/foojank/foojank/internal/testutils"
-	"github.com/foojank/foojank/proto"
+	"github.com/foohq/foojank/internal/services/vessel/connector"
+	"github.com/foohq/foojank/internal/services/vessel/errcodes"
+	"github.com/foohq/foojank/internal/testutils"
+	"github.com/foohq/foojank/proto"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

@@ -2,9 +2,9 @@ package vessel
 
 import (
 	"context"
-	"github.com/foojank/foojank/internal/services/vessel/connector"
-	"github.com/foojank/foojank/internal/services/vessel/decoder"
-	"github.com/foojank/foojank/internal/services/vessel/scheduler"
+	"github.com/foohq/foojank/internal/services/vessel/connector"
+	"github.com/foohq/foojank/internal/services/vessel/decoder"
+	"github.com/foohq/foojank/internal/services/vessel/scheduler"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"golang.org/x/sync/errgroup"

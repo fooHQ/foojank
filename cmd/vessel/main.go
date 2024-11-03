@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"github.com/foojank/foojank/internal/config"
-	"github.com/foojank/foojank/internal/log"
-	"github.com/foojank/foojank/internal/services/vessel"
+	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/log"
+	"github.com/foohq/foojank/internal/services/vessel"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"os"

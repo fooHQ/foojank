@@ -1,9 +1,9 @@
 package agent
 
 import (
-	"github.com/foojank/foojank/internal/application/actions"
-	"github.com/foojank/foojank/internal/application/commands/agent/exec"
-	"github.com/foojank/foojank/internal/application/commands/agent/list"
+	"github.com/foohq/foojank/internal/application/actions"
+	"github.com/foohq/foojank/internal/application/commands/agent/exec"
+	"github.com/foohq/foojank/internal/application/commands/agent/list"
 	"github.com/urfave/cli/v3"
 )
 

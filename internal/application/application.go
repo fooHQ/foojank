@@ -1,12 +1,12 @@
 package application
 
 import (
-	"github.com/foojank/foojank"
-	"github.com/foojank/foojank/internal/application/actions"
-	"github.com/foojank/foojank/internal/application/commands/agent"
-	_package "github.com/foojank/foojank/internal/application/commands/package"
-	"github.com/foojank/foojank/internal/application/commands/repository"
-	"github.com/foojank/foojank/internal/application/flags"
+	"github.com/foohq/foojank"
+	"github.com/foohq/foojank/internal/application/actions"
+	"github.com/foohq/foojank/internal/application/commands/agent"
+	_package "github.com/foohq/foojank/internal/application/commands/package"
+	"github.com/foohq/foojank/internal/application/commands/repository"
+	"github.com/foohq/foojank/internal/application/flags"
 	"github.com/urfave/cli/v3"
 )
 

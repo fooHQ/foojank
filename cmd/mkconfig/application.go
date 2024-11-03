@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/foojank/foojank"
+	"github.com/foohq/foojank"
 	"github.com/goccy/go-yaml"
 	"github.com/urfave/cli/v3"
 	"os"

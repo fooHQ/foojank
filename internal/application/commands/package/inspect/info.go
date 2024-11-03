@@ -3,7 +3,7 @@ package inspect
 import (
 	"context"
 	"fmt"
-	"github.com/foojank/foojank/internal/application/actions"
+	"github.com/foohq/foojank/internal/application/actions"
 	"github.com/urfave/cli/v3"
 	"log/slog"
 )

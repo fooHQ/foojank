@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/foojank/foojank/internal/application/flags"
+	"github.com/foohq/foojank/internal/application/flags"
 	"github.com/lmittmann/tint"
 	"github.com/nats-io/nats.go"
 	"github.com/urfave/cli/v3"

@@ -2,7 +2,7 @@ package publisher
 
 import (
 	"context"
-	"github.com/foojank/foojank/internal/log"
+	"github.com/foohq/foojank/internal/log"
 	"github.com/nats-io/nats.go"
 )
 

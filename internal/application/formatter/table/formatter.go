@@ -1,7 +1,7 @@
 package table
 
 import (
-	"github.com/foojank/foojank/internal/application/formatter"
+	"github.com/foohq/foojank/internal/application/formatter"
 	"github.com/olekukonko/tablewriter"
 	"io"
 )

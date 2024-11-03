@@ -2,7 +2,7 @@ package proto
 
 import (
 	capnplib "capnproto.org/go/capnp/v3"
-	"github.com/foojank/foojank/proto/capnp"
+	"github.com/foohq/foojank/proto/capnp"
 )
 
 func NewCreateWorkerRequest() ([]byte, error) {

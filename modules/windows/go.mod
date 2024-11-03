@@ -1,4 +1,4 @@
-module github.com/foojank/foojank/modules/windows
+module github.com/foohq/foojank/modules/windows
 
 go 1.22
 

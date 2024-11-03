@@ -3,7 +3,7 @@ package engine
 import (
 	"context"
 	"errors"
-	"github.com/foojank/foojank/internal/engine/importers"
+	"github.com/foohq/foojank/internal/engine/importers"
 	"github.com/risor-io/risor"
 	"github.com/risor-io/risor/compiler"
 	"github.com/risor-io/risor/object"

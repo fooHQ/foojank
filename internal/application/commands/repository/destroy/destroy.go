@@ -3,8 +3,8 @@ package destroy
 import (
 	"context"
 	"fmt"
-	"github.com/foojank/foojank/clients/repository"
-	"github.com/foojank/foojank/internal/application/actions"
+	"github.com/foohq/foojank/clients/repository"
+	"github.com/foohq/foojank/internal/application/actions"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/urfave/cli/v3"
 	"log/slog"

@@ -2,10 +2,10 @@ package decoder
 
 import (
 	"context"
-	"github.com/foojank/foojank/internal/log"
-	"github.com/foojank/foojank/internal/services/vessel/connector"
-	"github.com/foojank/foojank/internal/services/vessel/errcodes"
-	"github.com/foojank/foojank/proto"
+	"github.com/foohq/foojank/internal/log"
+	"github.com/foohq/foojank/internal/services/vessel/connector"
+	"github.com/foohq/foojank/internal/services/vessel/errcodes"
+	"github.com/foohq/foojank/proto"
 )
 
 type Arguments struct {

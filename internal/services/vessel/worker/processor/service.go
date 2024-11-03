@@ -2,12 +2,12 @@ package processor
 
 import (
 	"context"
-	"github.com/foojank/foojank/clients/repository"
-	"github.com/foojank/foojank/internal/engine"
-	"github.com/foojank/foojank/internal/engine/os"
-	"github.com/foojank/foojank/internal/log"
-	"github.com/foojank/foojank/internal/services/vessel/errcodes"
-	"github.com/foojank/foojank/internal/services/vessel/worker/decoder"
+	"github.com/foohq/foojank/clients/repository"
+	"github.com/foohq/foojank/internal/engine"
+	"github.com/foohq/foojank/internal/engine/os"
+	"github.com/foohq/foojank/internal/log"
+	"github.com/foohq/foojank/internal/services/vessel/errcodes"
+	"github.com/foohq/foojank/internal/services/vessel/worker/decoder"
 	"golang.org/x/sync/errgroup"
 )
 

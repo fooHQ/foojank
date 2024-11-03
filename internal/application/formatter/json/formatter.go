@@ -2,7 +2,7 @@ package json
 
 import (
 	"encoding/json"
-	"github.com/foojank/foojank/internal/application/formatter"
+	"github.com/foohq/foojank/internal/application/formatter"
 	"io"
 )
 

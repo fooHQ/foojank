@@ -2,11 +2,11 @@ package worker
 
 import (
 	"context"
-	"github.com/foojank/foojank/clients/repository"
-	"github.com/foojank/foojank/internal/services/vessel/worker/connector"
-	"github.com/foojank/foojank/internal/services/vessel/worker/decoder"
-	"github.com/foojank/foojank/internal/services/vessel/worker/processor"
-	"github.com/foojank/foojank/internal/services/vessel/worker/publisher"
+	"github.com/foohq/foojank/clients/repository"
+	"github.com/foohq/foojank/internal/services/vessel/worker/connector"
+	"github.com/foohq/foojank/internal/services/vessel/worker/decoder"
+	"github.com/foohq/foojank/internal/services/vessel/worker/processor"
+	"github.com/foohq/foojank/internal/services/vessel/worker/publisher"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"golang.org/x/sync/errgroup"

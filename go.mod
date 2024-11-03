@@ -1,4 +1,4 @@
-module github.com/foojank/foojank
+module github.com/foohq/foojank
 
 go 1.22.2
 

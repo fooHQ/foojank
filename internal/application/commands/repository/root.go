@@ -1,12 +1,12 @@
 package repository
 
 import (
-	"github.com/foojank/foojank/internal/application/actions"
-	"github.com/foojank/foojank/internal/application/commands/repository/copy"
-	"github.com/foojank/foojank/internal/application/commands/repository/create"
-	"github.com/foojank/foojank/internal/application/commands/repository/destroy"
-	"github.com/foojank/foojank/internal/application/commands/repository/list"
-	"github.com/foojank/foojank/internal/application/commands/repository/remove"
+	"github.com/foohq/foojank/internal/application/actions"
+	"github.com/foohq/foojank/internal/application/commands/repository/copy"
+	"github.com/foohq/foojank/internal/application/commands/repository/create"
+	"github.com/foohq/foojank/internal/application/commands/repository/destroy"
+	"github.com/foohq/foojank/internal/application/commands/repository/list"
+	"github.com/foohq/foojank/internal/application/commands/repository/remove"
 	"github.com/urfave/cli/v3"
 )
 
