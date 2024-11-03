@@ -16,8 +16,8 @@ import (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "copy",
-		ArgsUsage: "<file-path> <destination-path>",
-		Usage:     "Copy files between local filesystem and a repository",
+		ArgsUsage: "[repository:]<file> [repository:]<destination-path>",
+		Usage:     "Copy files between local filesystem and a repository or vice versa",
 		Action:    action,
 		Aliases:   []string{"cp"},
 	}
@@ -116,11 +116,11 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 				filename = filepath.Join("/", dstPath.FilePath)
 			}
 
-			logger.Debug("put local file to a remote repository", "src", srcPath, "repository", dstPath.Repository, "dst", filename)
+			logger.Debug("put local file to a repository", "src", srcPath, "repository", dstPath.Repository, "dst", filename)
 
 			err = client.PutFile(ctx, dstPath.Repository, filename, f)
 			if err != nil {
-				err := fmt.Errorf("cannot put local file '%s' to a remote repository '%s' as '%s': %v", srcPath, dstPath.Repository, filename, err)
+				err := fmt.Errorf("cannot put local file '%s' to a repository '%s' as '%s': %v", srcPath, dstPath.Repository, filename, err)
 				logger.Error(err.Error())
 				return err
 			}
