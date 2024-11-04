@@ -50,6 +50,11 @@ func main() {
 		return
 	}
 
+	ip, err := nc.GetClientIP()
+	if err != nil {
+		log.Debug("cannot determine computer's IP address: %v", err)
+	}
+
 	js, err := jetstream.New(nc)
 	if err != nil {
 		log.Debug("cannot enable JetStream: %v", err)
@@ -60,9 +65,10 @@ func main() {
 		Name:    config.ServiceName,
 		Version: config.ServiceVersion,
 		Metadata: map[string]string{
-			"os":       runtime.GOOS,
-			"user":     usr.Username,
-			"hostname": hostname,
+			"os":         runtime.GOOS,
+			"user":       usr.Username,
+			"hostname":   hostname,
+			"ip_address": ip.String(),
 		},
 		Connection: nc,
 		Stream:     js,
