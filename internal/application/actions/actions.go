@@ -21,9 +21,10 @@ func CommandNotFound(ctx context.Context, c *cli.Command, s string) {
 
 func NewLogger(ctx context.Context, c *cli.Command) *slog.Logger {
 	level := c.Int(flags.LogLevel)
+	noColor := c.Bool(flags.NoColor)
 	return slog.New(tint.NewHandler(os.Stderr, &tint.Options{
 		Level:   slog.Level(level),
-		NoColor: false,
+		NoColor: noColor,
 	}))
 }
 

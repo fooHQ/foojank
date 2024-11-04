@@ -37,6 +37,10 @@ func New() *cli.Command {
 				Usage: "set log level",
 				Value: 0,
 			},
+			&cli.BoolFlag{
+				Name:  flags.NoColor,
+				Usage: "disable color output",
+			},
 		},
 		Commands: []*cli.Command{
 			agent.NewCommand(),
