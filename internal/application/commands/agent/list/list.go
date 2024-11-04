@@ -73,9 +73,13 @@ func listAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 				logger.Debug("found an agent", "service", service)
 
 				id := service.ID.String()
+				//nolint:gosimple
 				ip, _ := service.Metadata["ip_address"]
+				//nolint:gosimple
 				user, _ := service.Metadata["user"]
+				//nolint:gosimple
 				hostname, _ := service.Metadata["hostname"]
+				//nolint:gosimple
 				osName, _ := service.Metadata["os"]
 				table.AddRow([]string{
 					id,
