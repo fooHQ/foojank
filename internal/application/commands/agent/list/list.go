@@ -67,11 +67,13 @@ func listAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 				"user",
 				"hostname",
 				"system",
+				"ip_address",
 			})
 			for service := range outputCh {
 				logger.Debug("found an agent", "service", service)
 
 				id := service.ID.String()
+				ip, _ := service.Metadata["ip_address"]
 				user, _ := service.Metadata["user"]
 				hostname, _ := service.Metadata["hostname"]
 				osName, _ := service.Metadata["os"]
@@ -80,6 +82,7 @@ func listAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 					user,
 					hostname,
 					osName,
+					ip,
 				})
 			}
 
