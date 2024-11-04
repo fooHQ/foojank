@@ -17,12 +17,12 @@ import (
 func main() {
 	usr, err := user.Current()
 	if err != nil {
-		log.Debug("cannot determine current user")
+		log.Debug("cannot determine computer's username: %v", err)
 	}
 
 	hostname, err := os.Hostname()
 	if err != nil {
-		log.Debug("cannot determine hostname")
+		log.Debug("cannot determine computer's hostname: %v", err)
 	}
 
 	log.Debug("started")
