@@ -62,7 +62,7 @@ func (e *Error) Error() string {
 }
 
 func (c *Client) Discover(ctx context.Context, serviceName string, outputCh chan<- Service) error {
-	subject, err := micro.ControlSubject(micro.InfoVerb, serviceName, "")
+	subject, err := micro.ControlSubject(micro.PingVerb, serviceName, "")
 	if err != nil {
 		return err
 	}
