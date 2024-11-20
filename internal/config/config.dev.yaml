@@ -1,9 +1,14 @@
 server:
-  url: wss://localhost
-  username: vessel
-  password: vesselpassword
+  url: wss://localhost:8443
+  username: agent001
+  password: password
   # Skips TLS verification
   insecure: true
 service:
   name: vessel
   version: 1.0.0
+  subjects:
+    rpc: rpc
+    data: data
+    stdin: stdin
+    stdout: stdout

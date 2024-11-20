@@ -2,6 +2,7 @@ package vessel
 
 import (
 	"context"
+	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/services/vessel/connector"
 	"github.com/foohq/foojank/internal/services/vessel/decoder"
 	"github.com/foohq/foojank/internal/services/vessel/scheduler"
@@ -29,8 +30,6 @@ func New(args Arguments) *Service {
 }
 
 func (s *Service) Start(ctx context.Context) error {
-	rpcSubject := nats.NewInbox()
-
 	connectorOutCh := make(chan connector.Message)
 	decoderOutCh := make(chan decoder.Message)
 
@@ -40,7 +39,7 @@ func (s *Service) Start(ctx context.Context) error {
 			Name:       s.args.Name,
 			Version:    s.args.Version,
 			Metadata:   s.args.Metadata,
-			RpcSubject: rpcSubject,
+			RpcSubject: config.ServiceSubjectsRpc,
 			Connection: s.args.Connection,
 			OutputCh:   connectorOutCh,
 		}).Start(groupCtx)

@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"github.com/foohq/foojank/clients/repository"
+	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/services/vessel/worker/connector"
 	"github.com/foohq/foojank/internal/services/vessel/worker/decoder"
 	"github.com/foohq/foojank/internal/services/vessel/worker/processor"
@@ -43,10 +44,6 @@ func (s *Service) Start(ctx context.Context) error {
 	}()
 
 	repo := repository.New(s.args.Stream)
-	// TODO: allow these to be configured from the outside
-	dataSubject := nats.NewInbox()
-	stdinSubject := nats.NewInbox()
-	stdoutSubject := nats.NewInbox()
 
 	connectorInfoCh := make(chan connector.InfoMessage, 1)
 	connectorOutCh := make(chan connector.Message)
@@ -63,10 +60,10 @@ func (s *Service) Start(ctx context.Context) error {
 				// TODO: progname
 				// TODO: args
 				// TODO: environ?
-				"stdout": stdoutSubject,
+				"stdout": config.ServiceSubjectsStdout,
 			},
-			StdinSubject: stdinSubject,
-			DataSubject:  dataSubject,
+			StdinSubject: config.ServiceSubjectsStdin,
+			DataSubject:  config.ServiceSubjectsData,
 			Connection:   s.args.Connection,
 			InfoCh:       connectorInfoCh,
 			OutputCh:     connectorOutCh,
@@ -74,7 +71,7 @@ func (s *Service) Start(ctx context.Context) error {
 	})
 	group.Go(func() error {
 		return decoder.New(decoder.Arguments{
-			DataSubject: dataSubject,
+			DataSubject: config.ServiceSubjectsData,
 			InputCh:     connectorOutCh,
 			DataCh:      decoderDataCh,
 			StdinCh:     decoderStdinCh,
@@ -91,7 +88,7 @@ func (s *Service) Start(ctx context.Context) error {
 	group.Go(func() error {
 		return publisher.New(publisher.Arguments{
 			Connection: s.args.Connection,
-			Subject:    stdoutSubject,
+			Subject:    config.ServiceSubjectsStdout,
 			InputCh:    processorStdoutCh,
 		}).Start(groupCtx)
 	})

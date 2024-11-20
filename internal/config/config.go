@@ -2,13 +2,17 @@
 package config
 
 const (
-	ServerURL = "wss://localhost"
-	ServerUsername = "vessel"
-	ServerPassword = "vesselpassword"
+	ServerURL = "wss://localhost:8443"
+	ServerUsername = "agent001"
+	ServerPassword = "password"
 )
 
 const (
 	ServiceName = "vessel"
 	ServiceWorkerName = "vessel-worker"
 	ServiceVersion = "1.0.0"
+	ServiceSubjectsRpc = "rpc"
+	ServiceSubjectsData = "data"
+	ServiceSubjectsStdin = "stdin"
+	ServiceSubjectsStdout = "stdout"
 )
