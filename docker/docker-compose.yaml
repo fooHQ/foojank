@@ -3,6 +3,8 @@ services:
   nats:
     image: docker.io/nats:latest
     command: -c /etc/nats/nats-server.conf
+    ports:
+      - "4222:4222"
     volumes:
       - "./nats-server.conf:/etc/nats/nats-server.conf"
 
