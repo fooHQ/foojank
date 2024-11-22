@@ -22,14 +22,8 @@ func NewCommand() *cli.Command {
 		Name:      "execute",
 		ArgsUsage: "<id> <package-path>",
 		Usage:     "Run a script on an agent",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "service-name",
-				Value: "vessel",
-			},
-		},
-		Action:  action,
-		Aliases: []string{"exec"},
+		Action:    action,
+		Aliases:   []string{"exec"},
 	}
 }
 
@@ -56,8 +50,13 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		id := c.Args().Get(0)
-		serviceName := c.String("service-name")
+		arg := c.Args().Get(0)
+		id, err := vessel.ParseID(arg)
+		if err != nil {
+			err := fmt.Errorf("invalid id '%s'", arg)
+			logger.Error(err.Error())
+			return err
+		}
 
 		pkg := c.Args().Get(1)
 		pkgPath, err := path.Parse(pkg)
@@ -79,7 +78,7 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 			return err
 		}
 
-		service, err := client.GetInfo(ctx, vessel.NewID(serviceName, id))
+		service, err := client.GetInfo(ctx, id)
 		if err != nil {
 			err := fmt.Errorf("get info request failed: %v", err)
 			logger.Error(err.Error())
