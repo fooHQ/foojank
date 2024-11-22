@@ -39,10 +39,6 @@ const (
 	ServiceName = "{{ .Service.Name }}"
 	ServiceWorkerName = "{{ .Service.Name }}"
 	ServiceVersion = "{{ .Service.Version }}"
-	ServiceSubjectsRpc = "{{ .Service.Subjects.Rpc }}"
-	ServiceSubjectsData = "{{ .Service.Subjects.Data }}"
-	ServiceSubjectsStdin = "{{ .Service.Subjects.Stdin }}"
-	ServiceSubjectsStdout = "{{ .Service.Subjects.Stdout }}"
 )
 `
 
@@ -53,13 +49,7 @@ type Data struct {
 		Password string `yaml:"password"`
 	} `yaml:"server"`
 	Service struct {
-		Name     string `yaml:"name"`
-		Version  string `yaml:"version"`
-		Subjects struct {
-			Rpc    string `yaml:"rpc"`
-			Data   string `yaml:"data"`
-			Stdin  string `yaml:"stdin"`
-			Stdout string `yaml:"stdout"`
-		} `yaml:"subjects"`
+		Name    string `yaml:"name"`
+		Version string `yaml:"version"`
 	} `yaml:"service"`
 }
