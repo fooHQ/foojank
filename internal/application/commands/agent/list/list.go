@@ -70,17 +70,21 @@ func listAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 				"ip_address",
 			})
 			for service := range outputCh {
-				logger.Debug("found an agent", "service", service)
+				logger.Debug("found a service", "service", service)
 
 				id := service.ID.String()
-				//nolint:gosimple
-				ip, _ := service.Metadata["ip_address"]
-				//nolint:gosimple
-				user, _ := service.Metadata["user"]
-				//nolint:gosimple
-				hostname, _ := service.Metadata["hostname"]
-				//nolint:gosimple
-				osName, _ := service.Metadata["os"]
+				ip, ipOk := service.Metadata["ip_address"]
+				user, userOk := service.Metadata["user"]
+				hostname, hostnameOk := service.Metadata["hostname"]
+				osName, osNameOk := service.Metadata["os"]
+
+				// This condition filters out workers and incompatible services.
+				// Detection should work even if worker was not able to determine
+				// a value, in such case the value will be an empty string.
+				if !ipOk || !userOk || !hostnameOk || !osNameOk {
+					continue
+				}
+
 				table.AddRow([]string{
 					id,
 					user,
