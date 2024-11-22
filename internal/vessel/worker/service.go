@@ -3,7 +3,6 @@ package worker
 import (
 	"context"
 	"github.com/foohq/foojank/clients/repository"
-	"github.com/foohq/foojank/internal/vessel/config"
 	connector2 "github.com/foohq/foojank/internal/vessel/worker/connector"
 	decoder2 "github.com/foohq/foojank/internal/vessel/worker/decoder"
 	"github.com/foohq/foojank/internal/vessel/worker/processor"
@@ -11,6 +10,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"golang.org/x/sync/errgroup"
+	"strconv"
 )
 
 type Arguments struct {
@@ -43,6 +43,10 @@ func (s *Service) Start(ctx context.Context) error {
 		}
 	}()
 
+	dataSubject := s.args.Name + "." + strconv.FormatUint(s.args.ID, 10) + ".DATA"
+	stdinSubject := s.args.Name + "." + strconv.FormatUint(s.args.ID, 10) + ".STDIN"
+	stdoutSubject := s.args.Name + "." + strconv.FormatUint(s.args.ID, 10) + ".STDOUT"
+
 	repo := repository.New(s.args.Stream)
 
 	connectorInfoCh := make(chan connector2.InfoMessage, 1)
@@ -60,10 +64,10 @@ func (s *Service) Start(ctx context.Context) error {
 				// TODO: progname
 				// TODO: args
 				// TODO: environ?
-				"stdout": config.ServiceSubjectsStdout,
+				"stdout": stdoutSubject,
 			},
-			StdinSubject: config.ServiceSubjectsStdin,
-			DataSubject:  config.ServiceSubjectsData,
+			StdinSubject: stdinSubject,
+			DataSubject:  dataSubject,
 			Connection:   s.args.Connection,
 			InfoCh:       connectorInfoCh,
 			OutputCh:     connectorOutCh,
@@ -71,7 +75,7 @@ func (s *Service) Start(ctx context.Context) error {
 	})
 	group.Go(func() error {
 		return decoder2.New(decoder2.Arguments{
-			DataSubject: config.ServiceSubjectsData,
+			DataSubject: dataSubject,
 			InputCh:     connectorOutCh,
 			DataCh:      decoderDataCh,
 			StdinCh:     decoderStdinCh,
@@ -88,7 +92,7 @@ func (s *Service) Start(ctx context.Context) error {
 	group.Go(func() error {
 		return publisher.New(publisher.Arguments{
 			Connection: s.args.Connection,
-			Subject:    config.ServiceSubjectsStdout,
+			Subject:    stdoutSubject,
 			InputCh:    processorStdoutCh,
 		}).Start(groupCtx)
 	})
