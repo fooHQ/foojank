@@ -37,7 +37,7 @@ const (
 
 const (
 	ServiceName = "{{ .Service.Name }}"
-	ServiceWorkerName = "{{ .Service.Name }}-worker"
+	ServiceWorkerName = "{{ .Service.Name }}"
 	ServiceVersion = "{{ .Service.Version }}"
 	ServiceSubjectsRpc = "{{ .Service.Subjects.Rpc }}"
 	ServiceSubjectsData = "{{ .Service.Subjects.Data }}"
