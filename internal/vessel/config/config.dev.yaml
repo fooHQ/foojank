@@ -5,10 +5,5 @@ server:
   # Skips TLS verification
   insecure: true
 service:
-  name: vessel
+  name: agent001
   version: 1.0.0
-  subjects:
-    rpc: rpc
-    data: data
-    stdin: stdin
-    stdout: stdout

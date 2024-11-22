@@ -8,11 +8,7 @@ const (
 )
 
 const (
-	ServiceName = "vessel"
-	ServiceWorkerName = "vessel-worker"
+	ServiceName = "agent001"
+	ServiceWorkerName = "agent001"
 	ServiceVersion = "1.0.0"
-	ServiceSubjectsRpc = "rpc"
-	ServiceSubjectsData = "data"
-	ServiceSubjectsStdin = "stdin"
-	ServiceSubjectsStdout = "stdout"
 )
