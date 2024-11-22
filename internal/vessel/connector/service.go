@@ -2,7 +2,7 @@ package connector
 
 import (
 	"context"
-	"github.com/foohq/foojank/internal/log"
+	"github.com/foohq/foojank/internal/vessel/log"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
 )

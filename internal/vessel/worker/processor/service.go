@@ -5,9 +5,9 @@ import (
 	"github.com/foohq/foojank/clients/repository"
 	"github.com/foohq/foojank/internal/engine"
 	"github.com/foohq/foojank/internal/engine/os"
-	"github.com/foohq/foojank/internal/log"
-	"github.com/foohq/foojank/internal/services/vessel/errcodes"
-	"github.com/foohq/foojank/internal/services/vessel/worker/decoder"
+	"github.com/foohq/foojank/internal/vessel/errcodes"
+	"github.com/foohq/foojank/internal/vessel/log"
+	"github.com/foohq/foojank/internal/vessel/worker/decoder"
 	"golang.org/x/sync/errgroup"
 )
 

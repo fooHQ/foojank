@@ -2,7 +2,7 @@ package decoder
 
 import (
 	"context"
-	"github.com/foohq/foojank/internal/services/vessel/worker/connector"
+	"github.com/foohq/foojank/internal/vessel/connector"
 )
 
 type Message struct {
@@ -67,11 +67,23 @@ func (m MessageResponse) Error() *MessageError {
 	return m.err
 }
 
-type ExecuteRequest struct {
-	Repository string
-	FilePath   string
+type CreateWorkerRequest struct{}
+
+type CreateWorkerResponse struct {
+	ID uint64
 }
 
-type ExecuteResponse struct {
-	Code int64
+type DestroyWorkerRequest struct {
+	ID uint64
+}
+
+type DestroyWorkerResponse struct{}
+
+type GetWorkerRequest struct {
+	ID uint64
+}
+
+type GetWorkerResponse struct {
+	ServiceName string
+	ServiceID   string
 }

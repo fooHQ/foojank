@@ -2,9 +2,9 @@ package decoder
 
 import (
 	"context"
-	"github.com/foohq/foojank/internal/log"
-	"github.com/foohq/foojank/internal/services/vessel/connector"
-	"github.com/foohq/foojank/internal/services/vessel/errcodes"
+	"github.com/foohq/foojank/internal/vessel/connector"
+	"github.com/foohq/foojank/internal/vessel/errcodes"
+	"github.com/foohq/foojank/internal/vessel/log"
 	"github.com/foohq/foojank/proto"
 )
 

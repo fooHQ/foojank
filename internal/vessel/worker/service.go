@@ -3,11 +3,11 @@ package worker
 import (
 	"context"
 	"github.com/foohq/foojank/clients/repository"
-	"github.com/foohq/foojank/internal/config"
-	"github.com/foohq/foojank/internal/services/vessel/worker/connector"
-	"github.com/foohq/foojank/internal/services/vessel/worker/decoder"
-	"github.com/foohq/foojank/internal/services/vessel/worker/processor"
-	"github.com/foohq/foojank/internal/services/vessel/worker/publisher"
+	"github.com/foohq/foojank/internal/vessel/config"
+	connector2 "github.com/foohq/foojank/internal/vessel/worker/connector"
+	decoder2 "github.com/foohq/foojank/internal/vessel/worker/decoder"
+	"github.com/foohq/foojank/internal/vessel/worker/processor"
+	"github.com/foohq/foojank/internal/vessel/worker/publisher"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"golang.org/x/sync/errgroup"
@@ -45,15 +45,15 @@ func (s *Service) Start(ctx context.Context) error {
 
 	repo := repository.New(s.args.Stream)
 
-	connectorInfoCh := make(chan connector.InfoMessage, 1)
-	connectorOutCh := make(chan connector.Message)
-	decoderDataCh := make(chan decoder.Message)
-	decoderStdinCh := make(chan decoder.Message)
+	connectorInfoCh := make(chan connector2.InfoMessage, 1)
+	connectorOutCh := make(chan connector2.Message)
+	decoderDataCh := make(chan decoder2.Message)
+	decoderStdinCh := make(chan decoder2.Message)
 	processorStdoutCh := make(chan []byte, 1024)
 
 	group, groupCtx := errgroup.WithContext(ctx)
 	group.Go(func() error {
-		return connector.New(connector.Arguments{
+		return connector2.New(connector2.Arguments{
 			Name:    s.args.Name,
 			Version: s.args.Version,
 			Metadata: map[string]string{
@@ -70,7 +70,7 @@ func (s *Service) Start(ctx context.Context) error {
 		}).Start(groupCtx)
 	})
 	group.Go(func() error {
-		return decoder.New(decoder.Arguments{
+		return decoder2.New(decoder2.Arguments{
 			DataSubject: config.ServiceSubjectsData,
 			InputCh:     connectorOutCh,
 			DataCh:      decoderDataCh,
@@ -93,7 +93,7 @@ func (s *Service) Start(ctx context.Context) error {
 		}).Start(groupCtx)
 	})
 
-	var info connector.InfoMessage
+	var info connector2.InfoMessage
 	select {
 	case v := <-connectorInfoCh:
 		info = v

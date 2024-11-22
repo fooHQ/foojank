@@ -2,11 +2,11 @@ package scheduler
 
 import (
 	"context"
-	"github.com/foohq/foojank/internal/config"
-	"github.com/foohq/foojank/internal/log"
-	"github.com/foohq/foojank/internal/services/vessel/decoder"
-	"github.com/foohq/foojank/internal/services/vessel/errcodes"
-	"github.com/foohq/foojank/internal/services/vessel/worker"
+	"github.com/foohq/foojank/internal/vessel/config"
+	"github.com/foohq/foojank/internal/vessel/decoder"
+	"github.com/foohq/foojank/internal/vessel/errcodes"
+	"github.com/foohq/foojank/internal/vessel/log"
+	worker2 "github.com/foohq/foojank/internal/vessel/worker"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"sync"
@@ -32,7 +32,7 @@ func New(args Arguments) *Service {
 func (s *Service) Start(ctx context.Context) error {
 	var workerID uint64
 	var workers = make(map[uint64]state)
-	var eventCh = make(chan worker.Event)
+	var eventCh = make(chan worker2.Event)
 
 loop:
 	for {
@@ -82,7 +82,7 @@ loop:
 
 		case event := <-eventCh:
 			switch v := event.(type) {
-			case worker.EventWorkerStarted:
+			case worker2.EventWorkerStarted:
 				log.Debug("%#v", v)
 				workers[v.WorkerID] = state{
 					w:           workers[v.WorkerID].w,
@@ -91,7 +91,7 @@ loop:
 					cancel:      workers[v.WorkerID].cancel,
 				}
 
-			case worker.EventWorkerStopped:
+			case worker2.EventWorkerStopped:
 				log.Debug("%#v", v)
 				workers[v.WorkerID].Cancel()
 				delete(workers, v.WorkerID)
@@ -114,9 +114,9 @@ loop:
 	return nil
 }
 
-func (s *Service) createWorker(ctx context.Context, workerID uint64, eventCh chan<- worker.Event) *worker.Service {
+func (s *Service) createWorker(ctx context.Context, workerID uint64, eventCh chan<- worker2.Event) *worker2.Service {
 	log.Debug("creating a new worker id=%d", workerID)
-	w := worker.New(worker.Arguments{
+	w := worker2.New(worker2.Arguments{
 		ID:         workerID,
 		Name:       config.ServiceWorkerName,
 		Version:    config.ServiceVersion,
@@ -139,7 +139,7 @@ func (s *Service) createWorker(ctx context.Context, workerID uint64, eventCh cha
 }
 
 type state struct {
-	w           *worker.Service
+	w           *worker2.Service
 	serviceName string
 	serviceID   string
 	cancel      context.CancelFunc

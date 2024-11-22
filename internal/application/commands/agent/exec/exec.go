@@ -8,7 +8,7 @@ import (
 	"github.com/foohq/foojank/clients/vessel"
 	"github.com/foohq/foojank/internal/application/actions"
 	"github.com/foohq/foojank/internal/application/path"
-	"github.com/foohq/foojank/internal/services/vessel/errcodes"
+	"github.com/foohq/foojank/internal/vessel/errcodes"
 	"github.com/muesli/cancelreader"
 	"github.com/urfave/cli/v3"
 	"log/slog"

@@ -2,10 +2,10 @@ package vessel
 
 import (
 	"context"
-	"github.com/foohq/foojank/internal/config"
-	"github.com/foohq/foojank/internal/services/vessel/connector"
-	"github.com/foohq/foojank/internal/services/vessel/decoder"
-	"github.com/foohq/foojank/internal/services/vessel/scheduler"
+	"github.com/foohq/foojank/internal/vessel/config"
+	connector2 "github.com/foohq/foojank/internal/vessel/connector"
+	decoder2 "github.com/foohq/foojank/internal/vessel/decoder"
+	"github.com/foohq/foojank/internal/vessel/scheduler"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"golang.org/x/sync/errgroup"
@@ -30,12 +30,12 @@ func New(args Arguments) *Service {
 }
 
 func (s *Service) Start(ctx context.Context) error {
-	connectorOutCh := make(chan connector.Message)
-	decoderOutCh := make(chan decoder.Message)
+	connectorOutCh := make(chan connector2.Message)
+	decoderOutCh := make(chan decoder2.Message)
 
 	group, groupCtx := errgroup.WithContext(ctx)
 	group.Go(func() error {
-		return connector.New(connector.Arguments{
+		return connector2.New(connector2.Arguments{
 			Name:       s.args.Name,
 			Version:    s.args.Version,
 			Metadata:   s.args.Metadata,
@@ -45,7 +45,7 @@ func (s *Service) Start(ctx context.Context) error {
 		}).Start(groupCtx)
 	})
 	group.Go(func() error {
-		return decoder.New(decoder.Arguments{
+		return decoder2.New(decoder2.Arguments{
 			InputCh:  connectorOutCh,
 			OutputCh: decoderOutCh,
 		}).Start(groupCtx)
