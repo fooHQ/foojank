@@ -3,8 +3,8 @@ package worker
 import (
 	"context"
 	"github.com/foohq/foojank/clients/repository"
-	connector2 "github.com/foohq/foojank/internal/vessel/worker/connector"
-	decoder2 "github.com/foohq/foojank/internal/vessel/worker/decoder"
+	"github.com/foohq/foojank/internal/vessel/worker/connector"
+	"github.com/foohq/foojank/internal/vessel/worker/decoder"
 	"github.com/foohq/foojank/internal/vessel/worker/processor"
 	"github.com/foohq/foojank/internal/vessel/worker/publisher"
 	"github.com/nats-io/nats.go"
@@ -49,15 +49,15 @@ func (s *Service) Start(ctx context.Context) error {
 
 	repo := repository.New(s.args.Stream)
 
-	connectorInfoCh := make(chan connector2.InfoMessage, 1)
-	connectorOutCh := make(chan connector2.Message)
-	decoderDataCh := make(chan decoder2.Message)
-	decoderStdinCh := make(chan decoder2.Message)
+	connectorInfoCh := make(chan connector.InfoMessage, 1)
+	connectorOutCh := make(chan connector.Message)
+	decoderDataCh := make(chan decoder.Message)
+	decoderStdinCh := make(chan decoder.Message)
 	processorStdoutCh := make(chan []byte, 1024)
 
 	group, groupCtx := errgroup.WithContext(ctx)
 	group.Go(func() error {
-		return connector2.New(connector2.Arguments{
+		return connector.New(connector.Arguments{
 			Name:    s.args.Name,
 			Version: s.args.Version,
 			Metadata: map[string]string{
@@ -74,7 +74,7 @@ func (s *Service) Start(ctx context.Context) error {
 		}).Start(groupCtx)
 	})
 	group.Go(func() error {
-		return decoder2.New(decoder2.Arguments{
+		return decoder.New(decoder.Arguments{
 			DataSubject: dataSubject,
 			InputCh:     connectorOutCh,
 			DataCh:      decoderDataCh,
@@ -97,7 +97,7 @@ func (s *Service) Start(ctx context.Context) error {
 		}).Start(groupCtx)
 	})
 
-	var info connector2.InfoMessage
+	var info connector.InfoMessage
 	select {
 	case v := <-connectorInfoCh:
 		info = v
