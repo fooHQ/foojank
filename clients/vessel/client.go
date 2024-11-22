@@ -7,6 +7,7 @@ import (
 	"github.com/foohq/foojank/proto"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
+	"strings"
 	"sync"
 )
 
@@ -39,6 +40,14 @@ func NewID(serviceName, id string) ID {
 		serviceName: serviceName,
 		serviceID:   id,
 	}
+}
+
+func ParseID(s string) (ID, error) {
+	tokens := strings.SplitN(s, ".", 2)
+	if len(tokens) != 2 {
+		return ID{}, errors.New("malformed ID")
+	}
+	return NewID(tokens[0], tokens[1]), nil
 }
 
 type Endpoint struct {
