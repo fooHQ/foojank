@@ -22,7 +22,7 @@ func NewCommand() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "service-name",
-				Value: "vessel",
+				Value: "",
 			},
 			&cli.DurationFlag{
 				Name:  "timeout",
