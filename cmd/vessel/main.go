@@ -42,6 +42,7 @@ func main() {
 		},
 		AllowReconnect: true,
 		MaxReconnect:   -1,
+		InboxPrefix:    "_INBOX_" + config.ServiceName,
 	}
 
 	nc, err := opts.Connect()
