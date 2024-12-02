@@ -1,0 +1,197 @@
+{
+  "lockfile_version": "1",
+  "packages": {
+    "go@1.22": {
+      "last_modified": "2024-11-16T04:25:12Z",
+      "resolved": "github:NixOS/nixpkgs/34a626458d686f1b58139620a8b2793e9e123bba#go_1_22",
+      "source": "devbox-search",
+      "version": "1.22.9",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/4nf51i4ah186y2jy3fad2fyvpa49qx6q-go-1.22.9",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/4nf51i4ah186y2jy3fad2fyvpa49qx6q-go-1.22.9"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/8w8vzwgp55yl8j1ljgm4wzdgjkvkv5v3-go-1.22.9",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/8w8vzwgp55yl8j1ljgm4wzdgjkvkv5v3-go-1.22.9"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/vlih7j78ki05i8nvzdsxvws7a7ksq04m-go-1.22.9",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/vlih7j78ki05i8nvzdsxvws7a7ksq04m-go-1.22.9"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/frc5188kgv3ws0n999c7cy5vi2f8k4jp-go-1.22.9",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/frc5188kgv3ws0n999c7cy5vi2f8k4jp-go-1.22.9"
+        }
+      }
+    },
+    "golangci-lint@1.62.0": {
+      "last_modified": "2024-11-16T04:25:12Z",
+      "resolved": "github:NixOS/nixpkgs/34a626458d686f1b58139620a8b2793e9e123bba#golangci-lint",
+      "source": "devbox-search",
+      "version": "1.62.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/3n3m7z2y3wsgsd69r551jqqc1zrq8lwj-golangci-lint-1.62.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/3n3m7z2y3wsgsd69r551jqqc1zrq8lwj-golangci-lint-1.62.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/kcp7197947lansarn4x4ddnyh8m7hw0z-golangci-lint-1.62.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/kcp7197947lansarn4x4ddnyh8m7hw0z-golangci-lint-1.62.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/ymg3531fpln5b8bfwnf9gq7c1sr81f2y-golangci-lint-1.62.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/ymg3531fpln5b8bfwnf9gq7c1sr81f2y-golangci-lint-1.62.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/3vzfj43k05qsxdhiphw60j3gfvv6yhak-golangci-lint-1.62.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/3vzfj43k05qsxdhiphw60j3gfvv6yhak-golangci-lint-1.62.0"
+        }
+      }
+    },
+    "natscli@latest": {
+      "last_modified": "2024-11-16T04:25:12Z",
+      "resolved": "github:NixOS/nixpkgs/34a626458d686f1b58139620a8b2793e9e123bba#natscli",
+      "source": "devbox-search",
+      "version": "0.1.5",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/67j5838b0jvmkxk0ffx4hqzsfig9v90k-natscli-0.1.5",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/67j5838b0jvmkxk0ffx4hqzsfig9v90k-natscli-0.1.5"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/0llydlszi0j4v76dw0jfvbzsric9q9k0-natscli-0.1.5",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/0llydlszi0j4v76dw0jfvbzsric9q9k0-natscli-0.1.5"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/gz79kdv1i8zy9lm7wgvm27sadf69zyd8-natscli-0.1.5",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/gz79kdv1i8zy9lm7wgvm27sadf69zyd8-natscli-0.1.5"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/wccr8617k2kg63l8wx7v0gn6k6dkanac-natscli-0.1.5",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/wccr8617k2kg63l8wx7v0gn6k6dkanac-natscli-0.1.5"
+        }
+      }
+    },
+    "nsc@latest": {
+      "last_modified": "2024-11-16T04:25:12Z",
+      "resolved": "github:NixOS/nixpkgs/34a626458d686f1b58139620a8b2793e9e123bba#nsc",
+      "source": "devbox-search",
+      "version": "2.10.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/2di2a4v1v81s9fxwdlrzj7a8jpmds7dc-nsc-2.10.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/2di2a4v1v81s9fxwdlrzj7a8jpmds7dc-nsc-2.10.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/jrldhf0spz58ix721xi0fwmc7n4586s9-nsc-2.10.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/jrldhf0spz58ix721xi0fwmc7n4586s9-nsc-2.10.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/sc31jh5jgrxal211ngavqwdsp0qhf54k-nsc-2.10.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/sc31jh5jgrxal211ngavqwdsp0qhf54k-nsc-2.10.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/912wx50dg4rhpzc0ibzyz0vnqc2x50ll-nsc-2.10.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/912wx50dg4rhpzc0ibzyz0vnqc2x50ll-nsc-2.10.0"
+        }
+      }
+    }
+  }
+}
