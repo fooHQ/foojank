@@ -63,20 +63,20 @@ func NewLogger(ctx context.Context, conf *config.Config) *slog.Logger {
 	}))
 }
 
-func NewNATSConnection(ctx context.Context, conf *config.Config, logger *slog.Logger) (*nats.Conn, error) {
+func NewServerConnection(ctx context.Context, conf *config.Config, logger *slog.Logger) (*nats.Conn, error) {
 	servers := strings.Join(conf.Servers, ",")
 	nc, err := nats.Connect(
 		servers,
 		nats.UserJWTAndSeed(conf.User.JWT, conf.User.Key),
 		nats.MaxReconnects(-1),
 		nats.ConnectHandler(func(nc *nats.Conn) {
-			logger.Debug("connected to NATS")
+			logger.Debug("connected to the server")
 		}),
 		nats.ReconnectHandler(func(nc *nats.Conn) {
-			logger.Info("reconnected to NATS")
+			logger.Info("reconnected to the server")
 		}),
 		nats.DisconnectErrHandler(func(conn *nats.Conn, err error) {
-			err = fmt.Errorf("disconnected from NATS: %v", err)
+			err = fmt.Errorf("disconnected from the server: %v", err)
 			logger.Warn(err.Error())
 		}),
 		/*nats.ErrorHandler(func(conn *nats.Conn, subscription *nats.Subscription, err error) {
@@ -85,7 +85,7 @@ func NewNATSConnection(ctx context.Context, conf *config.Config, logger *slog.Lo
 		}),*/
 	)
 	if err != nil {
-		err = fmt.Errorf("cannot connect to NATS: %v", err)
+		err = fmt.Errorf("cannot connect to the server: %v", err)
 		logger.Error(err.Error())
 		return nil, err
 	}

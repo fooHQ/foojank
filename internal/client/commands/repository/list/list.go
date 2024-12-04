@@ -38,7 +38,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	logger := actions.NewLogger(ctx, conf)
-	nc, err := actions.NewNATSConnection(ctx, conf, logger)
+	nc, err := actions.NewServerConnection(ctx, conf, logger)
 	if err != nil {
 		return err
 	}
