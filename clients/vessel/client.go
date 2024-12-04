@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/foohq/foojank/proto"
-	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nats.go/micro"
 	"strings"
 	"sync"
+
+	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/micro"
+
+	"github.com/foohq/foojank/proto"
 )
 
 type Client struct {

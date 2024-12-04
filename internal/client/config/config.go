@@ -2,8 +2,9 @@ package config
 
 import (
 	"errors"
-	"github.com/goccy/go-yaml"
 	"os"
+
+	"github.com/goccy/go-yaml"
 )
 
 var ErrParserError = errors.New("parser error")

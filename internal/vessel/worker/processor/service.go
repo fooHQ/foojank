@@ -2,13 +2,15 @@ package processor
 
 import (
 	"context"
+
+	"golang.org/x/sync/errgroup"
+
 	"github.com/foohq/foojank/clients/repository"
 	"github.com/foohq/foojank/internal/engine"
 	"github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
 	"github.com/foohq/foojank/internal/vessel/log"
 	"github.com/foohq/foojank/internal/vessel/worker/decoder"
-	"golang.org/x/sync/errgroup"
 )
 
 type Arguments struct {

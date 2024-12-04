@@ -1,10 +1,11 @@
 package agent
 
 import (
+	"github.com/urfave/cli/v3"
+
 	"github.com/foohq/foojank/internal/client/actions"
 	"github.com/foohq/foojank/internal/client/commands/agent/exec"
 	"github.com/foohq/foojank/internal/client/commands/agent/list"
-	"github.com/urfave/cli/v3"
 )
 
 func NewCommand() *cli.Command {

@@ -1,9 +1,10 @@
 package config
 
 import (
+	"github.com/urfave/cli/v3"
+
 	"github.com/foohq/foojank/internal/client/actions"
 	"github.com/foohq/foojank/internal/client/commands/config/generate"
-	"github.com/urfave/cli/v3"
 )
 
 // Usage:

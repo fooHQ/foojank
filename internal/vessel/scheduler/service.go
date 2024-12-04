@@ -2,14 +2,16 @@ package scheduler
 
 import (
 	"context"
+	"sync"
+
+	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
+
 	"github.com/foohq/foojank/internal/vessel/config"
 	"github.com/foohq/foojank/internal/vessel/decoder"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
 	"github.com/foohq/foojank/internal/vessel/log"
 	"github.com/foohq/foojank/internal/vessel/worker"
-	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nats.go/jetstream"
-	"sync"
 )
 
 type Arguments struct {

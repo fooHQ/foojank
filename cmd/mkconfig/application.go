@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/foohq/foojank"
+	"os"
+
 	"github.com/goccy/go-yaml"
 	"github.com/urfave/cli/v3"
-	"os"
+
+	"github.com/foohq/foojank"
 )
 
 func NewApplication() *cli.Command {

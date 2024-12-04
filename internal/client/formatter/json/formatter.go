@@ -2,8 +2,9 @@ package json
 
 import (
 	"encoding/json"
-	"github.com/foohq/foojank/internal/client/formatter"
 	"io"
+
+	"github.com/foohq/foojank/internal/client/formatter"
 )
 
 var _ formatter.Formatter = &Formatter{}

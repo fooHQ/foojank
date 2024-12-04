@@ -3,12 +3,14 @@ package remove
 import (
 	"context"
 	"fmt"
+	"log/slog"
+
+	"github.com/nats-io/nats.go/jetstream"
+	"github.com/urfave/cli/v3"
+
 	"github.com/foohq/foojank/clients/repository"
 	"github.com/foohq/foojank/internal/client/actions"
 	"github.com/foohq/foojank/internal/client/path"
-	"github.com/nats-io/nats.go/jetstream"
-	"github.com/urfave/cli/v3"
-	"log/slog"
 )
 
 func NewCommand() *cli.Command {

@@ -4,14 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/foohq/foojank/internal/client/config"
-	"github.com/foohq/foojank/internal/client/flags"
-	"github.com/lmittmann/tint"
-	"github.com/nats-io/nats.go"
-	"github.com/urfave/cli/v3"
 	"log/slog"
 	"os"
 	"strings"
+
+	"github.com/lmittmann/tint"
+	"github.com/nats-io/nats.go"
+	"github.com/urfave/cli/v3"
+
+	"github.com/foohq/foojank/internal/client/config"
+	"github.com/foohq/foojank/internal/client/flags"
 )
 
 func NewConfig(ctx context.Context, c *cli.Command) (*config.Config, error) {

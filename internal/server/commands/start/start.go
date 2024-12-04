@@ -3,13 +3,15 @@ package start
 import (
 	"context"
 	"fmt"
-	"github.com/foohq/foojank/internal/server/actions"
-	"github.com/foohq/foojank/internal/server/config"
+	"log/slog"
+	"time"
+
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/urfave/cli/v3"
-	"log/slog"
-	"time"
+
+	"github.com/foohq/foojank/internal/server/actions"
+	"github.com/foohq/foojank/internal/server/config"
 )
 
 func NewCommand() *cli.Command {

@@ -3,11 +3,13 @@ package create
 import (
 	"context"
 	"fmt"
-	"github.com/foohq/foojank/clients/repository"
-	"github.com/foohq/foojank/internal/client/actions"
+	"log/slog"
+
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/urfave/cli/v3"
-	"log/slog"
+
+	"github.com/foohq/foojank/clients/repository"
+	"github.com/foohq/foojank/internal/client/actions"
 )
 
 func NewCommand() *cli.Command {

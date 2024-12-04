@@ -3,12 +3,14 @@ package decoder
 import (
 	"bytes"
 	"context"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/foohq/foojank/internal/testutils"
 	"github.com/foohq/foojank/internal/vessel/connector"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
 	"github.com/foohq/foojank/proto"
-	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestService(t *testing.T) {

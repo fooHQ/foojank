@@ -2,6 +2,7 @@ package decoder
 
 import (
 	"context"
+
 	"github.com/foohq/foojank/internal/vessel/worker/connector"
 )
 

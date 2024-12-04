@@ -3,11 +3,13 @@ package build
 import (
 	"context"
 	"fmt"
-	"github.com/foohq/foojank/fzz"
-	"github.com/foohq/foojank/internal/client/actions"
-	"github.com/urfave/cli/v3"
 	"log/slog"
 	"path/filepath"
+
+	"github.com/urfave/cli/v3"
+
+	"github.com/foohq/foojank/fzz"
+	"github.com/foohq/foojank/internal/client/actions"
 )
 
 func NewCommand() *cli.Command {

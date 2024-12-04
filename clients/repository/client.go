@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"github.com/nats-io/nats.go/jetstream"
 	"io"
+
+	"github.com/nats-io/nats.go/jetstream"
 )
 
 type Client struct {

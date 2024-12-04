@@ -3,10 +3,11 @@ package fzz
 import (
 	"archive/zip"
 	"errors"
-	"github.com/otiai10/copy"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/otiai10/copy"
 )
 
 var (

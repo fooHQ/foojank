@@ -1,9 +1,10 @@
 package server
 
 import (
-	"github.com/foohq/foojank/internal/client/commands/config/generate/seed"
 	"github.com/goccy/go-yaml"
 	"github.com/nats-io/nkeys"
+
+	"github.com/foohq/foojank/internal/client/commands/config/generate/seed"
 )
 
 type Output struct {

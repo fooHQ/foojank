@@ -2,9 +2,10 @@ package fzz
 
 import (
 	"archive/zip"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBuild(t *testing.T) {

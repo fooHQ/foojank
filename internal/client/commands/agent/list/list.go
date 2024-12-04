@@ -3,16 +3,18 @@ package list
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"os"
+	"sync"
+	"time"
+
+	"github.com/urfave/cli/v3"
+
 	"github.com/foohq/foojank/clients/vessel"
 	"github.com/foohq/foojank/internal/client/actions"
 	"github.com/foohq/foojank/internal/client/formatter"
 	jsonformatter "github.com/foohq/foojank/internal/client/formatter/json"
 	tableformatter "github.com/foohq/foojank/internal/client/formatter/table"
-	"github.com/urfave/cli/v3"
-	"log/slog"
-	"os"
-	"sync"
-	"time"
 )
 
 func NewCommand() *cli.Command {

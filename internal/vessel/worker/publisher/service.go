@@ -2,8 +2,10 @@ package publisher
 
 import (
 	"context"
-	"github.com/foohq/foojank/internal/vessel/log"
+
 	"github.com/nats-io/nats.go"
+
+	"github.com/foohq/foojank/internal/vessel/log"
 )
 
 type Arguments struct {

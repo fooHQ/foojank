@@ -3,15 +3,17 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"github.com/foohq/foojank/internal/vessel"
-	"github.com/foohq/foojank/internal/vessel/config"
-	"github.com/foohq/foojank/internal/vessel/log"
-	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nats.go/jetstream"
 	"os"
 	"os/signal"
 	"os/user"
 	"runtime"
+
+	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
+
+	"github.com/foohq/foojank/internal/vessel"
+	"github.com/foohq/foojank/internal/vessel/config"
+	"github.com/foohq/foojank/internal/vessel/log"
 )
 
 func main() {

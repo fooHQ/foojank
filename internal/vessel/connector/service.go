@@ -2,9 +2,11 @@ package connector
 
 import (
 	"context"
-	"github.com/foohq/foojank/internal/vessel/log"
+
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
+
+	"github.com/foohq/foojank/internal/vessel/log"
 )
 
 type Arguments struct {

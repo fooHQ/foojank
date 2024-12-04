@@ -2,10 +2,11 @@ package seed
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/goccy/go-yaml"
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
-	"os"
 )
 
 type Entity struct {

@@ -2,11 +2,13 @@ package connector
 
 import (
 	"context"
-	"github.com/foohq/foojank/internal/testutils"
-	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/foohq/foojank/internal/testutils"
 )
 
 func TestService(t *testing.T) {

@@ -1,6 +1,11 @@
 package client
 
 import (
+	"os"
+	"path/filepath"
+
+	"github.com/urfave/cli/v3"
+
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/internal/client/actions"
 	"github.com/foohq/foojank/internal/client/commands/agent"
@@ -8,9 +13,6 @@ import (
 	_package "github.com/foohq/foojank/internal/client/commands/package"
 	"github.com/foohq/foojank/internal/client/commands/repository"
 	"github.com/foohq/foojank/internal/client/flags"
-	"github.com/urfave/cli/v3"
-	"os"
-	"path/filepath"
 )
 
 const DefaultConfigFilename = "fjrc.toml"

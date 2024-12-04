@@ -2,12 +2,13 @@ package testutils
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/nats-io/nats-server/v2/server"
 	natsserver "github.com/nats-io/nats-server/v2/test"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var _ micro.Request = &Request{}

@@ -2,12 +2,14 @@ package vessel
 
 import (
 	"context"
-	"github.com/foohq/foojank/internal/vessel/connector"
-	"github.com/foohq/foojank/internal/vessel/decoder"
-	"github.com/foohq/foojank/internal/vessel/scheduler"
+
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/foohq/foojank/internal/vessel/connector"
+	"github.com/foohq/foojank/internal/vessel/decoder"
+	"github.com/foohq/foojank/internal/vessel/scheduler"
 )
 
 type Arguments struct {

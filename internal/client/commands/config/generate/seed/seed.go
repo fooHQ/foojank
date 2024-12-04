@@ -3,9 +3,11 @@ package seed
 import (
 	"context"
 	"fmt"
-	"github.com/foohq/foojank/internal/client/actions"
-	"github.com/urfave/cli/v3"
 	"log/slog"
+
+	"github.com/urfave/cli/v3"
+
+	"github.com/foohq/foojank/internal/client/actions"
 )
 
 func NewCommand() *cli.Command {

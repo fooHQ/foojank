@@ -2,10 +2,12 @@ package client
 
 import (
 	"fmt"
-	"github.com/foohq/foojank/internal/client/commands/config/generate/seed"
+
 	"github.com/goccy/go-yaml"
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
+
+	"github.com/foohq/foojank/internal/client/commands/config/generate/seed"
 )
 
 type Output struct {

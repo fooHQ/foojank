@@ -5,16 +5,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/foohq/foojank/clients/vessel"
-	"github.com/foohq/foojank/internal/client/actions"
-	"github.com/foohq/foojank/internal/client/path"
-	"github.com/foohq/foojank/internal/vessel/errcodes"
-	"github.com/muesli/cancelreader"
-	"github.com/urfave/cli/v3"
 	"log/slog"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/muesli/cancelreader"
+	"github.com/urfave/cli/v3"
+
+	"github.com/foohq/foojank/clients/vessel"
+	"github.com/foohq/foojank/internal/client/actions"
+	"github.com/foohq/foojank/internal/client/path"
+	"github.com/foohq/foojank/internal/vessel/errcodes"
 )
 
 func NewCommand() *cli.Command {

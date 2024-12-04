@@ -1,8 +1,10 @@
 package proto
 
 import (
-	capnplib "capnproto.org/go/capnp/v3"
 	"errors"
+
+	capnplib "capnproto.org/go/capnp/v3"
+
 	"github.com/foohq/foojank/proto/capnp"
 )
 

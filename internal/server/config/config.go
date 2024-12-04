@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/goccy/go-yaml"
 	"os"
+
+	"github.com/goccy/go-yaml"
 )
 
 type Entity struct {

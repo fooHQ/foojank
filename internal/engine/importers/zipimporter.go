@@ -3,12 +3,13 @@ package importers
 import (
 	"archive/zip"
 	"context"
+	"io"
+	"io/fs"
+
 	"github.com/risor-io/risor/compiler"
 	"github.com/risor-io/risor/importer"
 	"github.com/risor-io/risor/object"
 	"github.com/risor-io/risor/parser"
-	"io"
-	"io/fs"
 )
 
 var _ importer.Importer = &ZipImporter{}

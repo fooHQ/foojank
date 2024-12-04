@@ -1,10 +1,11 @@
 package os
 
 import (
-	risoros "github.com/risor-io/risor/os"
 	"io"
 	"io/fs"
 	"time"
+
+	risoros "github.com/risor-io/risor/os"
 )
 
 var _ risoros.File = Pipe{}

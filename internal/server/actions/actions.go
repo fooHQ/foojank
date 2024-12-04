@@ -3,11 +3,13 @@ package actions
 import (
 	"context"
 	"fmt"
-	"github.com/foohq/foojank/internal/server/flags"
-	"github.com/lmittmann/tint"
-	"github.com/urfave/cli/v3"
 	"log/slog"
 	"os"
+
+	"github.com/lmittmann/tint"
+	"github.com/urfave/cli/v3"
+
+	"github.com/foohq/foojank/internal/server/flags"
 )
 
 func CommandNotFound(ctx context.Context, c *cli.Command, s string) {

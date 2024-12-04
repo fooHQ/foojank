@@ -3,6 +3,7 @@ package windows
 import (
 	"context"
 	"fmt"
+
 	"github.com/risor-io/risor/object"
 	"github.com/risor-io/risor/op"
 	"golang.org/x/sys/windows"

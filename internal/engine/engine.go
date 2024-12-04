@@ -3,13 +3,15 @@ package engine
 import (
 	"context"
 	"errors"
-	"github.com/foohq/foojank/internal/engine/importers"
+	"io"
+
 	"github.com/risor-io/risor"
 	"github.com/risor-io/risor/compiler"
 	"github.com/risor-io/risor/object"
 	"github.com/risor-io/risor/parser"
 	"github.com/risor-io/risor/vm"
-	"io"
+
+	"github.com/foohq/foojank/internal/engine/importers"
 )
 
 type Engine struct {

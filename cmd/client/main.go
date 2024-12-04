@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/foohq/foojank/internal/client"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/foohq/foojank/internal/client"
 )
 
 func main() {

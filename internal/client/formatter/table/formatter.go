@@ -1,9 +1,11 @@
 package table
 
 import (
-	"github.com/foohq/foojank/internal/client/formatter"
-	"github.com/olekukonko/tablewriter"
 	"io"
+
+	"github.com/olekukonko/tablewriter"
+
+	"github.com/foohq/foojank/internal/client/formatter"
 )
 
 var _ formatter.Formatter = &Formatter{}

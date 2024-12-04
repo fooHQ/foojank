@@ -3,11 +3,12 @@ package server
 // TODO: do not import from application directory!
 
 import (
+	"github.com/urfave/cli/v3"
+
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/internal/server/actions"
 	"github.com/foohq/foojank/internal/server/commands/start"
 	"github.com/foohq/foojank/internal/server/flags"
-	"github.com/urfave/cli/v3"
 )
 
 func New() *cli.Command {
