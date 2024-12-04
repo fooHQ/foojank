@@ -3,7 +3,7 @@ package start
 import (
 	"context"
 	"fmt"
-	"github.com/foohq/foojank/internal/client/actions"
+	"github.com/foohq/foojank/internal/server/actions"
 	"github.com/foohq/foojank/internal/server/config"
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats-server/v2/server"
