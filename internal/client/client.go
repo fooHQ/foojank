@@ -24,12 +24,14 @@ func New() *cli.Command {
 				Aliases: []string{"s"},
 			},
 			&cli.StringFlag{
-				Name:  flags.UserJWT,
-				Usage: "user JWT token",
+				Name:     flags.UserJWT,
+				Usage:    "user JWT token",
+				Required: true,
 			},
 			&cli.StringFlag{
-				Name:  flags.UserNkey,
-				Usage: "user secrete NKey",
+				Name:     flags.UserNkey,
+				Usage:    "user secrete NKey",
+				Required: true,
 			},
 			&cli.IntFlag{
 				Name:  flags.LogLevel,
