@@ -5,18 +5,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: repo
       - uses: jetify-com/devbox-install-action@v0.11.0
       - run: make test
-        working-directory: repo
 
   linter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: repo
       - uses: jetify-com/devbox-install-action@v0.11.0
       - run: make lint
-        working-directory: repo
