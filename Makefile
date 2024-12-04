@@ -20,6 +20,14 @@ build/client/prod:
 build/client/dev:
 	go build -tags debug -o build/client ./cmd/client
 
+.PHONY: build/server/prod
+build/server/prod:
+	go build -ldflags "-w -s" -o build/server ./cmd/server
+
+.PHONY: build/server/dev
+build/server/dev:
+	go build -tags debug -o build/server ./cmd/server
+
 .PHONY: generate
 generate:
 	go generate ./...
@@ -27,6 +35,10 @@ generate:
 .PHONY: run/vessel
 run/vessel:
 	CGO_ENABLED=1 go run -race -tags debug ./cmd/vessel
+
+.PHONY: run/server
+run/server:
+	CGO_ENABLED=1 go run -race ./cmd/server start
 
 .PHONY: test
 test:
