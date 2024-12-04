@@ -3,7 +3,7 @@ package actions
 import (
 	"context"
 	"fmt"
-	"github.com/foohq/foojank/internal/application/flags"
+	"github.com/foohq/foojank/internal/client/flags"
 	"github.com/lmittmann/tint"
 	"github.com/urfave/cli/v3"
 	"log/slog"
