@@ -39,6 +39,7 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 			return err
 		}
 
+		// TODO: configurable username
 		clientFile, err := NewOutput(seedFile, "userTODO")
 		if err != nil {
 			err = fmt.Errorf("cannot generate client configuration: %v", err)

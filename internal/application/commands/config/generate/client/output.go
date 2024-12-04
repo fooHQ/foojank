@@ -19,7 +19,7 @@ func (c *Output) String() string {
 }
 
 func NewOutput(seedFile *seed.Output, username string) (*Output, error) {
-	userJWT, userKey, err := generateUser(username, []byte(seedFile.Account.SigningKey))
+	userJWT, userKey, err := generateUser(username, []byte(seedFile.Account.Key), []byte(seedFile.Account.SigningKey))
 	if err != nil {
 		return nil, err
 	}
@@ -33,10 +33,15 @@ func NewOutput(seedFile *seed.Output, username string) (*Output, error) {
 	}, nil
 }
 
-func generateUser(name string, accountSignKey []byte) (string, []byte, error) {
+func generateUser(name string, accountKey, accountSignKey []byte) (string, []byte, error) {
 	keyPair, err := nkeys.CreateUser()
 	if err != nil {
 		return "", nil, fmt.Errorf("cannot generate user key-pair: %v", err)
+	}
+
+	accountKeyPair, err := nkeys.FromSeed(accountKey)
+	if err != nil {
+		return "", nil, fmt.Errorf("cannot decode account's key-pair: %v", err)
 	}
 
 	accountSignKeyPair, err := nkeys.FromSeed(accountSignKey)
@@ -49,8 +54,14 @@ func generateUser(name string, accountSignKey []byte) (string, []byte, error) {
 		return "", nil, fmt.Errorf("cannot get user's public key: %v", err)
 	}
 
+	accountPubKey, err := accountKeyPair.PublicKey()
+	if err != nil {
+		return "", nil, fmt.Errorf("cannot get account's public key: %v", err)
+	}
+
 	claims := jwt.NewUserClaims(pubKey)
 	claims.Name = name
+	claims.IssuerAccount = accountPubKey
 	// TODO: define permissions
 	claimsEnc, err := claims.Encode(accountSignKeyPair)
 	if err != nil {
