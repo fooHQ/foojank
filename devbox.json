@@ -6,6 +6,10 @@
     "natscli@latest",
     "nsc@latest"
   ],
+  "env": {
+    "GOROOT": "",
+    "GOPATH": ""
+  },
   "shell": {
     "init_hook": [
       "echo 'Welcome to devbox!' > /dev/null"
