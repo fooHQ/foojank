@@ -9,6 +9,7 @@ import (
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/urfave/cli/v3"
 	"log/slog"
+	"time"
 )
 
 func NewCommand() *cli.Command {
@@ -35,7 +36,7 @@ func startAction(logger *slog.Logger) cli.ActionFunc {
 		}
 
 		// TODO: configurable directory!
-		resolver, err := server.NewDirAccResolver("/tmp/nats-jwt", 0, 0, 1)
+		resolver, err := server.NewDirAccResolver("/tmp/nats-jwt", 0, 0, 1, server.FetchTimeout(2*time.Second))
 		if err != nil {
 			err := fmt.Errorf("cannot create account resolver: %v", err)
 			logger.Error(err.Error())
@@ -85,13 +86,10 @@ func startAction(logger *slog.Logger) cli.ActionFunc {
 		s.ConfigureLogger()
 
 		go func() {
-			<-ctx.Done()
-			s.Shutdown()
-		}()
-
-		go func() {
-			// TODO: use server.Run instead
-			s.Start()
+			err := server.Run(s)
+			if err != nil {
+				logger.Error(err.Error())
+			}
 		}()
 
 		s.WaitForShutdown()
