@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/client/actions"
@@ -46,8 +47,8 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 			return err
 		}
 
-		// TODO: configurable username
-		clientFile, err := NewOutput(seedFile, "userTODO")
+		username := fmt.Sprintf("MG%s", nuid.Next())
+		clientFile, err := NewOutput(seedFile, username)
 		if err != nil {
 			err = fmt.Errorf("cannot generate client configuration: %v", err)
 			logger.Error(err.Error())

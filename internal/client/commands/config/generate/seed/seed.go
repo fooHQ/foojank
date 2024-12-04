@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/client/actions"
@@ -30,11 +31,10 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func createAction(logger *slog.Logger) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		// TODO: make operator name configurable - or generate random!
-		// TODO: make account name configurable - or generate random!
-		// TODO: make servers configurable!
+		operatorName := fmt.Sprintf("OP%s", nuid.Next())
+		accountName := fmt.Sprintf("AC%s", nuid.Next())
 		servers := []string{"nats://localhost:4222"}
-		seedFile, err := NewOutput(servers, "operatorTest", "accountTest")
+		seedFile, err := NewOutput(servers, operatorName, accountName)
 		if err != nil {
 			err = fmt.Errorf("cannot generate a seed file: %v", err)
 			logger.Error(err.Error())
