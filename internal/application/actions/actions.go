@@ -2,7 +2,6 @@ package actions
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"github.com/foohq/foojank/internal/application/flags"
 	"github.com/lmittmann/tint"
@@ -31,33 +30,27 @@ func NewLogger(ctx context.Context, c *cli.Command) *slog.Logger {
 
 func NewNATSConnection(ctx context.Context, c *cli.Command, logger *slog.Logger) (*nats.Conn, error) {
 	server := c.String(flags.Server)
-	user := c.String(flags.Username)
-	password := c.String(flags.Password)
-	opts := nats.Options{
-		Url:      server,
-		User:     user,
-		Password: password,
-		// TODO: delete before the release!
-		// TODO: auto-enable if --insecure flag is set!
-		TLSConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-		AllowReconnect: true,
-		MaxReconnect:   -1,
-		ConnectedCB: func(conn *nats.Conn) {
-			logger.Debug("connected to NATS", "server", server, "username", user)
-		},
-		ReconnectedCB: func(conn *nats.Conn) {
-			logger.Info("reconnected to NATS", "server", server, "username", user)
-		},
-		DisconnectedErrCB: func(conn *nats.Conn, err error) {
-			logger.Warn("disconnected from NATS", "error", err, "server", server, "username", user)
-		},
-	}
-
-	nc, err := opts.Connect()
+	userJWT := c.String(flags.UserJWT)
+	userNkey := c.String(flags.UserNkey)
+	nc, err := nats.Connect(server,
+		nats.UserJWTAndSeed(userJWT, userNkey),
+		nats.MaxReconnects(-1),
+		nats.ConnectHandler(func(nc *nats.Conn) {
+			logger.Debug("connected to NATS", "server", server)
+		}),
+		nats.ReconnectHandler(func(nc *nats.Conn) {
+			logger.Info("reconnected to NATS", "server", server)
+		}),
+		nats.DisconnectErrHandler(func(conn *nats.Conn, err error) {
+			logger.Warn("disconnected from NATS", "error", err, "server", server)
+		}),
+		/*nats.ErrorHandler(func(conn *nats.Conn, subscription *nats.Subscription, err error) {
+			// TODO: set better error message
+			logger.Warn("NATS error ", "error", err, "server", server)
+		}),*/
+	)
 	if err != nil {
-		logger.Error("cannot connect to NATS server", "server", server, "username", user, "error", err)
+		logger.Error("cannot connect to NATS server", "server", server, "error", err)
 		return nil, err
 	}
 

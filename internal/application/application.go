@@ -24,14 +24,12 @@ func New() *cli.Command {
 				Aliases: []string{"s"},
 			},
 			&cli.StringFlag{
-				Name:    flags.Username,
-				Usage:   "authenticate to the server as user",
-				Aliases: []string{"u"},
+				Name:  flags.UserJWT,
+				Usage: "user JWT token",
 			},
 			&cli.StringFlag{
-				Name:    flags.Password,
-				Usage:   "set user password",
-				Aliases: []string{"p"},
+				Name:  flags.UserNkey,
+				Usage: "user secrete NKey",
 			},
 			&cli.IntFlag{
 				Name:  flags.LogLevel,

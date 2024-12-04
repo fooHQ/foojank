@@ -2,8 +2,8 @@ package flags
 
 const (
 	Server   = "server"
-	Username = "username"
-	Password = "password"
+	UserJWT  = "user-jwt"
+	UserNkey = "user-nkey"
 	LogLevel = "log-level"
 	NoColor  = "no-color"
 )
