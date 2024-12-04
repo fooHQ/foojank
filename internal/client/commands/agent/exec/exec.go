@@ -28,7 +28,12 @@ func NewCommand() *cli.Command {
 }
 
 func action(ctx context.Context, c *cli.Command) error {
-	logger := actions.NewLogger(ctx, c)
+	conf, err := actions.NewConfig(ctx, c)
+	if err != nil {
+		return err
+	}
+
+	logger := actions.NewLogger(ctx, conf)
 
 	if c.Args().Len() != 2 {
 		err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
@@ -36,7 +41,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	nc, err := actions.NewNATSConnection(ctx, c, logger)
+	nc, err := actions.NewNATSConnection(ctx, conf, logger)
 	if err != nil {
 		return err
 	}

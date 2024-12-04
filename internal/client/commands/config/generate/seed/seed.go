@@ -17,7 +17,12 @@ func NewCommand() *cli.Command {
 }
 
 func action(ctx context.Context, c *cli.Command) error {
-	logger := actions.NewLogger(ctx, c)
+	conf, err := actions.NewConfig(ctx, c)
+	if err != nil {
+		return err
+	}
+
+	logger := actions.NewLogger(ctx, conf)
 	return createAction(logger)(ctx, c)
 }
 

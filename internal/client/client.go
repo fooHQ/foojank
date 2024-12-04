@@ -9,29 +9,44 @@ import (
 	"github.com/foohq/foojank/internal/client/commands/repository"
 	"github.com/foohq/foojank/internal/client/flags"
 	"github.com/urfave/cli/v3"
+	"os"
+	"path/filepath"
 )
 
+const DefaultConfigFilename = "fjrc.toml"
+
 func New() *cli.Command {
+	confDir, err := os.UserConfigDir()
+	if err != nil {
+		confDir = "./"
+	}
+	confPath := filepath.Join(confDir, "foojank", DefaultConfigFilename)
+
 	return &cli.Command{
 		Name:    "foojank",
 		Usage:   "A cross-platform command and control (C2) framework",
 		Version: foojank.Version(),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
+				Name:    flags.Config,
+				Usage:   "path to a configuration file",
+				Value:   confPath,
+				Aliases: []string{"c"},
+			},
+			// TODO: use string slice!
+			&cli.StringFlag{
 				Name:    flags.Server,
-				Usage:   "URL of a NATS server",
-				Value:   "wss://localhost",
+				Usage:   "server URL",
+				Value:   "localhost",
 				Aliases: []string{"s"},
 			},
 			&cli.StringFlag{
-				Name:     flags.UserJWT,
-				Usage:    "user JWT token",
-				Required: true,
+				Name:  flags.UserJWT,
+				Usage: "user JWT token",
 			},
 			&cli.StringFlag{
-				Name:     flags.UserNkey,
-				Usage:    "user secrete NKey",
-				Required: true,
+				Name:  flags.UserNkey,
+				Usage: "user secret NKey",
 			},
 			&cli.IntFlag{
 				Name:  flags.LogLevel,

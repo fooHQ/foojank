@@ -39,8 +39,13 @@ func NewCommand() *cli.Command {
 }
 
 func action(ctx context.Context, c *cli.Command) error {
-	logger := actions.NewLogger(ctx, c)
-	nc, err := actions.NewNATSConnection(ctx, c, logger)
+	conf, err := actions.NewConfig(ctx, c)
+	if err != nil {
+		return err
+	}
+
+	logger := actions.NewLogger(ctx, conf)
+	nc, err := actions.NewNATSConnection(ctx, conf, logger)
 	if err != nil {
 		return err
 	}

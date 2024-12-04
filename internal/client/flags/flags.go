@@ -1,6 +1,7 @@
 package flags
 
 const (
+	Config   = "config"
 	Server   = "server"
 	UserJWT  = "user-jwt"
 	UserNkey = "user-nkey"
