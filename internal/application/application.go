@@ -4,6 +4,7 @@ import (
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/internal/application/actions"
 	"github.com/foohq/foojank/internal/application/commands/agent"
+	"github.com/foohq/foojank/internal/application/commands/config"
 	_package "github.com/foohq/foojank/internal/application/commands/package"
 	"github.com/foohq/foojank/internal/application/commands/repository"
 	"github.com/foohq/foojank/internal/application/flags"
@@ -46,6 +47,7 @@ func New() *cli.Command {
 			agent.NewCommand(),
 			_package.NewCommand(),
 			repository.NewCommand(),
+			config.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		HideHelpCommand: true,
