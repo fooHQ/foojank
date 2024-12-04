@@ -1,7 +1,5 @@
 package server
 
-// TODO: do not import from application directory!
-
 import (
 	"github.com/urfave/cli/v3"
 
