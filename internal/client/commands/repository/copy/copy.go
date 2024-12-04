@@ -31,12 +31,6 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	logger := actions.NewLogger(ctx, conf)
 
-	if c.Args().Len() != 2 {
-		err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
-		logger.Error(err.Error())
-		return err
-	}
-
 	nc, err := actions.NewServerConnection(ctx, conf, logger)
 	if err != nil {
 		return err
@@ -67,6 +61,12 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 	// repository:/path/to/file ./ => file
 	// repository:/path/to/file repository:/path/to/file ./ => file (!!! SHOW WARNING THAT THIS WILL OVERWRITE THE FIRST FILE !!!)
 	return func(ctx context.Context, c *cli.Command) error {
+		if c.Args().Len() != 2 {
+			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
+			logger.Error(err.Error())
+			return err
+		}
+
 		files := c.Args().Slice()
 		src := files[0]
 		srcPath, err := path.Parse(src)

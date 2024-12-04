@@ -26,17 +26,17 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	logger := actions.NewLogger(ctx, conf)
 
-	if c.Args().Len() != 1 {
-		err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
-		logger.Error(err.Error())
-		return err
-	}
-
 	return generateAction(logger)(ctx, c)
 }
 
 func generateAction(logger *slog.Logger) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
+		if c.Args().Len() != 1 {
+			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
+			logger.Error(err.Error())
+			return err
+		}
+
 		seedFile, err := seed.ParseOutput(c.Args().First())
 		if err != nil {
 			err = fmt.Errorf("cannot parse seed file: %v", err)

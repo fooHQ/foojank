@@ -29,12 +29,6 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	logger := actions.NewLogger(ctx, conf)
 
-	if c.Args().Len() == 0 {
-		err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
-		logger.Error(err.Error())
-		return err
-	}
-
 	nc, err := actions.NewServerConnection(ctx, conf, logger)
 	if err != nil {
 		return err
@@ -53,6 +47,12 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func removeAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
+		if c.Args().Len() == 0 {
+			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
+			logger.Error(err.Error())
+			return err
+		}
+
 		for _, file := range c.Args().Slice() {
 			filePath, err := path.Parse(file)
 			if err != nil {
