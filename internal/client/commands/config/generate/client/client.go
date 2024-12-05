@@ -4,18 +4,19 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/client/actions"
-	"github.com/foohq/foojank/internal/client/commands/config/generate/seed"
+	"github.com/foohq/foojank/internal/config"
 )
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "client",
-		ArgsUsage: "<seed-file>",
+		ArgsUsage: "<config-file>",
 		Usage:     "Generate client configuration",
 		Action:    action,
 	}
@@ -40,22 +41,39 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 			return err
 		}
 
-		seedFile, err := seed.ParseOutput(c.Args().First())
+		input, err := config.ParseFile(c.Args().First())
 		if err != nil {
-			err = fmt.Errorf("cannot parse seed file: %v", err)
+			err := fmt.Errorf("cannot parse configuration file: %v", err)
+			logger.Error(err.Error())
+			return err
+		}
+
+		account := input.Account
+		if account == nil {
+			err := fmt.Errorf("cannot generate client configuration: no account found")
 			logger.Error(err.Error())
 			return err
 		}
 
 		username := fmt.Sprintf("MG%s", nuid.Next())
-		clientFile, err := NewOutput(seedFile, username)
+		user, err := config.NewUserManager(username, account.PublicKey, []byte(account.SigningKeySeed))
 		if err != nil {
-			err = fmt.Errorf("cannot generate client configuration: %v", err)
+			err := fmt.Errorf("cannot generate client configuration: %v", err)
 			logger.Error(err.Error())
 			return err
 		}
 
-		fmt.Println(clientFile.String())
+		output := config.Config{
+			Servers: input.Servers,
+			Account: &config.Entity{
+				JWT:            account.JWT,
+				PublicKey:      account.PublicKey,
+				SigningKeySeed: account.SigningKeySeed,
+			},
+			User: user,
+		}
+
+		_, _ = fmt.Fprintln(os.Stdout, output.String())
 
 		return nil
 	}

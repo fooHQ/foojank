@@ -4,20 +4,20 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/client/actions"
-	"github.com/foohq/foojank/internal/client/commands/config/generate/seed"
+	"github.com/foohq/foojank/internal/config"
 )
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:      "agent",
-		ArgsUsage: "<seed-file>",
-		Usage:     "Generate agent configuration",
-		Action:    action,
+		Name:   "agent",
+		Usage:  "Generate agent configuration",
+		Action: action,
 	}
 }
 
@@ -29,33 +29,36 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	logger := actions.NewLogger(ctx, conf)
 
-	return generateAction(logger)(ctx, c)
+	return generateAction(logger, conf)(ctx, c)
 }
 
-func generateAction(logger *slog.Logger) cli.ActionFunc {
+func generateAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		if c.Args().Len() != 1 {
-			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
-			logger.Error(err.Error())
-			return err
-		}
-
-		seedFile, err := seed.ParseOutput(c.Args().First())
-		if err != nil {
-			err = fmt.Errorf("cannot parse seed file: %v", err)
-			logger.Error(err.Error())
-			return err
-		}
-
 		username := fmt.Sprintf("AG%s", nuid.Next())
-		clientFile, err := NewOutput(seedFile, username)
-		if err != nil {
-			err = fmt.Errorf("cannot generate client configuration: %v", err)
+		account := conf.Account
+		if account == nil {
+			err := fmt.Errorf("cannot generate agent configuration: no account found")
 			logger.Error(err.Error())
 			return err
 		}
 
-		fmt.Println(clientFile.String())
+		user, err := config.NewUserAgent(username, account.PublicKey, []byte(account.SigningKeySeed))
+		if err != nil {
+			err := fmt.Errorf("cannot generate agent configuration: %v", err)
+			logger.Error(err.Error())
+			return err
+		}
+
+		output := config.Config{
+			Servers: conf.Servers,
+			User: &config.Entity{
+				JWT:       user.JWT,
+				PublicKey: user.PublicKey,
+				KeySeed:   user.KeySeed,
+			},
+		}
+
+		_, _ = fmt.Fprintln(os.Stdout, output.String())
 
 		return nil
 	}

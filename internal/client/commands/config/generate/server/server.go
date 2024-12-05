@@ -4,17 +4,18 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/client/actions"
-	"github.com/foohq/foojank/internal/client/commands/config/generate/seed"
+	"github.com/foohq/foojank/internal/config"
 )
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "server",
-		ArgsUsage: "<seed-file>",
+		ArgsUsage: "<config-file>",
 		Usage:     "Generate server configuration",
 		Action:    action,
 	}
@@ -39,21 +40,51 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 			return err
 		}
 
-		seedFile, err := seed.ParseOutput(c.Args().First())
+		input, err := config.ParseFile(c.Args().First())
 		if err != nil {
-			err = fmt.Errorf("cannot parse seed file: %v", err)
+			err := fmt.Errorf("cannot parse configuration file: %v", err)
 			logger.Error(err.Error())
 			return err
 		}
 
-		serverFile, err := NewOutput(seedFile)
-		if err != nil {
-			err = fmt.Errorf("cannot generate server configuration: %v", err)
+		operator := input.Operator
+		if operator == nil {
+			err := fmt.Errorf("cannot generate server configuration: no operator found")
 			logger.Error(err.Error())
 			return err
 		}
 
-		fmt.Println(serverFile.String())
+		account := input.Account
+		if account == nil {
+			err := fmt.Errorf("cannot generate server configuration: no account found")
+			logger.Error(err.Error())
+			return err
+		}
+
+		systemAccount := input.SystemAccount
+		if account == nil {
+			err := fmt.Errorf("cannot generate server configuration: no system account found")
+			logger.Error(err.Error())
+			return err
+		}
+
+		output := config.Config{
+			Host: input.Host,
+			Operator: &config.Entity{
+				JWT:       operator.JWT,
+				PublicKey: operator.PublicKey,
+			},
+			Account: &config.Entity{
+				JWT:       account.JWT,
+				PublicKey: account.PublicKey,
+			},
+			SystemAccount: &config.Entity{
+				JWT:       systemAccount.JWT,
+				PublicKey: systemAccount.PublicKey,
+			},
+		}
+
+		_, _ = fmt.Fprintln(os.Stdout, output.String())
 
 		return nil
 	}

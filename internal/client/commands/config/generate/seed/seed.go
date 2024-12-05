@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/client/actions"
+	"github.com/foohq/foojank/internal/config"
 )
 
 func NewCommand() *cli.Command {
@@ -33,15 +35,17 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
 		operatorName := fmt.Sprintf("OP%s", nuid.Next())
 		accountName := fmt.Sprintf("AC%s", nuid.Next())
-		servers := []string{"nats://localhost:4222"}
-		seedFile, err := NewOutput(servers, operatorName, accountName)
+		seedFile, err := config.NewOutput(operatorName, accountName)
 		if err != nil {
 			err = fmt.Errorf("cannot generate a seed file: %v", err)
 			logger.Error(err.Error())
 			return err
 		}
 
-		fmt.Println(seedFile.String())
+		seedFile.Host = "localhost"
+		seedFile.Servers = []string{"nats://localhost:4222"}
+
+		_, _ = fmt.Fprintln(os.Stdout, seedFile.String())
 
 		return nil
 	}

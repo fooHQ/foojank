@@ -12,19 +12,19 @@ import (
 
 // Usage:
 // # Generate commands print yaml to stdout
-// config create > seed.yaml
+// config generate seed
 
-// config generate --type=server <seed-file>
+// config generate server <seed-file>
 
 // # Generate manager configuration file.
 // # This also creates a new USER nkey and JWT signed by a selected ACCOUNT.
 // # This configuration is meant to be used with foojank client application.
-// config generate --type=client <seed-file>
+// config generate client <file>
 
 // # Generate agent configuration file.
 // # This also creates a new USER nkey and JWT signed by a selected ACCOUNT.
 // # This configuration is meant to be used with vessel agent.
-// config generate --type=agent <seed-file>
+// config generate agent
 
 // # For debugging only.
 // config generate --type=creds <seed-file>
