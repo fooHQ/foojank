@@ -33,8 +33,8 @@ func NewConfig(ctx context.Context, c *cli.Command) (*config.Config, error) {
 		conf.Servers = c.StringSlice(flags.Server)
 	case c.IsSet(flags.UserJWT):
 		conf.User.JWT = c.String(flags.UserJWT)
-	case c.IsSet(flags.UserNkey):
-		conf.User.KeySeed = c.String(flags.UserNkey)
+	case c.IsSet(flags.UserKey):
+		conf.User.KeySeed = c.String(flags.UserKey)
 	case c.IsSet(flags.LogLevel):
 		v := c.Int(flags.LogLevel)
 		conf.LogLevel = &v

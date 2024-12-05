@@ -47,7 +47,7 @@ func New() *cli.Command {
 				Usage: "user JWT token",
 			},
 			&cli.StringFlag{
-				Name:  flags.UserNkey,
+				Name:  flags.UserKey,
 				Usage: "user secret NKey",
 			},
 			&cli.IntFlag{

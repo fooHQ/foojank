@@ -1,11 +1,10 @@
 package flags
 
 const (
-	Config  = "config"
-	Server  = "server"
-	UserJWT = "user-jwt"
-	// TODO: do not use nkey
-	UserNkey = "user-nkey"
+	Config   = "config"
+	Server   = "server"
+	UserJWT  = "user-jwt"
+	UserKey  = "user-key"
 	LogLevel = "log-level"
 	NoColor  = "no-color"
 )
