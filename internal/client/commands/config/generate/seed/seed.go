@@ -35,17 +35,37 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
 		operatorName := fmt.Sprintf("OP%s", nuid.Next())
 		accountName := fmt.Sprintf("AC%s", nuid.Next())
-		seedFile, err := config.NewOutput(operatorName, accountName)
+
+		operator, err := config.NewOperator(operatorName)
 		if err != nil {
-			err = fmt.Errorf("cannot generate a seed file: %v", err)
+			err := fmt.Errorf("cannot generate configuration: %v", err)
 			logger.Error(err.Error())
 			return err
 		}
 
-		seedFile.Host = "localhost"
-		seedFile.Servers = []string{"nats://localhost:4222"}
+		account, err := config.NewAccount(accountName, []byte(operator.SigningKeySeed))
+		if err != nil {
+			err := fmt.Errorf("cannot generate configuration: %v", err)
+			logger.Error(err.Error())
+			return err
+		}
 
-		_, _ = fmt.Fprintln(os.Stdout, seedFile.String())
+		systemAccount, err := config.NewAccount("SYS", []byte(operator.SigningKeySeed))
+		if err != nil {
+			err := fmt.Errorf("cannot generate configuration: %v", err)
+			logger.Error(err.Error())
+			return err
+		}
+
+		output := config.Config{
+			Host:          "localhost",
+			Servers:       []string{"nats://localhost:4222"},
+			Operator:      operator,
+			Account:       account,
+			SystemAccount: systemAccount,
+		}
+
+		_, _ = fmt.Fprintln(os.Stdout, output.String())
 
 		return nil
 	}

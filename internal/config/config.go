@@ -35,30 +35,6 @@ func (s *Config) String() string {
 	return string(b)
 }
 
-// TODO: rename!
-func NewOutput(operatorName, accountName string) (*Config, error) {
-	operator, err := newOperator(operatorName)
-	if err != nil {
-		return nil, err
-	}
-
-	account, err := newAccount(accountName, []byte(operator.SigningKeySeed))
-	if err != nil {
-		return nil, err
-	}
-
-	sysAccount, err := newAccount("SYS", []byte(operator.SigningKeySeed))
-	if err != nil {
-		return nil, err
-	}
-
-	return &Config{
-		Operator:      operator,
-		Account:       account,
-		SystemAccount: sysAccount,
-	}, nil
-}
-
 func ParseFile(file string) (*Config, error) {
 	b, err := os.ReadFile(file)
 	if err != nil {
@@ -74,7 +50,7 @@ func ParseFile(file string) (*Config, error) {
 	return &conf, nil
 }
 
-func newOperator(name string) (*Entity, error) {
+func NewOperator(name string) (*Entity, error) {
 	keyPair, err := nkeys.CreateOperator()
 	if err != nil {
 		return nil, fmt.Errorf("cannot generate operator's key: %v", err)
@@ -121,7 +97,7 @@ func newOperator(name string) (*Entity, error) {
 	}, nil
 }
 
-func newAccount(name string, operatorSignKey []byte) (*Entity, error) {
+func NewAccount(name string, operatorSignKey []byte) (*Entity, error) {
 	operatorSignKeyPair, err := nkeys.FromSeed(operatorSignKey)
 	if err != nil {
 		return nil, fmt.Errorf("cannot decode operator's signing key: %v", err)
