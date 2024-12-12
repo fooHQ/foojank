@@ -19,7 +19,7 @@
     ],
     "scripts": {
       "test": [
-        "go test -race ./..."
+        "CGO_ENABLED=1 go test -race ./..."
       ],
       "lint": [
         "golangci-lint run"
@@ -30,13 +30,13 @@
         "go generate ./..."
       ],
       "agent": [
-        "go run -race -tags debug ./cmd/vessel"
+        "CGO_ENABLED=1 go run -race -tags debug ./cmd/vessel"
       ],
       "server": [
-        "go run -race -tags dev ./cmd/server"
+        "CGO_ENABLED=1 go run -race -tags dev ./cmd/server"
       ],
       "client": [
-        "go run -race -tags dev ./cmd/client"
+        "CGO_ENABLED=1 go run -race -tags dev ./cmd/client"
       ],
       "docs": [
         "docsify server ./docs"
