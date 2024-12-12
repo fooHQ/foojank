@@ -1,6 +1,54 @@
 {
   "lockfile_version": "1",
   "packages": {
+    "capnproto@latest": {
+      "last_modified": "2024-11-28T07:51:56Z",
+      "resolved": "github:NixOS/nixpkgs/226216574ada4c3ecefcbbec41f39ce4655f78ef#capnproto",
+      "source": "devbox-search",
+      "version": "1.0.2",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/4pwgqwsi99j4c67nl2c85zigld3ns9xp-capnproto-1.0.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/4pwgqwsi99j4c67nl2c85zigld3ns9xp-capnproto-1.0.2"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/3s037aqnkm8mnyxbynyvdkj698pxahr4-capnproto-1.0.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/3s037aqnkm8mnyxbynyvdkj698pxahr4-capnproto-1.0.2"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/4ciiwqfvay44lwk91n910fyh4wls04v4-capnproto-1.0.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/4ciiwqfvay44lwk91n910fyh4wls04v4-capnproto-1.0.2"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/0ip13lgfhmdz392cj4ld11w5g0a05h62-capnproto-1.0.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/0ip13lgfhmdz392cj4ld11w5g0a05h62-capnproto-1.0.2"
+        }
+      }
+    },
     "go@1.22": {
       "last_modified": "2024-11-16T04:25:12Z",
       "resolved": "github:NixOS/nixpkgs/34a626458d686f1b58139620a8b2793e9e123bba#go_1_22",

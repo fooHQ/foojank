@@ -5,11 +5,13 @@
     "go@1.22",
     "natscli@latest",
     "nsc@latest",
-    "upx@latest"
+    "upx@latest",
+    "capnproto@latest"
   ],
   "env": {
-    "GOROOT": "",
-    "GOPATH": ""
+    "GOROOT":      "",
+    "GOPATH":      "",
+    "CGO_ENABLED": "0"
   },
   "shell": {
     "init_hook": [
@@ -17,7 +19,45 @@
     ],
     "scripts": {
       "test": [
-        "echo \"Error: no test specified\" && exit 1"
+        "go test -race ./..."
+      ],
+      "lint": [
+        "golangci-lint run"
+      ],
+      "generate": [
+        "test -d ./build/go-capnp || git clone -b v3.0.1-alpha.2 --depth 1 https://github.com/capnproto/go-capnp ./build/go-capnp",
+        "cd ./build/go-capnp/capnpc-go && go build . && cd -",
+        "go generate ./..."
+      ],
+      "agent": [
+        "go run -race -tags debug ./cmd/vessel"
+      ],
+      "server": [
+        "go run -race -tags dev ./cmd/server"
+      ],
+      "client": [
+        "go run -race -tags dev ./cmd/client"
+      ],
+      "docs": [
+        "docsify server ./docs"
+      ],
+      "build-agent-dev": [
+        "go build -tags debug -o build/vessel ./cmd/vessel"
+      ],
+      "build-agent-prod": [
+        "go build -tags prod -o build/vessel ./cmd/vessel"
+      ],
+      "build-server-dev": [
+        "go build -tags dev -o build/server ./cmd/server"
+      ],
+      "build-server-prod": [
+        "go build -tags prod -o build/server ./cmd/server"
+      ],
+      "build-client-dev": [
+        "go build -tags dev -o build/client ./cmd/client"
+      ],
+      "build-client-prod": [
+        "go build -tags prod -o build/client ./cmd/client"
       ]
     }
   }
