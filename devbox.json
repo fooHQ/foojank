@@ -24,10 +24,13 @@
       "lint": [
         "golangci-lint run"
       ],
-      "generate": [
+      "generate-proto": [
         "test -d ./build/go-capnp || git clone -b v3.0.1-alpha.2 --depth 1 https://github.com/capnproto/go-capnp ./build/go-capnp",
         "cd ./build/go-capnp/capnpc-go && go build . && cd -",
-        "go generate ./..."
+        "go generate ./proto/capnp"
+      ],
+      "generate-agent-config": [
+        "go generate ./internal/vessel/config"
       ],
       "agent": [
         "CGO_ENABLED=1 go run -race -tags debug ./cmd/vessel"
