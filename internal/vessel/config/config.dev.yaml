@@ -1,9 +1,0 @@
-server:
-  url: wss://localhost:8443
-  username: agent001
-  password: password
-  # Skips TLS verification
-  insecure: true
-service:
-  name: agent001
-  version: 1.0.0

@@ -1,3 +1,3 @@
 package config
 
-//go:generate go run ../../../cmd/mkconfig ./config.dev.yaml config.go
+//go:generate go run ../../../cmd/mkconfig ./config.yaml ./config.go
