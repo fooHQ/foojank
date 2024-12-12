@@ -12,6 +12,11 @@ import (
 
 var ErrParserError = errors.New("parser error")
 
+type Service struct {
+	Name    string `yaml:"name"`
+	Version string `yaml:"version"`
+}
+
 type Entity struct {
 	JWT            string `yaml:"jwt"`
 	PublicKey      string `yaml:"public_key"`
@@ -28,6 +33,7 @@ type Config struct {
 	User          *Entity  `yaml:"user,omitempty"`
 	LogLevel      *int64   `yaml:"log_level,omitempty"`
 	NoColor       *bool    `yaml:"no_color,omitempty"`
+	Service       *Service `yaml:"service,omitempty"`
 }
 
 func (s *Config) String() string {
