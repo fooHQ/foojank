@@ -5,39 +5,39 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/goccy/go-yaml"
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
+	"github.com/pelletier/go-toml/v2"
 )
 
 var ErrParserError = errors.New("parser error")
 
 type Service struct {
-	Name    string `yaml:"name"`
-	Version string `yaml:"version"`
+	Name    string `toml:"name"`
+	Version string `toml:"version"`
 }
 
 type Entity struct {
-	JWT            string `yaml:"jwt"`
-	PublicKey      string `yaml:"public_key"`
-	KeySeed        string `yaml:"key_seed,omitempty"`
-	SigningKeySeed string `yaml:"signing_key_seed,omitempty"`
+	JWT            string `toml:"jwt"`
+	PublicKey      string `toml:"public_key"`
+	KeySeed        string `toml:"key_seed,omitempty"`
+	SigningKeySeed string `toml:"signing_key_seed,omitempty"`
 }
 
 type Config struct {
-	Host          string   `yaml:"host,omitempty"`
-	Servers       []string `yaml:"servers,omitempty"`
-	Operator      *Entity  `yaml:"operator,omitempty"`
-	Account       *Entity  `yaml:"account,omitempty"`
-	SystemAccount *Entity  `yaml:"system_account,omitempty"`
-	User          *Entity  `yaml:"user,omitempty"`
-	LogLevel      *int64   `yaml:"log_level,omitempty"`
-	NoColor       *bool    `yaml:"no_color,omitempty"`
-	Service       *Service `yaml:"service,omitempty"`
+	Host          string   `toml:"host,omitempty"`
+	Servers       []string `toml:"servers,omitempty"`
+	Operator      *Entity  `toml:"operator,omitempty"`
+	Account       *Entity  `toml:"account,omitempty"`
+	SystemAccount *Entity  `toml:"system_account,omitempty"`
+	User          *Entity  `toml:"user,omitempty"`
+	LogLevel      *int64   `toml:"log_level,omitempty"`
+	NoColor       *bool    `toml:"no_color,omitempty"`
+	Service       *Service `toml:"service,omitempty"`
 }
 
 func (s *Config) String() string {
-	b, _ := yaml.Marshal(s)
+	b, _ := toml.Marshal(s)
 	return string(b)
 }
 
@@ -48,7 +48,7 @@ func ParseFile(file string) (*Config, error) {
 	}
 
 	var conf Config
-	err = yaml.Unmarshal(b, &conf)
+	err = toml.Unmarshal(b, &conf)
 	if err != nil {
 		return nil, errors.Join(ErrParserError, err)
 	}
