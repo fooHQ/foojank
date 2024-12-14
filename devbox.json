@@ -30,7 +30,7 @@
         "go generate ./proto/capnp"
       ],
       "agent": [
-        "CGO_ENABLED=1 go run -race -tags debug ./cmd/vessel"
+        "CGO_ENABLED=1 go run -race -tags dev ./cmd/vessel"
       ],
       "server": [
         "CGO_ENABLED=1 go run -race -tags dev ./cmd/server"
@@ -42,7 +42,7 @@
         "docsify server ./docs"
       ],
       "build-agent-dev": [
-        "go build -tags debug -o build/vessel ./cmd/vessel"
+        "go build -tags dev -o build/vessel ./cmd/vessel"
       ],
       "build-agent-prod": [
         "go build -tags prod -o build/vessel ./cmd/vessel"
