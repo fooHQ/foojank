@@ -18,6 +18,19 @@
       "echo 'Welcome to devbox!' > /dev/null"
     ],
     "scripts": {
+      "agent": [
+        "CGO_ENABLED=1 go run -race -tags dev ./cmd/vessel"
+      ],
+      "server": [
+        "CGO_ENABLED=1 go run -race -tags dev ./cmd/server"
+      ],
+      "client": [
+        "CGO_ENABLED=1 go run -race -tags dev ./cmd/client"
+      ],
+
+      "docs": [
+        "docsify server ./docs"
+      ],
       "test": [
         "CGO_ENABLED=1 go test -race ./..."
       ],
@@ -29,32 +42,22 @@
         "cd ./build/go-capnp/capnpc-go && go build . && cd -",
         "go generate ./proto/capnp"
       ],
-      "agent": [
-        "CGO_ENABLED=1 go run -race -tags dev ./cmd/vessel"
-      ],
-      "server": [
-        "CGO_ENABLED=1 go run -race -tags dev ./cmd/server"
-      ],
-      "client": [
-        "CGO_ENABLED=1 go run -race -tags dev ./cmd/client"
-      ],
-      "docs": [
-        "docsify server ./docs"
-      ],
+
       "build-agent-dev": [
         "go build -tags dev -o build/vessel ./cmd/vessel"
-      ],
-      "build-agent-prod": [
-        "go build -tags prod -o build/vessel ./cmd/vessel"
       ],
       "build-server-dev": [
         "go build -tags dev -o build/server ./cmd/server"
       ],
-      "build-server-prod": [
-        "go build -tags prod -o build/server ./cmd/server"
-      ],
       "build-client-dev": [
         "go build -tags dev -o build/client ./cmd/client"
+      ],
+
+      "build-agent-prod": [
+        "go build -tags prod -o build/vessel ./cmd/vessel"
+      ],
+      "build-server-prod": [
+        "go build -tags prod -o build/server ./cmd/server"
       ],
       "build-client-prod": [
         "go build -tags prod -o build/client ./cmd/client"
