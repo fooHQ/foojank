@@ -4,7 +4,6 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/client/actions"
-	"github.com/foohq/foojank/internal/client/commands/config/generate/agent"
 	"github.com/foohq/foojank/internal/client/commands/config/generate/client"
 	"github.com/foohq/foojank/internal/client/commands/config/generate/seed"
 	"github.com/foohq/foojank/internal/client/commands/config/generate/server"
@@ -45,7 +44,6 @@ func NewCommand() *cli.Command {
 		Name:  "generate",
 		Usage: "Generate configuration files",
 		Commands: []*cli.Command{
-			agent.NewCommand(),
 			client.NewCommand(),
 			server.NewCommand(),
 			seed.NewCommand(),
