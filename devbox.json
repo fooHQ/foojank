@@ -29,9 +29,6 @@
         "cd ./build/go-capnp/capnpc-go && go build . && cd -",
         "go generate ./proto/capnp"
       ],
-      "generate-agent-config": [
-        "go generate ./internal/vessel/config"
-      ],
       "agent": [
         "CGO_ENABLED=1 go run -race -tags debug ./cmd/vessel"
       ],
