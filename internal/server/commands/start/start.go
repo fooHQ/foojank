@@ -12,6 +12,7 @@ import (
 
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/server/actions"
+	"github.com/foohq/foojank/internal/server/flags"
 )
 
 func NewCommand() *cli.Command {
@@ -29,8 +30,8 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func startAction(logger *slog.Logger) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		// TODO: load from --config
-		conf, err := config.ParseFile(c.Args().First())
+		confFile := c.String(flags.Config)
+		conf, err := config.ParseFile(confFile)
 		if err != nil {
 			err = fmt.Errorf("cannot parse configuration file: %v", err)
 			logger.Error(err.Error())
