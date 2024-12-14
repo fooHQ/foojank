@@ -120,7 +120,7 @@ func (s *Service) createWorker(ctx context.Context, workerID uint64, eventCh cha
 	log.Debug("creating a new worker id=%d", workerID)
 	w := worker.New(worker.Arguments{
 		ID:         workerID,
-		Name:       config.ServiceWorkerName,
+		Name:       config.ServiceName,
 		Version:    config.ServiceVersion,
 		Connection: s.args.Connection,
 		Stream:     s.args.Stream,
