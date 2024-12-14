@@ -15,7 +15,7 @@ import (
 	"github.com/foohq/foojank/internal/client/flags"
 )
 
-const DefaultConfigFilename = "fjrc.toml"
+const DefaultConfigFilename = "foojank.conf"
 
 func New() *cli.Command {
 	confDir, err := os.UserConfigDir()
