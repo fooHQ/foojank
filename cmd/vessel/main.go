@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"os"
 	"os/signal"
 	"os/user"
 	"runtime"
+	"strings"
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
@@ -28,26 +28,26 @@ func main() {
 	}
 
 	log.Debug("started")
-	log.Debug("url=%s user=%s", config.ServerURL, config.ServerUsername)
 	defer log.Debug("stopped")
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	opts := nats.Options{
-		Url:      config.ServerURL,
-		User:     config.ServerUsername,
-		Password: config.ServerPassword,
-		// TODO: delete before the release!
-		TLSConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-		AllowReconnect: true,
-		MaxReconnect:   -1,
-		InboxPrefix:    "_INBOX_" + config.ServiceName,
-	}
-
-	nc, err := opts.Connect()
+	servers := strings.Join(config.Servers, ",")
+	nc, err := nats.Connect(
+		servers,
+		nats.UserJWTAndSeed(config.UserJWT, config.UserKeySeed),
+		nats.MaxReconnects(-1),
+		nats.ConnectHandler(func(nc *nats.Conn) {
+			log.Debug("connected to the server")
+		}),
+		nats.ReconnectHandler(func(nc *nats.Conn) {
+			log.Debug("reconnected to the server")
+		}),
+		nats.DisconnectErrHandler(func(conn *nats.Conn, err error) {
+			log.Debug(err.Error())
+		}),
+	)
 	if err != nil {
 		log.Debug("cannot connect to NATS: %v", err)
 		return
