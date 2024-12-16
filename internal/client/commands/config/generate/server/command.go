@@ -16,7 +16,7 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "server",
 		ArgsUsage: "<master-config>",
-		Usage:     "Generate server configuration",
+		Usage:     "Generate server config from master config",
 		Action:    action,
 	}
 }

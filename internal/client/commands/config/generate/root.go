@@ -44,9 +44,9 @@ func NewCommand() *cli.Command {
 		Name:  "generate",
 		Usage: "Generate configuration files",
 		Commands: []*cli.Command{
+			master.NewCommand(),
 			client.NewCommand(),
 			server.NewCommand(),
-			master.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		HideHelpCommand: true,
