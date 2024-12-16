@@ -54,7 +54,8 @@
       ],
 
       "build-agent-prod": [
-        "go build -tags prod -o build/vessel ./cmd/vessel"
+        "test ! -z \"$OUTPUT\" || OUTPUT=\"vessel\"",
+        "go build -tags prod -o \"build/$OUTPUT\" ./cmd/vessel"
       ],
       "build-server-prod": [
         "go build -tags prod -o build/server ./cmd/server"
