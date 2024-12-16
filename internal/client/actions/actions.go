@@ -41,6 +41,9 @@ func NewConfig(ctx context.Context, c *cli.Command) (*config.Config, error) {
 	case c.IsSet(flags.NoColor):
 		v := c.Bool(flags.NoColor)
 		conf.NoColor = &v
+	case c.IsSet(flags.Codebase):
+		v := c.String(flags.Codebase)
+		conf.Codebase = &v
 	}
 
 	/*err = conf.Validate()

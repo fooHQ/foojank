@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
@@ -22,9 +23,17 @@ func NewCommand() *cli.Command {
 		Usage: "Build an agent",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name: "project-dir",
-				// TODO: use something else!
-				Value: "/tmp/foojank",
+				Name:    "output",
+				Aliases: []string{"o"},
+			},
+			&cli.StringFlag{
+				Name: "os",
+			},
+			&cli.StringFlag{
+				Name: "arch",
+			},
+			&cli.StringFlag{
+				Name: "codebase",
 			},
 		},
 		Action: action,
@@ -44,20 +53,35 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		srcDir := c.String("project-dir")
-		// TODO: configurable OS
+		outputName := c.String("output")
+		targetOs := c.String("os")
+		targetArch := c.String("arch")
+
+		if conf.Codebase == nil {
+			err := fmt.Errorf("cannot build an agent: codebase not configured")
+			logger.Error(err.Error())
+			return err
+		}
+
+		if outputName == "" {
+			outputName = nuid.Next()
+		}
+
+		if targetOs == "windows" && !strings.HasSuffix(outputName, ".exe") {
+			outputName += ".exe"
+		}
 
 		username := nuid.Next()
 		account := conf.Account
 		if account == nil {
-			err := fmt.Errorf("cannot generate agent configuration: no account found")
+			err := fmt.Errorf("cannot build an agent: no account found")
 			logger.Error(err.Error())
 			return err
 		}
 
 		user, err := config.NewUserAgent(username, account.PublicKey, []byte(account.SigningKeySeed))
 		if err != nil {
-			err := fmt.Errorf("cannot generate agent configuration: %v", err)
+			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %v", err)
 			logger.Error(err.Error())
 			return err
 		}
@@ -78,25 +102,38 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 		template := NewTemplate()
 		output, err := template.Render(agentConf)
 		if err != nil {
-			err := fmt.Errorf("cannot generate agent configuration: %v", err)
+			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %v", err)
 			logger.Error(err.Error())
 			return err
 		}
 
-		confFile := filepath.Join(srcDir, "internal", "vessel", "config", "config.go")
+		confFile := filepath.Join(*conf.Codebase, "internal", "vessel", "config", "config.go")
 		err = os.WriteFile(confFile, output, 0600)
 		if err != nil {
-			err := fmt.Errorf("cannot write agent configuration to file '%s': %v", confFile, err)
+			err := fmt.Errorf("cannot build an agent: cannot write agent configuration to file '%s': %v", confFile, err)
 			logger.Error(err.Error())
 			return err
 		}
 
-		err = exec.CommandContext(ctx, "devbox", "run", "build-agent-prod").Run()
+		env := os.Environ()
+		if targetOs != "" {
+			env = append(env, "GOOS="+targetOs)
+		}
+		if targetArch != "" {
+			env = append(env, "GOARCH="+targetArch)
+		}
+		env = append(env, "OUTPUT="+outputName)
+
+		cmd := exec.CommandContext(ctx, "devbox", "run", "build-agent-prod")
+		cmd.Env = env
+		b, err := cmd.CombinedOutput()
 		if err != nil {
-			err := fmt.Errorf("cannot build agent: %v", err)
+			err := fmt.Errorf("cannot build an agent: %v\n%s", err, string(b))
 			logger.Error(err.Error())
 			return err
 		}
+
+		_, _ = fmt.Fprintln(os.Stdout, outputName)
 
 		return nil
 	}

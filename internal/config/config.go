@@ -34,6 +34,7 @@ type Config struct {
 	LogLevel      *int64   `toml:"log_level,omitempty"`
 	NoColor       *bool    `toml:"no_color,omitempty"`
 	Service       *Service `toml:"service,omitempty"`
+	Codebase      *string  `toml:"codebase,omitempty"`
 }
 
 func (s *Config) String() string {

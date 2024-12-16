@@ -7,4 +7,5 @@ const (
 	UserKey  = "user-key"
 	LogLevel = "log-level"
 	NoColor  = "no-color"
+	Codebase = "codebase"
 )
