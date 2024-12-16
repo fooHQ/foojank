@@ -1,4 +1,4 @@
-package seed
+package master
 
 import (
 	"context"
@@ -15,8 +15,8 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:   "seed",
-		Usage:  "Generate a new seed",
+		Name:   "master",
+		Usage:  "Generate new master config",
 		Action: action,
 	}
 }

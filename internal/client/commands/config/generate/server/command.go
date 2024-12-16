@@ -15,7 +15,7 @@ import (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "server",
-		ArgsUsage: "<config-file>",
+		ArgsUsage: "<master-config>",
 		Usage:     "Generate server configuration",
 		Action:    action,
 	}

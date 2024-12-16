@@ -5,7 +5,7 @@ import (
 
 	"github.com/foohq/foojank/internal/client/actions"
 	"github.com/foohq/foojank/internal/client/commands/config/generate/client"
-	"github.com/foohq/foojank/internal/client/commands/config/generate/seed"
+	"github.com/foohq/foojank/internal/client/commands/config/generate/master"
 	"github.com/foohq/foojank/internal/client/commands/config/generate/server"
 )
 
@@ -46,7 +46,7 @@ func NewCommand() *cli.Command {
 		Commands: []*cli.Command{
 			client.NewCommand(),
 			server.NewCommand(),
-			seed.NewCommand(),
+			master.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		HideHelpCommand: true,
