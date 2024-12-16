@@ -23,7 +23,7 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "execute",
 		ArgsUsage: "<id> <package-path>",
-		Usage:     "Run a script on an agent",
+		Usage:     "Execute a script on an agent",
 		Action:    action,
 		Aliases:   []string{"exec"},
 	}
