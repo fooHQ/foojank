@@ -54,7 +54,7 @@
       ],
 
       "build-agent-prod": [
-        "test ! -z \"$OUTPUT\" || OUTPUT=\"build/vessel\"",
+        "test ! -z \"$OUTPUT\" || (echo \"OUTPUT variable not defined\" && exit 1)",
         "go build -tags prod -o \"$OUTPUT\" ./cmd/vessel"
       ],
       "build-server-prod": [
