@@ -70,6 +70,7 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 
 		output := config.Config{
 			Host: input.Host,
+			Port: input.Port,
 			Operator: &config.Entity{
 				JWT:       operator.JWT,
 				PublicKey: operator.PublicKey,

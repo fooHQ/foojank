@@ -36,6 +36,9 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 		operatorName := fmt.Sprintf("OP%s", nuid.Next())
 		accountName := fmt.Sprintf("AC%s", nuid.Next())
 
+		host := "localhost"
+		port := 4222
+		server := fmt.Sprintf("nats://%s:%d", host, port)
 		operator, err := config.NewOperator(operatorName)
 		if err != nil {
 			err := fmt.Errorf("cannot generate configuration: %v", err)
@@ -58,8 +61,9 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 		}
 
 		output := config.Config{
-			Host:          "localhost",
-			Servers:       []string{"nats://localhost:4222"},
+			Host:          &host,
+			Port:          &port,
+			Servers:       []string{server},
 			Operator:      operator,
 			Account:       account,
 			SystemAccount: systemAccount,
