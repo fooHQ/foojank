@@ -24,34 +24,66 @@ func NewConfig(ctx context.Context, c *cli.Command) (*config.Config, error) {
 			err = fmt.Errorf("cannot parse configuration file '%s': %v", file, err)
 			_, _ = fmt.Fprintf(os.Stderr, "%s: %v\n", c.FullName(), err)
 			return nil, err
+		} else if !errors.Is(err, os.ErrNotExist) {
+			err = fmt.Errorf("cannot open configuration file '%s': %v", file, err)
+			_, _ = fmt.Fprintf(os.Stderr, "%s: %v\n", c.FullName(), err)
+			return nil, err
 		}
-		conf = &config.Config{}
+
+		// File does not exist, fallthrough.
+		conf = &config.Config{
+			Servers:  flags.DefaultServer,
+			LogLevel: &flags.DefaultLogLevel,
+			NoColor:  &flags.DefaultNoColor,
+		}
 	}
 
-	switch {
-	case c.IsSet(flags.Server):
+	if c.IsSet(flags.Server) {
 		conf.Servers = c.StringSlice(flags.Server)
-	case c.IsSet(flags.UserJWT):
+	}
+
+	if c.IsSet(flags.UserJWT) {
+		if conf.User == nil {
+			conf.User = &config.Entity{}
+		}
 		conf.User.JWT = c.String(flags.UserJWT)
-	case c.IsSet(flags.UserKey):
+	}
+
+	if c.IsSet(flags.UserKey) {
+		if conf.User == nil {
+			conf.User = &config.Entity{}
+		}
 		conf.User.KeySeed = c.String(flags.UserKey)
-	case c.IsSet(flags.LogLevel):
+	}
+
+	if c.IsSet(flags.AccountJWT) {
+		if conf.Account == nil {
+			conf.Account = &config.Entity{}
+		}
+		conf.Account.JWT = c.String(flags.AccountJWT)
+	}
+
+	if c.IsSet(flags.AccountSigningKey) {
+		if conf.Account == nil {
+			conf.Account = &config.Entity{}
+		}
+		conf.Account.SigningKeySeed = c.String(flags.AccountSigningKey)
+	}
+
+	if c.IsSet(flags.LogLevel) {
 		v := c.Int(flags.LogLevel)
 		conf.LogLevel = &v
-	case c.IsSet(flags.NoColor):
+	}
+
+	if c.IsSet(flags.NoColor) {
 		v := c.Bool(flags.NoColor)
 		conf.NoColor = &v
-	case c.IsSet(flags.Codebase):
+	}
+
+	if c.IsSet(flags.Codebase) {
 		v := c.String(flags.Codebase)
 		conf.Codebase = &v
 	}
-
-	/*err = conf.Validate()
-	if err != nil {
-		err = fmt.Errorf("invalid configuration: %v", err)
-		_, _ = fmt.Fprintf(os.Stderr, "%s: %v\n", c.FullName(), err)
-		return nil, err
-	}*/
 
 	return conf, nil
 }

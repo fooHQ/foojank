@@ -15,6 +15,7 @@ import (
 
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/internal/client/actions"
+	"github.com/foohq/foojank/internal/client/flags"
 	"github.com/foohq/foojank/internal/config"
 )
 
@@ -24,17 +25,28 @@ func NewCommand() *cli.Command {
 		Usage: "Build an agent",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:    "output",
-				Aliases: []string{"o"},
-			},
-			&cli.StringFlag{
 				Name: "os",
 			},
 			&cli.StringFlag{
 				Name: "arch",
 			},
 			&cli.StringFlag{
-				Name: "codebase",
+				Name:    "output",
+				Aliases: []string{"o"},
+			},
+			// TODO: configurable servers (for the agent)!
+			&cli.StringFlag{
+				Name:  flags.Codebase,
+				Usage: "path to directory with foojank codebase",
+				Value: flags.DefaultCodebase(),
+			},
+			&cli.StringFlag{
+				Name:  flags.AccountJWT,
+				Usage: "account JWT token",
+			},
+			&cli.StringFlag{
+				Name:  flags.AccountSigningKey,
+				Usage: "account signing key",
 			},
 		},
 		Action: action,
@@ -58,6 +70,7 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 		targetOs := c.String("os")
 		targetArch := c.String("arch")
 
+		// TODO: move to validation function
 		if conf.Codebase == nil {
 			err := fmt.Errorf("cannot build an agent: codebase not configured")
 			logger.Error(err.Error())

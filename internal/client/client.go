@@ -1,9 +1,6 @@
 package client
 
 import (
-	"os"
-	"path/filepath"
-
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank"
@@ -15,15 +12,7 @@ import (
 	"github.com/foohq/foojank/internal/client/flags"
 )
 
-const DefaultConfigFilename = "foojank.conf"
-
 func New() *cli.Command {
-	confDir, err := os.UserConfigDir()
-	if err != nil {
-		confDir = "./"
-	}
-	confPath := filepath.Join(confDir, "foojank", DefaultConfigFilename)
-
 	return &cli.Command{
 		Name:    "foojank",
 		Usage:   "A cross-platform command and control (C2) framework",
@@ -32,14 +21,14 @@ func New() *cli.Command {
 			&cli.StringFlag{
 				Name:    flags.Config,
 				Usage:   "path to a configuration file",
-				Value:   confPath,
+				Value:   flags.DefaultConfig(),
 				Aliases: []string{"c"},
 			},
 			// TODO: use string slice!
 			&cli.StringFlag{
 				Name:    flags.Server,
 				Usage:   "server URL",
-				Value:   "localhost",
+				Value:   flags.DefaultServer[0],
 				Aliases: []string{"s"},
 			},
 			&cli.StringFlag{
@@ -53,11 +42,12 @@ func New() *cli.Command {
 			&cli.IntFlag{
 				Name:  flags.LogLevel,
 				Usage: "set log level",
-				Value: 0,
+				Value: flags.DefaultLogLevel,
 			},
 			&cli.BoolFlag{
 				Name:  flags.NoColor,
 				Usage: "disable color output",
+				Value: flags.DefaultNoColor,
 			},
 		},
 		Commands: []*cli.Command{
