@@ -39,19 +39,16 @@ func New() *cli.Command {
 				Value: flags.DefaultPort,
 			},
 			&cli.StringFlag{
-				Name:     flags.OperatorJWT,
-				Usage:    "operator JWT token",
-				Required: true,
+				Name:  flags.OperatorJWT,
+				Usage: "operator JWT token",
 			},
 			&cli.StringFlag{
-				Name:     flags.SystemAccountJWT,
-				Usage:    "system account JWT token",
-				Required: true,
+				Name:  flags.SystemAccountJWT,
+				Usage: "system account JWT token",
 			},
 			&cli.StringFlag{
-				Name:     flags.AccountJWT,
-				Usage:    "account JWT token",
-				Required: true,
+				Name:  flags.AccountJWT,
+				Usage: "account JWT token",
 			},
 			&cli.IntFlag{
 				Name:  flags.LogLevel,
@@ -162,7 +159,6 @@ func startAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 		}
 
 		systemAccountPubKey := claims.Subject
-
 		opts := &server.Options{
 			Host:             *conf.Host,
 			Port:             int(*conf.Port),
