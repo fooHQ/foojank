@@ -146,6 +146,7 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 		env = append(env, "OUTPUT="+outputName)
 
 		cmd := exec.CommandContext(ctx, "devbox", "run", "build-agent-prod")
+		cmd.Dir = *conf.Codebase
 		cmd.Env = env
 		b, err := cmd.CombinedOutput()
 		if err != nil {
