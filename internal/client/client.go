@@ -39,6 +39,19 @@ func New() *cli.Command {
 				Name:  flags.UserKey,
 				Usage: "user secret NKey",
 			},
+			&cli.StringFlag{
+				Name:  flags.AccountJWT,
+				Usage: "account JWT token",
+			},
+			&cli.StringFlag{
+				Name:  flags.AccountSigningKey,
+				Usage: "account signing key",
+			},
+			&cli.StringFlag{
+				Name:  flags.Codebase,
+				Usage: "path to directory with foojank codebase",
+				Value: flags.DefaultCodebase(),
+			},
 			&cli.IntFlag{
 				Name:  flags.LogLevel,
 				Usage: "set log level",

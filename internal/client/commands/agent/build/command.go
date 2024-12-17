@@ -15,7 +15,6 @@ import (
 
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/internal/client/actions"
-	"github.com/foohq/foojank/internal/client/flags"
 	"github.com/foohq/foojank/internal/config"
 )
 
@@ -35,19 +34,6 @@ func NewCommand() *cli.Command {
 				Aliases: []string{"o"},
 			},
 			// TODO: configurable servers (for the agent)!
-			&cli.StringFlag{
-				Name:  flags.Codebase,
-				Usage: "path to directory with foojank codebase",
-				Value: flags.DefaultCodebase(),
-			},
-			&cli.StringFlag{
-				Name:  flags.AccountJWT,
-				Usage: "account JWT token",
-			},
-			&cli.StringFlag{
-				Name:  flags.AccountSigningKey,
-				Usage: "account signing key",
-			},
 		},
 		Action: action,
 	}
