@@ -72,16 +72,13 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 			Host: input.Host,
 			Port: input.Port,
 			Operator: &config.Entity{
-				JWT:       operator.JWT,
-				PublicKey: operator.PublicKey,
+				JWT: operator.JWT,
 			},
 			Account: &config.Entity{
-				JWT:       account.JWT,
-				PublicKey: account.PublicKey,
+				JWT: account.JWT,
 			},
 			SystemAccount: &config.Entity{
-				JWT:       systemAccount.JWT,
-				PublicKey: systemAccount.PublicKey,
+				JWT: systemAccount.JWT,
 			},
 		}
 

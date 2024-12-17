@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
 
@@ -55,8 +56,16 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 			return err
 		}
 
+		accountClaims, err := jwt.DecodeAccountClaims(account.JWT)
+		if err != nil {
+			err := fmt.Errorf("cannot build an agent: cannot decode account JWT: %v", err)
+			logger.Error(err.Error())
+			return err
+		}
+
+		accountPubKey := accountClaims.Subject
 		username := fmt.Sprintf("MG%s", nuid.Next())
-		user, err := config.NewUserManager(username, account.PublicKey, []byte(account.SigningKeySeed))
+		user, err := config.NewUserManager(username, accountPubKey, []byte(account.SigningKeySeed))
 		if err != nil {
 			err := fmt.Errorf("cannot generate client configuration: %v", err)
 			logger.Error(err.Error())
@@ -67,7 +76,6 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 			Servers: input.Servers,
 			Account: &config.Entity{
 				JWT:            account.JWT,
-				PublicKey:      account.PublicKey,
 				SigningKeySeed: account.SigningKeySeed,
 			},
 			User: user,

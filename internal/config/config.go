@@ -19,7 +19,6 @@ type Service struct {
 
 type Entity struct {
 	JWT            string `toml:"jwt"`
-	PublicKey      string `toml:"public_key"`
 	KeySeed        string `toml:"key_seed,omitempty"`
 	SigningKeySeed string `toml:"signing_key_seed,omitempty"`
 }
@@ -99,7 +98,6 @@ func NewOperator(name string) (*Entity, error) {
 
 	return &Entity{
 		JWT:            claimsEnc,
-		PublicKey:      pubKey,
 		KeySeed:        string(keySeed),
 		SigningKeySeed: string(signKeySeed),
 	}, nil
@@ -151,7 +149,6 @@ func NewAccount(name string, operatorSignKey []byte) (*Entity, error) {
 
 	return &Entity{
 		JWT:            claimsEnc,
-		PublicKey:      pubKey,
 		KeySeed:        string(keySeed),
 		SigningKeySeed: string(signKeySeed),
 	}, nil
@@ -188,9 +185,8 @@ func NewUserManager(name, accountPubKey string, accountSigningKey []byte) (*Enti
 	}
 
 	return &Entity{
-		JWT:       claimsEnc,
-		PublicKey: pubKey,
-		KeySeed:   string(keySeed),
+		JWT:     claimsEnc,
+		KeySeed: string(keySeed),
 	}, nil
 }
 
@@ -254,8 +250,7 @@ func NewUserAgent(name, accountPubKey string, accountSigningKey []byte) (*Entity
 	}
 
 	return &Entity{
-		JWT:       claimsEnc,
-		PublicKey: pubKey,
-		KeySeed:   string(keySeed),
+		JWT:     claimsEnc,
+		KeySeed: string(keySeed),
 	}, nil
 }

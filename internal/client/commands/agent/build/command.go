@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
 
@@ -79,7 +80,15 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 			return err
 		}
 
-		user, err := config.NewUserAgent(username, account.PublicKey, []byte(account.SigningKeySeed))
+		accountClaims, err := jwt.DecodeAccountClaims(account.JWT)
+		if err != nil {
+			err := fmt.Errorf("cannot build an agent: cannot decode account JWT: %v", err)
+			logger.Error(err.Error())
+			return err
+		}
+
+		accountPubKey := accountClaims.Subject
+		user, err := config.NewUserAgent(username, accountPubKey, []byte(account.SigningKeySeed))
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %v", err)
 			logger.Error(err.Error())
@@ -89,9 +98,8 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 		agentConf := config.Config{
 			Servers: conf.Servers,
 			User: &config.Entity{
-				JWT:       user.JWT,
-				PublicKey: user.PublicKey,
-				KeySeed:   user.KeySeed,
+				JWT:     user.JWT,
+				KeySeed: user.KeySeed,
 			},
 			Service: &config.Service{
 				Name:    username,
