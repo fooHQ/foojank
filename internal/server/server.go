@@ -1,9 +1,6 @@
 package server
 
 import (
-	"os"
-	"path/filepath"
-
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank"
@@ -12,15 +9,7 @@ import (
 	"github.com/foohq/foojank/internal/server/flags"
 )
 
-var DefaultConfigFilename = "server.conf"
-
 func New() *cli.Command {
-	confDir, err := os.UserConfigDir()
-	if err != nil {
-		confDir = "./"
-	}
-	confPath := filepath.Join(confDir, "foojank", DefaultConfigFilename)
-
 	return &cli.Command{
 		Name:    "foojank",
 		Usage:   "A foojank server",
@@ -29,17 +18,43 @@ func New() *cli.Command {
 			&cli.StringFlag{
 				Name:    flags.Config,
 				Usage:   "path to a configuration file",
-				Value:   confPath,
+				Value:   flags.DefaultConfig(),
 				Aliases: []string{"c"},
+			},
+			&cli.StringFlag{
+				Name:  flags.Host,
+				Usage: "bind to host",
+				Value: flags.DefaultHost,
+			},
+			&cli.IntFlag{
+				Name:  flags.Port,
+				Usage: "bind to port",
+				Value: flags.DefaultPort,
+			},
+			&cli.StringFlag{
+				Name:     flags.OperatorJWT,
+				Usage:    "operator JWT token",
+				Required: true,
+			},
+			&cli.StringFlag{
+				Name:     flags.SystemAccountJWT,
+				Usage:    "system account JWT token",
+				Required: true,
+			},
+			&cli.StringFlag{
+				Name:     flags.AccountJWT,
+				Usage:    "account JWT token",
+				Required: true,
 			},
 			&cli.IntFlag{
 				Name:  flags.LogLevel,
 				Usage: "set log level",
-				Value: 0,
+				Value: flags.DefaultLogLevel,
 			},
 			&cli.BoolFlag{
 				Name:  flags.NoColor,
 				Usage: "disable color output",
+				Value: flags.DefaultNoColor,
 			},
 		},
 		Commands: []*cli.Command{

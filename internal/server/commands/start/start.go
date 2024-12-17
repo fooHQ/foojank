@@ -12,7 +12,6 @@ import (
 
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/server/actions"
-	"github.com/foohq/foojank/internal/server/flags"
 )
 
 func NewCommand() *cli.Command {
@@ -24,25 +23,35 @@ func NewCommand() *cli.Command {
 }
 
 func action(ctx context.Context, c *cli.Command) error {
-	logger := actions.NewLogger(ctx, c)
-	return startAction(logger)(ctx, c)
+	conf, err := actions.NewConfig(ctx, c)
+	if err != nil {
+		return err
+	}
+
+	logger := actions.NewLogger(ctx, conf)
+	return startAction(logger, conf)(ctx, c)
 }
 
-func startAction(logger *slog.Logger) cli.ActionFunc {
+func startAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		confFile := c.String(flags.Config)
-		conf, err := config.ParseFile(confFile)
-		if err != nil {
-			err = fmt.Errorf("cannot parse configuration file: %v", err)
-			logger.Error(err.Error())
-			return err
-		}
-
 		// TODO: configurable directory!
 		// TODO: we can probably use memory resolver?
 		resolver, err := server.NewDirAccResolver("/tmp/nats-jwt", 0, 0, 1, server.FetchTimeout(2*time.Second))
 		if err != nil {
 			err := fmt.Errorf("cannot create account resolver: %v", err)
+			logger.Error(err.Error())
+			return err
+		}
+
+		// TODO: move validation inside a function!
+		if conf.Host == nil {
+			err := fmt.Errorf("invalid configuration: host not found")
+			logger.Error(err.Error())
+			return err
+		}
+
+		if conf.Port == nil {
+			err := fmt.Errorf("invalid configuration: port not found")
 			logger.Error(err.Error())
 			return err
 		}
@@ -80,29 +89,42 @@ func startAction(logger *slog.Logger) cli.ActionFunc {
 			preloadOperators = append(preloadOperators, claims)
 		}
 
-		preloadAccounts := map[string]string{
-			account.PublicKey:       account.JWT,
-			systemAccount.PublicKey: account.JWT,
-		}
-		for accountPubKey, accountJWT := range preloadAccounts {
+		for _, accountJWT := range []string{account.JWT, systemAccount.JWT} {
+			claims, err := jwt.DecodeAccountClaims(accountJWT)
+			if err != nil {
+				err := fmt.Errorf("invalid configuration: cannot decode account JWT: %v", err)
+				logger.Error(err.Error())
+				return err
+			}
+
+			accountPubKey := claims.Subject
 			err = resolver.Store(accountPubKey, accountJWT)
 			if err != nil {
-				err := fmt.Errorf("cannot store account in resolver: %v", err)
+				err := fmt.Errorf("cannot store account in the resolver: %v", err)
 				logger.Error(err.Error())
 				return err
 			}
 		}
 
+		claims, err := jwt.DecodeAccountClaims(systemAccount.JWT)
+		if err != nil {
+			err := fmt.Errorf("invalid configuration: cannot decode account JWT: %v", err)
+			logger.Error(err.Error())
+			return err
+		}
+
+		systemAccountPubKey := claims.Subject
+
 		opts := &server.Options{
-			Host:             "127.0.0.1",
-			Port:             4222,
-			SystemAccount:    systemAccount.PublicKey,
+			Host:             *conf.Host,
+			Port:             int(*conf.Port),
+			SystemAccount:    systemAccountPubKey,
 			AccountResolver:  resolver,
 			TrustedOperators: preloadOperators,
 		}
 		s, err := server.NewServer(opts)
 		if err != nil {
-			err := fmt.Errorf("cannot create server: %v", err)
+			err := fmt.Errorf("cannot start a server: %v", err)
 			logger.Error(err.Error())
 			return err
 		}
