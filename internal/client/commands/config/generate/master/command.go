@@ -37,7 +37,7 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 		accountName := fmt.Sprintf("AC%s", nuid.Next())
 
 		host := "localhost"
-		port := 4222
+		port := int64(4222)
 		server := fmt.Sprintf("nats://%s:%d", host, port)
 		operator, err := config.NewOperator(operatorName)
 		if err != nil {

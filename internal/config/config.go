@@ -25,7 +25,7 @@ type Entity struct {
 
 type Config struct {
 	Host          *string  `toml:"host,omitempty"`
-	Port          *int     `toml:"port,omitempty"`
+	Port          *int64   `toml:"port,omitempty"`
 	Servers       []string `toml:"servers,omitempty"`
 	Operator      *Entity  `toml:"operator,omitempty"`
 	Account       *Entity  `toml:"account,omitempty"`
