@@ -17,6 +17,10 @@ import (
 	tableformatter "github.com/foohq/foojank/internal/client/formatter/table"
 )
 
+const (
+	FlagFormat = "format"
+)
+
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "list",
@@ -24,7 +28,7 @@ func NewCommand() *cli.Command {
 		Usage:     "List repositories or their contents",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  "format",
+				Name:  FlagFormat,
 				Value: "table",
 			},
 		},
@@ -58,7 +62,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func listAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		format := c.String("format")
+		format := c.String(FlagFormat)
 
 		var f formatter.Formatter
 		switch format {

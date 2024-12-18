@@ -18,23 +18,31 @@ import (
 	"github.com/foohq/foojank/internal/config"
 )
 
+const (
+	FlagOs          = "os"
+	FlagArch        = "arch"
+	FlagOutput      = "output"
+	FlagAgentServer = "agent-server"
+)
+
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "build",
 		Usage: "Build an agent",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name: "os",
+				Name: FlagOs,
 			},
 			&cli.StringFlag{
-				Name: "arch",
+				Name: FlagArch,
 			},
 			&cli.StringFlag{
-				Name:    "output",
+				Name:    FlagOutput,
+				Usage:   "set output file",
 				Aliases: []string{"o"},
 			},
 			&cli.StringFlag{
-				Name: "agent-server",
+				Name: FlagAgentServer,
 			},
 		},
 		Action: action,
@@ -54,9 +62,9 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		outputName := c.String("output")
-		targetOs := c.String("os")
-		targetArch := c.String("arch")
+		outputName := c.String(FlagOutput)
+		targetOs := c.String(FlagOs)
+		targetArch := c.String(FlagArch)
 
 		// TODO: move to validation function
 		if conf.Codebase == nil {

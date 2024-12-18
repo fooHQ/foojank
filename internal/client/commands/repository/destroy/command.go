@@ -12,6 +12,10 @@ import (
 	"github.com/foohq/foojank/internal/client/actions"
 )
 
+const (
+	FlagForce = "force"
+)
+
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "destroy",
@@ -19,7 +23,7 @@ func NewCommand() *cli.Command {
 		Usage:     "Destroy an empty repository",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
-				Name:    "force",
+				Name:    FlagForce,
 				Usage:   "force delete of non-empty repository",
 				Aliases: []string{"f"},
 			},
@@ -61,7 +65,7 @@ func destroyAction(logger *slog.Logger, client *repository.Client) cli.ActionFun
 		}
 
 		name := c.Args().Get(0)
-		force := c.Bool("force")
+		force := c.Bool(FlagForce)
 
 		files, err := client.ListFiles(ctx, name)
 		if err != nil {

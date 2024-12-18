@@ -12,6 +12,10 @@ import (
 	"github.com/foohq/foojank/internal/client/actions"
 )
 
+const (
+	FlagDescription = "description"
+)
+
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "create",
@@ -19,7 +23,7 @@ func NewCommand() *cli.Command {
 		Usage:     "Create a new repository",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name: "description",
+				Name: FlagDescription,
 			},
 		},
 		Action: action,
@@ -59,7 +63,7 @@ func createAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc
 		}
 
 		name := c.Args().Get(0)
-		description := c.String("description")
+		description := c.String(FlagDescription)
 
 		err := client.Create(ctx, name, description)
 		if err != nil {

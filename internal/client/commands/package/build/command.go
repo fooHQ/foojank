@@ -12,6 +12,10 @@ import (
 	"github.com/foohq/foojank/internal/client/actions"
 )
 
+const (
+	FlagOutput = "output"
+)
+
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "build",
@@ -19,8 +23,9 @@ func NewCommand() *cli.Command {
 		Usage:     "Build a new package",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  "name",
-				Usage: "set output name",
+				Name:    FlagOutput,
+				Usage:   "set output file",
+				Aliases: []string{"o"},
 			},
 		},
 		Action: action,
@@ -47,7 +52,7 @@ func buildAction(logger *slog.Logger) cli.ActionFunc {
 		}
 
 		src := c.Args().Get(0)
-		name := c.String("name")
+		name := c.String(FlagOutput)
 		if name == "" {
 			name = filepath.Base(src)
 		}

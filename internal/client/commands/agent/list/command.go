@@ -17,21 +17,27 @@ import (
 	tableformatter "github.com/foohq/foojank/internal/client/formatter/table"
 )
 
+const (
+	FlagServiceName = "service-name"
+	FlagTimeout     = "timeout"
+	FlagFormat      = "format"
+)
+
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "list",
 		Usage: "List active agents",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  "service-name",
+				Name:  FlagServiceName,
 				Value: "",
 			},
 			&cli.DurationFlag{
-				Name:  "timeout",
+				Name:  FlagTimeout,
 				Value: 2 * time.Second,
 			},
 			&cli.StringFlag{
-				Name:  "format",
+				Name:  FlagFormat,
 				Value: "table",
 			},
 		},
@@ -58,9 +64,9 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func listAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		serviceName := c.String("service-name")
-		timeout := c.Duration("timeout")
-		format := c.String("format")
+		serviceName := c.String(FlagServiceName)
+		timeout := c.Duration(FlagTimeout)
+		format := c.String(FlagFormat)
 
 		outputCh := make(chan vessel.Service)
 
