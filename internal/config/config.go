@@ -173,7 +173,6 @@ func NewUserManager(name, accountPubKey string, accountSigningKey []byte) (*Enti
 	claims := jwt.NewUserClaims(pubKey)
 	claims.Name = name
 	claims.IssuerAccount = accountPubKey
-	// TODO: define permissions
 	claimsEnc, err := claims.Encode(accountSignKeyPair)
 	if err != nil {
 		return nil, fmt.Errorf("cannot encode and sign user claims: %v", err)
