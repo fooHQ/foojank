@@ -154,6 +154,7 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 			Host:             *conf.Host,
 			Port:             int(*conf.Port),
 			SystemAccount:    systemAccountPubKey,
+			JetStream:        true,
 			AccountResolver:  resolver,
 			TrustedOperators: preloadOperators,
 		}
