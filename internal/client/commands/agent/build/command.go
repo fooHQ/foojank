@@ -79,6 +79,7 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 			return err
 		}
 
+		agentName := nuid.Next()
 		if outputName == "" {
 			wd, err := os.Getwd()
 			if err != nil {
@@ -87,7 +88,7 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 				return err
 			}
 
-			outputName = filepath.Join(wd, nuid.Next())
+			outputName = filepath.Join(wd, agentName)
 		}
 
 		if targetOs == "windows" && !strings.HasSuffix(outputName, ".exe") {
@@ -104,7 +105,6 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 			return err
 		}
 
-		agentName := nuid.Next()
 		account := conf.Account
 		if account == nil {
 			err := fmt.Errorf("cannot build an agent: no account found")
