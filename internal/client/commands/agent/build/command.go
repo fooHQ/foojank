@@ -22,6 +22,7 @@ const (
 	FlagOs          = "os"
 	FlagArch        = "arch"
 	FlagOutput      = "output"
+	FlagDev         = "dev"
 	FlagAgentServer = "agent-server"
 )
 
@@ -35,6 +36,10 @@ func NewCommand() *cli.Command {
 			},
 			&cli.StringFlag{
 				Name: FlagArch,
+			},
+			&cli.BoolFlag{
+				Name:  FlagDev,
+				Value: false,
 			},
 			&cli.StringFlag{
 				Name:    FlagOutput,
@@ -65,6 +70,7 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 		outputName := c.String(FlagOutput)
 		targetOs := c.String(FlagOs)
 		targetArch := c.String(FlagArch)
+		devBuild := c.Bool(FlagDev)
 
 		// TODO: move to validation function
 		if conf.Codebase == nil {
@@ -158,7 +164,12 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 		}
 		env = append(env, "OUTPUT="+outputName)
 
-		cmd := exec.CommandContext(ctx, "devbox", "run", "build-agent-prod")
+		scriptName := "build-agent-prod"
+		if devBuild {
+			scriptName = "build-agent-dev"
+		}
+
+		cmd := exec.CommandContext(ctx, "devbox", "run", scriptName)
 		cmd.Dir = *conf.Codebase
 		cmd.Env = env
 		b, err := cmd.CombinedOutput()
