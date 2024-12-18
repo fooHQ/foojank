@@ -37,6 +37,7 @@ func main() {
 	nc, err := nats.Connect(
 		servers,
 		nats.UserJWTAndSeed(config.UserJWT, config.UserKeySeed),
+		nats.CustomInboxPrefix("_INBOX_"+config.ServiceName),
 		nats.MaxReconnects(-1),
 		nats.ConnectHandler(func(nc *nats.Conn) {
 			log.Debug("connected to the server")
