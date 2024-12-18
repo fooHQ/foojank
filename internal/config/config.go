@@ -131,6 +131,8 @@ func NewAccount(name string, operatorSignKey []byte) (*Entity, error) {
 
 	claims := jwt.NewAccountClaims(pubKey)
 	claims.Name = name
+	claims.Limits.JetStreamLimits.DiskStorage = -1
+	claims.Limits.JetStreamLimits.MemoryStorage = -1
 	claims.SigningKeys.Add(signPubKey)
 	claimsEnc, err := claims.Encode(operatorSignKeyPair)
 	if err != nil {
