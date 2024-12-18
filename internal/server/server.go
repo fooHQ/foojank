@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats-server/v2/server"
@@ -73,21 +72,13 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
+	resolver := &server.MemAccResolver{}
 	logger := actions.NewLogger(ctx, conf)
-	return startAction(logger, conf)(ctx, c)
+	return startAction(logger, conf, resolver)(ctx, c)
 }
 
-func startAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
+func startAction(logger *slog.Logger, conf *config.Config, resolver server.AccountResolver) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		// TODO: configurable directory!
-		// TODO: we can probably use memory resolver?
-		resolver, err := server.NewDirAccResolver("/tmp/nats-jwt", 0, 0, 1, server.FetchTimeout(2*time.Second))
-		if err != nil {
-			err := fmt.Errorf("cannot create account resolver: %v", err)
-			logger.Error(err.Error())
-			return err
-		}
-
 		// TODO: move validation inside a function!
 		if conf.Host == nil {
 			err := fmt.Errorf("invalid configuration: host not found")
