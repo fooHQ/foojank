@@ -103,7 +103,7 @@ func NewOperator(name string) (*Entity, error) {
 	}, nil
 }
 
-func NewAccount(name string, operatorSignKey []byte) (*Entity, error) {
+func NewAccount(name string, operatorSignKey []byte, enableJetstream bool) (*Entity, error) {
 	operatorSignKeyPair, err := nkeys.FromSeed(operatorSignKey)
 	if err != nil {
 		return nil, fmt.Errorf("cannot decode operator's signing key: %v", err)
@@ -131,8 +131,10 @@ func NewAccount(name string, operatorSignKey []byte) (*Entity, error) {
 
 	claims := jwt.NewAccountClaims(pubKey)
 	claims.Name = name
-	claims.Limits.JetStreamLimits.DiskStorage = -1
-	claims.Limits.JetStreamLimits.MemoryStorage = -1
+	if enableJetstream {
+		claims.Limits.JetStreamLimits.DiskStorage = -1
+		claims.Limits.JetStreamLimits.MemoryStorage = -1
+	}
 	claims.SigningKeys.Add(signPubKey)
 	claimsEnc, err := claims.Encode(operatorSignKeyPair)
 	if err != nil {
