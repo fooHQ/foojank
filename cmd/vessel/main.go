@@ -45,7 +45,10 @@ func main() {
 		nats.ReconnectHandler(func(nc *nats.Conn) {
 			log.Debug("reconnected to the server")
 		}),
-		nats.DisconnectErrHandler(func(conn *nats.Conn, err error) {
+		nats.DisconnectErrHandler(func(nc *nats.Conn, err error) {
+			log.Debug(err.Error())
+		}),
+		nats.ErrorHandler(func(nc *nats.Conn, _ *nats.Subscription, err error) {
 			log.Debug(err.Error())
 		}),
 	)
