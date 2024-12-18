@@ -33,7 +33,9 @@ func NewCommand() *cli.Command {
 				Name:    "output",
 				Aliases: []string{"o"},
 			},
-			// TODO: configurable servers (for the agent)!
+			&cli.StringFlag{
+				Name: "agent-server",
+			},
 		},
 		Action: action,
 	}
@@ -78,7 +80,17 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 			outputName += ".exe"
 		}
 
-		username := nuid.Next()
+		servers := conf.Servers
+		if c.IsSet("agent-server") {
+			servers = []string{c.String("agent-server")}
+		}
+		if servers == nil {
+			err := fmt.Errorf("cannot build an agent: no server found")
+			logger.Error(err.Error())
+			return err
+		}
+
+		agentName := nuid.Next()
 		account := conf.Account
 		if account == nil {
 			err := fmt.Errorf("cannot build an agent: no account found")
@@ -94,7 +106,7 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 		}
 
 		accountPubKey := accountClaims.Subject
-		user, err := config.NewUserAgent(username, accountPubKey, []byte(account.SigningKeySeed))
+		user, err := config.NewUserAgent(agentName, accountPubKey, []byte(account.SigningKeySeed))
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %v", err)
 			logger.Error(err.Error())
@@ -102,13 +114,13 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 		}
 
 		agentConf := config.Config{
-			Servers: conf.Servers,
+			Servers: servers,
 			User: &config.Entity{
 				JWT:     user.JWT,
 				KeySeed: user.KeySeed,
 			},
 			Service: &config.Service{
-				Name:    username,
+				Name:    agentName,
 				Version: foojank.Version(),
 			},
 		}
