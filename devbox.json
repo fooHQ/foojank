@@ -35,7 +35,8 @@
       ],
 
       "build-agent-dev": [
-        "go build -tags dev -o build/vessel ./cmd/vessel"
+        "test ! -z \"$OUTPUT\" || (echo \"OUTPUT variable not defined\" && exit 1)",
+        "go build -tags dev -o \"$OUTPUT\" ./cmd/vessel"
       ],
       "build-server-dev": [
         "go build -tags dev -o build/server ./cmd/server"
