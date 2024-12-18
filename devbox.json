@@ -19,16 +19,6 @@
       "echo 'Welcome to devbox!' > /dev/null"
     ],
     "scripts": {
-      "agent": [
-        "CGO_ENABLED=1 go run -race -tags dev ./cmd/vessel"
-      ],
-      "server": [
-        "CGO_ENABLED=1 go run -race -tags dev ./cmd/server"
-      ],
-      "client": [
-        "CGO_ENABLED=1 go run -race -tags dev ./cmd/client"
-      ],
-
       "docs": [
         "docsify server ./docs"
       ],
