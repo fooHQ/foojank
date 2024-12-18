@@ -64,7 +64,14 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 		}
 
 		if outputName == "" {
-			outputName = nuid.Next()
+			wd, err := os.Getwd()
+			if err != nil {
+				err := fmt.Errorf("cannot build an agent: cannot determine current working directory")
+				logger.Error(err.Error())
+				return err
+			}
+
+			outputName = filepath.Join(wd, nuid.Next())
 		}
 
 		if targetOs == "windows" && !strings.HasSuffix(outputName, ".exe") {
@@ -141,7 +148,7 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 			return err
 		}
 
-		_, _ = fmt.Fprintln(os.Stdout, outputName)
+		_, _ = fmt.Fprintln(os.Stdout, filepath.Base(outputName))
 
 		return nil
 	}
