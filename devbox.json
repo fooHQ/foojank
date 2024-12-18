@@ -6,7 +6,8 @@
     "natscli@latest",
     "nsc@latest",
     "upx@latest",
-    "capnproto@latest"
+    "capnproto@latest",
+    "garble@latest"
   ],
   "env": {
     "GOROOT":      "",
