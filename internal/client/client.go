@@ -24,7 +24,6 @@ func New() *cli.Command {
 				Value:   flags.DefaultConfig(),
 				Aliases: []string{"c"},
 			},
-			// TODO: use string slice!
 			&cli.StringFlag{
 				Name:    flags.Server,
 				Usage:   "server URL",
