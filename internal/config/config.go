@@ -231,7 +231,6 @@ func NewUserAgent(name, accountPubKey string, accountSigningKey []byte) (*Entity
 	}
 	claims.Pub = jwt.Permission{
 		Allow: []string{
-			fmt.Sprintf("_INBOX_%s.>", name),
 			fmt.Sprintf("$JS.API.STREAM.INFO.OBJ_%s", name),
 			fmt.Sprintf("$JS.API.DIRECT.GET.OBJ_%s.$O.%s.M.*", name, name),
 			fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.*.$O.%s.C.*", name, name),
