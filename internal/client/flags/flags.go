@@ -28,7 +28,4 @@ var (
 	DefaultServer         = []string{"localhost:4222"}
 	DefaultLogLevel int64 = 0
 	DefaultNoColor        = false
-	DefaultCodebase       = func() string {
-		return "foojank"
-	}
 )

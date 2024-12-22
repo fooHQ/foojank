@@ -49,7 +49,6 @@ func New() *cli.Command {
 			&cli.StringFlag{
 				Name:  flags.Codebase,
 				Usage: "path to directory with foojank codebase",
-				Value: flags.DefaultCodebase(),
 			},
 			&cli.IntFlag{
 				Name:  flags.LogLevel,
