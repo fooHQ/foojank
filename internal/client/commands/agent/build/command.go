@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank"
+	"github.com/foohq/foojank/clients/codebase"
 	"github.com/foohq/foojank/internal/client/actions"
 	"github.com/foohq/foojank/internal/config"
 )
@@ -33,9 +33,11 @@ func NewCommand() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name: FlagOs,
+				// TODO: show default value
 			},
 			&cli.StringFlag{
 				Name: FlagArch,
+				// TODO: show default value
 			},
 			&cli.BoolFlag{
 				Name:  FlagDev,
@@ -62,22 +64,22 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	logger := actions.NewLogger(ctx, conf)
 
-	return buildAction(logger, conf)(ctx, c)
+	if conf.Codebase == nil {
+		err := fmt.Errorf("cannot build an agent: codebase not configured")
+		logger.Error(err.Error())
+		return err
+	}
+
+	client := codebase.New(*conf.Codebase)
+	return buildAction(logger, conf, client)(ctx, c)
 }
 
-func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
+func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Client) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
 		outputName := c.String(FlagOutput)
 		targetOs := c.String(FlagOs)
 		targetArch := c.String(FlagArch)
 		devBuild := c.Bool(FlagDev)
-
-		// TODO: move to validation function
-		if conf.Codebase == nil {
-			err := fmt.Errorf("cannot build an agent: codebase not configured")
-			logger.Error(err.Error())
-			return err
-		}
 
 		agentName := nuid.Next()
 		if outputName == "" {
@@ -140,7 +142,7 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 		}
 
 		template := NewTemplate()
-		output, err := template.Render(agentConf)
+		confOutput, err := template.Render(agentConf)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %v", err)
 			logger.Error(err.Error())
@@ -148,33 +150,16 @@ func buildAction(logger *slog.Logger, conf *config.Config) cli.ActionFunc {
 		}
 
 		confFile := filepath.Join(*conf.Codebase, "internal", "vessel", "config", "config.go")
-		err = os.WriteFile(confFile, output, 0600)
+		err = os.WriteFile(confFile, confOutput, 0600)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot write agent configuration to file '%s': %v", confFile, err)
 			logger.Error(err.Error())
 			return err
 		}
 
-		env := os.Environ()
-		if targetOs != "" {
-			env = append(env, "GOOS="+targetOs)
-		}
-		if targetArch != "" {
-			env = append(env, "GOARCH="+targetArch)
-		}
-		env = append(env, "OUTPUT="+outputName)
-
-		scriptName := "build-agent-prod"
-		if devBuild {
-			scriptName = "build-agent-dev"
-		}
-
-		cmd := exec.CommandContext(ctx, "devbox", "run", scriptName)
-		cmd.Dir = *conf.Codebase
-		cmd.Env = env
-		b, err := cmd.CombinedOutput()
+		output, err := client.BuildAgent(ctx, targetOs, targetArch, outputName, !devBuild)
 		if err != nil {
-			err := fmt.Errorf("cannot build an agent: %v\n%s", err, string(b))
+			err := fmt.Errorf("cannot build an agent: %v\n%s", err, output)
 			logger.Error(err.Error())
 			return err
 		}
