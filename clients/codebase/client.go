@@ -18,6 +18,16 @@ func New(path string) *Client {
 	}
 }
 
+func (c *Client) BuildAgent(ctx context.Context, os, arch, output string, production bool) (string, error) {
+	scriptName := "build-agent-dev"
+	if production {
+		scriptName = "build-agent-prod"
+	}
+	return c.devboxRun(ctx, scriptName, map[string]string{
+		"OUTPUT": output,
+	})
+}
+
 func (c *Client) BuildRunscript(ctx context.Context, output string) (string, error) {
 	return c.devboxRun(ctx, "build-runscript", map[string]string{
 		"OUTPUT": output,
