@@ -74,13 +74,15 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
+	logger := log.New(*conf.LogLevel, *conf.NoColor)
+
 	err = validateConfiguration(conf)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
+		err := fmt.Errorf("invalid configuration: %v\n", err)
+		logger.Error(err.Error())
 		return err
 	}
 
-	logger := log.New(*conf.LogLevel, *conf.NoColor)
 	resolver := &server.MemAccResolver{}
 	return startAction(logger, conf, resolver)(ctx, c)
 }
