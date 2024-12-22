@@ -33,6 +33,10 @@
         "cd ./build/go-capnp/capnpc-go && go build . && cd -",
         "go generate ./proto/capnp"
       ],
+      "build-runscript": [
+        "test ! -z \"$OUTPUT\" || (echo \"OUTPUT variable not defined\" && exit 1)",
+        "go build -tags dev -o \"$OUTPUT\" ./cmd/runscript"
+      ],
 
       "build-agent-dev": [
         "test ! -z \"$OUTPUT\" || (echo \"OUTPUT variable not defined\" && exit 1)",
