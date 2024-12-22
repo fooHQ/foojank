@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats-server/v2/server"
@@ -13,6 +14,7 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/server/actions"
 	"github.com/foohq/foojank/internal/server/flags"
+	"github.com/foohq/foojank/internal/server/log"
 )
 
 func New() *cli.Command {
@@ -24,18 +26,18 @@ func New() *cli.Command {
 			&cli.StringFlag{
 				Name:    flags.Config,
 				Usage:   "path to a configuration file",
-				Value:   flags.DefaultConfig(),
+				Value:   config.DefaultServerConfigPath(),
 				Aliases: []string{"c"},
 			},
 			&cli.StringFlag{
 				Name:  flags.Host,
 				Usage: "bind to host",
-				Value: flags.DefaultHost,
+				Value: config.DefaultHost,
 			},
 			&cli.IntFlag{
 				Name:  flags.Port,
 				Usage: "bind to port",
-				Value: flags.DefaultPort,
+				Value: config.DefaultPort,
 			},
 			&cli.StringFlag{
 				Name:  flags.OperatorJWT,
@@ -49,15 +51,15 @@ func New() *cli.Command {
 				Name:  flags.AccountJWT,
 				Usage: "account JWT token",
 			},
-			&cli.IntFlag{
+			&cli.StringFlag{
 				Name:  flags.LogLevel,
 				Usage: "set log level",
-				Value: flags.DefaultLogLevel,
+				Value: config.DefaultLogLevel,
 			},
 			&cli.BoolFlag{
 				Name:  flags.NoColor,
 				Usage: "disable color output",
-				Value: flags.DefaultNoColor,
+				Value: config.DefaultNoColor,
 			},
 		},
 		Action:          action,
@@ -68,23 +70,23 @@ func New() *cli.Command {
 func action(ctx context.Context, c *cli.Command) error {
 	conf, err := actions.NewConfig(ctx, c)
 	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
 		return err
 	}
 
+	err = validateConfiguration(conf)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
+		return err
+	}
+
+	logger := log.New(*conf.LogLevel, *conf.NoColor)
 	resolver := &server.MemAccResolver{}
-	logger := actions.NewLogger(ctx, conf)
 	return startAction(logger, conf, resolver)(ctx, c)
 }
 
 func startAction(logger *slog.Logger, conf *config.Config, resolver server.AccountResolver) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		err := validateConfiguration(conf)
-		if err != nil {
-			err := fmt.Errorf("invalid configuration: %v", err)
-			logger.Error(err.Error())
-			return err
-		}
-
 		preloadOperators, err := decodeOperatorClaims(conf.Operator.JWT)
 		if err != nil {
 			err := fmt.Errorf("invalid configuration: %v", err)
