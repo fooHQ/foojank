@@ -1,7 +1,10 @@
 package codebase
 
 import (
+	"context"
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -13,6 +16,12 @@ func New(path string) *Client {
 	return &Client{
 		baseDir: path,
 	}
+}
+
+func (c *Client) BuildRunscript(ctx context.Context, output string) (string, error) {
+	return c.devboxRun(ctx, "build-runscript", map[string]string{
+		"OUTPUT": output,
+	})
 }
 
 func (c *Client) GetScript(name string) (string, error) {
@@ -42,4 +51,17 @@ func (c *Client) ListScripts() ([]string, error) {
 	}
 
 	return result, nil
+}
+
+func (c *Client) devboxRun(ctx context.Context, script string, env map[string]string) (string, error) {
+	environ := os.Environ()
+	for name, value := range env {
+		environ = append(environ, fmt.Sprintf("%s=%s", name, value))
+	}
+
+	cmd := exec.CommandContext(ctx, "devbox", "run", script)
+	cmd.Dir = c.baseDir
+	cmd.Env = environ
+	b, err := cmd.CombinedOutput()
+	return string(b), err
 }
