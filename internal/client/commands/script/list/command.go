@@ -13,9 +13,10 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:   "list",
-		Usage:  "List all scripts",
-		Action: action,
+		Name:    "list",
+		Usage:   "List all scripts",
+		Action:  action,
+		Aliases: []string{"ls"},
 	}
 }
 
