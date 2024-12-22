@@ -21,12 +21,15 @@ type Arguments struct {
 }
 
 type Service struct {
-	args Arguments
+	args   Arguments
+	engine *engine.Engine
 }
 
 func New(args Arguments) *Service {
+	e := engine.New()
 	return &Service{
-		args: args,
+		args:   args,
+		engine: e,
 	}
 }
 
@@ -93,7 +96,7 @@ loop:
 				}
 				log.Debug("after load package %s:%s", v.Repository, v.FilePath)
 
-				eng, err := engine.Unpack(ctx, file, int64(file.Size))
+				code, err := s.engine.CompilePackage(ctx, file, int64(file.Size))
 				if err != nil {
 					log.Debug(err.Error())
 					_ = msg.ReplyError(errcodes.ErrEngineUnpack, err.Error(), "")
@@ -101,7 +104,7 @@ loop:
 				}
 
 				log.Debug("before run")
-				_, err = eng.Run(ctx)
+				err = code.Run(ctx)
 				if err != nil {
 					log.Debug(err.Error())
 					_ = msg.ReplyError(errcodes.ErrEngineRun, err.Error(), "")

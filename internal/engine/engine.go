@@ -7,7 +7,6 @@ import (
 
 	"github.com/risor-io/risor"
 	"github.com/risor-io/risor/compiler"
-	"github.com/risor-io/risor/object"
 	"github.com/risor-io/risor/parser"
 	"github.com/risor-io/risor/vm"
 
@@ -15,46 +14,57 @@ import (
 )
 
 type Engine struct {
-	opts     *risor.Config
-	bootCode *compiler.Code
+	opts []risor.Option
 }
 
-func Unpack(ctx context.Context, reader io.ReaderAt, size int64) (*Engine, error) {
-	opts := risor.NewConfig()
-	imp, err := importers.NewZipImporter(reader, size, opts.CompilerOpts()...)
+func New(opts ...risor.Option) *Engine {
+	return &Engine{
+		opts: opts,
+	}
+}
+
+func (e *Engine) CompilePackage(ctx context.Context, reader io.ReaderAt, size int64) (*Code, error) {
+	conf := risor.NewConfig(e.opts...)
+	prog, err := parser.Parse(ctx, "import main")
 	if err != nil {
 		return nil, err
 	}
 
-	bootloader := "import main"
-	prog, err := parser.Parse(ctx, bootloader)
+	code, err := compiler.Compile(prog, conf.CompilerOpts()...)
 	if err != nil {
 		return nil, err
 	}
 
-	code, err := compiler.Compile(prog, opts.CompilerOpts()...)
+	importer, err := importers.NewZipImporter(reader, size, conf.CompilerOpts()...)
 	if err != nil {
 		return nil, err
 	}
 
 	// Recreate risor config but include the custom importer this time.
-	opts = risor.NewConfig(
-		risor.WithImporter(imp),
+	opts := append([]risor.Option{
+		risor.WithImporter(importer),
+	},
+		e.opts...,
 	)
-
-	return &Engine{
-		opts:     opts,
-		bootCode: code,
+	return &Code{
+		code: code,
+		opts: opts,
 	}, nil
 }
 
-func (e *Engine) Run(ctx context.Context) (object.Object, error) {
-	o, err := vm.Run(ctx, e.bootCode, e.opts.VMOpts()...)
+type Code struct {
+	code *compiler.Code
+	opts []risor.Option
+}
+
+func (c *Code) Run(ctx context.Context) error {
+	conf := risor.NewConfig(c.opts...)
+	_, err := vm.Run(ctx, c.code, conf.VMOpts()...)
 	if err != nil {
-		return nil, &Error{err}
+		return &Error{err}
 	}
 
-	return o, nil
+	return nil
 }
 
 type Error struct {
