@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/otiai10/copy"
 )
@@ -19,6 +20,9 @@ var (
 const fileExt = "fzz"
 
 func NewFilename(name string) string {
+	if strings.HasSuffix(name, fileExt) {
+		return name
+	}
 	return name + "." + fileExt
 }
 
