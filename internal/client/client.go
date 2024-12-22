@@ -7,7 +7,6 @@ import (
 	"github.com/foohq/foojank/internal/client/actions"
 	"github.com/foohq/foojank/internal/client/commands/agent"
 	"github.com/foohq/foojank/internal/client/commands/config"
-	_package "github.com/foohq/foojank/internal/client/commands/package"
 	"github.com/foohq/foojank/internal/client/commands/repository"
 	"github.com/foohq/foojank/internal/client/commands/script"
 	"github.com/foohq/foojank/internal/client/flags"
@@ -65,7 +64,6 @@ func New() *cli.Command {
 		},
 		Commands: []*cli.Command{
 			agent.NewCommand(),
-			_package.NewCommand(),
 			script.NewCommand(),
 			repository.NewCommand(),
 			config.NewCommand(),
