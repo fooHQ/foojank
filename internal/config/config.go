@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
@@ -11,6 +12,56 @@ import (
 )
 
 var ErrParserError = errors.New("parser error")
+
+var (
+	DefaultClientConfigPath = func() string {
+		confDir, err := os.UserConfigDir()
+		if err != nil {
+			confDir = "." + string(filepath.Separator)
+		}
+		return filepath.Join(confDir, "foojank", "foojank.conf")
+	}
+	DefaultServerConfigPath = func() string {
+		confDir, err := os.UserConfigDir()
+		if err != nil {
+			confDir = "." + string(filepath.Separator)
+		}
+		return filepath.Join(confDir, "foojank", "server.conf")
+	}
+	DefaultHost           = "localhost"
+	DefaultPort     int64 = 4222
+	DefaultServers        = []string{"localhost"}
+	DefaultLogLevel       = "info"
+	DefaultNoColor        = false
+)
+
+func setDefaults(conf *Config) *Config {
+	if conf == nil {
+		conf = &Config{}
+	}
+
+	if conf.Host == nil {
+		conf.Host = &DefaultHost
+	}
+
+	if conf.Port == nil {
+		conf.Port = &DefaultPort
+	}
+
+	if conf.Servers == nil {
+		conf.Servers = DefaultServers
+	}
+
+	if conf.LogLevel == nil {
+		conf.LogLevel = &DefaultLogLevel
+	}
+
+	if conf.NoColor == nil {
+		conf.NoColor = &DefaultNoColor
+	}
+
+	return conf
+}
 
 type Service struct {
 	Name    string `toml:"name"`
@@ -31,7 +82,7 @@ type Config struct {
 	Account       *Entity  `toml:"account,omitempty"`
 	SystemAccount *Entity  `toml:"system_account,omitempty"`
 	User          *Entity  `toml:"user,omitempty"`
-	LogLevel      *int64   `toml:"log_level,omitempty"`
+	LogLevel      *string  `toml:"log_level,omitempty"`
 	NoColor       *bool    `toml:"no_color,omitempty"`
 	Service       *Service `toml:"service,omitempty"`
 	Codebase      *string  `toml:"codebase,omitempty"`
@@ -42,9 +93,12 @@ func (s *Config) String() string {
 	return string(b)
 }
 
-func ParseFile(file string) (*Config, error) {
+func ParseFile(file string, mustExist bool) (*Config, error) {
 	b, err := os.ReadFile(file)
 	if err != nil {
+		if os.IsNotExist(err) && !mustExist {
+			return setDefaults(nil), nil
+		}
 		return nil, err
 	}
 
@@ -53,6 +107,8 @@ func ParseFile(file string) (*Config, error) {
 	if err != nil {
 		return nil, errors.Join(ErrParserError, err)
 	}
+
+	conf = *setDefaults(&conf)
 
 	return &conf, nil
 }
