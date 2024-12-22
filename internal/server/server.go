@@ -61,7 +61,6 @@ func New() *cli.Command {
 			},
 		},
 		Action:          action,
-		DefaultCommand:  "start",
 		CommandNotFound: actions.CommandNotFound,
 		HideHelpCommand: true,
 	}
