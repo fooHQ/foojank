@@ -1,0 +1,73 @@
+package runscript
+
+import (
+	"context"
+	"fmt"
+	"os"
+
+	"github.com/urfave/cli/v3"
+
+	"github.com/foohq/foojank"
+	"github.com/foohq/foojank/internal/engine"
+	"github.com/foohq/foojank/internal/runscript/actions"
+)
+
+func New() *cli.Command {
+	return &cli.Command{
+		Name:            "runscript",
+		ArgsUsage:       "<package>",
+		Usage:           "Run Risor script locally",
+		Version:         foojank.Version(),
+		Action:          action,
+		CommandNotFound: actions.CommandNotFound,
+		HideHelpCommand: true,
+	}
+}
+
+func action(ctx context.Context, c *cli.Command) error {
+	return runAction()(ctx, c)
+}
+
+func runAction() cli.ActionFunc {
+	return func(ctx context.Context, c *cli.Command) error {
+		if c.Args().Len() != 1 {
+			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
+			_, _ = fmt.Fprintln(os.Stderr, err)
+			return err
+		}
+
+		pkgPath := c.Args().First()
+		err := executePackage(ctx, pkgPath)
+		if err != nil {
+			err := fmt.Errorf("cannot execute a package: %v", err)
+			_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
+			return err
+		}
+
+		return nil
+	}
+}
+
+func executePackage(ctx context.Context, pkgPath string) error {
+	f, err := os.Open(pkgPath)
+	if err != nil {
+		err := fmt.Errorf("cannot open a package: %v", err)
+		return err
+	}
+	defer f.Close()
+
+	info, err := f.Stat()
+	if err != nil {
+		err := fmt.Errorf("cannot stat a package: %v", err)
+		return err
+	}
+
+	e := engine.New()
+	c, err := e.CompilePackage(ctx, f, info.Size())
+	if err != nil {
+		err := fmt.Errorf("cannot compile a package: %v", err)
+		return err
+	}
+
+	return c.Run(ctx)
+}
