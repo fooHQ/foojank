@@ -78,61 +78,34 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func startAction(logger *slog.Logger, conf *config.Config, resolver server.AccountResolver) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		// TODO: move validation inside a function!
-		if conf.Host == nil {
-			err := fmt.Errorf("invalid configuration: host not found")
+		err := validateConfiguration(conf)
+		if err != nil {
+			err := fmt.Errorf("invalid configuration: %v", err)
 			logger.Error(err.Error())
 			return err
 		}
 
-		if conf.Port == nil {
-			err := fmt.Errorf("invalid configuration: port not found")
+		preloadOperators, err := decodeOperatorClaims(conf.Operator.JWT)
+		if err != nil {
+			err := fmt.Errorf("invalid configuration: %v", err)
 			logger.Error(err.Error())
 			return err
 		}
 
-		operator := conf.Operator
-		if operator == nil {
-			err := fmt.Errorf("invalid configuration: no operator found")
+		configuredAccounts := []string{
+			conf.Account.JWT,
+			conf.SystemAccount.JWT,
+		}
+		preloadAccounts, err := decodeAccountClaims(configuredAccounts...)
+		if err != nil {
+			err := fmt.Errorf("invalid configuration: %v", err)
 			logger.Error(err.Error())
 			return err
 		}
 
-		account := conf.Account
-		if account == nil {
-			err := fmt.Errorf("invalid configuration: no account found")
-			logger.Error(err.Error())
-			return err
-		}
-
-		systemAccount := conf.SystemAccount
-		if account == nil {
-			err := fmt.Errorf("invalid configuration: no system account found")
-			logger.Error(err.Error())
-			return err
-		}
-
-		var preloadOperators []*jwt.OperatorClaims
-		for _, operatorJWT := range []string{operator.JWT} {
-			claims, err := jwt.DecodeOperatorClaims(operatorJWT)
-			if err != nil {
-				err := fmt.Errorf("invalid configuration: cannot decode operator JWT: %v", err)
-				logger.Error(err.Error())
-				return err
-			}
-
-			preloadOperators = append(preloadOperators, claims)
-		}
-
-		for _, accountJWT := range []string{account.JWT, systemAccount.JWT} {
-			claims, err := jwt.DecodeAccountClaims(accountJWT)
-			if err != nil {
-				err := fmt.Errorf("invalid configuration: cannot decode account JWT: %v", err)
-				logger.Error(err.Error())
-				return err
-			}
-
+		for i, claims := range preloadAccounts {
 			accountPubKey := claims.Subject
+			accountJWT := configuredAccounts[i]
 			err = resolver.Store(accountPubKey, accountJWT)
 			if err != nil {
 				err := fmt.Errorf("cannot store account in the resolver: %v", err)
@@ -141,14 +114,9 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 			}
 		}
 
-		claims, err := jwt.DecodeAccountClaims(systemAccount.JWT)
-		if err != nil {
-			err := fmt.Errorf("invalid configuration: cannot decode account JWT: %v", err)
-			logger.Error(err.Error())
-			return err
-		}
-
-		systemAccountPubKey := claims.Subject
+		// This is a footgun waiting to hurt someone.
+		// System account must always be defined as the last in the decodeAccountClaims.
+		systemAccountPubKey := preloadAccounts[len(preloadAccounts)-1].Subject
 		opts := &server.Options{
 			Host:             *conf.Host,
 			Port:             int(*conf.Port),
@@ -176,4 +144,56 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 
 		return nil
 	}
+}
+
+func validateConfiguration(conf *config.Config) error {
+	if conf.Host == nil {
+		return fmt.Errorf("host not found")
+	}
+
+	if conf.Port == nil {
+		return fmt.Errorf("port not found")
+	}
+
+	if conf.Operator == nil {
+		return fmt.Errorf("no operator found")
+	}
+
+	if conf.Account == nil {
+		return fmt.Errorf("no account found")
+	}
+
+	if conf.SystemAccount == nil {
+		return fmt.Errorf("no system account found")
+	}
+
+	return nil
+}
+
+func decodeOperatorClaims(operatorJWTs ...string) ([]*jwt.OperatorClaims, error) {
+	var result []*jwt.OperatorClaims
+	for _, operatorJWT := range operatorJWTs {
+		claims, err := jwt.DecodeOperatorClaims(operatorJWT)
+		if err != nil {
+			err := fmt.Errorf("cannot decode operator JWT: %v", err)
+			return nil, err
+		}
+
+		result = append(result, claims)
+	}
+	return result, nil
+}
+
+func decodeAccountClaims(accountJWTs ...string) ([]*jwt.AccountClaims, error) {
+	var result []*jwt.AccountClaims
+	for _, accountJWT := range accountJWTs {
+		claims, err := jwt.DecodeAccountClaims(accountJWT)
+		if err != nil {
+			err := fmt.Errorf("cannot decode account JWT: %v", err)
+			return nil, err
+		}
+
+		result = append(result, claims)
+	}
+	return result, nil
 }
