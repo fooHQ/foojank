@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/nats-io/jwt/v2"
@@ -35,12 +36,12 @@ func NewCommand() *cli.Command {
 			&cli.StringFlag{
 				Name:  FlagOs,
 				Usage: "set build operating system",
-				// TODO: show default value
+				Value: runtime.GOOS,
 			},
 			&cli.StringFlag{
 				Name:  FlagArch,
 				Usage: "set build architecture",
-				// TODO: show default value
+				Value: runtime.GOARCH,
 			},
 			&cli.BoolFlag{
 				Name:  FlagDev,
