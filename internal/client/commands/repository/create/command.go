@@ -10,6 +10,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/clients/repository"
+	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/client/actions"
 	"github.com/foohq/foojank/internal/client/log"
 	"github.com/foohq/foojank/internal/config"
@@ -42,9 +43,10 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	logger := log.New(*conf.LogLevel, *conf.NoColor)
 
-	// TODO: refactor!
-	nc, err := actions.NewServerConnection(ctx, conf, logger)
+	nc, err := server.New(logger, conf.Servers, conf.User.JWT, conf.User.KeySeed)
 	if err != nil {
+		err := fmt.Errorf("cannot connect to the server: %v", err)
+		logger.Error(err.Error())
 		return err
 	}
 

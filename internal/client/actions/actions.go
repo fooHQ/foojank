@@ -3,11 +3,8 @@ package actions
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"os"
-	"strings"
 
-	"github.com/nats-io/nats.go"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/client/flags"
@@ -84,42 +81,4 @@ func CommandNotFound(ctx context.Context, c *cli.Command, s string) {
 	err := fmt.Errorf("command '%s' does not exist", s)
 	_, _ = fmt.Fprintf(os.Stderr, "%s: %v\n", c.FullName(), err.Error())
 	os.Exit(1)
-}
-
-// TODO: move this into a clients/server
-func NewServerConnection(ctx context.Context, conf *config.Config, logger *slog.Logger) (*nats.Conn, error) {
-	servers := strings.Join(conf.Servers, ",")
-	user := conf.User
-	if user == nil {
-		err := fmt.Errorf("user configuration is missing")
-		logger.Error(err.Error())
-		return nil, err
-	}
-
-	nc, err := nats.Connect(
-		servers,
-		nats.UserJWTAndSeed(user.JWT, user.KeySeed),
-		nats.MaxReconnects(-1),
-		nats.ConnectHandler(func(nc *nats.Conn) {
-			logger.Debug("connected to the server")
-		}),
-		nats.ReconnectHandler(func(nc *nats.Conn) {
-			logger.Info("reconnected to the server")
-		}),
-		nats.DisconnectErrHandler(func(conn *nats.Conn, err error) {
-			err = fmt.Errorf("disconnected from the server: %v", err)
-			logger.Warn(err.Error())
-		}),
-		/*nats.ErrorHandler(func(conn *nats.Conn, subscription *nats.Subscription, err error) {
-			// TODO: set better error message
-			logger.Warn("NATS error ", "error", err, "server", server)
-		}),*/
-	)
-	if err != nil {
-		err = fmt.Errorf("cannot connect to the server: %v", err)
-		logger.Error(err.Error())
-		return nil, err
-	}
-
-	return nc, nil
 }
