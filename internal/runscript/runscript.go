@@ -30,14 +30,15 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func runAction() cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		if c.Args().Len() != 1 {
+		if c.Args().Len() < 1 {
 			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
 			_, _ = fmt.Fprintln(os.Stderr, err)
 			return err
 		}
 
 		pkgPath := c.Args().First()
-		err := executePackage(ctx, pkgPath)
+		pkgArgs := c.Args().Tail()
+		err := executePackage(ctx, pkgPath, pkgArgs...)
 		if err != nil {
 			err := fmt.Errorf("cannot execute a package: %v", err)
 			_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
@@ -48,7 +49,7 @@ func runAction() cli.ActionFunc {
 	}
 }
 
-func executePackage(ctx context.Context, pkgPath string) error {
+func executePackage(ctx context.Context, pkgPath string, pkgArgs ...string) error {
 	f, err := os.Open(pkgPath)
 	if err != nil {
 		err := fmt.Errorf("cannot open a package: %v", err)
@@ -69,5 +70,8 @@ func executePackage(ctx context.Context, pkgPath string) error {
 		return err
 	}
 
+	c.Stdin = os.Stdin
+	c.Stdout = os.Stdout
+	c.Args = pkgArgs
 	return c.Run(ctx)
 }
