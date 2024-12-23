@@ -6,12 +6,70 @@ import (
 	"io"
 
 	"github.com/risor-io/risor"
+	"github.com/risor-io/risor/builtins"
 	"github.com/risor-io/risor/compiler"
+	modbase64 "github.com/risor-io/risor/modules/base64"
+	modbytes "github.com/risor-io/risor/modules/bytes"
+	modcli "github.com/risor-io/risor/modules/cli"
+	moderrors "github.com/risor-io/risor/modules/errors"
+	modexec "github.com/risor-io/risor/modules/exec"
+	modfilepath "github.com/risor-io/risor/modules/filepath"
+	modfmt "github.com/risor-io/risor/modules/fmt"
+	modhttp "github.com/risor-io/risor/modules/http"
+	modjson "github.com/risor-io/risor/modules/json"
+	modmath "github.com/risor-io/risor/modules/math"
+	modnet "github.com/risor-io/risor/modules/net"
+	modos "github.com/risor-io/risor/modules/os"
+	modrand "github.com/risor-io/risor/modules/rand"
+	modregexp "github.com/risor-io/risor/modules/regexp"
+	modstrconv "github.com/risor-io/risor/modules/strconv"
+	modstrings "github.com/risor-io/risor/modules/strings"
+	modtime "github.com/risor-io/risor/modules/time"
 	"github.com/risor-io/risor/parser"
 	"github.com/risor-io/risor/vm"
 
 	"github.com/foohq/foojank/internal/engine/importers"
 )
+
+var DefaultModules = map[string]any{
+	"base64":   modbase64.Module(),
+	"bytes":    modbytes.Module(),
+	"errors":   moderrors.Module(),
+	"exec":     modexec.Module(),
+	"filepath": modfilepath.Module(),
+	"fmt":      modfmt.Module(),
+	"http":     modhttp.Module(),
+	"json":     modjson.Module(),
+	"math":     modmath.Module(),
+	"net":      modnet.Module(),
+	"os":       modos.Module(),
+	"cli":      modcli.Module(),
+	"rand":     modrand.Module(),
+	"regexp":   modregexp.Module(),
+	"strconv":  modstrconv.Module(),
+	"strings":  modstrings.Module(),
+	"time":     modtime.Module(),
+}
+
+func DefaultBuiltins() map[string]any {
+	result := make(map[string]any)
+	for name, obj := range builtins.Builtins() {
+		result[name] = obj
+	}
+	for name, obj := range modfmt.Builtins() {
+		result[name] = obj
+	}
+	for name, obj := range modos.Builtins() {
+		result[name] = obj
+	}
+	return result
+}
+
+var defaultOpts = []risor.Option{
+	risor.WithoutDefaultGlobals(),
+	risor.WithGlobals(DefaultModules),
+	risor.WithGlobals(DefaultBuiltins()),
+}
 
 type Engine struct {
 	opts []risor.Option
@@ -19,7 +77,7 @@ type Engine struct {
 
 func New(opts ...risor.Option) *Engine {
 	return &Engine{
-		opts: opts,
+		opts: append(defaultOpts, opts...),
 	}
 }
 
