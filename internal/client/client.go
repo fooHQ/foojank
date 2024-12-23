@@ -25,10 +25,10 @@ func New() *cli.Command {
 				Value:   config.DefaultClientConfigPath(),
 				Aliases: []string{"c"},
 			},
-			&cli.StringFlag{
+			&cli.StringSliceFlag{
 				Name:    flags.Server,
 				Usage:   "set server URL",
-				Value:   config.DefaultServers[0],
+				Value:   config.DefaultServers,
 				Aliases: []string{"s"},
 			},
 			&cli.StringFlag{

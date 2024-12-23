@@ -53,8 +53,9 @@ func NewCommand() *cli.Command {
 				Usage:   "set output file",
 				Aliases: []string{"o"},
 			},
-			&cli.StringFlag{
-				Name: FlagAgentServer,
+			&cli.StringSliceFlag{
+				Name:  FlagAgentServer,
+				Usage: "set agent server",
 			},
 		},
 		Action: action,
@@ -79,6 +80,8 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 		targetOs := c.String(FlagOs)
 		targetArch := c.String(FlagArch)
 		devBuild := c.Bool(FlagDev)
+		isAgentServer := c.IsSet(FlagAgentServer)
+		agentServer := c.StringSlice(FlagAgentServer)
 
 		agentName := nuid.Next()
 		if outputName == "" {
@@ -97,8 +100,8 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 		}
 
 		servers := conf.Servers
-		if c.IsSet(FlagAgentServer) {
-			servers = []string{c.String(FlagAgentServer)}
+		if isAgentServer {
+			servers = agentServer
 		}
 		if servers == nil {
 			err := fmt.Errorf("cannot build an agent: no server configured")
