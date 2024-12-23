@@ -84,6 +84,8 @@ func buildAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 			return err
 		}
 
+		_, _ = fmt.Fprintln(os.Stdout, filepath.Base(dst))
+
 		return nil
 	}
 }
