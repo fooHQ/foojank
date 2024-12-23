@@ -42,7 +42,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		if c.Args().Len() != 1 {
+		if c.Args().Len() < 1 {
 			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
 			logger.Error(err.Error())
 			return err
@@ -69,19 +69,15 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 			return err
 		}
 
-		runscriptBin := filepath.Join(os.TempDir(), fmt.Sprintf("runscript-%s", nuid.Next()))
-		output, err := client.BuildRunscript(ctx, runscriptBin)
+		binPath := filepath.Join(os.TempDir(), fmt.Sprintf("runscript-%s", nuid.Next()))
+		output, err := client.BuildRunscript(ctx, binPath)
 		if err != nil {
 			err := fmt.Errorf("cannot build runscript: %v\n%s", err, output)
 			logger.Error(err.Error())
 			return err
 		}
 
-		cmd := exec.CommandContext(ctx, runscriptBin, pkgPath)
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		err = cmd.Run()
+		err = execRunscript(ctx, binPath, pkgPath, c.Args().Tail()...)
 		if err != nil {
 			logger.Error(err.Error())
 			return err
@@ -107,4 +103,12 @@ func buildTempPackage(src string) (string, error) {
 	}
 
 	return dst, nil
+}
+
+func execRunscript(ctx context.Context, binPath, pkgPath string, args ...string) error {
+	cmd := exec.CommandContext(ctx, binPath, append([]string{pkgPath}, args...)...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
