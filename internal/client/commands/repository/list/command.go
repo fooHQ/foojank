@@ -32,6 +32,7 @@ func NewCommand() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  FlagFormat,
+				Usage: "set output format",
 				Value: "table",
 			},
 		},

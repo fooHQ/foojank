@@ -33,14 +33,17 @@ func NewCommand() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  FlagServiceName,
+				Usage: "filter by service name",
 				Value: "",
 			},
 			&cli.DurationFlag{
 				Name:  FlagTimeout,
+				Usage: "set how long to wait for response",
 				Value: 2 * time.Second,
 			},
 			&cli.StringFlag{
 				Name:  FlagFormat,
+				Usage: "set output format",
 				Value: "table",
 			},
 		},

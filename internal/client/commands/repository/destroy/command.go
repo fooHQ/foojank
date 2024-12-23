@@ -28,7 +28,7 @@ func NewCommand() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    FlagForce,
-				Usage:   "force delete of non-empty repository",
+				Usage:   "force delete a non-empty repository",
 				Aliases: []string{"f"},
 			},
 		},

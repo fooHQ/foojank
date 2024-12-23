@@ -33,15 +33,18 @@ func NewCommand() *cli.Command {
 		Usage: "Build an agent",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name: FlagOs,
+				Name:  FlagOs,
+				Usage: "set build operating system",
 				// TODO: show default value
 			},
 			&cli.StringFlag{
-				Name: FlagArch,
+				Name:  FlagArch,
+				Usage: "set build architecture",
 				// TODO: show default value
 			},
 			&cli.BoolFlag{
 				Name:  FlagDev,
+				Usage: "enable development mode",
 				Value: false,
 			},
 			&cli.StringFlag{

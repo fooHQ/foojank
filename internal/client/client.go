@@ -21,35 +21,35 @@ func New() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    flags.Config,
-				Usage:   "path to a configuration file",
+				Usage:   "set path to a configuration file",
 				Value:   config.DefaultClientConfigPath(),
 				Aliases: []string{"c"},
 			},
 			&cli.StringFlag{
 				Name:    flags.Server,
-				Usage:   "server URL",
+				Usage:   "set server URL",
 				Value:   config.DefaultServers[0],
 				Aliases: []string{"s"},
 			},
 			&cli.StringFlag{
 				Name:  flags.UserJWT,
-				Usage: "user JWT token",
+				Usage: "set user JWT token",
 			},
 			&cli.StringFlag{
 				Name:  flags.UserKey,
-				Usage: "user secret NKey",
+				Usage: "set user secret key",
 			},
 			&cli.StringFlag{
 				Name:  flags.AccountJWT,
-				Usage: "account JWT token",
+				Usage: "set account JWT token",
 			},
 			&cli.StringFlag{
 				Name:  flags.AccountSigningKey,
-				Usage: "account signing key",
+				Usage: "set account signing key",
 			},
 			&cli.StringFlag{
 				Name:  flags.Codebase,
-				Usage: "path to directory with foojank codebase",
+				Usage: "set path to a directory with framework's source code",
 			},
 			&cli.StringFlag{
 				Name:  flags.LogLevel,
