@@ -68,21 +68,13 @@ func New() *cli.Command {
 	}
 }
 func action(ctx context.Context, c *cli.Command) error {
-	conf, err := actions.NewConfig(ctx, c)
+	conf, err := actions.NewConfig(ctx, c, validateConfiguration)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
 		return err
 	}
 
 	logger := log.New(*conf.LogLevel, *conf.NoColor)
-
-	err = validateConfiguration(conf)
-	if err != nil {
-		err := fmt.Errorf("invalid configuration: %v\n", err)
-		logger.Error(err.Error())
-		return err
-	}
-
 	resolver := &server.MemAccResolver{}
 	return startAction(logger, conf, resolver)(ctx, c)
 }
@@ -152,23 +144,23 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 
 func validateConfiguration(conf *config.Config) error {
 	if conf.Host == nil {
-		return fmt.Errorf("host not found")
+		return fmt.Errorf("host not configured")
 	}
 
 	if conf.Port == nil {
-		return fmt.Errorf("port not found")
+		return fmt.Errorf("port not configured")
 	}
 
 	if conf.Operator == nil {
-		return fmt.Errorf("no operator found")
+		return fmt.Errorf("operator not configured")
 	}
 
 	if conf.Account == nil {
-		return fmt.Errorf("no account found")
+		return fmt.Errorf("account not configured")
 	}
 
 	if conf.SystemAccount == nil {
-		return fmt.Errorf("no system account found")
+		return fmt.Errorf("system account not configured")
 	}
 
 	return nil

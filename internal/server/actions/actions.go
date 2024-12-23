@@ -17,7 +17,7 @@ func CommandNotFound(ctx context.Context, c *cli.Command, s string) {
 	os.Exit(1)
 }
 
-func NewConfig(ctx context.Context, c *cli.Command) (*config.Config, error) {
+func NewConfig(ctx context.Context, c *cli.Command, validatorFn func(*config.Config) error) (*config.Config, error) {
 	file := c.String(flags.Config)
 	mustExist := c.IsSet(flags.Config)
 	conf, err := config.ParseFile(file, mustExist)
@@ -65,6 +65,13 @@ func NewConfig(ctx context.Context, c *cli.Command) (*config.Config, error) {
 	if c.IsSet(flags.NoColor) {
 		v := c.Bool(flags.NoColor)
 		conf.NoColor = &v
+	}
+
+	if validatorFn != nil {
+		err := validatorFn(conf)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return conf, nil
