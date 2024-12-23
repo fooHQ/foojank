@@ -30,7 +30,7 @@ var (
 	}
 	DefaultHost           = "localhost"
 	DefaultPort     int64 = 4222
-	DefaultServers        = []string{"localhost"}
+	DefaultServers        = []string{fmt.Sprintf("%s:%d", DefaultHost, DefaultPort)}
 	DefaultLogLevel       = "info"
 	DefaultNoColor        = false
 )
