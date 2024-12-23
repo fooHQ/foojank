@@ -28,7 +28,10 @@ import (
 	"github.com/risor-io/risor/parser"
 	"github.com/risor-io/risor/vm"
 
+	risoros "github.com/risor-io/risor/os"
+
 	"github.com/foohq/foojank/internal/engine/importers"
+	"github.com/foohq/foojank/internal/engine/os"
 )
 
 var DefaultModules = map[string]any{
@@ -111,13 +114,17 @@ func (e *Engine) CompilePackage(ctx context.Context, reader io.ReaderAt, size in
 }
 
 type Code struct {
-	code *compiler.Code
-	opts []risor.Option
+	Stdin  risoros.File
+	Stdout risoros.File
+	Args   []string
+	code   *compiler.Code
+	opts   []risor.Option
 }
 
 func (c *Code) Run(ctx context.Context) error {
+	oso := os.New(ctx, os.WithStdin(c.Stdin), os.WithStdout(c.Stdout), os.WithArgs(c.Args...))
 	conf := risor.NewConfig(c.opts...)
-	_, err := vm.Run(ctx, c.code, conf.VMOpts()...)
+	_, err := vm.Run(oso.Context(), c.code, conf.VMOpts()...)
 	if err != nil {
 		return &Error{err}
 	}
