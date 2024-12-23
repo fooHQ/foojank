@@ -99,7 +99,7 @@ loop:
 				code, err := s.engine.CompilePackage(ctx, file, int64(file.Size))
 				if err != nil {
 					log.Debug(err.Error())
-					_ = msg.ReplyError(errcodes.ErrEngineUnpack, err.Error(), "")
+					_ = msg.ReplyError(errcodes.ErrEngineCompile, err.Error(), "")
 					continue
 				}
 
