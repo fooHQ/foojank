@@ -8,22 +8,49 @@ import (
 
 var _ risoros.OS = &OS{}
 
+type Options struct {
+	stdin  risoros.File
+	stdout risoros.File
+	args   []string
+}
+type Option func(*Options)
+
+func WithArgs(args ...string) Option {
+	return func(o *Options) {
+		o.args = args
+	}
+}
+
+func WithStdin(file risoros.File) Option {
+	return func(o *Options) {
+		o.stdin = file
+	}
+}
+func WithStdout(file risoros.File) Option {
+	return func(o *Options) {
+		o.stdout = file
+	}
+}
+
 type OS struct {
 	*risoros.SimpleOS
 	ctx    context.Context
 	cancel context.CancelFunc
-	stdin  risoros.File
-	stdout risoros.File
+	opts   Options
 }
 
-func New(ctx context.Context, stdin, stdout risoros.File) *OS {
+func New(ctx context.Context, options ...Option) *OS {
+	var opts Options
+	for _, option := range options {
+		option(&opts)
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 	return &OS{
 		SimpleOS: risoros.NewSimpleOS(ctx),
 		ctx:      ctx,
 		cancel:   cancel,
-		stdin:    stdin,
-		stdout:   stdout,
+		opts:     opts,
 	}
 }
 
@@ -32,11 +59,15 @@ func (o *OS) Context() context.Context {
 }
 
 func (o *OS) Stdout() risoros.File {
-	return o.stdout
+	return o.opts.stdout
 }
 
 func (o *OS) Stdin() risoros.File {
-	return o.stdin
+	return o.opts.stdin
+}
+
+func (o *OS) Args() []string {
+	return o.opts.args
 }
 
 func (o *OS) Exit(code int) {
