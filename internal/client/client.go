@@ -6,10 +6,11 @@ import (
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/internal/client/actions"
 	"github.com/foohq/foojank/internal/client/commands/agent"
-	"github.com/foohq/foojank/internal/client/commands/config"
+	_config "github.com/foohq/foojank/internal/client/commands/config"
 	"github.com/foohq/foojank/internal/client/commands/repository"
 	"github.com/foohq/foojank/internal/client/commands/script"
 	"github.com/foohq/foojank/internal/client/flags"
+	"github.com/foohq/foojank/internal/config"
 )
 
 func New() *cli.Command {
@@ -21,13 +22,13 @@ func New() *cli.Command {
 			&cli.StringFlag{
 				Name:    flags.Config,
 				Usage:   "path to a configuration file",
-				Value:   flags.DefaultConfig(),
+				Value:   config.DefaultClientConfigPath(),
 				Aliases: []string{"c"},
 			},
 			&cli.StringFlag{
 				Name:    flags.Server,
 				Usage:   "server URL",
-				Value:   flags.DefaultServer[0],
+				Value:   config.DefaultServers[0],
 				Aliases: []string{"s"},
 			},
 			&cli.StringFlag{
@@ -50,22 +51,22 @@ func New() *cli.Command {
 				Name:  flags.Codebase,
 				Usage: "path to directory with foojank codebase",
 			},
-			&cli.IntFlag{
+			&cli.StringFlag{
 				Name:  flags.LogLevel,
 				Usage: "set log level",
-				Value: flags.DefaultLogLevel,
+				Value: config.DefaultLogLevel,
 			},
 			&cli.BoolFlag{
 				Name:  flags.NoColor,
 				Usage: "disable color output",
-				Value: flags.DefaultNoColor,
+				Value: config.DefaultNoColor,
 			},
 		},
 		Commands: []*cli.Command{
 			agent.NewCommand(),
 			script.NewCommand(),
 			repository.NewCommand(),
-			config.NewCommand(),
+			_config.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		HideHelpCommand: true,

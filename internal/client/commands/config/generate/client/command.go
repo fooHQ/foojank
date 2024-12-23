@@ -11,6 +11,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/client/actions"
+	"github.com/foohq/foojank/internal/client/log"
 	"github.com/foohq/foojank/internal/config"
 )
 
@@ -24,13 +25,13 @@ func NewCommand() *cli.Command {
 }
 
 func action(ctx context.Context, c *cli.Command) error {
-	conf, err := actions.NewConfig(ctx, c)
+	conf, err := actions.NewConfig(ctx, c, validateConfiguration)
 	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
 		return err
 	}
 
-	logger := actions.NewLogger(ctx, conf)
-
+	logger := log.New(*conf.LogLevel, *conf.NoColor)
 	return generateAction(logger)(ctx, c)
 }
 
@@ -42,21 +43,22 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 			return err
 		}
 
-		input, err := config.ParseFile(c.Args().First())
+		confFile := c.Args().First()
+		input, err := config.ParseFile(confFile, true)
 		if err != nil {
 			err := fmt.Errorf("cannot parse configuration file: %v", err)
 			logger.Error(err.Error())
 			return err
 		}
 
-		account := input.Account
-		if account == nil {
-			err := fmt.Errorf("cannot generate client configuration: no account found")
+		err = validateInputConfiguration(input)
+		if err != nil {
+			err := fmt.Errorf("invalid input configuration file: %v", err)
 			logger.Error(err.Error())
 			return err
 		}
 
-		accountClaims, err := jwt.DecodeAccountClaims(account.JWT)
+		accountClaims, err := jwt.DecodeAccountClaims(input.Account.JWT)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot decode account JWT: %v", err)
 			logger.Error(err.Error())
@@ -65,7 +67,7 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 
 		accountPubKey := accountClaims.Subject
 		username := fmt.Sprintf("MG%s", nuid.Next())
-		user, err := config.NewUserManager(username, accountPubKey, []byte(account.SigningKeySeed))
+		user, err := config.NewUserManager(username, accountPubKey, []byte(input.Account.SigningKeySeed))
 		if err != nil {
 			err := fmt.Errorf("cannot generate client configuration: %v", err)
 			logger.Error(err.Error())
@@ -75,8 +77,8 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 		output := config.Config{
 			Servers: input.Servers,
 			Account: &config.Entity{
-				JWT:            account.JWT,
-				SigningKeySeed: account.SigningKeySeed,
+				JWT:            input.Account.JWT,
+				SigningKeySeed: input.Account.SigningKeySeed,
 			},
 			User: user,
 		}
@@ -85,4 +87,21 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 
 		return nil
 	}
+}
+
+func validateConfiguration(conf *config.Config) error {
+	// TODO: validate LogLevel and NoColor
+	return nil
+}
+
+func validateInputConfiguration(conf *config.Config) error {
+	if conf.Servers == nil {
+		return fmt.Errorf("servers not configured")
+	}
+
+	if conf.Account == nil {
+		return fmt.Errorf("account not configured")
+	}
+
+	return nil
 }

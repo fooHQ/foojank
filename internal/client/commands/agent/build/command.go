@@ -15,6 +15,7 @@ import (
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/clients/codebase"
 	"github.com/foohq/foojank/internal/client/actions"
+	"github.com/foohq/foojank/internal/client/log"
 	"github.com/foohq/foojank/internal/config"
 )
 
@@ -57,19 +58,13 @@ func NewCommand() *cli.Command {
 }
 
 func action(ctx context.Context, c *cli.Command) error {
-	conf, err := actions.NewConfig(ctx, c)
+	conf, err := actions.NewConfig(ctx, c, validateConfiguration)
 	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
 		return err
 	}
 
-	logger := actions.NewLogger(ctx, conf)
-
-	if conf.Codebase == nil {
-		err := fmt.Errorf("cannot build an agent: codebase not configured")
-		logger.Error(err.Error())
-		return err
-	}
-
+	logger := log.New(*conf.LogLevel, *conf.NoColor)
 	client := codebase.New(*conf.Codebase)
 	return buildAction(logger, conf, client)(ctx, c)
 }
@@ -98,23 +93,16 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 		}
 
 		servers := conf.Servers
-		if c.IsSet("agent-server") {
-			servers = []string{c.String("agent-server")}
+		if c.IsSet(FlagAgentServer) {
+			servers = []string{c.String(FlagAgentServer)}
 		}
 		if servers == nil {
-			err := fmt.Errorf("cannot build an agent: no server found")
+			err := fmt.Errorf("cannot build an agent: no server configured")
 			logger.Error(err.Error())
 			return err
 		}
 
-		account := conf.Account
-		if account == nil {
-			err := fmt.Errorf("cannot build an agent: no account found")
-			logger.Error(err.Error())
-			return err
-		}
-
-		accountClaims, err := jwt.DecodeAccountClaims(account.JWT)
+		accountClaims, err := jwt.DecodeAccountClaims(conf.Account.JWT)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot decode account JWT: %v", err)
 			logger.Error(err.Error())
@@ -122,7 +110,7 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 		}
 
 		accountPubKey := accountClaims.Subject
-		user, err := config.NewUserAgent(agentName, accountPubKey, []byte(account.SigningKeySeed))
+		user, err := config.NewUserAgent(agentName, accountPubKey, []byte(conf.Account.SigningKeySeed))
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %v", err)
 			logger.Error(err.Error())
@@ -168,4 +156,20 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 
 		return nil
 	}
+}
+
+func validateConfiguration(conf *config.Config) error {
+	if conf.Codebase == nil {
+		return fmt.Errorf("codebase not configured")
+	}
+
+	if conf.Servers == nil {
+		return fmt.Errorf("servers not configured")
+	}
+
+	if conf.Account == nil {
+		return fmt.Errorf("account not configured")
+	}
+
+	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/client/actions"
+	"github.com/foohq/foojank/internal/client/log"
 	"github.com/foohq/foojank/internal/config"
 )
 
@@ -22,13 +23,13 @@ func NewCommand() *cli.Command {
 }
 
 func action(ctx context.Context, c *cli.Command) error {
-	conf, err := actions.NewConfig(ctx, c)
+	conf, err := actions.NewConfig(ctx, c, validateConfiguration)
 	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
 		return err
 	}
 
-	logger := actions.NewLogger(ctx, conf)
-
+	logger := log.New(*conf.LogLevel, *conf.NoColor)
 	return generateAction(logger)(ctx, c)
 }
 
@@ -40,30 +41,17 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 			return err
 		}
 
-		input, err := config.ParseFile(c.Args().First())
+		confFile := c.Args().First()
+		input, err := config.ParseFile(confFile, true)
 		if err != nil {
-			err := fmt.Errorf("cannot parse configuration file: %v", err)
+			err := fmt.Errorf("cannot parse master configuration file: %v", err)
 			logger.Error(err.Error())
 			return err
 		}
 
-		operator := input.Operator
-		if operator == nil {
-			err := fmt.Errorf("cannot generate server configuration: no operator found")
-			logger.Error(err.Error())
-			return err
-		}
-
-		account := input.Account
-		if account == nil {
-			err := fmt.Errorf("cannot generate server configuration: no account found")
-			logger.Error(err.Error())
-			return err
-		}
-
-		systemAccount := input.SystemAccount
-		if account == nil {
-			err := fmt.Errorf("cannot generate server configuration: no system account found")
+		err = validateInputConfiguration(input)
+		if err != nil {
+			err := fmt.Errorf("invalid master configuration file: %v", err)
 			logger.Error(err.Error())
 			return err
 		}
@@ -72,13 +60,13 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 			Host: input.Host,
 			Port: input.Port,
 			Operator: &config.Entity{
-				JWT: operator.JWT,
+				JWT: input.Operator.JWT,
 			},
 			Account: &config.Entity{
-				JWT: account.JWT,
+				JWT: input.Account.JWT,
 			},
 			SystemAccount: &config.Entity{
-				JWT: systemAccount.JWT,
+				JWT: input.SystemAccount.JWT,
 			},
 		}
 
@@ -86,4 +74,33 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 
 		return nil
 	}
+}
+
+func validateConfiguration(conf *config.Config) error {
+	// TODO: validate LogLevel and NoColor
+	return nil
+}
+
+func validateInputConfiguration(conf *config.Config) error {
+	if conf.Host == nil {
+		return fmt.Errorf("host not configured")
+	}
+
+	if conf.Port == nil {
+		return fmt.Errorf("port not configured")
+	}
+
+	if conf.Operator == nil {
+		return fmt.Errorf("operator not configured")
+	}
+
+	if conf.Account == nil {
+		return fmt.Errorf("account not configured")
+	}
+
+	if conf.SystemAccount == nil {
+		return fmt.Errorf("system account not configured")
+	}
+
+	return nil
 }

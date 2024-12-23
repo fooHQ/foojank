@@ -2,13 +2,11 @@ package actions
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"strings"
 
-	"github.com/lmittmann/tint"
 	"github.com/nats-io/nats.go"
 	"github.com/urfave/cli/v3"
 
@@ -16,26 +14,13 @@ import (
 	"github.com/foohq/foojank/internal/config"
 )
 
-func NewConfig(ctx context.Context, c *cli.Command) (*config.Config, error) {
+func NewConfig(ctx context.Context, c *cli.Command, validatorFn func(*config.Config) error) (*config.Config, error) {
 	file := c.String(flags.Config)
-	conf, err := config.ParseFile(file)
+	mustExist := c.IsSet(flags.Config)
+	conf, err := config.ParseFile(file, mustExist)
 	if err != nil {
-		if errors.Is(err, config.ErrParserError) {
-			err = fmt.Errorf("cannot parse configuration file '%s': %v", file, err)
-			_, _ = fmt.Fprintf(os.Stderr, "%s: %v\n", c.FullName(), err)
-			return nil, err
-		} else if !errors.Is(err, os.ErrNotExist) {
-			err = fmt.Errorf("cannot open configuration file '%s': %v", file, err)
-			_, _ = fmt.Fprintf(os.Stderr, "%s: %v\n", c.FullName(), err)
-			return nil, err
-		}
-
-		// File does not exist, fallthrough.
-		conf = &config.Config{
-			Servers:  flags.DefaultServer,
-			LogLevel: &flags.DefaultLogLevel,
-			NoColor:  &flags.DefaultNoColor,
-		}
+		err = fmt.Errorf("cannot parse configuration file '%s': %v", file, err)
+		return nil, err
 	}
 
 	if c.IsSet(flags.Server) {
@@ -71,7 +56,7 @@ func NewConfig(ctx context.Context, c *cli.Command) (*config.Config, error) {
 	}
 
 	if c.IsSet(flags.LogLevel) {
-		v := c.Int(flags.LogLevel)
+		v := c.String(flags.LogLevel)
 		conf.LogLevel = &v
 	}
 
@@ -85,6 +70,13 @@ func NewConfig(ctx context.Context, c *cli.Command) (*config.Config, error) {
 		conf.Codebase = &v
 	}
 
+	if validatorFn != nil {
+		err := validatorFn(conf)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return conf, nil
 }
 
@@ -94,24 +86,7 @@ func CommandNotFound(ctx context.Context, c *cli.Command, s string) {
 	os.Exit(1)
 }
 
-func NewLogger(ctx context.Context, conf *config.Config) *slog.Logger {
-	logLevel := slog.LevelInfo
-	if conf.LogLevel != nil {
-		logLevel = slog.Level(*conf.LogLevel)
-	}
-
-	noColor := false
-	if conf.NoColor != nil {
-		noColor = *conf.NoColor
-	}
-
-	return slog.New(tint.NewHandler(os.Stderr, &tint.Options{
-		Level:     logLevel,
-		NoColor:   noColor,
-		AddSource: logLevel == slog.LevelDebug,
-	}))
-}
-
+// TODO: move this into a clients/server
 func NewServerConnection(ctx context.Context, conf *config.Config, logger *slog.Logger) (*nats.Conn, error) {
 	servers := strings.Join(conf.Servers, ",")
 	user := conf.User

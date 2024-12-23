@@ -12,6 +12,8 @@ import (
 	"github.com/foohq/foojank/clients/codebase"
 	"github.com/foohq/foojank/fzz"
 	"github.com/foohq/foojank/internal/client/actions"
+	"github.com/foohq/foojank/internal/client/log"
+	"github.com/foohq/foojank/internal/config"
 )
 
 const (
@@ -35,19 +37,13 @@ func NewCommand() *cli.Command {
 }
 
 func action(ctx context.Context, c *cli.Command) error {
-	conf, err := actions.NewConfig(ctx, c)
+	conf, err := actions.NewConfig(ctx, c, validateConfiguration)
 	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
 		return err
 	}
 
-	logger := actions.NewLogger(ctx, conf)
-
-	if conf.Codebase == nil {
-		err := fmt.Errorf("cannot build a package: codebase not configured")
-		logger.Error(err.Error())
-		return err
-	}
-
+	logger := log.New(*conf.LogLevel, *conf.NoColor)
 	client := codebase.New(*conf.Codebase)
 	return buildAction(logger, client)(ctx, c)
 }
@@ -90,4 +86,12 @@ func buildAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 
 		return nil
 	}
+}
+
+func validateConfiguration(conf *config.Config) error {
+	if conf.Codebase == nil {
+		return fmt.Errorf("codebase not configured")
+	}
+
+	return nil
 }
