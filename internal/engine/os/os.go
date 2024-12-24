@@ -9,9 +9,10 @@ import (
 var _ risoros.OS = &OS{}
 
 type Options struct {
-	stdin  risoros.File
-	stdout risoros.File
-	args   []string
+	stdin       risoros.File
+	stdout      risoros.File
+	args        []string
+	exitHandler ExitHandler
 }
 type Option func(*Options)
 
@@ -32,30 +33,17 @@ func WithStdout(file risoros.File) Option {
 	}
 }
 
+type ExitHandler func(int)
+
+func WithExitHandler(handler ExitHandler) Option {
+	return func(o *Options) {
+		o.exitHandler = handler
+	}
+}
+
 type OS struct {
 	*risoros.SimpleOS
-	ctx    context.Context
-	cancel context.CancelFunc
-	opts   Options
-}
-
-func New(ctx context.Context, options ...Option) *OS {
-	var opts Options
-	for _, option := range options {
-		option(&opts)
-	}
-
-	ctx, cancel := context.WithCancel(ctx)
-	return &OS{
-		SimpleOS: risoros.NewSimpleOS(ctx),
-		ctx:      ctx,
-		cancel:   cancel,
-		opts:     opts,
-	}
-}
-
-func (o *OS) Context() context.Context {
-	return risoros.WithOS(o.ctx, o)
+	opts Options
 }
 
 func (o *OS) Stdout() risoros.File {
@@ -71,6 +59,20 @@ func (o *OS) Args() []string {
 }
 
 func (o *OS) Exit(code int) {
-	// TODO: preserve code!
-	o.cancel()
+	if o.opts.exitHandler != nil {
+		o.opts.exitHandler(code)
+	}
+}
+
+func NewContext(ctx context.Context, options ...Option) context.Context {
+	var opts Options
+	for _, option := range options {
+		option(&opts)
+	}
+
+	o := &OS{
+		SimpleOS: risoros.NewSimpleOS(ctx),
+		opts:     opts,
+	}
+	return risoros.WithOS(ctx, o)
 }
