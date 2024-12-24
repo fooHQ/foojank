@@ -1,0 +1,9 @@
+var app = cli.app({
+    name: "cat",
+    usage: "Concatenate and print files",
+    action: func(c) {
+        for _, arg := range c.args() {
+            print(cat(arg))
+        }
+    }
+})
