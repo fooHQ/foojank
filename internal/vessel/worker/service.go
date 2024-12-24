@@ -37,11 +37,13 @@ func New(args Arguments) *Service {
 func (s *Service) Start(ctx context.Context) error {
 	defer func() {
 		r := recover()
-		// This must not be used in select along with ctx.
-		// Doing so would prevent sending the event up to the scheduler, ultimately causing a deadlock.
-		s.args.EventCh <- EventWorkerStopped{
-			WorkerID: s.args.ID,
-			Reason:   r,
+		if r != nil {
+			// This must not be used in select along with ctx.
+			// Doing so would prevent sending the event up to the scheduler, ultimately causing a deadlock.
+			s.args.EventCh <- EventWorkerStopped{
+				WorkerID: s.args.ID,
+				Reason:   r,
+			}
 		}
 	}()
 
@@ -99,23 +101,28 @@ func (s *Service) Start(ctx context.Context) error {
 		}).Start(groupCtx)
 	})
 
-	var info connector.InfoMessage
 	select {
-	case v := <-connectorInfoCh:
-		info = v
+	case info := <-connectorInfoCh:
+		select {
+		case s.args.EventCh <- EventWorkerStarted{
+			WorkerID:    s.args.ID,
+			ServiceName: info.ServiceName(),
+			ServiceID:   info.ServiceID(),
+		}:
+		case <-ctx.Done():
+			break
+		}
 	case <-ctx.Done():
-		return nil
+		break
 	}
 
-	select {
-	case s.args.EventCh <- EventWorkerStarted{
-		WorkerID:    s.args.ID,
-		ServiceName: info.ServiceName(),
-		ServiceID:   info.ServiceID(),
-	}:
-	case <-ctx.Done():
-		return nil
+	err := group.Wait()
+	// This must not be used in select along with ctx.
+	// Doing so would prevent sending the event up to the scheduler, ultimately causing a deadlock.
+	s.args.EventCh <- EventWorkerStopped{
+		WorkerID: s.args.ID,
+		Reason:   err,
 	}
 
-	return group.Wait()
+	return nil
 }
