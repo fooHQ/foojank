@@ -40,13 +40,13 @@
 
       "build-agent-dev": [
         "test ! -z \"$OUTPUT\" || (echo \"OUTPUT variable not defined\" && exit 1)",
-        "go build -tags dev -o \"$OUTPUT\" ./cmd/vessel"
+        "CGO_ENABLED=1 go build -race -tags dev -o \"$OUTPUT\" ./cmd/vessel"
       ],
       "build-server-dev": [
-        "go build -tags dev -o build/server ./cmd/server"
+        "CGO_ENABLED=1 go build -race -tags dev -o build/server ./cmd/server"
       ],
       "build-client-dev": [
-        "go build -tags dev -o build/client ./cmd/client"
+        "CGO_ENABLED=1 go build -race -tags dev -o build/client ./cmd/client"
       ],
 
       "build-agent-prod": [
