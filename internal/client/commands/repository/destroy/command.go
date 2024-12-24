@@ -12,8 +12,8 @@ import (
 	"github.com/foohq/foojank/clients/repository"
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/client/actions"
-	"github.com/foohq/foojank/internal/client/log"
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/log"
 )
 
 const (

@@ -16,8 +16,8 @@ import (
 	"github.com/foohq/foojank/internal/client/formatter"
 	jsonformatter "github.com/foohq/foojank/internal/client/formatter/json"
 	tableformatter "github.com/foohq/foojank/internal/client/formatter/table"
-	"github.com/foohq/foojank/internal/client/log"
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/log"
 )
 
 const (

@@ -12,9 +12,9 @@ import (
 
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/log"
 	"github.com/foohq/foojank/internal/server/actions"
 	"github.com/foohq/foojank/internal/server/flags"
-	"github.com/foohq/foojank/internal/server/log"
 )
 
 func New() *cli.Command {

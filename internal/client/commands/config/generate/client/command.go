@@ -11,8 +11,8 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/client/actions"
-	"github.com/foohq/foojank/internal/client/log"
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/log"
 )
 
 func NewCommand() *cli.Command {

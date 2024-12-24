@@ -14,8 +14,8 @@ import (
 	"github.com/foohq/foojank/clients/codebase"
 	"github.com/foohq/foojank/fzz"
 	"github.com/foohq/foojank/internal/client/actions"
-	"github.com/foohq/foojank/internal/client/log"
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/log"
 )
 
 func NewCommand() *cli.Command {
