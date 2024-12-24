@@ -32,7 +32,7 @@ func (s *Service) Start(ctx context.Context) error {
 		case msg := <-s.args.InputCh:
 			parsed, err := proto.ParseAction(msg.Data())
 			if err != nil {
-				log.Debug("cannot decode scheduler action message: %v", err)
+				log.Debug("cannot decode scheduler action message", "error", err)
 				_ = msg.ReplyError(errcodes.ErrInvalidMessage, "", nil)
 				continue
 			}
@@ -53,7 +53,7 @@ func (s *Service) Start(ctx context.Context) error {
 				}
 
 			default:
-				log.Debug("invalid scheduler action message: %T", parsed)
+				log.Debug("invalid scheduler action message", "message", parsed)
 				_ = msg.ReplyError(errcodes.ErrInvalidAction, "", nil)
 				continue
 			}
@@ -89,12 +89,12 @@ func (s *Service) Start(ctx context.Context) error {
 				b, err = proto.NewGetWorkerResponse(v.ServiceName, v.ServiceID)
 
 			default:
-				log.Debug("invalid scheduler response message: %T", msg.Data())
+				log.Debug("invalid scheduler response message", "message", msg.Data())
 				_ = msg.Request().ReplyError(errcodes.ErrInvalidResponse, "", nil)
 				continue
 			}
 			if err != nil {
-				log.Debug("cannot create a scheduler response message: %v", err)
+				log.Debug("cannot create a scheduler response message", "error", err)
 				_ = msg.Request().ReplyError(errcodes.ErrNewResponseFailed, err.Error(), nil)
 				continue
 			}

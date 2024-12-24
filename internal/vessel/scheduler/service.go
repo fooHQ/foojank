@@ -85,7 +85,7 @@ loop:
 		case event := <-eventCh:
 			switch v := event.(type) {
 			case worker.EventWorkerStarted:
-				log.Debug("%#v", v)
+				log.Debug("received worker started event", "event", v)
 				workers[v.WorkerID] = state{
 					w:           workers[v.WorkerID].w,
 					serviceName: v.ServiceName,
@@ -94,7 +94,7 @@ loop:
 				}
 
 			case worker.EventWorkerStopped:
-				log.Debug("%#v", v)
+				log.Debug("received worker stopped event", "event", v)
 				workers[v.WorkerID].Cancel()
 				delete(workers, v.WorkerID)
 			}
@@ -106,7 +106,7 @@ loop:
 
 	log.Debug("cancelling all running workers")
 	for i := range workers {
-		log.Debug("worker id=%d cancelled", i)
+		log.Debug("worker cancelled", "id", i)
 		workers[i].Cancel()
 		<-eventCh
 	}
@@ -117,7 +117,7 @@ loop:
 }
 
 func (s *Service) createWorker(ctx context.Context, workerID uint64, eventCh chan<- worker.Event) *worker.Service {
-	log.Debug("creating a new worker id=%d", workerID)
+	log.Debug("creating a new worker", "id", workerID)
 	w := worker.New(worker.Arguments{
 		ID:         workerID,
 		Name:       config.ServiceName,
@@ -132,7 +132,7 @@ func (s *Service) createWorker(ctx context.Context, workerID uint64, eventCh cha
 		defer s.wg.Done()
 		err := w.Start(ctx)
 		if err != nil {
-			log.Debug("worker stopped with an error: %v", err)
+			log.Debug("worker stopped", "error", err)
 			return
 		}
 	}()

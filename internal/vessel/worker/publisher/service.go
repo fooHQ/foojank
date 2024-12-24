@@ -34,7 +34,7 @@ func (s *Service) Start(ctx context.Context) error {
 			}
 			err := s.args.Connection.PublishMsg(msg)
 			if err != nil {
-				log.Debug("cannot publish to stdout subject: %v", err)
+				log.Debug("cannot publish to stdout subject", "error", err)
 				continue
 			}
 
