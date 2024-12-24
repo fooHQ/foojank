@@ -9,6 +9,7 @@ import (
 
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/internal/engine"
+	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/runscript/actions"
 )
 
@@ -63,15 +64,17 @@ func executePackage(ctx context.Context, pkgPath string, pkgArgs ...string) erro
 		return err
 	}
 
-	e := engine.New()
-	c, err := e.CompilePackage(ctx, f, info.Size())
+	osCtx := engineos.NewContext(
+		ctx,
+		engineos.WithStdin(os.Stdin),
+		engineos.WithStdout(os.Stdout),
+		// TODO: add args!
+	)
+	c, err := engine.CompilePackage(osCtx, f, info.Size())
 	if err != nil {
 		err := fmt.Errorf("cannot compile a package: %v", err)
 		return err
 	}
 
-	c.Stdin = os.Stdin
-	c.Stdout = os.Stdout
-	c.Args = pkgArgs
-	return c.Run(ctx)
+	return c.Run(osCtx)
 }
