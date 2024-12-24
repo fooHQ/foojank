@@ -1,3 +1,7 @@
-func command(args) {
-    printf("%s\n", os.getwd())
-}
+var app = cli.app({
+    name: "pwd",
+    usage: "Print current working directory",
+    action: func(c) {
+        print(os.getwd())
+    }
+})

@@ -1,16 +1,20 @@
-func command(args){
-    if len(args) == 0 {
-        args.append(".")
-    }
-
-    for _, f := range args {
-        if len(args) > 1 {
-            printf("%s:\n", f)
+var app = cli.app({
+    name: "ls",
+    usage: "List directory contents",
+    action: func(c) {
+        args := c.args()
+        if len(args) == 0 {
+            args.append(".")
         }
 
-        contents := ls(f)
-        for i := range contents {
-            print(contents[i].name)
+        for _, f := range args {
+            if len(args) > 1 {
+                printf("%s:\n", f)
+            }
+
+            for _, f := range ls(f) {
+                print(f.name)
+            }
         }
     }
-}
+})

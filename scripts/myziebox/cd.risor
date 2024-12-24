@@ -1,7 +1,14 @@
-func command(args) {
-    dir := os.user_home_dir()
-    if len(args) > 0 {
-        dir = args[0]
+import os
+
+var app = cli.app({
+    name: "cd",
+    usage: "Change working directory",
+    action: func(c) {
+        dir := os.user_home_dir()
+        args := c.args()
+        if len(args) > 0 {
+            dir = args[0]
+        }
+        os.chdir(dir)
     }
-    os.chdir(dir)
-}
+})

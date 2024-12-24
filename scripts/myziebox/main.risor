@@ -1,13 +1,18 @@
-import ls
-import exit
+import cli
+import strings
+import os
+
+import cat
 import cd
 import pwd
 import env
+import exit
+import ls
 
 func read_line(f) {
 	buf := byte_slice(255)
 	for {
-		printf("> ")
+		printf("(foojank) > ")
 		line := string(f.read(buf))
 		if !strings.contains(line, '\n') {
 			continue
@@ -17,32 +22,12 @@ func read_line(f) {
 }
 
 var commands = {
-    "ls": ls.command,
-    "exit": exit.command,
-    "cd": cd.command,
-    "pwd": pwd.command,
-    "env": env.command,
-}
-
-func help_builtin(args) {
-    printf("Commands: ")
-    cmds := keys(commands)
-    for _, cmd := range cmds {
-        printf("%s ", cmd)
-    }
-    printf("\n")
-}
-
-func looper_builtin(args) {
-    for i := 0; i < 10; i++ {
-        print(i+1)
-        time.sleep(0.8)
-    }
-}
-
-var builtins = {
-    "help": help_builtin,
-    "looper": looper_builtin,
+    "cat": cat.app,
+    "cd": cd.app,
+    "pwd": pwd.app,
+    "env": env.app,
+    "exit": exit.app,
+    "ls": ls.app,
 }
 
 func main() {
@@ -55,21 +40,9 @@ func main() {
             continue
         }
 
-        if len(args) > 1 {
-            args = args[1:]
-        } else {
-            args = []
-        }
-
         if c in commands {
             try(func(){
-                commands[c](args)
-            }, func(err){
-                print(err)
-            })
-        } else if c in builtins {
-            try(func(){
-                builtins[c](args)
+                commands[c].run(args)
             }, func(err){
                 print(err)
             })
