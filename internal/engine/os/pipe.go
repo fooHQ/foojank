@@ -8,7 +8,7 @@ import (
 	risoros "github.com/risor-io/risor/os"
 )
 
-var _ risoros.File = Pipe{}
+var _ risoros.File = &Pipe{}
 
 // Pipe implements Risor's os.File interface.
 // The type is backed by Go's io.Pipe therefore it allows concurrent read/write.
@@ -17,19 +17,19 @@ type Pipe struct {
 	w *io.PipeWriter
 }
 
-func NewPipe() Pipe {
+func NewPipe() *Pipe {
 	r, w := io.Pipe()
-	return Pipe{
+	return &Pipe{
 		r: r,
 		w: w,
 	}
 }
 
-func (f Pipe) Write(p []byte) (n int, err error) {
+func (f *Pipe) Write(p []byte) (n int, err error) {
 	return f.w.Write(p)
 }
 
-func (f Pipe) Stat() (fs.FileInfo, error) {
+func (f *Pipe) Stat() (fs.FileInfo, error) {
 	return risoros.NewFileInfo(risoros.GenericFileInfoOpts{
 		Name:    "grr",
 		Size:    0,
@@ -39,11 +39,11 @@ func (f Pipe) Stat() (fs.FileInfo, error) {
 	}), nil
 }
 
-func (f Pipe) Read(p []byte) (int, error) {
+func (f *Pipe) Read(p []byte) (int, error) {
 	return f.r.Read(p)
 }
 
-func (f Pipe) Close() error {
+func (f *Pipe) Close() error {
 	err := f.w.Close()
 	if err != nil {
 		return err
