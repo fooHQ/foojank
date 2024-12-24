@@ -24,6 +24,8 @@ func (c *Client) BuildAgent(ctx context.Context, os, arch, output string, produc
 		scriptName = "build-agent-prod"
 	}
 	return c.devboxRun(ctx, scriptName, map[string]string{
+		"GOOS":   os,
+		"GOARCH": arch,
 		"OUTPUT": output,
 	})
 }
