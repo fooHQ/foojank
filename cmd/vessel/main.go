@@ -19,12 +19,12 @@ import (
 func main() {
 	usr, err := user.Current()
 	if err != nil {
-		log.Debug("cannot get computer's username: %v", err)
+		log.Debug("cannot get computer's username", "error", err)
 	}
 
 	hostname, err := os.Hostname()
 	if err != nil {
-		log.Debug("cannot get computer's hostname: %v", err)
+		log.Debug("cannot get computer's hostname", "error", err)
 	}
 
 	log.Debug("started")
@@ -46,25 +46,25 @@ func main() {
 			log.Debug("reconnected to the server")
 		}),
 		nats.DisconnectErrHandler(func(nc *nats.Conn, err error) {
-			log.Debug(err.Error())
+			log.Debug("disconnected from the server", err.Error())
 		}),
 		nats.ErrorHandler(func(nc *nats.Conn, _ *nats.Subscription, err error) {
-			log.Debug(err.Error())
+			log.Debug("server error", err.Error())
 		}),
 	)
 	if err != nil {
-		log.Debug("cannot connect to NATS: %v", err)
+		log.Debug("cannot connect to the server", "error", err)
 		return
 	}
 
 	ip, err := nc.GetClientIP()
 	if err != nil {
-		log.Debug("cannot determine computer's IP address: %v", err)
+		log.Debug("cannot determine computer's IP address", "error", err)
 	}
 
 	js, err := jetstream.New(nc)
 	if err != nil {
-		log.Debug("cannot enable JetStream: %v", err)
+		log.Debug("cannot enable JetStream", "error", err)
 		return
 	}
 
@@ -81,7 +81,7 @@ func main() {
 		Stream:     js,
 	}).Start(ctx)
 	if err != nil {
-		log.Debug("%v", err)
+		log.Debug("cannot start the agent", "error", err)
 		return
 	}
 }
