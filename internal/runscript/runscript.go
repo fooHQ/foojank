@@ -66,9 +66,9 @@ func executePackage(ctx context.Context, pkgPath string, pkgArgs ...string) erro
 
 	osCtx := engineos.NewContext(
 		ctx,
+		engineos.WithArgs(pkgArgs...),
 		engineos.WithStdin(os.Stdin),
 		engineos.WithStdout(os.Stdout),
-		// TODO: add args!
 	)
 	c, err := engine.CompilePackage(osCtx, f, info.Size())
 	if err != nil {
