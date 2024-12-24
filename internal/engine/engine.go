@@ -28,33 +28,32 @@ import (
 	"github.com/risor-io/risor/parser"
 	"github.com/risor-io/risor/vm"
 
-	risoros "github.com/risor-io/risor/os"
-
 	"github.com/foohq/foojank/internal/engine/importers"
-	"github.com/foohq/foojank/internal/engine/os"
 )
 
-var DefaultModules = map[string]any{
-	"base64":   modbase64.Module(),
-	"bytes":    modbytes.Module(),
-	"errors":   moderrors.Module(),
-	"exec":     modexec.Module(),
-	"filepath": modfilepath.Module(),
-	"fmt":      modfmt.Module(),
-	"http":     modhttp.Module(),
-	"json":     modjson.Module(),
-	"math":     modmath.Module(),
-	"net":      modnet.Module(),
-	"os":       modos.Module(),
-	"cli":      modcli.Module(),
-	"rand":     modrand.Module(),
-	"regexp":   modregexp.Module(),
-	"strconv":  modstrconv.Module(),
-	"strings":  modstrings.Module(),
-	"time":     modtime.Module(),
+func defaultModules() map[string]any {
+	return map[string]any{
+		"base64":   modbase64.Module(),
+		"bytes":    modbytes.Module(),
+		"errors":   moderrors.Module(),
+		"exec":     modexec.Module(),
+		"filepath": modfilepath.Module(),
+		"fmt":      modfmt.Module(),
+		"http":     modhttp.Module(),
+		"json":     modjson.Module(),
+		"math":     modmath.Module(),
+		"net":      modnet.Module(),
+		"os":       modos.Module(),
+		"cli":      modcli.Module(),
+		"rand":     modrand.Module(),
+		"regexp":   modregexp.Module(),
+		"strconv":  modstrconv.Module(),
+		"strings":  modstrings.Module(),
+		"time":     modtime.Module(),
+	}
 }
 
-func DefaultBuiltins() map[string]any {
+func defaultBuiltins() map[string]any {
 	result := make(map[string]any)
 	for name, obj := range builtins.Builtins() {
 		result[name] = obj
@@ -68,24 +67,13 @@ func DefaultBuiltins() map[string]any {
 	return result
 }
 
-var defaultOpts = []risor.Option{
-	risor.WithoutDefaultGlobals(),
-	risor.WithGlobals(DefaultModules),
-	risor.WithGlobals(DefaultBuiltins()),
-}
-
-type Engine struct {
-	opts []risor.Option
-}
-
-func New(opts ...risor.Option) *Engine {
-	return &Engine{
-		opts: append(defaultOpts, opts...),
-	}
-}
-
-func (e *Engine) CompilePackage(ctx context.Context, reader io.ReaderAt, size int64) (*Code, error) {
-	conf := risor.NewConfig(e.opts...)
+func CompilePackage(ctx context.Context, reader io.ReaderAt, size int64) (*Code, error) {
+	opts := append([]risor.Option{
+		risor.WithoutDefaultGlobals(),
+		risor.WithGlobals(defaultModules()),
+		risor.WithGlobals(defaultBuiltins()),
+	})
+	conf := risor.NewConfig(opts...)
 	prog, err := parser.Parse(ctx, "import main")
 	if err != nil {
 		return nil, err
@@ -102,11 +90,7 @@ func (e *Engine) CompilePackage(ctx context.Context, reader io.ReaderAt, size in
 	}
 
 	// Recreate risor config but include the custom importer this time.
-	opts := append([]risor.Option{
-		risor.WithImporter(importer),
-	},
-		e.opts...,
-	)
+	opts = append(opts, risor.WithImporter(importer))
 	return &Code{
 		code: code,
 		opts: opts,
@@ -114,17 +98,13 @@ func (e *Engine) CompilePackage(ctx context.Context, reader io.ReaderAt, size in
 }
 
 type Code struct {
-	Stdin  risoros.File
-	Stdout risoros.File
-	Args   []string
-	code   *compiler.Code
-	opts   []risor.Option
+	code *compiler.Code
+	opts []risor.Option
 }
 
 func (c *Code) Run(ctx context.Context) error {
-	oso := os.New(ctx, os.WithStdin(c.Stdin), os.WithStdout(c.Stdout), os.WithArgs(c.Args...))
-	conf := risor.NewConfig(c.opts...)
-	_, err := vm.Run(oso.Context(), c.code, conf.VMOpts()...)
+	opts := risor.NewConfig(c.opts...)
+	_, err := vm.Run(ctx, c.code, opts.VMOpts()...)
 	if err != nil {
 		return &Error{err}
 	}
