@@ -113,6 +113,7 @@ loop:
 
 	log.Debug("waiting for all workers to stop")
 	s.wg.Wait()
+	log.Debug("all workers stopped")
 	return nil
 }
 
