@@ -21,26 +21,24 @@ type Arguments struct {
 }
 
 type Service struct {
-	args   Arguments
-	engine *engine.Engine
+	args Arguments
 }
 
 func New(args Arguments) *Service {
-	e := engine.New()
 	return &Service{
-		args:   args,
-		engine: e,
+		args: args,
 	}
 }
 
 func (s *Service) Start(ctx context.Context) error {
-	stdin := os.NewPipe()
-	stdout := os.NewPipe()
-	ros := os.New(ctx, stdin, stdout)
-	ctx = ros.Context()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	group, _ := errgroup.WithContext(ctx)
+	stdout := os.NewPipe()
 	group.Go(func() error {
+		log.Debug("started reading from stdout")
+		defer log.Debug("stopped reading from stdout")
 		for {
 			b := make([]byte, 4096)
 			_, err := stdout.Read(b)
@@ -56,12 +54,16 @@ func (s *Service) Start(ctx context.Context) error {
 		}
 		return nil
 	})
+
+	stdin := os.NewPipe()
 	group.Go(func() error {
+		log.Debug("started reading from stdin")
+		defer log.Debug("stopped reading from stdin")
 		for {
 			select {
 			case msg := <-s.args.StdinCh:
 				b := msg.Data().([]byte)
-				log.Debug("before input: %q", string(b))
+				log.Debug("before input", "value", string(b))
 				_, _ = stdin.Write(b)
 				log.Debug("after input")
 
@@ -69,15 +71,6 @@ func (s *Service) Start(ctx context.Context) error {
 				return nil
 			}
 		}
-	})
-	// Wait for context closure and then close stdin and stdout files.
-	// This unblocks (cancels) any potential pending writes/reads to/from the files
-	// and allows the service to shutdown gracefully.
-	group.Go(func() error {
-		<-ctx.Done()
-		_ = stdin.Close()
-		_ = stdout.Close()
-		return nil
 	})
 
 loop:
@@ -87,16 +80,25 @@ loop:
 			data := msg.Data()
 			switch v := data.(type) {
 			case decoder.ExecuteRequest:
-				log.Debug("before load package %s:%s", v.Repository, v.FilePath)
+				log.Debug("before load package", "repository", v.Repository, "path", v.FilePath)
 				file, err := s.args.Repository.GetFile(ctx, v.Repository, v.FilePath)
 				if err != nil {
 					log.Debug(err.Error())
 					_ = msg.ReplyError(errcodes.ErrRepositoryGetFile, err.Error(), "")
 					continue
 				}
-				log.Debug("after load package %s:%s", v.Repository, v.FilePath)
+				log.Debug("after load package", "repository", v.Repository, "path", v.FilePath)
 
-				code, err := s.engine.CompilePackage(ctx, file, int64(file.Size))
+				osCtx := os.NewContext(
+					ctx,
+					os.WithStdin(stdin),
+					os.WithStdout(stdout),
+					os.WithExitHandler(func(code int) {
+						log.Debug("on exit", "code", code)
+						cancel()
+					}),
+				)
+				code, err := engine.CompilePackage(osCtx, file, int64(file.Size))
 				if err != nil {
 					log.Debug(err.Error())
 					_ = msg.ReplyError(errcodes.ErrEngineCompile, err.Error(), "")
@@ -104,7 +106,7 @@ loop:
 				}
 
 				log.Debug("before run")
-				err = code.Run(ctx)
+				err = code.Run(osCtx)
 				if err != nil {
 					log.Debug(err.Error())
 					_ = msg.ReplyError(errcodes.ErrEngineRun, err.Error(), "")
@@ -122,5 +124,14 @@ loop:
 		}
 	}
 
-	return group.Wait()
+	log.Debug("cleaning up")
+	log.Debug("closing stdin")
+	_ = stdin.Close()
+	log.Debug("closing stdout")
+	_ = stdout.Close()
+
+	log.Debug("waiting for all goroutines to finish")
+	_ = group.Wait()
+	log.Debug("all goroutines finished")
+	return ctx.Err()
 }
