@@ -20,11 +20,11 @@ func New(logger *slog.Logger, servers []string, userJWT, userKey string) (*nats.
 			logger.Info("reconnected to the server")
 		}),
 		nats.DisconnectErrHandler(func(_ *nats.Conn, err error) {
-			err = fmt.Errorf("disconnected from the server: %v", err)
+			err = fmt.Errorf("disconnected from the server: %w", err)
 			logger.Warn(err.Error())
 		}),
 		nats.ErrorHandler(func(_ *nats.Conn, _ *nats.Subscription, err error) {
-			err = fmt.Errorf("server error: %v", err)
+			err = fmt.Errorf("server error: %w", err)
 			logger.Warn(err.Error())
 		}),
 	)
