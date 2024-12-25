@@ -58,14 +58,14 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 				return err
 			}
 
-			err := fmt.Errorf("cannot execute a script: %v", err)
+			err := fmt.Errorf("cannot execute a script: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		pkgPath, err := buildTempPackage(scriptPath)
 		if err != nil {
-			err := fmt.Errorf("cannot build a script: %v", err)
+			err := fmt.Errorf("cannot build a script: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -73,7 +73,7 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 		binPath := filepath.Join(os.TempDir(), fmt.Sprintf("runscript-%s", nuid.Next()))
 		output, err := client.BuildRunscript(ctx, binPath)
 		if err != nil {
-			err := fmt.Errorf("cannot build runscript: %v\n%s", err, output)
+			err := fmt.Errorf("cannot build runscript: %w\n%s", err, output)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}

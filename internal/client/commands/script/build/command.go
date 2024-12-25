@@ -66,7 +66,7 @@ func buildAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 				return err
 			}
 
-			err := fmt.Errorf("cannot build a package: %v", err)
+			err := fmt.Errorf("cannot build a package: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -80,7 +80,7 @@ func buildAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 		dst := fzz.NewFilename(name)
 		err = fzz.Build(src, dst)
 		if err != nil {
-			err := fmt.Errorf("cannot build a package: %v", err)
+			err := fmt.Errorf("cannot build a package: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
