@@ -9,11 +9,14 @@ import (
 	"github.com/foohq/foojank/internal/client"
 )
 
-func main() {
+func run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
+	return client.New().Run(ctx, os.Args)
+}
 
-	err := client.New().Run(ctx, os.Args)
+func main() {
+	err := run()
 	if err != nil {
 		// Error logging is done inside each command no need to have a logger in this place.
 		os.Exit(1)
