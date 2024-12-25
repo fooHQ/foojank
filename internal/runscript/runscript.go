@@ -41,7 +41,7 @@ func runAction() cli.ActionFunc {
 		pkgArgs := c.Args().Tail()
 		err := executePackage(ctx, pkgPath, pkgArgs...)
 		if err != nil {
-			err := fmt.Errorf("cannot execute a package: %v", err)
+			err := fmt.Errorf("cannot execute a package: %w", err)
 			_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
 			return err
 		}
@@ -53,14 +53,14 @@ func runAction() cli.ActionFunc {
 func executePackage(ctx context.Context, pkgPath string, pkgArgs ...string) error {
 	f, err := os.Open(pkgPath)
 	if err != nil {
-		err := fmt.Errorf("cannot open a package: %v", err)
+		err := fmt.Errorf("cannot open a package: %w", err)
 		return err
 	}
 	defer f.Close()
 
 	info, err := f.Stat()
 	if err != nil {
-		err := fmt.Errorf("cannot stat a package: %v", err)
+		err := fmt.Errorf("cannot stat a package: %w", err)
 		return err
 	}
 
@@ -72,7 +72,7 @@ func executePackage(ctx context.Context, pkgPath string, pkgArgs ...string) erro
 	)
 	c, err := engine.CompilePackage(osCtx, f, info.Size())
 	if err != nil {
-		err := fmt.Errorf("cannot compile a package: %v", err)
+		err := fmt.Errorf("cannot compile a package: %w", err)
 		return err
 	}
 
