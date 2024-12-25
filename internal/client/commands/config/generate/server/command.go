@@ -34,7 +34,7 @@ func action(ctx context.Context, c *cli.Command) error {
 }
 
 func generateAction(logger *slog.Logger) cli.ActionFunc {
-	return func(ctx context.Context, c *cli.Command) error {
+	return func(_ context.Context, c *cli.Command) error {
 		if c.Args().Len() != 1 {
 			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
 			logger.Error(err.Error())
@@ -76,7 +76,7 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 	}
 }
 
-func validateConfiguration(conf *config.Config) error {
+func validateConfiguration(_ *config.Config) error {
 	// TODO: validate LogLevel and NoColor
 	return nil
 }
