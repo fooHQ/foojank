@@ -25,7 +25,7 @@ func NewPipe() *Pipe {
 	}
 }
 
-func (f *Pipe) Write(p []byte) (n int, err error) {
+func (f *Pipe) Write(p []byte) (int, error) {
 	return f.w.Write(p)
 }
 
