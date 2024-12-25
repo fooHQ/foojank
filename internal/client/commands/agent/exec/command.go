@@ -149,7 +149,7 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 		go func() {
 			defer wg.Done()
 			for line := range stdoutCh {
-				fmt.Print(string(line))
+				_, _ = fmt.Fprint(os.Stdout, string(line))
 			}
 		}()
 
