@@ -45,14 +45,14 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 		confFile := c.Args().First()
 		input, err := config.ParseFile(confFile, true)
 		if err != nil {
-			err := fmt.Errorf("cannot parse master configuration file: %v", err)
+			err := fmt.Errorf("cannot parse master configuration file: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		err = validateInputConfiguration(input)
 		if err != nil {
-			err := fmt.Errorf("invalid master configuration file: %v", err)
+			err := fmt.Errorf("invalid master configuration file: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}

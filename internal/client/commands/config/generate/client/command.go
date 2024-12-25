@@ -47,21 +47,21 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 		confFile := c.Args().First()
 		input, err := config.ParseFile(confFile, true)
 		if err != nil {
-			err := fmt.Errorf("cannot parse configuration file: %v", err)
+			err := fmt.Errorf("cannot parse configuration file: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		err = validateInputConfiguration(input)
 		if err != nil {
-			err := fmt.Errorf("invalid input configuration file: %v", err)
+			err := fmt.Errorf("invalid input configuration file: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		accountClaims, err := jwt.DecodeAccountClaims(input.Account.JWT)
 		if err != nil {
-			err := fmt.Errorf("cannot build an agent: cannot decode account JWT: %v", err)
+			err := fmt.Errorf("cannot build an agent: cannot decode account JWT: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -70,7 +70,7 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 		username := fmt.Sprintf("MG%s", nuid.Next())
 		user, err := config.NewUserManager(username, accountPubKey, []byte(input.Account.SigningKeySeed))
 		if err != nil {
-			err := fmt.Errorf("cannot generate client configuration: %v", err)
+			err := fmt.Errorf("cannot generate client configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
