@@ -218,6 +218,6 @@ func parseExecuteResponse(message capnp.Message) (ExecuteResponse, error) {
 
 type DummyRequest struct{}
 
-func parseDummyRequest(message capnp.Message) (DummyRequest, error) {
+func parseDummyRequest(_ capnp.Message) (DummyRequest, error) {
 	return DummyRequest{}, nil
 }
