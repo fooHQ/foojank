@@ -22,7 +22,7 @@ func NewConfig(_ context.Context, c *cli.Command, validatorFn func(*config.Confi
 	mustExist := c.IsSet(flags.Config)
 	conf, err := config.ParseFile(file, mustExist)
 	if err != nil {
-		err = fmt.Errorf("cannot parse configuration file '%s': %v", file, err)
+		err = fmt.Errorf("cannot parse configuration file '%s': %w", file, err)
 		return nil, err
 	}
 

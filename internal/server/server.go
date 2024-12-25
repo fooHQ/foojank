@@ -84,7 +84,7 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 	return func(ctx context.Context, c *cli.Command) error {
 		preloadOperators, err := decodeOperatorClaims(conf.Operator.JWT)
 		if err != nil {
-			err := fmt.Errorf("invalid configuration: %v", err)
+			err := fmt.Errorf("invalid configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -95,7 +95,7 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 		}
 		preloadAccounts, err := decodeAccountClaims(configuredAccounts...)
 		if err != nil {
-			err := fmt.Errorf("invalid configuration: %v", err)
+			err := fmt.Errorf("invalid configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -105,7 +105,7 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 			accountJWT := configuredAccounts[i]
 			err = resolver.Store(accountPubKey, accountJWT)
 			if err != nil {
-				err := fmt.Errorf("cannot store account in the resolver: %v", err)
+				err := fmt.Errorf("cannot store account in the resolver: %w", err)
 				logger.ErrorContext(ctx, err.Error())
 				return err
 			}
@@ -124,7 +124,7 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 		}
 		s, err := server.NewServer(opts)
 		if err != nil {
-			err := fmt.Errorf("cannot start a server: %v", err)
+			err := fmt.Errorf("cannot start a server: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -172,7 +172,7 @@ func decodeOperatorClaims(operatorJWTs ...string) ([]*jwt.OperatorClaims, error)
 	for _, operatorJWT := range operatorJWTs {
 		claims, err := jwt.DecodeOperatorClaims(operatorJWT)
 		if err != nil {
-			err := fmt.Errorf("cannot decode operator JWT: %v", err)
+			err := fmt.Errorf("cannot decode operator JWT: %w", err)
 			return nil, err
 		}
 
@@ -186,7 +186,7 @@ func decodeAccountClaims(accountJWTs ...string) ([]*jwt.AccountClaims, error) {
 	for _, accountJWT := range accountJWTs {
 		claims, err := jwt.DecodeAccountClaims(accountJWT)
 		if err != nil {
-			err := fmt.Errorf("cannot decode account JWT: %v", err)
+			err := fmt.Errorf("cannot decode account JWT: %w", err)
 			return nil, err
 		}
 
