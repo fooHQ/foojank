@@ -68,11 +68,11 @@ func defaultBuiltins() map[string]any {
 }
 
 func CompilePackage(ctx context.Context, reader io.ReaderAt, size int64) (*Code, error) {
-	opts := append([]risor.Option{
+	opts := []risor.Option{
 		risor.WithoutDefaultGlobals(),
 		risor.WithGlobals(defaultModules()),
 		risor.WithGlobals(defaultBuiltins()),
-	})
+	}
 	conf := risor.NewConfig(opts...)
 	prog, err := parser.Parse(ctx, "import main")
 	if err != nil {
