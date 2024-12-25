@@ -3,7 +3,7 @@ package path_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/foohq/foojank/internal/client/path"
 )
@@ -28,9 +28,9 @@ func TestParse(t *testing.T) {
 	for _, test := range tests {
 		result, err := path.Parse(test.input)
 		if test.err {
-			assert.NotNil(t, err)
+			require.NotNil(t, err)
 			continue
 		}
-		assert.Equal(t, test.expected, result)
+		require.Equal(t, test.expected, result)
 	}
 }
