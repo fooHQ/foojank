@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/foohq/foojank/internal/testutils"
 	"github.com/foohq/foojank/internal/vessel/connector"
@@ -34,7 +34,7 @@ func TestService(t *testing.T) {
 			Connection: nc,
 			OutputCh:   outputCh,
 		}).Start(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}()
 
 	time.Sleep(1 * time.Second)
@@ -44,15 +44,15 @@ func TestService(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			msg := <-outputCh
-			assert.Equal(t, reqData, msg.Data())
+			require.Equal(t, reqData, msg.Data())
 
 			err := msg.Reply(respData)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}()
 
 		resp, err := nc.Request(rpcSubject, reqData, 2*time.Second)
-		assert.NoError(t, err)
-		assert.Equal(t, respData, resp.Data)
+		require.NoError(t, err)
+		require.Equal(t, respData, resp.Data)
 	}
 
 	cancel()
