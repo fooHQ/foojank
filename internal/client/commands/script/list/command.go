@@ -36,7 +36,7 @@ func action(ctx context.Context, c *cli.Command) error {
 }
 
 func listAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
-	return func(ctx context.Context, c *cli.Command) error {
+	return func(_ context.Context, c *cli.Command) error {
 		scripts, err := client.ListScripts()
 		if err != nil {
 			err := fmt.Errorf("cannot list scripts: codebase not configured")
