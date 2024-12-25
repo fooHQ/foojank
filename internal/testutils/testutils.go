@@ -8,7 +8,7 @@ import (
 	natsserver "github.com/nats-io/nats-server/v2/test"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var _ micro.Request = &Request{}
@@ -63,7 +63,7 @@ func NewNatsServer(port int) *server.Server {
 func NewNatsServerAndConnection(t *testing.T) (*server.Server, *nats.Conn) {
 	s := NewNatsServer(14444)
 	nc, err := nats.Connect(s.ClientURL())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	t.Cleanup(func() {
 		nc.Close()
 		s.Shutdown()
