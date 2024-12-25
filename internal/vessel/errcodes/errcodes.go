@@ -3,8 +3,7 @@ package errcodes
 const (
 	ErrInvalidMessage    = "400001"
 	ErrInvalidAction     = "400002"
-	ErrEngineCompile     = "400008"
-	ErrEngineRun         = "400009"
+	ErrEngineRun         = "400008"
 	ErrRepositoryGetFile = "400010"
 	ErrWorkerNotFound    = "400011"
 	ErrWorkerStarting    = "400012"

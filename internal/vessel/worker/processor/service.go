@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 
+	risoros "github.com/risor-io/risor/os"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/foohq/foojank/clients/repository"
@@ -31,9 +32,6 @@ func New(args Arguments) *Service {
 }
 
 func (s *Service) Start(ctx context.Context) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	group, _ := errgroup.WithContext(ctx)
 	stdout := os.NewPipe()
 	group.Go(func() error {
@@ -89,30 +87,12 @@ loop:
 				}
 				log.Debug("after load package", "repository", v.Repository, "path", v.FilePath)
 
-				osCtx := os.NewContext(
-					ctx,
-					os.WithStdin(stdin),
-					os.WithStdout(stdout),
-					os.WithExitHandler(func(code int) {
-						log.Debug("on exit", "code", code)
-						cancel()
-					}),
-				)
-				code, err := engine.CompilePackage(osCtx, file, int64(file.Size))
-				if err != nil {
-					log.Debug(err.Error())
-					_ = msg.ReplyError(errcodes.ErrEngineCompile, err.Error(), "")
-					continue
-				}
-
-				log.Debug("before run")
-				err = code.Run(osCtx)
+				err = compileAndRunPackage(ctx, file, stdin, stdout)
 				if err != nil {
 					log.Debug(err.Error())
 					_ = msg.ReplyError(errcodes.ErrEngineRun, err.Error(), "")
 					continue
 				}
-				log.Debug("after run")
 
 				_ = msg.Reply(decoder.ExecuteResponse{
 					Code: 0,
@@ -134,4 +114,33 @@ loop:
 	_ = group.Wait()
 	log.Debug("all goroutines finished")
 	return ctx.Err()
+}
+
+func compileAndRunPackage(ctx context.Context, file *repository.File, stdin, stdout risoros.File) error {
+	osCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	osCtx = os.NewContext(
+		osCtx,
+		os.WithStdin(stdin),
+		os.WithStdout(stdout),
+		os.WithExitHandler(func(code int) {
+			log.Debug("on exit", "code", code)
+			cancel()
+		}),
+	)
+
+	code, err := engine.CompilePackage(osCtx, file, int64(file.Size))
+	if err != nil {
+		return err
+	}
+
+	log.Debug("before run")
+	err = code.Run(osCtx)
+	if err != nil {
+		return err
+	}
+	log.Debug("after run")
+
+	return nil
 }
