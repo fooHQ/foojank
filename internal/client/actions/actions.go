@@ -11,7 +11,7 @@ import (
 	"github.com/foohq/foojank/internal/config"
 )
 
-func NewConfig(ctx context.Context, c *cli.Command, validatorFn func(*config.Config) error) (*config.Config, error) {
+func NewConfig(_ context.Context, c *cli.Command, validatorFn func(*config.Config) error) (*config.Config, error) {
 	file := c.String(flags.Config)
 	mustExist := c.IsSet(flags.Config)
 	conf, err := config.ParseFile(file, mustExist)
