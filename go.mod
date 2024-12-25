@@ -1,8 +1,6 @@
 module github.com/foohq/foojank
 
-go 1.22.2
-
-toolchain go1.22.3
+go 1.23
 
 require (
 	capnproto.org/go/capnp/v3 v3.0.1-alpha.2
