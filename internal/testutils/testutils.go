@@ -61,7 +61,8 @@ func NewNatsServer(port int) *server.Server {
 }
 
 func NewNatsServerAndConnection(t *testing.T) (*server.Server, *nats.Conn) {
-	s := NewNatsServer(14444)
+	const port = 14444
+	s := NewNatsServer(port)
 	nc, err := nats.Connect(s.ClientURL())
 	require.NoError(t, err)
 	t.Cleanup(func() {
