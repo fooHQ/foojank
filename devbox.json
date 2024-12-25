@@ -4,7 +4,6 @@
     "golangci-lint@1.62.0",
     "go@1.22",
     "natscli@latest",
-    "nsc@latest",
     "upx@latest",
     "capnproto@latest",
     "garble@latest"
