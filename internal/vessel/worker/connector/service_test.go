@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/foohq/foojank/internal/testutils"
 	"github.com/foohq/foojank/internal/vessel/worker/connector"
@@ -37,27 +37,27 @@ func TestService(t *testing.T) {
 			InfoCh:       infoCh,
 			OutputCh:     outputCh,
 		}).Start(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}()
 
 	info := <-infoCh
-	assert.NotEmpty(t, info.ServiceID())
-	assert.Equal(t, "test", info.ServiceName())
+	require.NotEmpty(t, info.ServiceID())
+	require.Equal(t, "test", info.ServiceName())
 
 	{
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			msg := <-outputCh
-			assert.Equal(t, reqData, msg.Data())
+			require.Equal(t, reqData, msg.Data())
 
 			err := msg.Reply(respData)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}()
 
 		resp, err := nc.Request(dataSubject, reqData, 2*time.Second)
-		assert.NoError(t, err)
-		assert.Equal(t, respData, resp.Data)
+		require.NoError(t, err)
+		require.Equal(t, respData, resp.Data)
 	}
 
 	{
@@ -65,15 +65,15 @@ func TestService(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			msg := <-outputCh
-			assert.Equal(t, reqData, msg.Data())
+			require.Equal(t, reqData, msg.Data())
 
 			err := msg.Reply(respData)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}()
 
 		resp, err := nc.Request(stdinSubject, reqData, 2*time.Second)
-		assert.NoError(t, err)
-		assert.Equal(t, respData, resp.Data)
+		require.NoError(t, err)
+		require.Equal(t, respData, resp.Data)
 	}
 
 	cancel()

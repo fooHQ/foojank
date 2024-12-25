@@ -5,7 +5,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/foohq/foojank/internal/testutils"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
@@ -27,7 +27,7 @@ func TestService(t *testing.T) {
 			DataCh:      dataCh,
 			StdinCh:     stdinCh,
 		}).Start(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}()
 
 	responseCh := make(chan []byte)
@@ -42,12 +42,12 @@ func TestService(t *testing.T) {
 		msg := connector.NewMessage(req)
 		inputCh <- msg
 		respMsg := <-responseCh
-		assert.True(t, bytes.HasPrefix(respMsg, []byte(errcodes.ErrInvalidMessage)))
+		require.True(t, bytes.HasPrefix(respMsg, []byte(errcodes.ErrInvalidMessage)))
 	}
 
 	{
 		b, err := proto.NewExecuteRequest("foojank1", "/scripts/test.fzz")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		req := testutils.Request{
 			FSubject:   "data",
 			FData:      b,
@@ -56,22 +56,22 @@ func TestService(t *testing.T) {
 		msg := connector.NewMessage(req)
 		inputCh <- msg
 		outMsg := <-dataCh
-		assert.IsType(t, decoder.ExecuteRequest{}, outMsg.Data())
+		require.IsType(t, decoder.ExecuteRequest{}, outMsg.Data())
 		err = outMsg.Reply(decoder.ExecuteResponse{
 			Code: 1,
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		b = <-responseCh
 		parsed, err := proto.ParseResponse(b)
-		assert.NoError(t, err)
-		assert.IsType(t, proto.ExecuteResponse{}, parsed)
-		assert.EqualValues(t, 1, parsed.(proto.ExecuteResponse).Code)
+		require.NoError(t, err)
+		require.IsType(t, proto.ExecuteResponse{}, parsed)
+		require.EqualValues(t, 1, parsed.(proto.ExecuteResponse).Code)
 	}
 
 	{
 		b, err := proto.NewDummyRequest()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		req := testutils.Request{
 			FSubject:   "data",
 			FData:      b,
@@ -80,6 +80,6 @@ func TestService(t *testing.T) {
 		msg := connector.NewMessage(req)
 		inputCh <- msg
 		respMsg := <-responseCh
-		assert.True(t, bytes.HasPrefix(respMsg, []byte(errcodes.ErrInvalidAction)))
+		require.True(t, bytes.HasPrefix(respMsg, []byte(errcodes.ErrInvalidAction)))
 	}
 }
