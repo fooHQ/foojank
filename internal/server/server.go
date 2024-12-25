@@ -84,7 +84,7 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 		preloadOperators, err := decodeOperatorClaims(conf.Operator.JWT)
 		if err != nil {
 			err := fmt.Errorf("invalid configuration: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -95,7 +95,7 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 		preloadAccounts, err := decodeAccountClaims(configuredAccounts...)
 		if err != nil {
 			err := fmt.Errorf("invalid configuration: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -105,7 +105,7 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 			err = resolver.Store(accountPubKey, accountJWT)
 			if err != nil {
 				err := fmt.Errorf("cannot store account in the resolver: %v", err)
-				logger.Error(err.Error())
+				logger.ErrorContext(ctx, err.Error())
 				return err
 			}
 		}
@@ -124,7 +124,7 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 		s, err := server.NewServer(opts)
 		if err != nil {
 			err := fmt.Errorf("cannot start a server: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 		s.ConfigureLogger()
@@ -132,7 +132,7 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 		go func() {
 			err := server.Run(s)
 			if err != nil {
-				logger.Error(err.Error())
+				logger.ErrorContext(ctx, err.Error())
 			}
 		}()
 
