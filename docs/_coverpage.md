@@ -1,6 +1,6 @@
 # foojank
 
-> Yet another Command & Control framework
+> A cross-platform post-exploitation and command & control framework
 
 [GitHub](https://github.com/foohq/foojank)
 [Try a demo](https://example.com)
