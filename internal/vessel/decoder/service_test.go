@@ -1,4 +1,4 @@
-package decoder
+package decoder_test
 
 import (
 	"bytes"
@@ -9,17 +9,18 @@ import (
 
 	"github.com/foohq/foojank/internal/testutils"
 	"github.com/foohq/foojank/internal/vessel/connector"
+	"github.com/foohq/foojank/internal/vessel/decoder"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
 	"github.com/foohq/foojank/proto"
 )
 
 func TestService(t *testing.T) {
 	inputCh := make(chan connector.Message)
-	outputCh := make(chan Message)
+	outputCh := make(chan decoder.Message)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go func() {
-		err := New(Arguments{
+		err := decoder.New(decoder.Arguments{
 			InputCh:  inputCh,
 			OutputCh: outputCh,
 		}).Start(ctx)
@@ -52,8 +53,8 @@ func TestService(t *testing.T) {
 		msg := connector.NewMessage(req)
 		inputCh <- msg
 		outMsg := <-outputCh
-		assert.IsType(t, CreateWorkerRequest{}, outMsg.Data())
-		err = outMsg.Reply(CreateWorkerResponse{
+		assert.IsType(t, decoder.CreateWorkerRequest{}, outMsg.Data())
+		err = outMsg.Reply(decoder.CreateWorkerResponse{
 			ID: 1,
 		})
 		assert.NoError(t, err)
@@ -76,9 +77,9 @@ func TestService(t *testing.T) {
 		msg := connector.NewMessage(req)
 		inputCh <- msg
 		outMsg := <-outputCh
-		assert.IsType(t, DestroyWorkerRequest{}, outMsg.Data())
-		assert.EqualValues(t, 1, outMsg.Data().(DestroyWorkerRequest).ID)
-		err = outMsg.Reply(DestroyWorkerResponse{})
+		assert.IsType(t, decoder.DestroyWorkerRequest{}, outMsg.Data())
+		assert.EqualValues(t, 1, outMsg.Data().(decoder.DestroyWorkerRequest).ID)
+		err = outMsg.Reply(decoder.DestroyWorkerResponse{})
 		assert.NoError(t, err)
 
 		b = <-responseCh
@@ -98,9 +99,9 @@ func TestService(t *testing.T) {
 		msg := connector.NewMessage(req)
 		inputCh <- msg
 		outMsg := <-outputCh
-		assert.IsType(t, GetWorkerRequest{}, outMsg.Data())
-		assert.EqualValues(t, 1, outMsg.Data().(GetWorkerRequest).ID)
-		err = outMsg.Reply(GetWorkerResponse{
+		assert.IsType(t, decoder.GetWorkerRequest{}, outMsg.Data())
+		assert.EqualValues(t, 1, outMsg.Data().(decoder.GetWorkerRequest).ID)
+		err = outMsg.Reply(decoder.GetWorkerResponse{
 			ServiceName: "test",
 			ServiceID:   "test-id",
 		})
