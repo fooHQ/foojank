@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
@@ -296,6 +297,7 @@ func NewUserAgent(name, accountPubKey string, accountSigningKey []byte) (*Entity
 	}
 	claims.Resp = &jwt.ResponsePermission{
 		MaxMsgs: 1,
+		Expires: 60000 * time.Hour,
 	}
 	claimsEnc, err := claims.Encode(accountSignKeyPair)
 	if err != nil {
