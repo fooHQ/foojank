@@ -117,22 +117,22 @@ func ParseFile(file string, mustExist bool) (*Config, error) {
 func NewOperator(name string) (*Entity, error) {
 	keyPair, err := nkeys.CreateOperator()
 	if err != nil {
-		return nil, fmt.Errorf("cannot generate operator's key: %v", err)
+		return nil, fmt.Errorf("cannot generate operator's key: %w", err)
 	}
 
 	pubKey, err := keyPair.PublicKey()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get operator's public key: %v", err)
+		return nil, fmt.Errorf("cannot get operator's public key: %w", err)
 	}
 
 	signKeyPair, err := nkeys.CreateOperator()
 	if err != nil {
-		return nil, fmt.Errorf("cannot generate operator's signing key: %v", err)
+		return nil, fmt.Errorf("cannot generate operator's signing key: %w", err)
 	}
 
 	signPubKey, err := signKeyPair.PublicKey()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get operator's signing public key: %v", err)
+		return nil, fmt.Errorf("cannot get operator's signing public key: %w", err)
 	}
 
 	claims := jwt.NewOperatorClaims(pubKey)
@@ -140,17 +140,17 @@ func NewOperator(name string) (*Entity, error) {
 	claims.SigningKeys.Add(signPubKey)
 	claimsEnc, err := claims.Encode(keyPair)
 	if err != nil {
-		return nil, fmt.Errorf("cannot encode and sign operator claims: %v", err)
+		return nil, fmt.Errorf("cannot encode and sign operator claims: %w", err)
 	}
 
 	keySeed, err := keyPair.Seed()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get seed of operator's key: %v", err)
+		return nil, fmt.Errorf("cannot get seed of operator's key: %w", err)
 	}
 
 	signKeySeed, err := signKeyPair.Seed()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get seed of operator's signing key: %v", err)
+		return nil, fmt.Errorf("cannot get seed of operator's signing key: %w", err)
 	}
 
 	return &Entity{
@@ -163,27 +163,27 @@ func NewOperator(name string) (*Entity, error) {
 func NewAccount(name string, operatorSignKey []byte, enableJetstream bool) (*Entity, error) {
 	operatorSignKeyPair, err := nkeys.FromSeed(operatorSignKey)
 	if err != nil {
-		return nil, fmt.Errorf("cannot decode operator's signing key: %v", err)
+		return nil, fmt.Errorf("cannot decode operator's signing key: %w", err)
 	}
 
 	keyPair, err := nkeys.CreateAccount()
 	if err != nil {
-		return nil, fmt.Errorf("cannot generate account's key: %v", err)
+		return nil, fmt.Errorf("cannot generate account's key: %w", err)
 	}
 
 	pubKey, err := keyPair.PublicKey()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get account's public key: %v", err)
+		return nil, fmt.Errorf("cannot get account's public key: %w", err)
 	}
 
 	signKeyPair, err := nkeys.CreateAccount()
 	if err != nil {
-		return nil, fmt.Errorf("cannot generate account's key: %v", err)
+		return nil, fmt.Errorf("cannot generate account's key: %w", err)
 	}
 
 	signPubKey, err := signKeyPair.PublicKey()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get account's signing public key: %v", err)
+		return nil, fmt.Errorf("cannot get account's signing public key: %w", err)
 	}
 
 	claims := jwt.NewAccountClaims(pubKey)
@@ -195,17 +195,17 @@ func NewAccount(name string, operatorSignKey []byte, enableJetstream bool) (*Ent
 	claims.SigningKeys.Add(signPubKey)
 	claimsEnc, err := claims.Encode(operatorSignKeyPair)
 	if err != nil {
-		return nil, fmt.Errorf("cannot encode and sign account claims: %v", err)
+		return nil, fmt.Errorf("cannot encode and sign account claims: %w", err)
 	}
 
 	keySeed, err := keyPair.Seed()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get a seed of account's key: %v", err)
+		return nil, fmt.Errorf("cannot get a seed of account's key: %w", err)
 	}
 
 	signKeySeed, err := signKeyPair.Seed()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get a seed of account's key: %v", err)
+		return nil, fmt.Errorf("cannot get a seed of account's key: %w", err)
 	}
 
 	return &Entity{
@@ -218,17 +218,17 @@ func NewAccount(name string, operatorSignKey []byte, enableJetstream bool) (*Ent
 func NewUserManager(name, accountPubKey string, accountSigningKey []byte) (*Entity, error) {
 	accountSignKeyPair, err := nkeys.FromSeed(accountSigningKey)
 	if err != nil {
-		return nil, fmt.Errorf("cannot decode account's signing key: %v", err)
+		return nil, fmt.Errorf("cannot decode account's signing key: %w", err)
 	}
 
 	keyPair, err := nkeys.CreateUser()
 	if err != nil {
-		return nil, fmt.Errorf("cannot generate user key: %v", err)
+		return nil, fmt.Errorf("cannot generate user key: %w", err)
 	}
 
 	pubKey, err := keyPair.PublicKey()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get user's public key: %v", err)
+		return nil, fmt.Errorf("cannot get user's public key: %w", err)
 	}
 
 	claims := jwt.NewUserClaims(pubKey)
@@ -236,12 +236,12 @@ func NewUserManager(name, accountPubKey string, accountSigningKey []byte) (*Enti
 	claims.IssuerAccount = accountPubKey
 	claimsEnc, err := claims.Encode(accountSignKeyPair)
 	if err != nil {
-		return nil, fmt.Errorf("cannot encode and sign user claims: %v", err)
+		return nil, fmt.Errorf("cannot encode and sign user claims: %w", err)
 	}
 
 	keySeed, err := keyPair.Seed()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get a seed of user's key-pair: %v", err)
+		return nil, fmt.Errorf("cannot get a seed of user's key-pair: %w", err)
 	}
 
 	return &Entity{
@@ -253,17 +253,17 @@ func NewUserManager(name, accountPubKey string, accountSigningKey []byte) (*Enti
 func NewUserAgent(name, accountPubKey string, accountSigningKey []byte) (*Entity, error) {
 	accountSignKeyPair, err := nkeys.FromSeed(accountSigningKey)
 	if err != nil {
-		return nil, fmt.Errorf("cannot decode account's signing key: %v", err)
+		return nil, fmt.Errorf("cannot decode account's signing key: %w", err)
 	}
 
 	keyPair, err := nkeys.CreateUser()
 	if err != nil {
-		return nil, fmt.Errorf("cannot generate user key: %v", err)
+		return nil, fmt.Errorf("cannot generate user key: %w", err)
 	}
 
 	pubKey, err := keyPair.PublicKey()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get user's public key: %v", err)
+		return nil, fmt.Errorf("cannot get user's public key: %w", err)
 	}
 
 	claims := jwt.NewUserClaims(pubKey)
@@ -301,12 +301,12 @@ func NewUserAgent(name, accountPubKey string, accountSigningKey []byte) (*Entity
 	}
 	claimsEnc, err := claims.Encode(accountSignKeyPair)
 	if err != nil {
-		return nil, fmt.Errorf("cannot encode and sign user claims: %v", err)
+		return nil, fmt.Errorf("cannot encode and sign user claims: %w", err)
 	}
 
 	keySeed, err := keyPair.Seed()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get a seed of user's key-pair: %v", err)
+		return nil, fmt.Errorf("cannot get a seed of user's key-pair: %w", err)
 	}
 
 	return &Entity{
