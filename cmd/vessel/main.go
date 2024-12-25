@@ -39,16 +39,16 @@ func main() {
 		nats.UserJWTAndSeed(config.UserJWT, config.UserKeySeed),
 		nats.CustomInboxPrefix("_INBOX_"+config.ServiceName),
 		nats.MaxReconnects(-1),
-		nats.ConnectHandler(func(nc *nats.Conn) {
+		nats.ConnectHandler(func(_ *nats.Conn) {
 			log.Debug("connected to the server")
 		}),
-		nats.ReconnectHandler(func(nc *nats.Conn) {
+		nats.ReconnectHandler(func(_ *nats.Conn) {
 			log.Debug("reconnected to the server")
 		}),
-		nats.DisconnectErrHandler(func(nc *nats.Conn, err error) {
+		nats.DisconnectErrHandler(func(_ *nats.Conn, err error) {
 			log.Debug("disconnected from the server", err.Error())
 		}),
-		nats.ErrorHandler(func(nc *nats.Conn, _ *nats.Subscription, err error) {
+		nats.ErrorHandler(func(_ *nats.Conn, _ *nats.Subscription, err error) {
 			log.Debug("server error", err.Error())
 		}),
 	)
