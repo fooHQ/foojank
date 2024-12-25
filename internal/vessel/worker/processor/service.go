@@ -75,29 +75,30 @@ loop:
 	for {
 		select {
 		case msg := <-s.args.DataCh:
-			data := msg.Data()
-			switch v := data.(type) {
-			case decoder.ExecuteRequest:
-				log.Debug("before load package", "repository", v.Repository, "path", v.FilePath)
-				file, err := s.args.Repository.GetFile(ctx, v.Repository, v.FilePath)
-				if err != nil {
-					log.Debug(err.Error())
-					_ = msg.ReplyError(errcodes.ErrRepositoryGetFile, err.Error(), "")
-					continue
-				}
-				log.Debug("after load package", "repository", v.Repository, "path", v.FilePath)
-
-				err = compileAndRunPackage(ctx, file, stdin, stdout)
-				if err != nil {
-					log.Debug(err.Error())
-					_ = msg.ReplyError(errcodes.ErrEngineRun, err.Error(), "")
-					continue
-				}
-
-				_ = msg.Reply(decoder.ExecuteResponse{
-					Code: 0,
-				})
+			v, ok := msg.Data().(decoder.ExecuteRequest)
+			if !ok {
+				continue
 			}
+
+			log.Debug("before load package", "repository", v.Repository, "path", v.FilePath)
+			file, err := s.args.Repository.GetFile(ctx, v.Repository, v.FilePath)
+			if err != nil {
+				log.Debug(err.Error())
+				_ = msg.ReplyError(errcodes.ErrRepositoryGetFile, err.Error(), "")
+				continue
+			}
+			log.Debug("after load package", "repository", v.Repository, "path", v.FilePath)
+
+			err = compileAndRunPackage(ctx, file, stdin, stdout)
+			if err != nil {
+				log.Debug(err.Error())
+				_ = msg.ReplyError(errcodes.ErrEngineRun, err.Error(), "")
+				continue
+			}
+
+			_ = msg.Reply(decoder.ExecuteResponse{
+				Code: 0,
+			})
 
 		case <-ctx.Done():
 			break loop
