@@ -13,17 +13,17 @@ func New(logger *slog.Logger, servers []string, userJWT, userKey string) (*nats.
 		strings.Join(servers, ","),
 		nats.UserJWTAndSeed(userJWT, userKey),
 		nats.MaxReconnects(-1),
-		nats.ConnectHandler(func(nc *nats.Conn) {
+		nats.ConnectHandler(func(_ *nats.Conn) {
 			logger.Debug("connected to the server")
 		}),
-		nats.ReconnectHandler(func(nc *nats.Conn) {
+		nats.ReconnectHandler(func(_ *nats.Conn) {
 			logger.Info("reconnected to the server")
 		}),
-		nats.DisconnectErrHandler(func(conn *nats.Conn, err error) {
+		nats.DisconnectErrHandler(func(_ *nats.Conn, err error) {
 			err = fmt.Errorf("disconnected from the server: %v", err)
 			logger.Warn(err.Error())
 		}),
-		nats.ErrorHandler(func(conn *nats.Conn, subscription *nats.Subscription, err error) {
+		nats.ErrorHandler(func(_ *nats.Conn, _ *nats.Subscription, err error) {
 			err = fmt.Errorf("server error: %v", err)
 			logger.Warn(err.Error())
 		}),
