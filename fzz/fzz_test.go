@@ -1,4 +1,4 @@
-package fzz
+package fzz_test
 
 import (
 	"archive/zip"
@@ -6,12 +6,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/foohq/foojank/fzz"
 )
 
 func TestBuild(t *testing.T) {
-	out := NewFilename("helo")
+	out := fzz.NewFilename("helo")
 	defer os.Remove(out)
-	err := Build("testdata/helo", out)
+	err := fzz.Build("testdata/helo", out)
 	assert.NoError(t, err)
 
 	zr, err := zip.OpenReader(out)
@@ -26,19 +28,19 @@ func TestBuildIsEmpty(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.RemoveAll(src)
 
-	out := NewFilename("empty")
-	err = Build(src, out)
-	assert.ErrorIs(t, err, ErrIsEmpty)
+	out := fzz.NewFilename("empty")
+	err = fzz.Build(src, out)
+	assert.ErrorIs(t, err, fzz.ErrIsEmpty)
 }
 
 func TestBuildMissingMain(t *testing.T) {
-	out := NewFilename("helo")
-	err := Build("testdata/nomain", out)
-	assert.ErrorIs(t, err, ErrMissingMain)
+	out := fzz.NewFilename("helo")
+	err := fzz.Build("testdata/nomain", out)
+	assert.ErrorIs(t, err, fzz.ErrMissingMain)
 }
 
 func TestBuildInvalidMain(t *testing.T) {
-	out := NewFilename("helo")
-	err := Build("testdata/noregmain", out)
-	assert.ErrorIs(t, err, ErrInvalidMain)
+	out := fzz.NewFilename("helo")
+	err := fzz.Build("testdata/noregmain", out)
+	assert.ErrorIs(t, err, fzz.ErrInvalidMain)
 }
