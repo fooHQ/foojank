@@ -64,7 +64,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	nc, err := server.New(logger, conf.Servers, conf.User.JWT, conf.User.KeySeed)
 	if err != nil {
-		err := fmt.Errorf("cannot connect to the server: %v", err)
+		err := fmt.Errorf("cannot connect to the server: %w", err)
 		logger.ErrorContext(ctx, err.Error())
 		return err
 	}
@@ -132,7 +132,7 @@ func listAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 
 			err := f.Write(os.Stdout, table)
 			if err != nil {
-				err := fmt.Errorf("cannot write formatted output: %v", err)
+				err := fmt.Errorf("cannot write formatted output: %w", err)
 				logger.ErrorContext(ctx, err.Error())
 				return
 			}
@@ -143,7 +143,7 @@ func listAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 
 		err := client.Discover(ctx, serviceName, outputCh)
 		if err != nil {
-			err := fmt.Errorf("discovery request failed: %v", err)
+			err := fmt.Errorf("discovery request failed: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}

@@ -43,7 +43,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	nc, err := server.New(logger, conf.Servers, conf.User.JWT, conf.User.KeySeed)
 	if err != nil {
-		err := fmt.Errorf("cannot connect to the server: %v", err)
+		err := fmt.Errorf("cannot connect to the server: %w", err)
 		logger.ErrorContext(ctx, err.Error())
 		return err
 	}
@@ -74,7 +74,7 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 		pkg := c.Args().Get(1)
 		pkgPath, err := path.Parse(pkg)
 		if err != nil {
-			err := fmt.Errorf("invalid package path '%s': %v", pkg, err)
+			err := fmt.Errorf("invalid package path '%s': %w", pkg, err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -93,14 +93,14 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 
 		service, err := client.GetInfo(ctx, id)
 		if err != nil {
-			err := fmt.Errorf("get info request failed: %v", err)
+			err := fmt.Errorf("get info request failed: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		wid, err := client.CreateWorker(ctx, service)
 		if err != nil {
-			err := fmt.Errorf("create worker request failed: %v", err)
+			err := fmt.Errorf("create worker request failed: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -108,7 +108,7 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 		defer func() {
 			err := client.DestroyWorker(context.Background(), service, wid)
 			if err != nil {
-				err := fmt.Errorf("destroy worker request failed: %v", err)
+				err := fmt.Errorf("destroy worker request failed: %w", err)
 				logger.ErrorContext(ctx, err.Error())
 			}
 		}()
@@ -126,7 +126,7 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 					continue
 				}
 
-				err := fmt.Errorf("get worker request failed: %v", err)
+				err := fmt.Errorf("get worker request failed: %w", err)
 				logger.ErrorContext(ctx, err.Error())
 				return err
 			}
@@ -134,7 +134,7 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 
 		worker, err := client.GetInfo(ctx, workerID)
 		if err != nil {
-			err := fmt.Errorf("get info request failed: %v", err)
+			err := fmt.Errorf("get info request failed: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -155,7 +155,7 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 
 		r, err := cancelreader.NewReader(os.Stdin)
 		if err != nil {
-			err := fmt.Errorf("cannot create a standard input reader %v", err)
+			err := fmt.Errorf("cannot create a standard input reader %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -165,7 +165,7 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 			defer wg.Done()
 			code, err := client.Execute(ctx, worker, pkgPath.Repository, pkgPath.FilePath, stdinCh, stdoutCh)
 			if err != nil && !errors.Is(err, context.Canceled) {
-				err := fmt.Errorf("execute request failed: %v", err)
+				err := fmt.Errorf("execute request failed: %w", err)
 				logger.ErrorContext(ctx, err.Error())
 			}
 

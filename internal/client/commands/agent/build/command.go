@@ -112,7 +112,7 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 
 		accountClaims, err := jwt.DecodeAccountClaims(conf.Account.JWT)
 		if err != nil {
-			err := fmt.Errorf("cannot build an agent: cannot decode account JWT: %v", err)
+			err := fmt.Errorf("cannot build an agent: cannot decode account JWT: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -120,7 +120,7 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 		accountPubKey := accountClaims.Subject
 		user, err := config.NewUserAgent(agentName, accountPubKey, []byte(conf.Account.SigningKeySeed))
 		if err != nil {
-			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %v", err)
+			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -140,7 +140,7 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 		template := NewTemplate()
 		confOutput, err := template.Render(agentConf)
 		if err != nil {
-			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %v", err)
+			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -148,14 +148,14 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 		confFile := filepath.Join(*conf.Codebase, "internal", "vessel", "config", "config.go")
 		err = os.WriteFile(confFile, confOutput, 0600)
 		if err != nil {
-			err := fmt.Errorf("cannot build an agent: cannot write agent configuration to file '%s': %v", confFile, err)
+			err := fmt.Errorf("cannot build an agent: cannot write agent configuration to file '%s': %w", confFile, err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		output, err := client.BuildAgent(ctx, targetOs, targetArch, outputName, !devBuild)
 		if err != nil {
-			err := fmt.Errorf("cannot build an agent: %v\n%s", err, output)
+			err := fmt.Errorf("cannot build an agent: %w\n%s", err, output)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
