@@ -40,14 +40,14 @@ func action(ctx context.Context, c *cli.Command) error {
 	nc, err := server.New(logger, conf.Servers, conf.User.JWT, conf.User.KeySeed)
 	if err != nil {
 		err := fmt.Errorf("cannot connect to the server: %v", err)
-		logger.Error(err.Error())
+		logger.ErrorContext(ctx, err.Error())
 		return err
 	}
 
 	js, err := jetstream.New(nc)
 	if err != nil {
 		err := fmt.Errorf("cannot create a JetStream context: %v", err)
-		logger.Error(err.Error())
+		logger.ErrorContext(ctx, err.Error())
 		return err
 	}
 
@@ -71,7 +71,7 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
 		if c.Args().Len() != 2 {
 			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -80,7 +80,7 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 		srcPath, err := path.Parse(src)
 		if err != nil {
 			err := fmt.Errorf("invalid file path '%s': %v", src, err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -88,25 +88,25 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 		dstPath, err := path.Parse(dst)
 		if err != nil {
 			err := fmt.Errorf("invalid destination path '%s': %v", dst, err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		if srcPath.IsDir() {
 			err := fmt.Errorf("file '%s' is a directory, copying directories is currently not supported", srcPath)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		if srcPath.IsLocal() && dstPath.IsLocal() {
 			err := fmt.Errorf("both paths are local paths, this operation is currently not supported")
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		if !srcPath.IsLocal() && !dstPath.IsLocal() {
 			err := fmt.Errorf("both paths are repository paths, this operation is currently not supported")
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -115,7 +115,7 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 			f, err := os.Open(srcPath.FilePath)
 			if err != nil {
 				err := fmt.Errorf("cannot open local file: %v", err)
-				logger.Error(err.Error())
+				logger.ErrorContext(ctx, err.Error())
 				return err
 			}
 			defer func() {
@@ -134,7 +134,7 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 			err = client.PutFile(ctx, dstPath.Repository, filename, f)
 			if err != nil {
 				err := fmt.Errorf("cannot put local file '%s' to a repository '%s' as '%s': %v", srcPath, dstPath.Repository, filename, err)
-				logger.Error(err.Error())
+				logger.ErrorContext(ctx, err.Error())
 				return err
 			}
 

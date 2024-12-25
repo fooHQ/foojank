@@ -39,14 +39,14 @@ func action(ctx context.Context, c *cli.Command) error {
 	nc, err := server.New(logger, conf.Servers, conf.User.JWT, conf.User.KeySeed)
 	if err != nil {
 		err := fmt.Errorf("cannot connect to the server: %v", err)
-		logger.Error(err.Error())
+		logger.ErrorContext(ctx, err.Error())
 		return err
 	}
 
 	js, err := jetstream.New(nc)
 	if err != nil {
 		err := fmt.Errorf("cannot create a JetStream context: %v", err)
-		logger.Error(err.Error())
+		logger.ErrorContext(ctx, err.Error())
 		return err
 	}
 
@@ -58,7 +58,7 @@ func removeAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc
 	return func(ctx context.Context, c *cli.Command) error {
 		if c.Args().Len() == 0 {
 			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -66,20 +66,20 @@ func removeAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc
 			filePath, err := path.Parse(file)
 			if err != nil {
 				err := fmt.Errorf("invalid destination path '%s': %v", file, err)
-				logger.Error(err.Error())
+				logger.ErrorContext(ctx, err.Error())
 				continue
 			}
 
 			if filePath.IsLocal() {
 				err := fmt.Errorf("path '%s' is a local path, files can only be removed from a repository", filePath)
-				logger.Error(err.Error())
+				logger.ErrorContext(ctx, err.Error())
 				continue
 			}
 
 			err = client.DeleteFile(ctx, filePath.Repository, filePath.FilePath)
 			if err != nil {
 				err := fmt.Errorf("cannot delete file '%s' from a repository '%s': %v", filePath.FilePath, filePath.Repository, err)
-				logger.Error(err.Error())
+				logger.ErrorContext(ctx, err.Error())
 				continue
 			}
 		}

@@ -47,14 +47,14 @@ func action(ctx context.Context, c *cli.Command) error {
 	nc, err := server.New(logger, conf.Servers, conf.User.JWT, conf.User.KeySeed)
 	if err != nil {
 		err := fmt.Errorf("cannot connect to the server: %v", err)
-		logger.Error(err.Error())
+		logger.ErrorContext(ctx, err.Error())
 		return err
 	}
 
 	js, err := jetstream.New(nc)
 	if err != nil {
 		err := fmt.Errorf("cannot create a JetStream context: %v", err)
-		logger.Error(err.Error())
+		logger.ErrorContext(ctx, err.Error())
 		return err
 	}
 
@@ -66,7 +66,7 @@ func createAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc
 	return func(ctx context.Context, c *cli.Command) error {
 		if c.Args().Len() != 1 {
 			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -76,7 +76,7 @@ func createAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc
 		err := client.Create(ctx, name, description)
 		if err != nil {
 			err := fmt.Errorf("cannot create repository '%s': %v", name, err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
