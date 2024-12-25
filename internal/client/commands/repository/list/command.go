@@ -53,14 +53,14 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	nc, err := server.New(logger, conf.Servers, conf.User.JWT, conf.User.KeySeed)
 	if err != nil {
-		err := fmt.Errorf("cannot connect to the server: %v", err)
+		err := fmt.Errorf("cannot connect to the server: %w", err)
 		logger.ErrorContext(ctx, err.Error())
 		return err
 	}
 
 	js, err := jetstream.New(nc)
 	if err != nil {
-		err := fmt.Errorf("cannot create a JetStream context: %v", err)
+		err := fmt.Errorf("cannot create a JetStream context: %w", err)
 		logger.ErrorContext(ctx, err.Error())
 		return err
 	}
@@ -89,7 +89,7 @@ func listAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 			for _, r := range c.Args().Slice() {
 				files, err := client.ListFiles(ctx, r)
 				if err != nil {
-					err := fmt.Errorf("cannot list contents of repository '%s': %v", r, err)
+					err := fmt.Errorf("cannot list contents of repository '%s': %w", r, err)
 					logger.ErrorContext(ctx, err.Error())
 					return err
 				}
@@ -112,7 +112,7 @@ func listAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 
 				err = f.Write(os.Stdout, table)
 				if err != nil {
-					err := fmt.Errorf("cannot write formatted output: %v", err)
+					err := fmt.Errorf("cannot write formatted output: %w", err)
 					logger.ErrorContext(ctx, err.Error())
 					return err
 				}
@@ -143,7 +143,7 @@ func listAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 
 		err = f.Write(os.Stdout, table)
 		if err != nil {
-			err := fmt.Errorf("cannot write formatted output: %v", err)
+			err := fmt.Errorf("cannot write formatted output: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}

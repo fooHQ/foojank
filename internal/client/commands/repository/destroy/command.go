@@ -48,14 +48,14 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	nc, err := server.New(logger, conf.Servers, conf.User.JWT, conf.User.KeySeed)
 	if err != nil {
-		err := fmt.Errorf("cannot connect to the server: %v", err)
+		err := fmt.Errorf("cannot connect to the server: %w", err)
 		logger.ErrorContext(ctx, err.Error())
 		return err
 	}
 
 	js, err := jetstream.New(nc)
 	if err != nil {
-		err := fmt.Errorf("cannot create a JetStream context: %v", err)
+		err := fmt.Errorf("cannot create a JetStream context: %w", err)
 		logger.ErrorContext(ctx, err.Error())
 		return err
 	}
@@ -77,7 +77,7 @@ func destroyAction(logger *slog.Logger, client *repository.Client) cli.ActionFun
 
 		files, err := client.ListFiles(ctx, name)
 		if err != nil {
-			err := fmt.Errorf("cannot destroy repository '%s': %v", name, err)
+			err := fmt.Errorf("cannot destroy repository '%s': %w", name, err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -90,7 +90,7 @@ func destroyAction(logger *slog.Logger, client *repository.Client) cli.ActionFun
 
 		err = client.Delete(ctx, name)
 		if err != nil {
-			err := fmt.Errorf("cannot destroy repository '%s': %v", name, err)
+			err := fmt.Errorf("cannot destroy repository '%s': %w", name, err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}

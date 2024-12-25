@@ -39,14 +39,14 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	nc, err := server.New(logger, conf.Servers, conf.User.JWT, conf.User.KeySeed)
 	if err != nil {
-		err := fmt.Errorf("cannot connect to the server: %v", err)
+		err := fmt.Errorf("cannot connect to the server: %w", err)
 		logger.ErrorContext(ctx, err.Error())
 		return err
 	}
 
 	js, err := jetstream.New(nc)
 	if err != nil {
-		err := fmt.Errorf("cannot create a JetStream context: %v", err)
+		err := fmt.Errorf("cannot create a JetStream context: %w", err)
 		logger.ErrorContext(ctx, err.Error())
 		return err
 	}
@@ -66,7 +66,7 @@ func removeAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc
 		for _, file := range c.Args().Slice() {
 			filePath, err := path.Parse(file)
 			if err != nil {
-				err := fmt.Errorf("invalid destination path '%s': %v", file, err)
+				err := fmt.Errorf("invalid destination path '%s': %w", file, err)
 				logger.ErrorContext(ctx, err.Error())
 				continue
 			}
@@ -79,7 +79,7 @@ func removeAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc
 
 			err = client.DeleteFile(ctx, filePath.Repository, filePath.FilePath)
 			if err != nil {
-				err := fmt.Errorf("cannot delete file '%s' from a repository '%s': %v", filePath.FilePath, filePath.Repository, err)
+				err := fmt.Errorf("cannot delete file '%s' from a repository '%s': %w", filePath.FilePath, filePath.Repository, err)
 				logger.ErrorContext(ctx, err.Error())
 				continue
 			}

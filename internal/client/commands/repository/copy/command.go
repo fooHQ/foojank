@@ -40,14 +40,14 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	nc, err := server.New(logger, conf.Servers, conf.User.JWT, conf.User.KeySeed)
 	if err != nil {
-		err := fmt.Errorf("cannot connect to the server: %v", err)
+		err := fmt.Errorf("cannot connect to the server: %w", err)
 		logger.ErrorContext(ctx, err.Error())
 		return err
 	}
 
 	js, err := jetstream.New(nc)
 	if err != nil {
-		err := fmt.Errorf("cannot create a JetStream context: %v", err)
+		err := fmt.Errorf("cannot create a JetStream context: %w", err)
 		logger.ErrorContext(ctx, err.Error())
 		return err
 	}
@@ -80,7 +80,7 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 		src := files[0]
 		srcPath, err := path.Parse(src)
 		if err != nil {
-			err := fmt.Errorf("invalid file path '%s': %v", src, err)
+			err := fmt.Errorf("invalid file path '%s': %w", src, err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -88,7 +88,7 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 		dst := files[len(files)-1]
 		dstPath, err := path.Parse(dst)
 		if err != nil {
-			err := fmt.Errorf("invalid destination path '%s': %v", dst, err)
+			err := fmt.Errorf("invalid destination path '%s': %w", dst, err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -115,7 +115,7 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 		if srcPath.IsLocal() {
 			f, err := os.Open(srcPath.FilePath)
 			if err != nil {
-				err := fmt.Errorf("cannot open local file: %v", err)
+				err := fmt.Errorf("cannot open local file: %w", err)
 				logger.ErrorContext(ctx, err.Error())
 				return err
 			}
