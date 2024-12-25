@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -96,11 +97,11 @@ func validateConfiguration(_ *config.Config) error {
 
 func validateInputConfiguration(conf *config.Config) error {
 	if conf.Servers == nil {
-		return fmt.Errorf("servers not configured")
+		return errors.New("servers not configured")
 	}
 
 	if conf.Account == nil {
-		return fmt.Errorf("account not configured")
+		return errors.New("account not configured")
 	}
 
 	return nil
