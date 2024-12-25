@@ -2,6 +2,7 @@ package build
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -104,7 +105,7 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 			servers = agentServer
 		}
 		if servers == nil {
-			err := fmt.Errorf("cannot build an agent: no server configured")
+			err := errors.New("cannot build an agent: no server configured")
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -167,15 +168,15 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 
 func validateConfiguration(conf *config.Config) error {
 	if conf.Codebase == nil {
-		return fmt.Errorf("codebase not configured")
+		return errors.New("codebase not configured")
 	}
 
 	if conf.Servers == nil {
-		return fmt.Errorf("servers not configured")
+		return errors.New("servers not configured")
 	}
 
 	if conf.Account == nil {
-		return fmt.Errorf("account not configured")
+		return errors.New("account not configured")
 	}
 
 	return nil
