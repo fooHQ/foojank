@@ -88,7 +88,7 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 			wd, err := os.Getwd()
 			if err != nil {
 				err := fmt.Errorf("cannot build an agent: cannot determine current working directory")
-				logger.Error(err.Error())
+				logger.ErrorContext(ctx, err.Error())
 				return err
 			}
 
@@ -105,14 +105,14 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 		}
 		if servers == nil {
 			err := fmt.Errorf("cannot build an agent: no server configured")
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		accountClaims, err := jwt.DecodeAccountClaims(conf.Account.JWT)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot decode account JWT: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -120,7 +120,7 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 		user, err := config.NewUserAgent(agentName, accountPubKey, []byte(conf.Account.SigningKeySeed))
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -140,7 +140,7 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 		confOutput, err := template.Render(agentConf)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -148,14 +148,14 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 		err = os.WriteFile(confFile, confOutput, 0600)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot write agent configuration to file '%s': %v", confFile, err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		output, err := client.BuildAgent(ctx, targetOs, targetArch, outputName, !devBuild)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: %v\n%s", err, output)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
