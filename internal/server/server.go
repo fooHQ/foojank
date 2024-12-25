@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -144,23 +145,23 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 
 func validateConfiguration(conf *config.Config) error {
 	if conf.Host == nil {
-		return fmt.Errorf("host not configured")
+		return errors.New("host not configured")
 	}
 
 	if conf.Port == nil {
-		return fmt.Errorf("port not configured")
+		return errors.New("port not configured")
 	}
 
 	if conf.Operator == nil {
-		return fmt.Errorf("operator not configured")
+		return errors.New("operator not configured")
 	}
 
 	if conf.Account == nil {
-		return fmt.Errorf("account not configured")
+		return errors.New("account not configured")
 	}
 
 	if conf.SystemAccount == nil {
-		return fmt.Errorf("system account not configured")
+		return errors.New("system account not configured")
 	}
 
 	return nil
