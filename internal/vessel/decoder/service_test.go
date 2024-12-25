@@ -5,7 +5,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/foohq/foojank/internal/testutils"
 	"github.com/foohq/foojank/internal/vessel/connector"
@@ -24,7 +24,7 @@ func TestService(t *testing.T) {
 			InputCh:  inputCh,
 			OutputCh: outputCh,
 		}).Start(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}()
 
 	responseCh := make(chan []byte)
@@ -39,12 +39,12 @@ func TestService(t *testing.T) {
 		msg := connector.NewMessage(req)
 		inputCh <- msg
 		respMsg := <-responseCh
-		assert.True(t, bytes.HasPrefix(respMsg, []byte(errcodes.ErrInvalidMessage)))
+		require.True(t, bytes.HasPrefix(respMsg, []byte(errcodes.ErrInvalidMessage)))
 	}
 
 	{
 		b, err := proto.NewCreateWorkerRequest()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		req := testutils.Request{
 			FSubject:   "test",
 			FData:      b,
@@ -53,22 +53,22 @@ func TestService(t *testing.T) {
 		msg := connector.NewMessage(req)
 		inputCh <- msg
 		outMsg := <-outputCh
-		assert.IsType(t, decoder.CreateWorkerRequest{}, outMsg.Data())
+		require.IsType(t, decoder.CreateWorkerRequest{}, outMsg.Data())
 		err = outMsg.Reply(decoder.CreateWorkerResponse{
 			ID: 1,
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		b = <-responseCh
 		parsed, err := proto.ParseResponse(b)
-		assert.NoError(t, err)
-		assert.IsType(t, proto.CreateWorkerResponse{}, parsed)
-		assert.EqualValues(t, 1, parsed.(proto.CreateWorkerResponse).ID)
+		require.NoError(t, err)
+		require.IsType(t, proto.CreateWorkerResponse{}, parsed)
+		require.EqualValues(t, 1, parsed.(proto.CreateWorkerResponse).ID)
 	}
 
 	{
 		b, err := proto.NewDestroyWorkerRequest(1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		req := testutils.Request{
 			FSubject:   "test",
 			FData:      b,
@@ -77,20 +77,20 @@ func TestService(t *testing.T) {
 		msg := connector.NewMessage(req)
 		inputCh <- msg
 		outMsg := <-outputCh
-		assert.IsType(t, decoder.DestroyWorkerRequest{}, outMsg.Data())
-		assert.EqualValues(t, 1, outMsg.Data().(decoder.DestroyWorkerRequest).ID)
+		require.IsType(t, decoder.DestroyWorkerRequest{}, outMsg.Data())
+		require.EqualValues(t, 1, outMsg.Data().(decoder.DestroyWorkerRequest).ID)
 		err = outMsg.Reply(decoder.DestroyWorkerResponse{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		b = <-responseCh
 		parsed, err := proto.ParseResponse(b)
-		assert.NoError(t, err)
-		assert.IsType(t, proto.DestroyWorkerResponse{}, parsed)
+		require.NoError(t, err)
+		require.IsType(t, proto.DestroyWorkerResponse{}, parsed)
 	}
 
 	{
 		b, err := proto.NewGetWorkerRequest(1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		req := testutils.Request{
 			FSubject:   "test",
 			FData:      b,
@@ -99,25 +99,25 @@ func TestService(t *testing.T) {
 		msg := connector.NewMessage(req)
 		inputCh <- msg
 		outMsg := <-outputCh
-		assert.IsType(t, decoder.GetWorkerRequest{}, outMsg.Data())
-		assert.EqualValues(t, 1, outMsg.Data().(decoder.GetWorkerRequest).ID)
+		require.IsType(t, decoder.GetWorkerRequest{}, outMsg.Data())
+		require.EqualValues(t, 1, outMsg.Data().(decoder.GetWorkerRequest).ID)
 		err = outMsg.Reply(decoder.GetWorkerResponse{
 			ServiceName: "test",
 			ServiceID:   "test-id",
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		b = <-responseCh
 		parsed, err := proto.ParseResponse(b)
-		assert.NoError(t, err)
-		assert.IsType(t, proto.GetWorkerResponse{}, parsed)
-		assert.EqualValues(t, "test", parsed.(proto.GetWorkerResponse).ServiceName)
-		assert.EqualValues(t, "test-id", parsed.(proto.GetWorkerResponse).ServiceID)
+		require.NoError(t, err)
+		require.IsType(t, proto.GetWorkerResponse{}, parsed)
+		require.EqualValues(t, "test", parsed.(proto.GetWorkerResponse).ServiceName)
+		require.EqualValues(t, "test-id", parsed.(proto.GetWorkerResponse).ServiceID)
 	}
 
 	{
 		b, err := proto.NewDummyRequest()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		req := testutils.Request{
 			FSubject:   "test",
 			FData:      b,
@@ -126,6 +126,6 @@ func TestService(t *testing.T) {
 		msg := connector.NewMessage(req)
 		inputCh <- msg
 		respMsg := <-responseCh
-		assert.True(t, bytes.HasPrefix(respMsg, []byte(errcodes.ErrInvalidAction)))
+		require.True(t, bytes.HasPrefix(respMsg, []byte(errcodes.ErrInvalidAction)))
 	}
 }
