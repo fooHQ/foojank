@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/foohq/foojank/internal/testutils"
@@ -37,7 +38,7 @@ func TestService(t *testing.T) {
 			InfoCh:       infoCh,
 			OutputCh:     outputCh,
 		}).Start(ctx)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	}()
 
 	info := <-infoCh
@@ -49,10 +50,10 @@ func TestService(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			msg := <-outputCh
-			require.Equal(t, reqData, msg.Data())
+			assert.Equal(t, reqData, msg.Data())
 
 			err := msg.Reply(respData)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 		}()
 
 		resp, err := nc.Request(dataSubject, reqData, 2*time.Second)
@@ -65,10 +66,10 @@ func TestService(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			msg := <-outputCh
-			require.Equal(t, reqData, msg.Data())
+			assert.Equal(t, reqData, msg.Data())
 
 			err := msg.Reply(respData)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 		}()
 
 		resp, err := nc.Request(stdinSubject, reqData, 2*time.Second)
