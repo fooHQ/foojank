@@ -1,4 +1,4 @@
-package connector
+package connector_test
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/foohq/foojank/internal/testutils"
+	"github.com/foohq/foojank/internal/vessel/worker/connector"
 )
 
 func TestService(t *testing.T) {
@@ -17,8 +18,8 @@ func TestService(t *testing.T) {
 	var reqData = []byte("_data_")
 	var respData = []byte("_resp_data_")
 
-	infoCh := make(chan InfoMessage)
-	outputCh := make(chan Message)
+	infoCh := make(chan connector.InfoMessage)
+	outputCh := make(chan connector.Message)
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -27,7 +28,7 @@ func TestService(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := New(Arguments{
+		err := connector.New(connector.Arguments{
 			Name:         "test",
 			Version:      "0.0.1",
 			StdinSubject: stdinSubject,
