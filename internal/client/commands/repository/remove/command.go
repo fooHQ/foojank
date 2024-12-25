@@ -2,6 +2,7 @@ package remove
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -90,11 +91,11 @@ func removeAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc
 
 func validateConfiguration(conf *config.Config) error {
 	if conf.Servers == nil {
-		return fmt.Errorf("servers not configured")
+		return errors.New("servers not configured")
 	}
 
 	if conf.User == nil {
-		return fmt.Errorf("user not configured")
+		return errors.New("user not configured")
 	}
 
 	return nil
