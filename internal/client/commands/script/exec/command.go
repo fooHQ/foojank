@@ -44,7 +44,7 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
 		if c.Args().Len() < 1 {
 			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -53,19 +53,19 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 		if err != nil {
 			if os.IsNotExist(err) {
 				err := fmt.Errorf("script '%s' not found", scriptName)
-				logger.Error(err.Error())
+				logger.ErrorContext(ctx, err.Error())
 				return err
 			}
 
 			err := fmt.Errorf("cannot execute a script: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		pkgPath, err := buildTempPackage(scriptPath)
 		if err != nil {
 			err := fmt.Errorf("cannot build a script: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -73,13 +73,13 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 		output, err := client.BuildRunscript(ctx, binPath)
 		if err != nil {
 			err := fmt.Errorf("cannot build runscript: %v\n%s", err, output)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		err = execRunscript(ctx, binPath, pkgPath, c.Args().Tail()...)
 		if err != nil {
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 

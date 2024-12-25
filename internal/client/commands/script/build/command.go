@@ -52,7 +52,7 @@ func buildAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
 		if c.Args().Len() != 1 {
 			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -61,12 +61,12 @@ func buildAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 		if err != nil {
 			if os.IsNotExist(err) {
 				err := fmt.Errorf("cannot build a package: script '%s' not found", scriptName)
-				logger.Error(err.Error())
+				logger.ErrorContext(ctx, err.Error())
 				return err
 			}
 
 			err := fmt.Errorf("cannot build a package: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -80,7 +80,7 @@ func buildAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 		err = fzz.Build(src, dst)
 		if err != nil {
 			err := fmt.Errorf("cannot build a package: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
