@@ -1,4 +1,4 @@
-package decoder
+package decoder_test
 
 import (
 	"bytes"
@@ -10,17 +10,18 @@ import (
 	"github.com/foohq/foojank/internal/testutils"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
 	"github.com/foohq/foojank/internal/vessel/worker/connector"
+	"github.com/foohq/foojank/internal/vessel/worker/decoder"
 	"github.com/foohq/foojank/proto"
 )
 
 func TestService(t *testing.T) {
 	inputCh := make(chan connector.Message)
-	dataCh := make(chan Message)
-	stdinCh := make(chan Message)
+	dataCh := make(chan decoder.Message)
+	stdinCh := make(chan decoder.Message)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go func() {
-		err := New(Arguments{
+		err := decoder.New(decoder.Arguments{
 			InputCh:     inputCh,
 			DataSubject: "data",
 			DataCh:      dataCh,
@@ -55,8 +56,8 @@ func TestService(t *testing.T) {
 		msg := connector.NewMessage(req)
 		inputCh <- msg
 		outMsg := <-dataCh
-		assert.IsType(t, ExecuteRequest{}, outMsg.Data())
-		err = outMsg.Reply(ExecuteResponse{
+		assert.IsType(t, decoder.ExecuteRequest{}, outMsg.Data())
+		err = outMsg.Reply(decoder.ExecuteResponse{
 			Code: 1,
 		})
 		assert.NoError(t, err)
