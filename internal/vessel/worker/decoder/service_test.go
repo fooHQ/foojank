@@ -5,6 +5,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/foohq/foojank/internal/testutils"
@@ -27,7 +28,7 @@ func TestService(t *testing.T) {
 			DataCh:      dataCh,
 			StdinCh:     stdinCh,
 		}).Start(ctx)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	}()
 
 	responseCh := make(chan []byte)
