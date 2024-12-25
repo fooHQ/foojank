@@ -13,7 +13,7 @@ type Arguments struct {
 	Name       string
 	Version    string
 	Metadata   map[string]string
-	RpcSubject string
+	RPCSubject string
 	Connection *nats.Conn
 	OutputCh   chan<- Message
 }
@@ -45,7 +45,7 @@ func (s *Service) Start(ctx context.Context) error {
 		}
 	}()
 
-	err = ms.AddEndpoint("rpc", micro.ContextHandler(ctx, s.handler), micro.WithEndpointSubject(s.args.RpcSubject))
+	err = ms.AddEndpoint("rpc", micro.ContextHandler(ctx, s.handler), micro.WithEndpointSubject(s.args.RPCSubject))
 	if err != nil {
 		return err
 	}

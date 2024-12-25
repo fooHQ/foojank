@@ -29,7 +29,7 @@ func TestService(t *testing.T) {
 			Name:       "test",
 			Version:    "0.0.1",
 			Metadata:   nil,
-			RpcSubject: rpcSubject,
+			RPCSubject: rpcSubject,
 			Connection: nc,
 			OutputCh:   outputCh,
 		}).Start(ctx)

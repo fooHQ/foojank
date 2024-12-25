@@ -41,7 +41,7 @@ func (s *Service) Start(ctx context.Context) error {
 			Name:       s.args.Name,
 			Version:    s.args.Version,
 			Metadata:   s.args.Metadata,
-			RpcSubject: rpcSubject,
+			RPCSubject: rpcSubject,
 			Connection: s.args.Connection,
 			OutputCh:   connectorOutCh,
 		}).Start(groupCtx)
