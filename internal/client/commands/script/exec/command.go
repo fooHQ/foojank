@@ -2,6 +2,7 @@ package exec
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -89,7 +90,7 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 
 func validateConfiguration(conf *config.Config) error {
 	if conf.Codebase == nil {
-		return fmt.Errorf("codebase not configured")
+		return errors.New("codebase not configured")
 	}
 
 	return nil
