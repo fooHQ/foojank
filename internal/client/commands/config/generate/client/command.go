@@ -89,7 +89,7 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 	}
 }
 
-func validateConfiguration(conf *config.Config) error {
+func validateConfiguration(_ *config.Config) error {
 	// TODO: validate LogLevel and NoColor
 	return nil
 }
