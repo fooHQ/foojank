@@ -34,10 +34,10 @@ func action(ctx context.Context, c *cli.Command) error {
 }
 
 func generateAction(logger *slog.Logger) cli.ActionFunc {
-	return func(_ context.Context, c *cli.Command) error {
+	return func(ctx context.Context, c *cli.Command) error {
 		if c.Args().Len() != 1 {
 			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -45,14 +45,14 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 		input, err := config.ParseFile(confFile, true)
 		if err != nil {
 			err := fmt.Errorf("cannot parse master configuration file: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		err = validateInputConfiguration(input)
 		if err != nil {
 			err := fmt.Errorf("invalid master configuration file: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 

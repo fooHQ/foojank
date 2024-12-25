@@ -39,7 +39,7 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
 		if c.Args().Len() != 1 {
 			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -47,21 +47,21 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 		input, err := config.ParseFile(confFile, true)
 		if err != nil {
 			err := fmt.Errorf("cannot parse configuration file: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		err = validateInputConfiguration(input)
 		if err != nil {
 			err := fmt.Errorf("invalid input configuration file: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		accountClaims, err := jwt.DecodeAccountClaims(input.Account.JWT)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot decode account JWT: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -70,7 +70,7 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 		user, err := config.NewUserManager(username, accountPubKey, []byte(input.Account.SigningKeySeed))
 		if err != nil {
 			err := fmt.Errorf("cannot generate client configuration: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 

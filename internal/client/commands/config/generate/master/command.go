@@ -39,7 +39,7 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 		operator, err := config.NewOperator(operatorName)
 		if err != nil {
 			err := fmt.Errorf("cannot generate configuration: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
@@ -47,14 +47,14 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 		account, err := config.NewAccount(accountName, []byte(operator.SigningKeySeed), true)
 		if err != nil {
 			err := fmt.Errorf("cannot generate configuration: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		systemAccount, err := config.NewAccount("SYS", []byte(operator.SigningKeySeed), false)
 		if err != nil {
 			err := fmt.Errorf("cannot generate configuration: %v", err)
-			logger.Error(err.Error())
+			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
