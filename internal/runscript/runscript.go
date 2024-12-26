@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/risor-io/risor"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/internal/engine"
 	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/runscript/actions"
+	"github.com/foohq/foojank/internal/runscript/config"
 )
 
 func New() *cli.Command {
@@ -70,7 +72,12 @@ func executePackage(ctx context.Context, pkgPath string, pkgArgs ...string) erro
 		engineos.WithStdin(os.Stdin),
 		engineos.WithStdout(os.Stdout),
 	)
-	c, err := engine.CompilePackage(osCtx, f, info.Size())
+	opts := []risor.Option{
+		risor.WithoutDefaultGlobals(),
+		risor.WithGlobals(config.Modules()),
+		risor.WithGlobals(config.Builtins()),
+	}
+	c, err := engine.CompilePackage(osCtx, f, info.Size(), opts...)
 	if err != nil {
 		err := fmt.Errorf("cannot compile a package: %w", err)
 		return err
