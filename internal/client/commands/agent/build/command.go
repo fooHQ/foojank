@@ -137,8 +137,7 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 			},
 		}
 
-		template := NewTemplate()
-		confOutput, err := template.Render(agentConf)
+		confOutput, err := RenderTemplate(configTemplate, agentConf)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
