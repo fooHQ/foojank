@@ -65,6 +65,25 @@ func (c *Client) ListScripts() ([]string, error) {
 	return result, nil
 }
 
+func (c *Client) ListModules() ([]string, error) {
+	scriptsDir := filepath.Join(c.baseDir, "modules")
+	files, err := os.ReadDir(scriptsDir)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []string
+	for _, file := range files {
+		if !file.IsDir() {
+			continue
+		}
+
+		result = append(result, file.Name())
+	}
+
+	return result, nil
+}
+
 func (c *Client) devboxRun(ctx context.Context, script string, env map[string]string) (string, error) {
 	environ := os.Environ()
 	for name, value := range env {
