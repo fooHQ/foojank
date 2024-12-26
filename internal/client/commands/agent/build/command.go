@@ -26,7 +26,7 @@ const (
 	FlagArch          = "arch"
 	FlagOutput        = "output"
 	FlagDev           = "dev"
-	FlagAgentServer   = "agent-server"
+	FlagWithServer    = "with-server"
 	FlagWithoutModule = "without-module"
 )
 
@@ -56,8 +56,8 @@ func NewCommand() *cli.Command {
 				Aliases: []string{"o"},
 			},
 			&cli.StringSliceFlag{
-				Name:  FlagAgentServer,
-				Usage: "set agent server",
+				Name:  FlagWithServer,
+				Usage: "set agent's server",
 			},
 			&cli.StringSliceFlag{
 				Name:  FlagWithoutModule,
@@ -86,8 +86,8 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 		targetOs := c.String(FlagOs)
 		targetArch := c.String(FlagArch)
 		devBuild := c.Bool(FlagDev)
-		isAgentServer := c.IsSet(FlagAgentServer)
-		agentServer := c.StringSlice(FlagAgentServer)
+		isAgentServer := c.IsSet(FlagWithServer)
+		agentServer := c.StringSlice(FlagWithServer)
 		disabledModules := c.StringSlice(FlagWithoutModule)
 
 		agentName := nuid.Next()
