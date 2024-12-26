@@ -1,6 +1,7 @@
 import cli
 import strings
 import os
+import shlex
 
 import cat
 import cd
@@ -33,9 +34,12 @@ var commands = {
 func main() {
     for {
         line := read_line(os.stdin)
-        args := strings.split(line, " ")
-        c := strings.trim_space(args[0])
+        args := shlex.argv(line)
+        if len(args) == 0 {
+            continue
+        }
 
+        c := args[0]
         if c == "" {
             continue
         }
