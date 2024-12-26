@@ -3,12 +3,14 @@ package processor
 import (
 	"context"
 
+	"github.com/risor-io/risor"
 	risoros "github.com/risor-io/risor/os"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/foohq/foojank/clients/repository"
 	"github.com/foohq/foojank/internal/engine"
 	"github.com/foohq/foojank/internal/engine/os"
+	"github.com/foohq/foojank/internal/vessel/config"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
 	"github.com/foohq/foojank/internal/vessel/log"
 	"github.com/foohq/foojank/internal/vessel/worker/decoder"
@@ -22,12 +24,18 @@ type Arguments struct {
 }
 
 type Service struct {
-	args Arguments
+	args       Arguments
+	engineOpts []risor.Option
 }
 
 func New(args Arguments) *Service {
 	return &Service{
 		args: args,
+		engineOpts: []risor.Option{
+			risor.WithoutDefaultGlobals(),
+			risor.WithGlobals(config.Modules()),
+			risor.WithGlobals(config.Builtins()),
+		},
 	}
 }
 
@@ -117,7 +125,7 @@ loop:
 	return ctx.Err()
 }
 
-func compileAndRunPackage(ctx context.Context, file *repository.File, stdin, stdout risoros.File) error {
+func compileAndRunPackage(ctx context.Context, file *repository.File, stdin, stdout risoros.File, opts ...risor.Option) error {
 	osCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -131,7 +139,7 @@ func compileAndRunPackage(ctx context.Context, file *repository.File, stdin, std
 		}),
 	)
 
-	code, err := engine.CompilePackage(osCtx, file, int64(file.Size))
+	code, err := engine.CompilePackage(osCtx, file, int64(file.Size), opts...)
 	if err != nil {
 		return err
 	}
