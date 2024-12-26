@@ -7,4 +7,10 @@ var (
 	UserKeySeed = ""
 	ServiceName = ""
 	ServiceVersion = ""
+	Modules = func() map[string]any {
+		return nil
+	}
+	Builtins = func() map[string]any {
+		return nil
+	}
 )
