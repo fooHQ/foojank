@@ -17,6 +17,7 @@ require (
 	github.com/risor-io/risor v1.7.0
 	github.com/risor-io/risor/modules/cli v1.7.0
 	github.com/stretchr/testify v1.10.0
+	github.com/u-root/u-root v0.14.0
 	github.com/urfave/cli/v3 v3.0.0-beta1
 	golang.org/x/sync v0.10.0
 )
