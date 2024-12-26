@@ -85,7 +85,6 @@ type Config struct {
 	User          *Entity  `toml:"user,omitempty"`
 	LogLevel      *string  `toml:"log_level,omitempty"`
 	NoColor       *bool    `toml:"no_color,omitempty"`
-	Service       *Service `toml:"service,omitempty"`
 	Codebase      *string  `toml:"codebase,omitempty"`
 }
 
