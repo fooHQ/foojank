@@ -30,10 +30,28 @@ func (c *Client) BuildAgent(ctx context.Context, os, arch, output string, produc
 	})
 }
 
+func (c *Client) WriteAgentConfig(b []byte) error {
+	confFile := filepath.Join(c.baseDir, "internal", "vessel", "config", "config.go")
+	err := os.WriteFile(confFile, b, 0600)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *Client) BuildRunscript(ctx context.Context, output string) (string, error) {
 	return c.devboxRun(ctx, "build-runscript", map[string]string{
 		"OUTPUT": output,
 	})
+}
+
+func (c *Client) WriteRunscriptConfig(b []byte) error {
+	confFile := filepath.Join(c.baseDir, "internal", "runscript", "config", "config.go")
+	err := os.WriteFile(confFile, b, 0600)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *Client) GetScript(name string) (string, error) {
