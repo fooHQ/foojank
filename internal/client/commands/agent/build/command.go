@@ -22,11 +22,12 @@ import (
 )
 
 const (
-	FlagOs          = "os"
-	FlagArch        = "arch"
-	FlagOutput      = "output"
-	FlagDev         = "dev"
-	FlagAgentServer = "agent-server"
+	FlagOs            = "os"
+	FlagArch          = "arch"
+	FlagOutput        = "output"
+	FlagDev           = "dev"
+	FlagAgentServer   = "agent-server"
+	FlagWithoutModule = "without-module"
 )
 
 func NewCommand() *cli.Command {
@@ -58,6 +59,10 @@ func NewCommand() *cli.Command {
 				Name:  FlagAgentServer,
 				Usage: "set agent server",
 			},
+			&cli.StringSliceFlag{
+				Name:  FlagWithoutModule,
+				Usage: "disable compilation of a module",
+			},
 		},
 		Action: action,
 	}
@@ -83,6 +88,7 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 		devBuild := c.Bool(FlagDev)
 		isAgentServer := c.IsSet(FlagAgentServer)
 		agentServer := c.StringSlice(FlagAgentServer)
+		disabledModules := c.StringSlice(FlagWithoutModule)
 
 		agentName := nuid.Next()
 		if outputName == "" {
@@ -110,6 +116,15 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 			return err
 		}
 
+		modules, err := client.ListModules()
+		if err != nil {
+			err := fmt.Errorf("cannot build an agent: cannot get a list of modules: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		modules = configureModules(modules, disabledModules)
+
 		accountClaims, err := jwt.DecodeAccountClaims(conf.Account.JWT)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot decode account JWT: %w", err)
@@ -125,29 +140,28 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 			return err
 		}
 
-		agentConf := config.Config{
+		agentConf := templateData{
 			Servers: servers,
-			User: &config.Entity{
+			User: templateDataUser{
 				JWT:     user.JWT,
 				KeySeed: user.KeySeed,
 			},
-			Service: &config.Service{
+			Service: templateDataService{
 				Name:    agentName,
 				Version: foojank.Version(),
 			},
+			Modules: modules,
 		}
-
-		confOutput, err := RenderTemplate(configTemplate, agentConf)
+		confOutput, err := RenderTemplate(templateString, agentConf)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		confFile := filepath.Join(*conf.Codebase, "internal", "vessel", "config", "config.go")
-		err = os.WriteFile(confFile, confOutput, 0600)
+		err = client.WriteAgentConfig(confOutput)
 		if err != nil {
-			err := fmt.Errorf("cannot build an agent: cannot write agent configuration to file '%s': %w", confFile, err)
+			err := fmt.Errorf("cannot build an agent: cannot write agent configuration to a file: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -179,4 +193,20 @@ func validateConfiguration(conf *config.Config) error {
 	}
 
 	return nil
+}
+
+func configureModules(enabled, disabled []string) []string {
+	var result []string
+	for _, e := range enabled {
+		found := false
+		for _, d := range disabled {
+			if e == d {
+				found = true
+			}
+		}
+		if !found {
+			result = append(result, e)
+		}
+	}
+	return result
 }
