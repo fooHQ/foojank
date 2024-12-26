@@ -19,13 +19,23 @@ import (
 	"github.com/foohq/foojank/internal/log"
 )
 
+const (
+	FlagWithoutModule = "without-module"
+)
+
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "execute",
 		ArgsUsage: "<script-name>",
 		Usage:     "Execute a script locally",
-		Action:    action,
-		Aliases:   []string{"exec"},
+		Flags: []cli.Flag{
+			&cli.StringSliceFlag{
+				Name:  FlagWithoutModule,
+				Usage: "disable compilation of a module",
+			},
+		},
+		Action:  action,
+		Aliases: []string{"exec"},
 	}
 }
 
@@ -49,7 +59,9 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 			return err
 		}
 
+		disabledModules := c.StringSlice(FlagWithoutModule)
 		scriptName := c.Args().First()
+
 		scriptPath, err := client.GetScript(scriptName)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -66,6 +78,32 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 		pkgPath, err := buildTempPackage(scriptPath)
 		if err != nil {
 			err := fmt.Errorf("cannot build a script: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		modules, err := client.ListModules()
+		if err != nil {
+			err := fmt.Errorf("cannot get a list of modules: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		modules = configureModules(modules, disabledModules)
+
+		runscriptConf := templateData{
+			Modules: modules,
+		}
+		confOutput, err := RenderTemplate(templateString, runscriptConf)
+		if err != nil {
+			err := fmt.Errorf("cannot generate runscript configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		err = client.WriteRunscriptConfig(confOutput)
+		if err != nil {
+			err := fmt.Errorf("cannot write runscript configuration to a file: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -112,4 +150,20 @@ func execRunscript(ctx context.Context, binPath, pkgPath string, args ...string)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+func configureModules(enabled, disabled []string) []string {
+	var result []string
+	for _, e := range enabled {
+		found := false
+		for _, d := range disabled {
+			if e == d {
+				found = true
+			}
+		}
+		if !found {
+			result = append(result, e)
+		}
+	}
+	return result
 }
