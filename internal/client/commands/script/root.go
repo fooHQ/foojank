@@ -4,7 +4,6 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/client/actions"
-	"github.com/foohq/foojank/internal/client/commands/script/build"
 	"github.com/foohq/foojank/internal/client/commands/script/exec"
 	"github.com/foohq/foojank/internal/client/commands/script/list"
 )
@@ -15,7 +14,6 @@ func NewCommand() *cli.Command {
 		Usage: "Manage scripts",
 		Commands: []*cli.Command{
 			list.NewCommand(),
-			build.NewCommand(),
 			exec.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
