@@ -90,8 +90,15 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 	}
 }
 
-func validateConfiguration(_ *config.Config) error {
-	// TODO: validate LogLevel and NoColor
+func validateConfiguration(conf *config.Config) error {
+	if conf.LogLevel == nil {
+		return errors.New("log level not configured")
+	}
+
+	if conf.NoColor == nil {
+		return errors.New("no color not configured")
+	}
+
 	return nil
 }
 

@@ -2,6 +2,7 @@ package master
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -71,6 +72,13 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 }
 
 func validateConfiguration(conf *config.Config) error {
-	// TODO: validate LogLevel and NoColor
+	if conf.LogLevel == nil {
+		return errors.New("log level not configured")
+	}
+
+	if conf.NoColor == nil {
+		return errors.New("no color not configured")
+	}
+
 	return nil
 }

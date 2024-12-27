@@ -100,6 +100,14 @@ func destroyAction(logger *slog.Logger, client *repository.Client) cli.ActionFun
 }
 
 func validateConfiguration(conf *config.Config) error {
+	if conf.LogLevel == nil {
+		return errors.New("log level not configured")
+	}
+
+	if conf.NoColor == nil {
+		return errors.New("no color not configured")
+	}
+
 	if conf.Servers == nil {
 		return errors.New("servers not configured")
 	}
