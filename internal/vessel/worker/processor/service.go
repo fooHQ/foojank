@@ -133,6 +133,7 @@ func engineCompileAndRunPackage(ctx context.Context, file *repository.File, stdi
 		osCtx,
 		os.WithStdin(stdin),
 		os.WithStdout(stdout),
+		os.WithEnvVar("SERVICE_NAME", config.ServiceName),
 		os.WithExitHandler(func(code int) {
 			log.Debug("on exit", "code", code)
 			cancel()
