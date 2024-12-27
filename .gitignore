@@ -1,3 +1,5 @@
 /build/
 vendor/
 *.fzz
+go.work
+go.work.sum
