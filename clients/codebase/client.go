@@ -6,6 +6,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/nats-io/nuid"
+
+	"github.com/foohq/foojank/fzz"
 )
 
 type Client struct {
@@ -16,6 +20,10 @@ func New(path string) *Client {
 	return &Client{
 		baseDir: path,
 	}
+}
+
+func (c *Client) BuildDir() string {
+	return filepath.Join(c.baseDir, "build")
 }
 
 func (c *Client) BuildAgent(ctx context.Context, os, arch, output string, production bool) (string, error) {
@@ -62,6 +70,21 @@ func (c *Client) GetScript(name string) (string, error) {
 	}
 
 	return scriptsDir, nil
+}
+
+func (c *Client) BuildScript(name string) (string, error) {
+	scriptSrc, err := c.GetScript(name)
+	if err != nil {
+		return "", err
+	}
+
+	outputName := filepath.Join(c.BuildDir(), nuid.Next())
+	err = fzz.Build(scriptSrc, outputName)
+	if err != nil {
+		return "", err
+	}
+
+	return outputName, nil
 }
 
 func (c *Client) ListScripts() ([]string, error) {
