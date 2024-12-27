@@ -13,7 +13,6 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/clients/codebase"
-	"github.com/foohq/foojank/fzz"
 	"github.com/foohq/foojank/internal/client/actions"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/log"
@@ -62,7 +61,7 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 		disabledModules := c.StringSlice(FlagWithoutModule)
 		scriptName := c.Args().First()
 
-		scriptPath, err := client.GetScript(scriptName)
+		pkgPath, err := client.BuildScript(scriptName)
 		if err != nil {
 			if os.IsNotExist(err) {
 				err := fmt.Errorf("script '%s' not found", scriptName)
@@ -70,14 +69,7 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 				return err
 			}
 
-			err := fmt.Errorf("cannot execute a script: %w", err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		pkgPath, err := buildTempPackage(scriptPath)
-		if err != nil {
-			err := fmt.Errorf("cannot build a script: %w", err)
+			err := fmt.Errorf("cannot build script '%s': %w", scriptName, err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -132,16 +124,6 @@ func validateConfiguration(conf *config.Config) error {
 	}
 
 	return nil
-}
-
-func buildTempPackage(src string) (string, error) {
-	dst := filepath.Join(os.TempDir(), fmt.Sprintf("fj%s.fzz", nuid.Next()))
-	err := fzz.Build(src, dst)
-	if err != nil {
-		return "", err
-	}
-
-	return dst, nil
 }
 
 func execRunscript(ctx context.Context, binPath, pkgPath string, args ...string) error {
