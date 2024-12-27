@@ -26,16 +26,24 @@ func (c *Client) BuildDir() string {
 	return filepath.Join(c.baseDir, "build")
 }
 
-func (c *Client) BuildAgent(ctx context.Context, os, arch, output string, production bool) (string, error) {
-	scriptName := "build-agent-dev"
+func (c *Client) BuildAgent(ctx context.Context, os, arch string, production bool) (string, string, error) {
+	script := "build-agent-dev"
 	if production {
-		scriptName = "build-agent-prod"
+		script = "build-agent-prod"
 	}
-	return c.devboxRun(ctx, scriptName, map[string]string{
+	output := filepath.Join(c.BuildDir(), nuid.Next())
+	if os == "windows" {
+		output += ".exe"
+	}
+	result, err := c.devboxRun(ctx, script, map[string]string{
 		"GOOS":   os,
 		"GOARCH": arch,
 		"OUTPUT": output,
 	})
+	if err != nil {
+		return "", result, err
+	}
+	return output, result, nil
 }
 
 func (c *Client) WriteAgentConfig(b []byte) error {

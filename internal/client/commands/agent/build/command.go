@@ -166,9 +166,16 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 			return err
 		}
 
-		output, err := client.BuildAgent(ctx, targetOs, targetArch, outputName, !devBuild)
+		binPath, output, err := client.BuildAgent(ctx, targetOs, targetArch, !devBuild)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: %w\n%s", err, output)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		err = os.Rename(binPath, outputName)
+		if err != nil {
+			err := fmt.Errorf("cannot build an agent: cannot rename the executable file: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
