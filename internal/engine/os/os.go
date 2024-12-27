@@ -2,6 +2,8 @@ package os
 
 import (
 	"context"
+	"os"
+	"strings"
 
 	risoros "github.com/risor-io/risor/os"
 )
@@ -11,10 +13,17 @@ var _ risoros.OS = &OS{}
 type Options struct {
 	stdin       risoros.File
 	stdout      risoros.File
+	environ     map[string]string
 	args        []string
 	exitHandler ExitHandler
 }
 type Option func(*Options)
+
+func WithEnvVar(name, value string) Option {
+	return func(o *Options) {
+		o.environ[name] = value
+	}
+}
 
 func WithArgs(args ...string) Option {
 	return func(o *Options) {
@@ -58,6 +67,32 @@ func (o *OS) Args() []string {
 	return o.opts.args
 }
 
+func (o *OS) Environ() []string {
+	var environ []string
+	for k, v := range o.opts.environ {
+		environ = append(environ, k+"="+v)
+	}
+	return environ
+}
+
+func (o *OS) Getenv(key string) string {
+	v, ok := o.opts.environ[key]
+	if !ok {
+		return ""
+	}
+	return v
+}
+
+func (o *OS) Setenv(key, value string) error {
+	o.opts.environ[key] = value
+	return nil
+}
+
+func (o *OS) Unsetenv(key string) error {
+	delete(o.opts.environ, key)
+	return nil
+}
+
 func (o *OS) Exit(code int) {
 	if o.opts.exitHandler != nil {
 		o.opts.exitHandler(code)
@@ -65,7 +100,9 @@ func (o *OS) Exit(code int) {
 }
 
 func NewContext(ctx context.Context, options ...Option) context.Context {
-	var opts Options
+	opts := Options{
+		environ: initEnviron(),
+	}
 	for _, option := range options {
 		option(&opts)
 	}
@@ -75,4 +112,16 @@ func NewContext(ctx context.Context, options ...Option) context.Context {
 		opts:     opts,
 	}
 	return risoros.WithOS(ctx, o)
+}
+
+func initEnviron() map[string]string {
+	environ := make(map[string]string)
+	for _, kv := range os.Environ() {
+		parts := strings.SplitN(kv, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		environ[parts[0]] = parts[1]
+	}
+	return environ
 }
