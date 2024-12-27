@@ -10,10 +10,15 @@ import env
 import exit
 import ls
 
+func prompt() {
+    name := os.getenv("SERVICE_NAME")
+    printf("foojank (%s) > ", name)
+}
+
 func read_line(f) {
 	buf := byte_slice(255)
 	for {
-		printf("(foojank) > ")
+		prompt()
 		line := string(f.read(buf))
 		if !strings.contains(line, '\n') {
 			continue
