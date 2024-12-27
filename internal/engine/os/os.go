@@ -93,6 +93,11 @@ func (o *OS) Unsetenv(key string) error {
 	return nil
 }
 
+func (o *OS) LookupEnv(key string) (string, bool) {
+	v, ok := o.opts.environ[key]
+	return v, ok
+}
+
 func (o *OS) Exit(code int) {
 	if o.opts.exitHandler != nil {
 		o.opts.exitHandler(code)
