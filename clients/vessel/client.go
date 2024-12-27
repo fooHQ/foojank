@@ -28,6 +28,10 @@ type ID struct {
 	serviceID   string
 }
 
+func (i ID) ServiceName() string {
+	return i.serviceName
+}
+
 func (i ID) String() string {
 	return i.serviceName + "." + i.serviceID
 }
