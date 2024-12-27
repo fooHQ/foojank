@@ -7,16 +7,19 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
 	"github.com/muesli/cancelreader"
+	"github.com/nats-io/nats.go/jetstream"
 	"github.com/urfave/cli/v3"
 
+	"github.com/foohq/foojank/clients/codebase"
+	"github.com/foohq/foojank/clients/repository"
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/clients/vessel"
 	"github.com/foohq/foojank/internal/client/actions"
-	"github.com/foohq/foojank/internal/client/path"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/log"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
@@ -25,7 +28,7 @@ import (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "execute",
-		ArgsUsage: "<id> <package-path>",
+		ArgsUsage: "<id> <script-name>",
 		Usage:     "Execute a script on an agent",
 		Action:    action,
 		Aliases:   []string{"exec"},
@@ -48,57 +51,86 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	client := vessel.New(nc)
-	return execAction(logger, client)(ctx, c)
+	js, err := jetstream.New(nc)
+	if err != nil {
+		err := fmt.Errorf("cannot create a JetStream context: %w", err)
+		logger.ErrorContext(ctx, err.Error())
+		return err
+	}
+
+	vesselCli := vessel.New(nc)
+	codebaseCli := codebase.New(*conf.Codebase)
+	repositoryCli := repository.New(js)
+	return execAction(logger, vesselCli, codebaseCli, repositoryCli)(ctx, c)
 }
 
-func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
+func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *codebase.Client, repositoryCli *repository.Client) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
 		if c.Args().Len() != 2 {
 			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		ctx, cancel := context.WithCancel(ctx)
-		defer cancel()
+		id := c.Args().Get(0)
+		scriptName := c.Args().Get(1)
 
-		arg := c.Args().Get(0)
-		id, err := vessel.ParseID(arg)
+		agentID, err := vessel.ParseID(id)
 		if err != nil {
-			err := fmt.Errorf("invalid id '%s'", arg)
+			err := fmt.Errorf("invalid id '%s'", id)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		pkg := c.Args().Get(1)
-		pkgPath, err := path.Parse(pkg)
+		pkgPath, err := codebaseCli.BuildScript(scriptName)
 		if err != nil {
-			err := fmt.Errorf("invalid package path '%s': %w", pkg, err)
+			if os.IsNotExist(err) {
+				err := fmt.Errorf("script '%s' not found", scriptName)
+				logger.ErrorContext(ctx, err.Error())
+				return err
+			}
+
+			err := fmt.Errorf("cannot build script '%s': %w", scriptName, err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		if pkgPath.IsLocal() {
-			err := fmt.Errorf("path '%s' is a local path, executing packages is only possible from a repository", pkgPath)
+		repoName := agentID.ServiceName()
+		err = repositoryCli.Create(ctx, repoName, "")
+		if err != nil {
+			// FIXME: for some reason existing repository does not cause the method to fail...
+			err := fmt.Errorf("cannot create repository '%s': %w", repoName, err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		if pkgPath.IsDir() {
-			err := fmt.Errorf("path '%s' is a directory", pkgPath)
+		f, err := os.Open(pkgPath)
+		if err != nil {
+			err := fmt.Errorf("cannot open file '%s': %w", pkgPath, err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+		defer f.Close()
+
+		pkgExecPath := filepath.Join(string(filepath.Separator), "_cache", filepath.Base(pkgPath))
+		err = repositoryCli.PutFile(ctx, repoName, pkgExecPath, f)
+		if err != nil {
+			err := fmt.Errorf("cannot put local file '%s' to a repository '%s' as '%s': %v", pkgPath, repoName, pkgExecPath, err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		service, err := client.GetInfo(ctx, id)
+		service, err := vesselCli.GetInfo(ctx, agentID)
 		if err != nil {
 			err := fmt.Errorf("get info request failed: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		wid, err := client.CreateWorker(ctx, service)
+		wid, err := vesselCli.CreateWorker(ctx, service)
 		if err != nil {
 			err := fmt.Errorf("create worker request failed: %w", err)
 			logger.ErrorContext(ctx, err.Error())
@@ -106,7 +138,7 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 		}
 
 		defer func() {
-			err := client.DestroyWorker(context.Background(), service, wid)
+			err := vesselCli.DestroyWorker(context.Background(), service, wid)
 			if err != nil {
 				err := fmt.Errorf("destroy worker request failed: %w", err)
 				logger.ErrorContext(ctx, err.Error())
@@ -117,7 +149,7 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 		var workerID vessel.ID
 		for attempt := range attempts + 1 {
 			var err error
-			workerID, err = client.GetWorker(ctx, service, wid)
+			workerID, err = vesselCli.GetWorker(ctx, service, wid)
 			if err != nil {
 				var errVessel *vessel.Error
 				if errors.As(err, &errVessel) && errVessel.Code == errcodes.ErrWorkerStarting && attempt < attempts {
@@ -132,7 +164,7 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 			}
 		}
 
-		worker, err := client.GetInfo(ctx, workerID)
+		worker, err := vesselCli.GetInfo(ctx, workerID)
 		if err != nil {
 			err := fmt.Errorf("get info request failed: %w", err)
 			logger.ErrorContext(ctx, err.Error())
@@ -163,7 +195,7 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			code, err := client.Execute(ctx, worker, pkgPath.Repository, pkgPath.FilePath, stdinCh, stdoutCh)
+			code, err := vesselCli.Execute(ctx, worker, repoName, pkgExecPath, stdinCh, stdoutCh)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				err := fmt.Errorf("execute request failed: %w", err)
 				logger.ErrorContext(ctx, err.Error())
@@ -197,6 +229,10 @@ func execAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 }
 
 func validateConfiguration(conf *config.Config) error {
+	if conf.Codebase == nil {
+		return errors.New("codebase not configured")
+	}
+
 	if conf.Servers == nil {
 		return errors.New("servers not configured")
 	}
