@@ -24,18 +24,12 @@ type Arguments struct {
 }
 
 type Service struct {
-	args       Arguments
-	engineOpts []risor.Option
+	args Arguments
 }
 
 func New(args Arguments) *Service {
 	return &Service{
 		args: args,
-		engineOpts: []risor.Option{
-			risor.WithoutDefaultGlobals(),
-			risor.WithGlobals(config.Modules()),
-			risor.WithGlobals(config.Builtins()),
-		},
 	}
 }
 
@@ -79,6 +73,12 @@ func (s *Service) Start(ctx context.Context) error {
 		}
 	})
 
+	engineOpts := []risor.Option{
+		risor.WithoutDefaultGlobals(),
+		risor.WithGlobals(config.Modules()),
+		risor.WithGlobals(config.Builtins()),
+	}
+
 loop:
 	for {
 		select {
@@ -97,7 +97,7 @@ loop:
 			}
 			log.Debug("after load package", "repository", v.Repository, "path", v.FilePath)
 
-			err = compileAndRunPackage(ctx, file, stdin, stdout)
+			err = engineCompileAndRunPackage(ctx, file, stdin, stdout, engineOpts...)
 			if err != nil {
 				log.Debug(err.Error())
 				_ = msg.ReplyError(errcodes.ErrEngineRun, err.Error(), "")
@@ -125,7 +125,7 @@ loop:
 	return ctx.Err()
 }
 
-func compileAndRunPackage(ctx context.Context, file *repository.File, stdin, stdout risoros.File, opts ...risor.Option) error {
+func engineCompileAndRunPackage(ctx context.Context, file *repository.File, stdin, stdout risoros.File, opts ...risor.Option) error {
 	osCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
