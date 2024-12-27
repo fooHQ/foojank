@@ -46,7 +46,7 @@ func listAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 		}
 
 		for _, script := range scripts {
-			_, _ = fmt.Fprint(os.Stdout, script)
+			_, _ = fmt.Fprintln(os.Stdout, script)
 		}
 
 		return nil
