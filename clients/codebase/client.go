@@ -47,10 +47,15 @@ func (c *Client) WriteAgentConfig(b []byte) error {
 	return nil
 }
 
-func (c *Client) BuildRunscript(ctx context.Context, output string) (string, error) {
-	return c.devboxRun(ctx, "build-runscript", map[string]string{
+func (c *Client) BuildRunscript(ctx context.Context) (string, string, error) {
+	output := filepath.Join(c.BuildDir(), fmt.Sprintf("runscript-%s", nuid.Next()))
+	result, err := c.devboxRun(ctx, "build-runscript", map[string]string{
 		"OUTPUT": output,
 	})
+	if err != nil {
+		return "", result, err
+	}
+	return output, result, nil
 }
 
 func (c *Client) WriteRunscriptConfig(b []byte) error {

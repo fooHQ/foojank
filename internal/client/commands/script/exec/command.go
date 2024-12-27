@@ -7,9 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
-	"path/filepath"
 
-	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/clients/codebase"
@@ -100,10 +98,9 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 			return err
 		}
 
-		binPath := filepath.Join(os.TempDir(), fmt.Sprintf("runscript-%s", nuid.Next()))
-		output, err := client.BuildRunscript(ctx, binPath)
+		binPath, result, err := client.BuildRunscript(ctx)
 		if err != nil {
-			err := fmt.Errorf("cannot build runscript: %w\n%s", err, output)
+			err := fmt.Errorf("cannot build runscript: %w\n%s", err, result)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
