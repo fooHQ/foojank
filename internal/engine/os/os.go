@@ -46,7 +46,6 @@ func WithExitHandler(handler ExitHandler) Option {
 }
 
 type OS struct {
-	*risoros.SimpleOS
 	wd          string
 	environ     map[string]string
 	stdin       risoros.File
@@ -68,6 +67,10 @@ func (o *OS) Mkdir(name string, perm os.FileMode) error {
 func (o *OS) MkdirAll(path string, perm os.FileMode) error {
 	pth := o.joinPath(path)
 	return os.MkdirAll(pth, perm)
+}
+
+func (o *OS) MkdirTemp(dir, pattern string) (string, error) {
+	return os.MkdirTemp(dir, pattern)
 }
 
 func (o *OS) Open(name string) (risoros.File, error) {
@@ -110,6 +113,10 @@ func (o *OS) Symlink(oldname, newname string) error {
 	oldPth := o.joinPath(oldname)
 	newPth := o.joinPath(newname)
 	return os.Symlink(oldPth, newPth)
+}
+
+func (o *OS) TempDir() string {
+	return os.TempDir()
 }
 
 func (o *OS) WriteFile(name string, content []byte, perm os.FileMode) error {
@@ -223,6 +230,30 @@ func (o *OS) Exit(code int) {
 	}
 }
 
+func (o *OS) Getpid() int {
+	return os.Getpid()
+}
+
+func (o *OS) Getuid() int {
+	return os.Getuid()
+}
+
+func (o *OS) Hostname() (string, error) {
+	return os.Hostname()
+}
+
+func (o *OS) UserCacheDir() (string, error) {
+	return os.UserCacheDir()
+}
+
+func (o *OS) UserConfigDir() (string, error) {
+	return os.UserConfigDir()
+}
+
+func (o *OS) UserHomeDir() (string, error) {
+	return os.UserHomeDir()
+}
+
 func (o *OS) joinPath(name string) string {
 	if !filepath.IsAbs(name) {
 		return filepath.Join(o.wd, name)
@@ -232,9 +263,8 @@ func (o *OS) joinPath(name string) string {
 
 func NewContext(ctx context.Context, options ...Option) context.Context {
 	o := &OS{
-		SimpleOS: risoros.NewSimpleOS(ctx),
-		wd:       initWD(),
-		environ:  initEnviron(),
+		wd:      initWD(),
+		environ: initEnviron(),
 	}
 	for _, option := range options {
 		option(o)
