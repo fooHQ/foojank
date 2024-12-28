@@ -115,7 +115,7 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 		}
 		defer f.Close()
 
-		pkgExecPath := filepath.Join(string(filepath.Separator), "_cache", filepath.Base(pkgPath))
+		pkgExecPath := filepath.Join(string(os.PathSeparator), "_cache", filepath.Base(pkgPath))
 		err = repositoryCli.PutFile(ctx, repoName, pkgExecPath, f)
 		if err != nil {
 			err := fmt.Errorf("cannot copy file '%s' to the repository '%s' as '%s': %v", pkgPath, repoName, pkgExecPath, err)

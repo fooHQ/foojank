@@ -18,14 +18,14 @@ var (
 	DefaultClientConfigPath = func() string {
 		confDir, err := os.UserConfigDir()
 		if err != nil {
-			confDir = "." + string(filepath.Separator)
+			confDir = "."
 		}
 		return filepath.Join(confDir, "foojank", "foojank.conf")
 	}
 	DefaultServerConfigPath = func() string {
 		confDir, err := os.UserConfigDir()
 		if err != nil {
-			confDir = "." + string(filepath.Separator)
+			confDir = "."
 		}
 		return filepath.Join(confDir, "foojank", "server.conf")
 	}
