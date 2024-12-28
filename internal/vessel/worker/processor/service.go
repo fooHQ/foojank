@@ -9,7 +9,7 @@ import (
 
 	"github.com/foohq/foojank/clients/repository"
 	"github.com/foohq/foojank/internal/engine"
-	"github.com/foohq/foojank/internal/engine/os"
+	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/vessel/config"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
 	"github.com/foohq/foojank/internal/vessel/log"
@@ -35,7 +35,7 @@ func New(args Arguments) *Service {
 
 func (s *Service) Start(ctx context.Context) error {
 	group, _ := errgroup.WithContext(ctx)
-	stdout := os.NewPipe()
+	stdout := engineos.NewPipe()
 	group.Go(func() error {
 		log.Debug("started reading from stdout")
 		defer log.Debug("stopped reading from stdout")
@@ -55,7 +55,7 @@ func (s *Service) Start(ctx context.Context) error {
 		return nil
 	})
 
-	stdin := os.NewPipe()
+	stdin := engineos.NewPipe()
 	group.Go(func() error {
 		log.Debug("started reading from stdin")
 		defer log.Debug("stopped reading from stdin")
@@ -129,12 +129,12 @@ func engineCompileAndRunPackage(ctx context.Context, file *repository.File, stdi
 	osCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	osCtx = os.NewContext(
+	osCtx = engineos.NewContext(
 		osCtx,
-		os.WithStdin(stdin),
-		os.WithStdout(stdout),
-		os.WithEnvVar("SERVICE_NAME", config.ServiceName),
-		os.WithExitHandler(func(code int) {
+		engineos.WithStdin(stdin),
+		engineos.WithStdout(stdout),
+		engineos.WithEnvVar("SERVICE_NAME", config.ServiceName),
+		engineos.WithExitHandler(func(code int) {
 			log.Debug("on exit", "code", code)
 			cancel()
 		}),
