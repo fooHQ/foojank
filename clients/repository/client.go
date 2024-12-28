@@ -25,7 +25,7 @@ func (c *Client) Create(ctx context.Context, name, description string) error {
 		Description: description,
 	})
 	if err != nil {
-		return err
+		return &Error{err}
 	}
 	return nil
 }
@@ -33,7 +33,7 @@ func (c *Client) Create(ctx context.Context, name, description string) error {
 func (c *Client) Delete(ctx context.Context, repository string) error {
 	err := c.js.DeleteObjectStore(ctx, repository)
 	if err != nil {
-		return err
+		return &Error{err}
 	}
 	return nil
 }
@@ -53,7 +53,7 @@ func (c *Client) List(ctx context.Context) ([]*Repository, error) {
 func (c *Client) PutFile(ctx context.Context, repository, filename string, reader io.Reader) error {
 	s, err := c.js.ObjectStore(ctx, repository)
 	if err != nil {
-		return err
+		return &Error{err}
 	}
 
 	_, err = s.Put(ctx, jetstream.ObjectMeta{
@@ -69,12 +69,12 @@ func (c *Client) PutFile(ctx context.Context, repository, filename string, reade
 func (c *Client) GetFile(ctx context.Context, repository, filename string) (*File, error) {
 	s, err := c.js.ObjectStore(ctx, repository)
 	if err != nil {
-		return nil, err
+		return nil, &Error{err}
 	}
 
 	res, err := s.Get(ctx, filename)
 	if err != nil {
-		return nil, err
+		return nil, &Error{err}
 	}
 	defer res.Close()
 
@@ -99,21 +99,21 @@ func (c *Client) GetFile(ctx context.Context, repository, filename string) (*Fil
 func (c *Client) DeleteFile(ctx context.Context, repository, filename string) error {
 	s, err := c.js.ObjectStore(ctx, repository)
 	if err != nil {
-		return err
+		return &Error{err}
 	}
 
 	err = s.Delete(ctx, filename)
 	if err != nil {
-		return err
+		return &Error{err}
 	}
 
-	return err
+	return nil
 }
 
 func (c *Client) ListFiles(ctx context.Context, repository string) ([]*File, error) {
 	s, err := c.js.ObjectStore(ctx, repository)
 	if err != nil {
-		return nil, err
+		return nil, &Error{err}
 	}
 
 	files, err := s.List(ctx)
@@ -121,7 +121,7 @@ func (c *Client) ListFiles(ctx context.Context, repository string) ([]*File, err
 		if errors.Is(err, jetstream.ErrNoObjectsFound) {
 			return nil, nil
 		}
-		return nil, err
+		return nil, &Error{err}
 	}
 
 	var result []*File
@@ -138,4 +138,22 @@ func (c *Client) ListFiles(ctx context.Context, repository string) ([]*File, err
 	}
 
 	return result, nil
+}
+
+type Error struct {
+	err error
+}
+
+func (e *Error) Error() string {
+	switch {
+	case errors.Is(e.err, jetstream.ErrBucketExists):
+		return "repository already exists"
+	case errors.Is(e.err, jetstream.ErrBucketNotFound):
+		return "repository not found"
+	case errors.Is(e.err, jetstream.ErrObjectNotFound):
+		return "file not found"
+	case errors.Is(e.err, jetstream.ErrInvalidStoreName):
+		return "invalid repository name"
+	}
+	return e.err.Error()
 }
