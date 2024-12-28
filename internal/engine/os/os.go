@@ -12,34 +12,27 @@ import (
 
 var _ risoros.OS = &OS{}
 
-type Options struct {
-	stdin       risoros.File
-	stdout      risoros.File
-	environ     map[string]string
-	args        []string
-	exitHandler ExitHandler
-}
-type Option func(*Options)
+type Option func(*OS)
 
 func WithEnvVar(name, value string) Option {
-	return func(o *Options) {
+	return func(o *OS) {
 		o.environ[name] = value
 	}
 }
 
 func WithArgs(args ...string) Option {
-	return func(o *Options) {
+	return func(o *OS) {
 		o.args = args
 	}
 }
 
 func WithStdin(file risoros.File) Option {
-	return func(o *Options) {
+	return func(o *OS) {
 		o.stdin = file
 	}
 }
 func WithStdout(file risoros.File) Option {
-	return func(o *Options) {
+	return func(o *OS) {
 		o.stdout = file
 	}
 }
@@ -47,15 +40,19 @@ func WithStdout(file risoros.File) Option {
 type ExitHandler func(int)
 
 func WithExitHandler(handler ExitHandler) Option {
-	return func(o *Options) {
+	return func(o *OS) {
 		o.exitHandler = handler
 	}
 }
 
 type OS struct {
 	*risoros.SimpleOS
-	opts Options
-	wd   string
+	wd          string
+	environ     map[string]string
+	stdin       risoros.File
+	stdout      risoros.File
+	args        []string
+	exitHandler ExitHandler
 }
 
 func (o *OS) Chdir(dir string) error {
@@ -89,27 +86,27 @@ func (o *OS) Getwd() (dir string, err error) {
 }
 
 func (o *OS) Stdout() risoros.File {
-	return o.opts.stdout
+	return o.stdout
 }
 
 func (o *OS) Stdin() risoros.File {
-	return o.opts.stdin
+	return o.stdin
 }
 
 func (o *OS) Args() []string {
-	return o.opts.args
+	return o.args
 }
 
 func (o *OS) Environ() []string {
 	var environ []string
-	for k, v := range o.opts.environ {
+	for k, v := range o.environ {
 		environ = append(environ, k+"="+v)
 	}
 	return environ
 }
 
 func (o *OS) Getenv(key string) string {
-	v, ok := o.opts.environ[key]
+	v, ok := o.environ[key]
 	if !ok {
 		return ""
 	}
@@ -117,41 +114,42 @@ func (o *OS) Getenv(key string) string {
 }
 
 func (o *OS) Setenv(key, value string) error {
-	o.opts.environ[key] = value
+	o.environ[key] = value
 	return nil
 }
 
 func (o *OS) Unsetenv(key string) error {
-	delete(o.opts.environ, key)
+	delete(o.environ, key)
 	return nil
 }
 
 func (o *OS) LookupEnv(key string) (string, bool) {
-	v, ok := o.opts.environ[key]
+	v, ok := o.environ[key]
 	return v, ok
 }
 
 func (o *OS) Exit(code int) {
-	if o.opts.exitHandler != nil {
-		o.opts.exitHandler(code)
+	if o.exitHandler != nil {
+		o.exitHandler(code)
 	}
 }
 
 func NewContext(ctx context.Context, options ...Option) context.Context {
-	opts := Options{
-		environ: initEnviron(),
-	}
-	for _, option := range options {
-		option(&opts)
-	}
-
-	wd, _ := os.Getwd()
 	o := &OS{
 		SimpleOS: risoros.NewSimpleOS(ctx),
-		opts:     opts,
-		wd:       wd,
+		wd:       initWD(),
+		environ:  initEnviron(),
 	}
+	for _, option := range options {
+		option(o)
+	}
+
 	return risoros.WithOS(ctx, o)
+}
+
+func initWD() string {
+	wd, _ := os.Getwd()
+	return wd
 }
 
 func initEnviron() map[string]string {
