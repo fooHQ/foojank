@@ -124,7 +124,10 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 		}
 
 		defer func() {
-			err := repositoryCli.DeleteFile(context.Background(), repoName, pkgExecPath)
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+
+			err := repositoryCli.DeleteFile(ctx, repoName, pkgExecPath)
 			if err != nil {
 				err := fmt.Errorf("cannot delete file '%s' from the repository '%s': %v", pkgExecPath, repoName, err)
 				logger.ErrorContext(ctx, err.Error())
@@ -147,7 +150,10 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 		}
 
 		defer func() {
-			err := vesselCli.DestroyWorker(context.Background(), service, wid)
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+
+			err := vesselCli.DestroyWorker(ctx, service, wid)
 			if err != nil {
 				err := fmt.Errorf("destroy worker request failed: %w", err)
 				logger.ErrorContext(ctx, err.Error())
