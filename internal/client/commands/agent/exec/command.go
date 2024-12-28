@@ -118,10 +118,19 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 		pkgExecPath := filepath.Join(string(filepath.Separator), "_cache", filepath.Base(pkgPath))
 		err = repositoryCli.PutFile(ctx, repoName, pkgExecPath, f)
 		if err != nil {
-			err := fmt.Errorf("cannot put local file '%s' to a repository '%s' as '%s': %v", pkgPath, repoName, pkgExecPath, err)
+			err := fmt.Errorf("cannot copy file '%s' to the repository '%s' as '%s': %v", pkgPath, repoName, pkgExecPath, err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
+
+		defer func() {
+			err := repositoryCli.DeleteFile(context.Background(), repoName, pkgExecPath)
+			if err != nil {
+				err := fmt.Errorf("cannot delete file '%s' from the repository '%s': %v", pkgExecPath, repoName, err)
+				logger.ErrorContext(ctx, err.Error())
+				return
+			}
+		}()
 
 		service, err := vesselCli.GetInfo(ctx, agentID)
 		if err != nil {
