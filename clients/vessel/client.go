@@ -308,11 +308,7 @@ func (c *Client) Execute(ctx context.Context, s Service, repository, filePath st
 					Reply:   nats.NewInbox(),
 					Data:    line,
 				}
-				err := c.nc.PublishMsg(msg)
-				if err != nil {
-					// TODO: handle error!
-					return
-				}
+				_ = c.nc.PublishMsg(msg)
 
 			case <-ctx.Done():
 				return
