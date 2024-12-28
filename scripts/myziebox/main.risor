@@ -9,6 +9,7 @@ import pwd
 import env
 import exit
 import ls
+import mkdir
 
 func prompt() {
     name := os.getenv("SERVICE_NAME")
@@ -34,6 +35,7 @@ var commands = {
     "env": env.app,
     "exit": exit.app,
     "ls": ls.app,
+    "mkdir": mkdir.app,
 }
 
 func main() {
