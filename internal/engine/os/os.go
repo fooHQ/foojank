@@ -2,7 +2,9 @@ package os
 
 import (
 	"context"
+	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 
 	risoros "github.com/risor-io/risor/os"
@@ -53,6 +55,37 @@ func WithExitHandler(handler ExitHandler) Option {
 type OS struct {
 	*risoros.SimpleOS
 	opts Options
+	wd   string
+}
+
+func (o *OS) Chdir(dir string) error {
+	pth := dir
+	if !filepath.IsAbs(dir) {
+		pth = filepath.Join(o.wd, dir)
+	}
+	f, err := os.Open(pth)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	// Checks whether the file is a directory by trying to read the entries.
+	_, err = f.Readdirnames(0)
+	if err != nil {
+		// Trying hard to return the same error string as stdlib's os.Chdir.
+		var pathErr *os.PathError
+		if errors.As(err, &pathErr) {
+			return errors.New("chdir " + dir + ": " + pathErr.Unwrap().Error())
+		}
+		return err
+	}
+
+	o.wd = pth
+	return nil
+}
+
+func (o *OS) Getwd() (dir string, err error) {
+	return o.wd, nil
 }
 
 func (o *OS) Stdout() risoros.File {
@@ -112,9 +145,11 @@ func NewContext(ctx context.Context, options ...Option) context.Context {
 		option(&opts)
 	}
 
+	wd, _ := os.Getwd()
 	o := &OS{
 		SimpleOS: risoros.NewSimpleOS(ctx),
 		opts:     opts,
+		wd:       wd,
 	}
 	return risoros.WithOS(ctx, o)
 }
