@@ -3,8 +3,8 @@ package importers
 import (
 	"archive/zip"
 	"context"
+	"errors"
 	"io"
-	"io/fs"
 
 	"github.com/risor-io/risor/compiler"
 	"github.com/risor-io/risor/importer"
@@ -32,22 +32,19 @@ func NewZipImporter(reader io.ReaderAt, size int64, opts ...compiler.Option) (*Z
 }
 
 func (i *ZipImporter) Import(ctx context.Context, name string) (*object.Module, error) {
-	var file fs.File
-	var err error
+	var text string
+	var found bool
 	for _, ext := range extensions {
-		file, err = i.reader.Open(name + ext)
-		if err == nil {
+		text, found = i.readFile(name + ext)
+		if found {
 			break
 		}
 	}
-	defer file.Close()
-
-	b, err := io.ReadAll(file)
-	if err != nil {
-		return nil, err
+	if !found {
+		return nil, errors.New("import error: module \"" + name + "\" not found")
 	}
 
-	prog, err := parser.Parse(ctx, string(b))
+	prog, err := parser.Parse(ctx, text)
 	if err != nil {
 		return nil, err
 	}
@@ -58,4 +55,19 @@ func (i *ZipImporter) Import(ctx context.Context, name string) (*object.Module, 
 	}
 
 	return object.NewModule(name, code), nil
+}
+
+func (i *ZipImporter) readFile(name string) (string, bool) {
+	file, err := i.reader.Open(name)
+	if err != nil {
+		return "", false
+	}
+	defer file.Close()
+
+	b, err := io.ReadAll(file)
+	if err != nil {
+		return "", false
+	}
+
+	return string(b), true
 }
