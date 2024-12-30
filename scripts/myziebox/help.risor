@@ -6,8 +6,13 @@ var app = cli.app({
     action: func(c) {
         args := c.args()
         if len(args) == 0 {
+            commands := []
             for _, cmd := range cmds.commands {
-                print(cmd.name, "\t", cmd.usage)
+               commands.append(cmd.name)
+            }
+            commands = sorted(commands)
+            for _, name := range commands {
+                print(cmds.commands[name].name, "\t", cmds.commands[name].usage)
             }
             return
         }
