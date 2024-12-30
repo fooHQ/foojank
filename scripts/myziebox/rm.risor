@@ -1,0 +1,24 @@
+import os
+
+var app = cli.app({
+    name: "rm",
+    usage: "Remove file or directory",
+    flags: [
+        cli.flag({
+            name: "r",
+            usage: "remove non-empty directories recursively",
+            value: false,
+            type: "bool",
+        }),
+    ],
+    action: func(c) {
+        removeFn := if c.bool("r") {
+            os.remove_all
+        } else {
+            os.remove
+        }
+        for _, arg := range c.args() {
+            removeFn(arg)
+        }
+    }
+})
