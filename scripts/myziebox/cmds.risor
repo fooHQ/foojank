@@ -1,0 +1,19 @@
+import cat
+import cd
+import pwd
+import env
+import exit
+import ls
+import mkdir
+import rm
+
+var commands = {
+    "cat": cat.app,
+    "cd": cd.app,
+    "pwd": pwd.app,
+    "env": env.app,
+    "exit": exit.app,
+    "ls": ls.app,
+    "mkdir": mkdir.app,
+    "rm": rm.app,
+}

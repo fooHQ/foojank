@@ -3,14 +3,8 @@ import strings
 import os
 import shlex
 
-import cat
-import cd
-import pwd
-import env
-import exit
-import ls
-import mkdir
-import rm
+import help
+import cmds
 
 func prompt() {
     name := os.getenv("SERVICE_NAME")
@@ -29,17 +23,6 @@ func read_line(f) {
 	}
 }
 
-var commands = {
-    "cat": cat.app,
-    "cd": cd.app,
-    "pwd": pwd.app,
-    "env": env.app,
-    "exit": exit.app,
-    "ls": ls.app,
-    "mkdir": mkdir.app,
-    "rm": rm.app,
-}
-
 func main() {
     for {
         line := read_line(os.stdin)
@@ -53,14 +36,20 @@ func main() {
             continue
         }
 
-        if c in commands {
+        if c in cmds.commands {
             try(func(){
-                commands[c].run(args)
+                cmds.commands[c].run(args)
             }, func(err){
                 print(err)
             })
+        } else if c == "help" {
+             try(func(){
+                 help.app.run(args)
+             }, func(err){
+                 print(err)
+             })
         } else {
-            printf("unknown command '%s'\n", c)
+            printf("unknown command %q\n", c)
         }
     }
 }

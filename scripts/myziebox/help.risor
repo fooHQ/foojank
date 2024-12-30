@@ -1,0 +1,27 @@
+import cmds
+
+var app = cli.app({
+    name: "help",
+    usage: "Show available commands and usage information",
+    action: func(c) {
+        args := c.args()
+        if len(args) == 0 {
+            for _, cmd := range cmds.commands {
+                print(cmd.name, "\t", cmd.usage)
+            }
+            return
+        }
+
+        if len(args) > 1 {
+            print("too many arguments")
+            return
+        }
+
+        c := args[0]
+        if c in cmds.commands {
+            cmds.commands[c].run([c, "-h"])
+        } else {
+            printf("unknown command %q\n", c)
+        }
+    }
+})
