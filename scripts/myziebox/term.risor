@@ -1,0 +1,25 @@
+import shlex
+import os
+
+func read_line(f, prompt) {
+	buf := byte_slice(255)
+
+	promptFn := if type(prompt) == "string" {
+	    func() {
+	        printf(prompt)
+	    }
+	} else if type(prompt) == "function" {
+	    prompt
+	} else {
+	    error("parameter 'prompt' must be a string or a function: "+type(prompt)+" provided")
+	}
+
+	for {
+	    promptFn()
+		line := string(f.read(buf))
+		if !strings.contains(line, '\n') {
+			continue
+		}
+        return shlex.argv(line[:-1])
+	}
+}
