@@ -12,7 +12,7 @@ var app = cli.app({
             }
             commands = sorted(commands)
             for _, name := range commands {
-                print(cmds.commands[name].name, "\t", cmds.commands[name].usage)
+                printf("%-15s %s\n", cmds.commands[name].name, cmds.commands[name].usage)
             }
             return
         }
