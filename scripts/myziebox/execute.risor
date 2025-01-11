@@ -1,0 +1,45 @@
+import exec
+import term
+import strings
+
+func execCommand(args) {
+    output := ""
+    try(func(){
+        output = exec.command(args).combined_output()
+    }, func(err) {
+        output = string(err)
+    })
+    return strings.trim_suffix(output, "\n")
+}
+
+func prompt() {
+    name := os.getenv("SERVICE_NAME")
+    printf("foojank (%s) ! ", name)
+}
+
+var app = cli.app({
+    name: "execute",
+    usage: "Execute a system command",
+    action: func(c) {
+        args := c.args()
+        if len(args) > 0 {
+            output := execCommand(args)
+            print(output)
+            return
+        }
+
+        for {
+            args := term.read_line(os.stdin, prompt)
+            if len(args) == 0 {
+                continue
+            }
+
+            if args[0] == "exit" {
+                break
+            }
+
+            output := execCommand(args)
+            print(output)
+        }
+    }
+})

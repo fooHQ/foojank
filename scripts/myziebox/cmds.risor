@@ -6,6 +6,7 @@ import exit
 import ls
 import mkdir
 import rm
+import execute
 
 var commands = {
     "cat": cat.app,
@@ -16,4 +17,5 @@ var commands = {
     "ls": ls.app,
     "mkdir": mkdir.app,
     "rm": rm.app,
+    "execute": execute.app,
 }
