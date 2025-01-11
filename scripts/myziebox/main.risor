@@ -1,7 +1,7 @@
 import cli
 import strings
 import os
-import shlex
+import term
 
 import help
 import cmds
@@ -11,22 +11,9 @@ func prompt() {
     printf("foojank (%s) > ", name)
 }
 
-func read_line(f) {
-	buf := byte_slice(255)
-	for {
-		prompt()
-		line := string(f.read(buf))
-		if !strings.contains(line, '\n') {
-			continue
-		}
-		return line[:-1]
-	}
-}
-
 func main() {
     for {
-        line := read_line(os.stdin)
-        args := shlex.argv(line)
+        args := term.read_line(os.stdin, prompt)
         if len(args) == 0 {
             continue
         }
