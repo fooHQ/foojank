@@ -69,7 +69,7 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		if c.Args().Len() != 2 {
+		if c.Args().Len() < 2 {
 			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
 			logger.ErrorContext(ctx, err.Error())
 			return err
