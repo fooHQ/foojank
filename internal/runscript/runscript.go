@@ -24,6 +24,7 @@ func New() *cli.Command {
 		Action:          action,
 		CommandNotFound: actions.CommandNotFound,
 		HideHelpCommand: true,
+		SkipFlagParsing: true,
 	}
 }
 
