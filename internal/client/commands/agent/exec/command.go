@@ -87,12 +87,6 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 
 		pkgPath, err := codebaseCli.BuildScript(scriptName)
 		if err != nil {
-			if os.IsNotExist(err) {
-				err := fmt.Errorf("script '%s' not found", scriptName)
-				logger.ErrorContext(ctx, err.Error())
-				return err
-			}
-
 			err := fmt.Errorf("cannot build script '%s': %w", scriptName, err)
 			logger.ErrorContext(ctx, err.Error())
 			return err

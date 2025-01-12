@@ -12,6 +12,8 @@ import (
 	"github.com/foohq/foojank/fzz"
 )
 
+var ErrScriptNotFound = fmt.Errorf("script not found")
+
 type Client struct {
 	baseDir string
 }
@@ -79,6 +81,9 @@ func (c *Client) GetScript(name string) (string, error) {
 	scriptsDir := filepath.Join(c.baseDir, "scripts", name)
 	_, err := os.ReadDir(scriptsDir)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return "", ErrScriptNotFound
+		}
 		return "", err
 	}
 

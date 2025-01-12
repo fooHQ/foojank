@@ -61,12 +61,6 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 
 		pkgPath, err := client.BuildScript(scriptName)
 		if err != nil {
-			if os.IsNotExist(err) {
-				err := fmt.Errorf("script '%s' not found", scriptName)
-				logger.ErrorContext(ctx, err.Error())
-				return err
-			}
-
 			err := fmt.Errorf("cannot build script '%s': %w", scriptName, err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
