@@ -44,4 +44,4 @@ var app = cli.app({
         }
     }
 })
-app.run()
+app.run(["myziebox"].extend(os.args()))
