@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
@@ -17,6 +18,12 @@ import (
 )
 
 func main() {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
+	log.Debug("started")
+	defer log.Debug("stopped")
+
 	usr, err := user.Current()
 	if err != nil {
 		log.Debug("cannot get computer's username", "error", err)
@@ -27,17 +34,12 @@ func main() {
 		log.Debug("cannot get computer's hostname", "error", err)
 	}
 
-	log.Debug("started")
-	defer log.Debug("stopped")
-
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
-
 	servers := strings.Join(config.Servers, ",")
 	nc, err := nats.Connect(
 		servers,
 		nats.UserJWTAndSeed(config.UserJWT, config.UserKeySeed),
 		nats.CustomInboxPrefix("_INBOX_"+config.ServiceName),
+		nats.RetryOnFailedConnect(true),
 		nats.MaxReconnects(-1),
 		nats.ConnectHandler(func(_ *nats.Conn) {
 			log.Debug("connected to the server")
@@ -46,7 +48,7 @@ func main() {
 			log.Debug("reconnected to the server")
 		}),
 		nats.DisconnectErrHandler(func(_ *nats.Conn, err error) {
-			log.Debug("disconnected from the server", err.Error())
+			log.Debug("disconnected from the server", "error", err.Error())
 		}),
 		nats.ErrorHandler(func(_ *nats.Conn, _ *nats.Subscription, err error) {
 			log.Debug("server error", err.Error())
@@ -55,6 +57,14 @@ func main() {
 	if err != nil {
 		log.Debug("cannot connect to the server", "error", err)
 		return
+	}
+
+	for !nc.IsConnected() {
+		select {
+		case <-time.After(3 * time.Second):
+		case <-ctx.Done():
+			return
+		}
 	}
 
 	ip, err := nc.GetClientIP()
