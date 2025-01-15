@@ -99,7 +99,7 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 			return err
 		}
 
-		err = execRunscript(ctx, binPath, pkgPath, c.Args().Tail()...)
+		err = execRunscript(ctx, binPath, pkgPath, c.Args().Slice()...)
 		if err != nil {
 			logger.ErrorContext(ctx, err.Error())
 			return err
