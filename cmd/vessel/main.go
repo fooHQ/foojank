@@ -51,7 +51,7 @@ func main() {
 			log.Debug("disconnected from the server", "error", err.Error())
 		}),
 		nats.ErrorHandler(func(_ *nats.Conn, _ *nats.Subscription, err error) {
-			log.Debug("server error", err.Error())
+			log.Debug("server error", "error", err.Error())
 		}),
 	)
 	if err != nil {
