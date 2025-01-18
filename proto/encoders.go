@@ -136,13 +136,23 @@ func NewGetWorkerResponse(serviceName, serviceID string) ([]byte, error) {
 	return msg.Message().Marshal()
 }
 
-func NewExecuteRequest(repository, filePath string) ([]byte, error) {
+func NewExecuteRequest(repository, filePath string, args []string) ([]byte, error) {
 	msg, err := newMessage()
 	if err != nil {
 		return nil, err
 	}
 
 	msgExecute, err := capnp.NewExecuteRequest(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	argsList, err := newTextList(msg.Segment(), args)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgExecute.SetArgs(argsList)
 	if err != nil {
 		return nil, err
 	}
@@ -218,4 +228,20 @@ func newMessage() (capnp.Message, error) {
 	}
 
 	return msg, nil
+}
+
+func newTextList(segment *capnplib.Segment, ss []string) (capnplib.TextList, error) {
+	tl, err := capnplib.NewTextList(segment, int32(len(ss)))
+	if err != nil {
+		return capnplib.TextList{}, err
+	}
+
+	for i, s := range ss {
+		err := tl.Set(i, s)
+		if err != nil {
+			return capnplib.TextList{}, err
+		}
+	}
+
+	return tl, nil
 }
