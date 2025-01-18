@@ -175,12 +175,23 @@ func parseGetWorkerResponse(message capnp.Message) (GetWorkerResponse, error) {
 }
 
 type ExecuteRequest struct {
+	Args       []string
 	Repository string
 	FilePath   string
 }
 
 func parseExecuteRequest(message capnp.Message) (ExecuteRequest, error) {
 	v, err := message.Action().Execute()
+	if err != nil {
+		return ExecuteRequest{}, err
+	}
+
+	vArgs, err := v.Args()
+	if err != nil {
+		return ExecuteRequest{}, err
+	}
+
+	args, err := textListToStringSlice(vArgs)
 	if err != nil {
 		return ExecuteRequest{}, err
 	}
@@ -196,6 +207,7 @@ func parseExecuteRequest(message capnp.Message) (ExecuteRequest, error) {
 	}
 
 	return ExecuteRequest{
+		Args:       args,
 		Repository: repository,
 		FilePath:   filePath,
 	}, nil
@@ -220,4 +232,16 @@ type DummyRequest struct{}
 
 func parseDummyRequest(_ capnp.Message) (DummyRequest, error) {
 	return DummyRequest{}, nil
+}
+
+func textListToStringSlice(list capnplib.TextList) ([]string, error) {
+	result := make([]string, list.Len())
+	for i := 0; i < list.Len(); i++ {
+		v, err := list.At(i)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, v)
+	}
+	return result, nil
 }
