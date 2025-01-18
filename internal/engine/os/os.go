@@ -20,7 +20,7 @@ func WithEnvVar(name, value string) Option {
 	}
 }
 
-func WithArgs(args ...string) Option {
+func WithArgs(args []string) Option {
 	return func(o *OS) {
 		o.args = args
 	}

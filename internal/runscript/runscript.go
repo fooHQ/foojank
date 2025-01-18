@@ -42,7 +42,7 @@ func runAction() cli.ActionFunc {
 
 		pkgPath := c.Args().First()
 		pkgArgs := c.Args().Tail()
-		err := executePackage(ctx, pkgPath, pkgArgs...)
+		err := executePackage(ctx, pkgPath, pkgArgs)
 		if err != nil {
 			err := fmt.Errorf("cannot execute a package: %w", err)
 			_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
@@ -53,7 +53,7 @@ func runAction() cli.ActionFunc {
 	}
 }
 
-func executePackage(ctx context.Context, pkgPath string, pkgArgs ...string) error {
+func executePackage(ctx context.Context, pkgPath string, pkgArgs []string) error {
 	f, err := os.Open(pkgPath)
 	if err != nil {
 		err := fmt.Errorf("cannot open a package: %w", err)
@@ -69,7 +69,7 @@ func executePackage(ctx context.Context, pkgPath string, pkgArgs ...string) erro
 
 	osCtx := engineos.NewContext(
 		ctx,
-		engineos.WithArgs(pkgArgs...),
+		engineos.WithArgs(pkgArgs),
 		engineos.WithStdin(os.Stdin),
 		engineos.WithStdout(os.Stdout),
 	)

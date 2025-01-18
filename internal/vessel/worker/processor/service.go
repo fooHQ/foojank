@@ -131,7 +131,7 @@ func engineCompileAndRunPackage(ctx context.Context, file *repository.File, args
 
 	osCtx = engineos.NewContext(
 		osCtx,
-		engineos.WithArgs(args...),
+		engineos.WithArgs(args),
 		engineos.WithStdin(stdin),
 		engineos.WithStdout(stdout),
 		engineos.WithEnvVar("SERVICE_NAME", config.ServiceName),
