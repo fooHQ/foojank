@@ -240,8 +240,8 @@ func (c *Client) DestroyWorker(ctx context.Context, s Service, workerID uint64) 
 	return nil
 }
 
-func (c *Client) Execute(ctx context.Context, s Service, repository, filePath string, stdin <-chan []byte, stdout chan<- []byte) (int64, error) {
-	b, err := proto.NewExecuteRequest(repository, filePath)
+func (c *Client) Execute(ctx context.Context, s Service, repository, filePath string, args []string, stdin <-chan []byte, stdout chan<- []byte) (int64, error) {
+	b, err := proto.NewExecuteRequest(repository, filePath, args)
 	if err != nil {
 		return 0, err
 	}
