@@ -97,7 +97,7 @@ loop:
 			}
 			log.Debug("after load package", "repository", v.Repository, "path", v.FilePath)
 
-			err = engineCompileAndRunPackage(ctx, file, stdin, stdout, engineOpts...)
+			err = engineCompileAndRunPackage(ctx, file, v.Args, stdin, stdout, engineOpts...)
 			if err != nil {
 				log.Debug(err.Error())
 				_ = msg.ReplyError(errcodes.ErrEngineRun, err.Error(), "")
@@ -125,12 +125,13 @@ loop:
 	return ctx.Err()
 }
 
-func engineCompileAndRunPackage(ctx context.Context, file *repository.File, stdin, stdout risoros.File, opts ...risor.Option) error {
+func engineCompileAndRunPackage(ctx context.Context, file *repository.File, args []string, stdin, stdout risoros.File, opts ...risor.Option) error {
 	osCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	osCtx = engineos.NewContext(
 		osCtx,
+		engineos.WithArgs(args...),
 		engineos.WithStdin(stdin),
 		engineos.WithStdout(stdout),
 		engineos.WithEnvVar("SERVICE_NAME", config.ServiceName),
