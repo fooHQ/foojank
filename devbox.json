@@ -29,7 +29,7 @@
       ],
       "generate-proto": [
         "test -d ./build/go-capnp || git clone -b v3.0.1-alpha.2 --depth 1 https://github.com/capnproto/go-capnp ./build/go-capnp",
-        "cd ./build/go-capnp/capnpc-go && go build . && cd -",
+        "cd ./build/go-capnp && go build -o ../capnpc-go ./capnpc-go && cd -",
         "go generate ./proto/capnp"
       ],
       "build-runscript": [
