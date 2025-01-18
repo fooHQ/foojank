@@ -14,7 +14,8 @@ func execCommand(args) {
 
 func prompt() {
     name := os.getenv("SERVICE_NAME")
-    printf("foojank (%s) ! ", name)
+    wd := os.getwd()
+    printf("%s:%s ! ", name, wd)
 }
 
 var app = cli.app({
