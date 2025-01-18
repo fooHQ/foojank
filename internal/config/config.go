@@ -28,9 +28,9 @@ var (
 		}
 		return filepath.Join(confDir, "foojank", "server.conf")
 	}
-	DefaultHost           = "localhost"
-	DefaultPort     int64 = 4222
-	DefaultServers        = []string{fmt.Sprintf("ws://%s:%d", DefaultHost, DefaultPort)}
+	DefaultHost           = "0.0.0.0"
+	DefaultPort     int64 = 443
+	DefaultServers        = []string{fmt.Sprintf("ws://localhost:%d", DefaultPort)}
 	DefaultLogLevel       = "info"
 	DefaultNoColor        = false
 )
