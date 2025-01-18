@@ -235,7 +235,7 @@ func parseDummyRequest(_ capnp.Message) (DummyRequest, error) {
 }
 
 func textListToStringSlice(list capnplib.TextList) ([]string, error) {
-	result := make([]string, list.Len())
+	result := make([]string, 0, list.Len())
 	for i := 0; i < list.Len(); i++ {
 		v, err := list.At(i)
 		if err != nil {
