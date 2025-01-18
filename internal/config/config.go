@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
@@ -292,11 +291,8 @@ func NewUserAgent(name, accountPubKey string, accountSigningKey []byte) (*Entity
 			fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.*.$O.%s.C.*", name, name),
 			fmt.Sprintf("$JS.API.CONSUMER.DELETE.OBJ_%s.*", name),
 			fmt.Sprintf("%s.*.STDOUT", name),
+			"_INBOX.>",
 		},
-	}
-	claims.Resp = &jwt.ResponsePermission{
-		MaxMsgs: 1,
-		Expires: 60000 * time.Hour,
 	}
 	claimsEnc, err := claims.Encode(accountSignKeyPair)
 	if err != nil {
