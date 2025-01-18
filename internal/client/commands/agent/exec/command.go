@@ -75,8 +75,11 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 			return err
 		}
 
-		id := c.Args().Get(0)
-		scriptName := c.Args().Get(1)
+		allArgs := c.Args().Slice()
+		id := allArgs[0]
+		scriptName := allArgs[1]
+		// Script arguments should include the name of the script as well.
+		scriptArgs := allArgs[1:]
 
 		agentID, err := vessel.ParseID(id)
 		if err != nil {
@@ -204,7 +207,7 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			code, err := vesselCli.Execute(ctx, worker, repoName, pkgExecPath, stdinCh, stdoutCh)
+			code, err := vesselCli.Execute(ctx, worker, repoName, pkgExecPath, scriptArgs, stdinCh, stdoutCh)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				err := fmt.Errorf("execute request failed: %w", err)
 				logger.ErrorContext(ctx, err.Error())
