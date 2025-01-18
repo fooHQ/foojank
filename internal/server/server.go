@@ -112,11 +112,16 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 		}
 
 		// This is a footgun waiting to hurt someone.
-		// System account must always be defined as the last in the decodeAccountClaims.
+		// System account must always be defined as the last in the configuredAccounts.
 		systemAccountPubKey := preloadAccounts[len(preloadAccounts)-1].Subject
 		opts := &server.Options{
-			Host:             *conf.Host,
-			Port:             int(*conf.Port),
+			Websocket: server.WebsocketOpts{
+				Host:  *conf.Host,
+				Port:  int(*conf.Port),
+				NoTLS: true,
+				// TODO: consider enabling the compression!
+				Compression: false,
+			},
 			SystemAccount:    systemAccountPubKey,
 			JetStream:        true,
 			AccountResolver:  resolver,
