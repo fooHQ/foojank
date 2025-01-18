@@ -115,6 +115,8 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 		// System account must always be defined as the last in the configuredAccounts.
 		systemAccountPubKey := preloadAccounts[len(preloadAccounts)-1].Subject
 		opts := &server.Options{
+			Host: "localhost",
+			Port: 4222,
 			Websocket: server.WebsocketOpts{
 				Host:  *conf.Host,
 				Port:  int(*conf.Port),
