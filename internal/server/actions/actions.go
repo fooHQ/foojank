@@ -57,6 +57,11 @@ func NewConfig(_ context.Context, c *cli.Command, validatorFn func(*config.Confi
 		}
 	}
 
+	if c.IsSet(flags.StoreDir) {
+		v := c.String(flags.StoreDir)
+		conf.StoreDir = &v
+	}
+
 	if c.IsSet(flags.LogLevel) {
 		v := c.String(flags.LogLevel)
 		conf.LogLevel = &v

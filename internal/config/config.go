@@ -28,6 +28,9 @@ var (
 		}
 		return filepath.Join(confDir, "foojank", "server.conf")
 	}
+	DefaultServerStoreDirPath = func() string {
+		return filepath.Join(os.TempDir(), "foojank")
+	}
 	DefaultHost           = "0.0.0.0"
 	DefaultPort     int64 = 443
 	DefaultServers        = []string{fmt.Sprintf("ws://localhost:%d", DefaultPort)}
@@ -46,6 +49,11 @@ func setDefaults(conf *Config) *Config {
 
 	if conf.Port == nil {
 		conf.Port = &DefaultPort
+	}
+
+	if conf.StoreDir == nil {
+		v := DefaultServerStoreDirPath()
+		conf.StoreDir = &v
 	}
 
 	if conf.Servers == nil {
@@ -85,6 +93,7 @@ type Config struct {
 	LogLevel      *string  `toml:"log_level,omitempty"`
 	NoColor       *bool    `toml:"no_color,omitempty"`
 	Codebase      *string  `toml:"codebase,omitempty"`
+	StoreDir      *string  `toml:"store_dir,omitempty"`
 }
 
 func (s *Config) String() string {

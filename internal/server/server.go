@@ -41,6 +41,11 @@ func New() *cli.Command {
 				Value: config.DefaultPort,
 			},
 			&cli.StringFlag{
+				Name:  flags.StoreDir,
+				Usage: "set store directory",
+				Value: config.DefaultServerStoreDirPath(),
+			},
+			&cli.StringFlag{
 				Name:  flags.OperatorJWT,
 				Usage: "operator JWT token",
 			},
@@ -128,6 +133,7 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 			JetStream:        true,
 			AccountResolver:  resolver,
 			TrustedOperators: preloadOperators,
+			StoreDir:         *conf.StoreDir,
 		}
 		s, err := server.NewServer(opts)
 		if err != nil {
@@ -157,6 +163,10 @@ func validateConfiguration(conf *config.Config) error {
 
 	if conf.Port == nil {
 		return errors.New("port not configured")
+	}
+
+	if conf.StoreDir == nil {
+		return errors.New("store directory not configured")
 	}
 
 	if conf.Operator == nil {
