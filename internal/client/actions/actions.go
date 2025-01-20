@@ -70,11 +70,11 @@ func NewConfig(_ context.Context, c *cli.Command, validatorFn func(*config.Confi
 		conf.Account.JWT = c.String(flags.AccountJWT)
 	}
 
-	if c.IsSet(flags.AccountSigningKey) {
+	if c.IsSet(flags.AccountKey) {
 		if conf.Account == nil {
 			conf.Account = &config.Entity{}
 		}
-		conf.Account.SigningKeySeed = c.String(flags.AccountSigningKey)
+		conf.Account.SigningKeySeed = c.String(flags.AccountKey)
 	}
 
 	if c.IsSet(flags.LogLevel) {
