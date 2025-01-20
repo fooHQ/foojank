@@ -20,9 +20,17 @@ import (
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/clients/vessel"
 	"github.com/foohq/foojank/internal/client/actions"
-	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/client/flags"
+	"github.com/foohq/foojank/internal/config/v2"
 	"github.com/foohq/foojank/internal/log"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
+)
+
+const (
+	FlagServer  = "server"
+	FlagUserJWT = "user-jwt"
+	FlagUserKey = "user-key"
+	FlagDataDir = flags.DataDir
 )
 
 func NewCommand() *cli.Command {
@@ -30,13 +38,38 @@ func NewCommand() *cli.Command {
 		Name:      "execute",
 		ArgsUsage: "<id> <script-name>",
 		Usage:     "Execute a script on an agent",
-		Action:    action,
-		Aliases:   []string{"exec"},
+		Flags: []cli.Flag{
+			&cli.StringSliceFlag{
+				Name:    FlagServer,
+				Usage:   "set server URL",
+				Aliases: []string{"s"},
+			},
+			&cli.StringFlag{
+				Name:  FlagUserJWT,
+				Usage: "set user JWT token",
+			},
+			&cli.StringFlag{
+				Name:  FlagUserKey,
+				Usage: "set user secret key",
+			},
+			&cli.StringFlag{
+				Name:  FlagDataDir,
+				Usage: "set path to a data directory",
+			},
+		},
+		Action:  action,
+		Aliases: []string{"exec"},
 	}
 }
 
 func action(ctx context.Context, c *cli.Command) error {
-	conf, err := actions.NewConfig(ctx, c, validateConfiguration)
+	conf, err := actions.NewClientConfig(ctx, c)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%s: cannot parse configuration: %v\n", c.FullName(), err)
+		return err
+	}
+
+	err = validateConfiguration(conf)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
 		return err
@@ -44,7 +77,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	logger := log.New(*conf.LogLevel, *conf.NoColor)
 
-	nc, err := server.New(logger, conf.Servers, conf.User.JWT, conf.User.KeySeed)
+	nc, err := server.New(logger, conf.Server, *conf.UserJWT, *conf.UserKey)
 	if err != nil {
 		err := fmt.Errorf("cannot connect to the server: %w", err)
 		logger.ErrorContext(ctx, err.Error())
@@ -59,7 +92,9 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	vesselCli := vessel.New(nc)
-	codebaseCli := codebase.New(*conf.Codebase)
+	// TODO: this should probably be defined in the config!
+	codebaseDir := filepath.Join(*conf.DataDir, "src")
+	codebaseCli := codebase.New(codebaseDir)
 	repositoryCli := repository.New(js)
 	return execAction(logger, vesselCli, codebaseCli, repositoryCli)(ctx, c)
 }
@@ -240,7 +275,7 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 	}
 }
 
-func validateConfiguration(conf *config.Config) error {
+func validateConfiguration(conf *config.Client) error {
 	if conf.LogLevel == nil {
 		return errors.New("log level not configured")
 	}
@@ -249,16 +284,20 @@ func validateConfiguration(conf *config.Config) error {
 		return errors.New("no color not configured")
 	}
 
-	if conf.Codebase == nil {
-		return errors.New("codebase not configured")
+	if conf.DataDir == nil {
+		return errors.New("data dir not configured")
 	}
 
-	if conf.Servers == nil {
-		return errors.New("servers not configured")
+	if len(conf.Server) == 0 {
+		return errors.New("server not configured")
 	}
 
-	if conf.User == nil {
-		return errors.New("user not configured")
+	if conf.UserJWT == nil {
+		return errors.New("user jwt not configured")
+	}
+
+	if conf.UserKey == nil {
+		return errors.New("user key not configured")
 	}
 
 	return nil

@@ -17,14 +17,18 @@ import (
 	"github.com/foohq/foojank/internal/client/formatter"
 	jsonformatter "github.com/foohq/foojank/internal/client/formatter/json"
 	tableformatter "github.com/foohq/foojank/internal/client/formatter/table"
-	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/config/v2"
 	"github.com/foohq/foojank/internal/log"
 )
 
 const (
+	// TODO: rename to filter-name
 	FlagServiceName = "service-name"
 	FlagTimeout     = "timeout"
 	FlagFormat      = "format"
+	FlagServer      = "server"
+	FlagUserJWT     = "user-jwt"
+	FlagUserKey     = "user-key"
 )
 
 func NewCommand() *cli.Command {
@@ -39,13 +43,26 @@ func NewCommand() *cli.Command {
 			},
 			&cli.DurationFlag{
 				Name:  FlagTimeout,
-				Usage: "set how long to wait for response",
+				Usage: "set wait timeout",
 				Value: 2 * time.Second,
 			},
 			&cli.StringFlag{
 				Name:  FlagFormat,
 				Usage: "set output format",
 				Value: "table",
+			},
+			&cli.StringSliceFlag{
+				Name:    FlagServer,
+				Usage:   "set server URL",
+				Aliases: []string{"s"},
+			},
+			&cli.StringFlag{
+				Name:  FlagUserJWT,
+				Usage: "set user JWT token",
+			},
+			&cli.StringFlag{
+				Name:  FlagUserKey,
+				Usage: "set user secret key",
 			},
 		},
 		Action:  action,
@@ -54,7 +71,13 @@ func NewCommand() *cli.Command {
 }
 
 func action(ctx context.Context, c *cli.Command) error {
-	conf, err := actions.NewConfig(ctx, c, validateConfiguration)
+	conf, err := actions.NewClientConfig(ctx, c)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%s: cannot parse configuration: %v\n", c.FullName(), err)
+		return err
+	}
+
+	err = validateConfiguration(conf)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
 		return err
@@ -62,7 +85,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	logger := log.New(*conf.LogLevel, *conf.NoColor)
 
-	nc, err := server.New(logger, conf.Servers, conf.User.JWT, conf.User.KeySeed)
+	nc, err := server.New(logger, conf.Server, *conf.UserJWT, *conf.UserKey)
 	if err != nil {
 		err := fmt.Errorf("cannot connect to the server: %w", err)
 		logger.ErrorContext(ctx, err.Error())
@@ -155,7 +178,7 @@ func listAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 	}
 }
 
-func validateConfiguration(conf *config.Config) error {
+func validateConfiguration(conf *config.Client) error {
 	if conf.LogLevel == nil {
 		return errors.New("log level not configured")
 	}
@@ -164,12 +187,16 @@ func validateConfiguration(conf *config.Config) error {
 		return errors.New("no color not configured")
 	}
 
-	if conf.Servers == nil {
-		return errors.New("servers not configured")
+	if len(conf.Server) == 0 {
+		return errors.New("server not configured")
 	}
 
-	if conf.User == nil {
-		return errors.New("user not configured")
+	if conf.UserJWT == nil {
+		return errors.New("user jwt not configured")
+	}
+
+	if conf.UserKey == nil {
+		return errors.New("user key not configured")
 	}
 
 	return nil

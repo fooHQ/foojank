@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/nats-io/jwt/v2"
@@ -16,8 +15,10 @@ import (
 
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/clients/codebase"
+	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/client/actions"
-	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/client/flags"
+	"github.com/foohq/foojank/internal/config/v2"
 	"github.com/foohq/foojank/internal/log"
 )
 
@@ -28,6 +29,9 @@ const (
 	FlagDev           = "dev"
 	FlagWithServer    = "with-server"
 	FlagWithoutModule = "without-module"
+	FlagAccountJWT    = flags.AccountJWT
+	FlagAccountKey    = flags.AccountKey
+	FlagDataDir       = flags.DataDir
 )
 
 func NewCommand() *cli.Command {
@@ -35,20 +39,18 @@ func NewCommand() *cli.Command {
 		Name:  "build",
 		Usage: "Build an agent",
 		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  FlagOs,
-				Usage: "set build operating system",
-				Value: runtime.GOOS,
-			},
-			&cli.StringFlag{
-				Name:  FlagArch,
-				Usage: "set build architecture",
-				Value: runtime.GOARCH,
-			},
 			&cli.BoolFlag{
 				Name:  FlagDev,
 				Usage: "enable development mode",
 				Value: false,
+			},
+			&cli.StringFlag{
+				Name:  FlagOs,
+				Usage: "set build operating system",
+			},
+			&cli.StringFlag{
+				Name:  FlagArch,
+				Usage: "set build architecture",
 			},
 			&cli.StringFlag{
 				Name:    FlagOutput,
@@ -63,30 +65,49 @@ func NewCommand() *cli.Command {
 				Name:  FlagWithoutModule,
 				Usage: "disable compilation of a module",
 			},
+			&cli.StringFlag{
+				Name:  FlagAccountJWT,
+				Usage: "set account JWT",
+			},
+			&cli.StringFlag{
+				Name:  FlagAccountKey,
+				Usage: "set account signing key",
+			},
+			&cli.StringFlag{
+				Name:  FlagDataDir,
+				Usage: "set path to a data directory",
+			},
 		},
 		Action: action,
 	}
 }
 
 func action(ctx context.Context, c *cli.Command) error {
-	conf, err := actions.NewConfig(ctx, c, validateConfiguration)
+	conf, err := actions.NewClientConfig(ctx, c)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%s: cannot parse configuration: %v\n", c.FullName(), err)
+		return err
+	}
+
+	err = validateConfiguration(conf)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
 		return err
 	}
 
 	logger := log.New(*conf.LogLevel, *conf.NoColor)
-	client := codebase.New(*conf.Codebase)
+	// TODO: this should probably be defined in the config!
+	codebaseDir := filepath.Join(*conf.DataDir, "src")
+	client := codebase.New(codebaseDir)
 	return buildAction(logger, conf, client)(ctx, c)
 }
 
-func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Client) cli.ActionFunc {
+func buildAction(logger *slog.Logger, conf *config.Client, client *codebase.Client) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
 		outputName := c.String(FlagOutput)
 		targetOs := c.String(FlagOs)
 		targetArch := c.String(FlagArch)
 		devBuild := c.Bool(FlagDev)
-		isAgentServer := c.IsSet(FlagWithServer)
 		agentServer := c.StringSlice(FlagWithServer)
 		disabledModules := c.StringSlice(FlagWithoutModule)
 
@@ -106,11 +127,8 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 			outputName += ".exe"
 		}
 
-		servers := conf.Servers
-		if isAgentServer {
-			servers = agentServer
-		}
-		if servers == nil {
+		servers := agentServer
+		if len(servers) == 0 {
 			err := errors.New("cannot build an agent: no server configured")
 			logger.ErrorContext(ctx, err.Error())
 			return err
@@ -125,7 +143,7 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 
 		modules = configureModules(modules, disabledModules)
 
-		accountClaims, err := jwt.DecodeAccountClaims(conf.Account.JWT)
+		accountClaims, err := jwt.DecodeAccountClaims(*conf.AccountJWT)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot decode account JWT: %w", err)
 			logger.ErrorContext(ctx, err.Error())
@@ -133,7 +151,7 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 		}
 
 		accountPubKey := accountClaims.Subject
-		user, err := config.NewUserAgent(agentName, accountPubKey, []byte(conf.Account.SigningKeySeed))
+		user, err := auth.NewUserAgent(agentName, accountPubKey, []byte(*conf.AccountKey))
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
@@ -144,13 +162,13 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 			Servers: servers,
 			User: templateDataUser{
 				JWT:     user.JWT,
-				KeySeed: user.KeySeed,
+				KeySeed: user.Key,
 			},
 			Service: templateDataService{
 				Name:    agentName,
 				Version: foojank.Version(),
 			},
-			Modules: modules,
+			Modules: configureModules(modules, disabledModules),
 		}
 		confOutput, err := RenderTemplate(templateString, agentConf)
 		if err != nil {
@@ -186,7 +204,7 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 	}
 }
 
-func validateConfiguration(conf *config.Config) error {
+func validateConfiguration(conf *config.Client) error {
 	if conf.LogLevel == nil {
 		return errors.New("log level not configured")
 	}
@@ -195,16 +213,20 @@ func validateConfiguration(conf *config.Config) error {
 		return errors.New("no color not configured")
 	}
 
-	if conf.Codebase == nil {
-		return errors.New("codebase not configured")
+	if conf.DataDir == nil {
+		return errors.New("data dir not configured")
 	}
 
-	if conf.Servers == nil {
-		return errors.New("servers not configured")
+	if len(conf.Server) == 0 {
+		return errors.New("server not configured")
 	}
 
-	if conf.Account == nil {
-		return errors.New("account not configured")
+	if conf.AccountJWT == nil {
+		return errors.New("account jwt not configured")
+	}
+
+	if conf.AccountKey == nil {
+		return errors.New("account key not configured")
 	}
 
 	return nil
