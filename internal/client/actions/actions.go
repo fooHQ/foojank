@@ -9,8 +9,33 @@ import (
 
 	"github.com/foohq/foojank/internal/client/flags"
 	"github.com/foohq/foojank/internal/config"
+	// TODO: rename import!
+	configv2 "github.com/foohq/foojank/internal/config/v2"
 )
 
+func NewClientConfig(_ context.Context, c *cli.Command) (*configv2.Client, error) {
+	confDefault, err := configv2.NewDefaultClient()
+	if err != nil {
+		err = fmt.Errorf("cannot create a new configuration: %w", err)
+		return nil, err
+	}
+
+	file := c.String(flags.Config)
+	confFile, err := configv2.ParseClientFile(file)
+	if err != nil && !os.IsNotExist(err) {
+		err = fmt.Errorf("cannot parse configuration file '%s': %w", file, err)
+		return nil, err
+	}
+
+	confFlags, err := configv2.ParseClientFlags(func(name string) (any, bool) {
+		return c.Value(name), c.IsSet(name)
+	})
+
+	result := configv2.MergeClient(confDefault, confFile, confFlags)
+	return result, nil
+}
+
+// NewConfig TODO: can be deleted.
 func NewConfig(_ context.Context, c *cli.Command, validatorFn func(*config.Config) error) (*config.Config, error) {
 	file := c.String(flags.Config)
 	mustExist := c.IsSet(flags.Config)
