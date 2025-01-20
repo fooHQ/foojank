@@ -30,6 +30,10 @@ func NewClientConfig(_ context.Context, c *cli.Command) (*configv2.Client, error
 	confFlags, err := configv2.ParseClientFlags(func(name string) (any, bool) {
 		return c.Value(name), c.IsSet(name)
 	})
+	if err != nil {
+		err = fmt.Errorf("cannot parse configuration flags: %w", err)
+		return nil, err
+	}
 
 	result := configv2.MergeClient(confDefault, confFile, confFlags)
 	return result, nil
