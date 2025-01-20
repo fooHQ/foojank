@@ -24,6 +24,7 @@ func TestMergeClient(t *testing.T) {
 		},
 		UserJWT:    testutils.NewString("JWT_PLACEHOLDER"),
 		UserKey:    testutils.NewString("KEY_PLACEHOLDER"),
+		AccountJWT: testutils.NewString("JWT_PLACEHOLDER"),
 		AccountKey: testutils.NewString("KEY_PLACEHOLDER"),
 	})
 	require.Equal(t, &config.Client{
@@ -38,6 +39,7 @@ func TestMergeClient(t *testing.T) {
 		},
 		UserJWT:    testutils.NewString("JWT_PLACEHOLDER"),
 		UserKey:    testutils.NewString("KEY_PLACEHOLDER"),
+		AccountJWT: testutils.NewString("JWT_PLACEHOLDER"),
 		AccountKey: testutils.NewString("KEY_PLACEHOLDER"),
 	}, merged)
 }
@@ -50,6 +52,7 @@ func TestParseClientFlags(t *testing.T) {
 		"server":      []string{"ws://example.com"},
 		"user-jwt":    "JWT_PLACEHOLDER",
 		"user-key":    "KEY_PLACEHOLDER",
+		"account-jwt": "JWT_PLACEHOLDER",
 		"account-key": "KEY_PLACEHOLDER",
 	}
 	getFlag := func(name string) (any, bool) {
@@ -71,6 +74,7 @@ func TestParseClientFlags(t *testing.T) {
 		},
 		UserJWT:    testutils.NewString("JWT_PLACEHOLDER"),
 		UserKey:    testutils.NewString("KEY_PLACEHOLDER"),
+		AccountJWT: testutils.NewString("JWT_PLACEHOLDER"),
 		AccountKey: testutils.NewString("KEY_PLACEHOLDER"),
 	}, conf)
 }

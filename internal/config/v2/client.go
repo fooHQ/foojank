@@ -25,6 +25,12 @@ func WithUserKey(key string) func(*Client) {
 	}
 }
 
+func WithAccountJWT(jwt string) func(*Client) {
+	return func(c *Client) {
+		c.AccountJWT = &jwt
+	}
+}
+
 func WithAccountKey(key string) func(*Client) {
 	return func(c *Client) {
 		c.AccountKey = &key
@@ -36,6 +42,7 @@ type Client struct {
 	Server     []string `toml:"server,omitempty"`
 	UserJWT    *string  `toml:"user_jwt,omitempty"`
 	UserKey    *string  `toml:"user_key,omitempty"`
+	AccountJWT *string  `toml:"account_jwt,omitempty"`
 	AccountKey *string  `toml:"account_key,omitempty"`
 }
 
@@ -55,7 +62,7 @@ func NewDefaultClient() (*Client, error) {
 
 func ParseClientFile(file string) (*Client, error) {
 	var conf *Client
-	err := ParseFile(file, conf)
+	err := ParseFile(file, &conf)
 	if err != nil {
 		return nil, err
 	}
@@ -94,6 +101,14 @@ func ParseClientFlags(fn func(string) (any, bool)) (*Client, error) {
 				return fmt.Errorf("--%s must be a string", name)
 			}
 			WithUserKey(s)(&result)
+			return nil
+		},
+		"account_jwt": func(name string, v any) error {
+			s, ok := v.(string)
+			if !ok {
+				return fmt.Errorf("--%s must be a string", name)
+			}
+			WithAccountJWT(s)(&result)
 			return nil
 		},
 		"account_key": func(name string, v any) error {
@@ -142,6 +157,10 @@ func MergeClient(confs ...*Client) *Client {
 
 		if conf.UserKey != nil {
 			WithUserKey(*conf.UserKey)(&result)
+		}
+
+		if conf.AccountJWT != nil {
+			WithAccountJWT(*conf.AccountJWT)(&result)
 		}
 
 		if conf.AccountKey != nil {
