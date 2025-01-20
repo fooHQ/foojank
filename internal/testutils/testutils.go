@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/nats-io/nats-server/v2/server"
@@ -70,4 +71,20 @@ func NewNatsServerAndConnection(t *testing.T) (*server.Server, *nats.Conn) {
 		s.Shutdown()
 	})
 	return s, nc
+}
+
+func GetUserHomeDir(t *testing.T) string {
+	dir, err := os.UserHomeDir()
+	require.NoError(t, err)
+	return dir
+}
+
+func NewString(s string) *string {
+	v := s
+	return &v
+}
+
+func NewBool(b bool) *bool {
+	v := b
+	return &v
 }
