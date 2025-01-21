@@ -13,21 +13,22 @@ import (
 	configv2 "github.com/foohq/foojank/internal/config/v2"
 )
 
-func NewClientConfig(_ context.Context, c *cli.Command) (*configv2.Client, error) {
-	confDefault, err := configv2.NewDefaultClient()
+// NewClientConfig TODO: RENAME ME!
+func NewClientConfig(_ context.Context, c *cli.Command) (*configv2.Config, error) {
+	confDefault, err := configv2.NewDefault()
 	if err != nil {
 		err = fmt.Errorf("cannot create a new configuration: %w", err)
 		return nil, err
 	}
 
 	file := c.String(flags.Config)
-	confFile, err := configv2.ParseClientFile(file)
+	confFile, err := configv2.ParseFile(file)
 	if err != nil && !os.IsNotExist(err) {
 		err = fmt.Errorf("cannot parse configuration file '%s': %w", file, err)
 		return nil, err
 	}
 
-	confFlags, err := configv2.ParseClientFlags(func(name string) (any, bool) {
+	confFlags, err := configv2.ParseFlags(func(name string) (any, bool) {
 		return c.Value(name), c.IsSet(name)
 	})
 	if err != nil {
@@ -35,7 +36,7 @@ func NewClientConfig(_ context.Context, c *cli.Command) (*configv2.Client, error
 		return nil, err
 	}
 
-	result := configv2.MergeClient(confDefault, confFile, confFlags)
+	result := configv2.Merge(confDefault, confFile, confFlags)
 	return result, nil
 }
 
