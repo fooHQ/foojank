@@ -1,7 +1,6 @@
 package config_test
 
 import (
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -15,9 +14,6 @@ func TestMergeClient(t *testing.T) {
 	require.NoError(t, err)
 
 	merged := config.MergeClient(defaults, &config.Client{
-		Config: &config.Config{
-			NoColor: testutils.NewBool(true),
-		},
 		Server: []string{
 			"ws://example.com",
 			"wss://example.com",
@@ -28,11 +24,6 @@ func TestMergeClient(t *testing.T) {
 		AccountKey: testutils.NewString("KEY_PLACEHOLDER"),
 	})
 	require.Equal(t, &config.Client{
-		Config: &config.Config{
-			DataDir:  testutils.NewString(filepath.Join(testutils.GetUserHomeDir(t), "foojank")),
-			LogLevel: testutils.NewString("info"),
-			NoColor:  testutils.NewBool(true),
-		},
 		Server: []string{
 			"ws://example.com",
 			"wss://example.com",
@@ -46,9 +37,6 @@ func TestMergeClient(t *testing.T) {
 
 func TestParseClientFlags(t *testing.T) {
 	flags := map[string]any{
-		"data-dir":    filepath.Join(testutils.GetUserHomeDir(t), "foojank"),
-		"log-level":   "info",
-		"no-color":    false,
 		"server":      []string{"ws://example.com"},
 		"user-jwt":    "JWT_PLACEHOLDER",
 		"user-key":    "KEY_PLACEHOLDER",
@@ -64,11 +52,6 @@ func TestParseClientFlags(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, &config.Client{
-		Config: &config.Config{
-			DataDir:  testutils.NewString(filepath.Join(testutils.GetUserHomeDir(t), "foojank")),
-			LogLevel: testutils.NewString("info"),
-			NoColor:  testutils.NewBool(false),
-		},
 		Server: []string{
 			"ws://example.com",
 		},
