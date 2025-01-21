@@ -9,6 +9,7 @@ import (
 	"github.com/foohq/foojank/internal/client/commands/config"
 	"github.com/foohq/foojank/internal/client/commands/repository"
 	"github.com/foohq/foojank/internal/client/commands/script"
+	"github.com/foohq/foojank/internal/client/commands/server"
 	"github.com/foohq/foojank/internal/client/flags"
 )
 
@@ -37,6 +38,7 @@ func New() *cli.Command {
 			script.NewCommand(),
 			repository.NewCommand(),
 			config.NewCommand(),
+			server.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		HideHelpCommand: true,
