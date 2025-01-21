@@ -50,7 +50,7 @@ func (s *Server) SetSystemAccountKey(key string) {
 
 func NewDefaultServer() (*Server, error) {
 	host := "0.0.0.0"
-	port := int64(443)
+	port := int64(80)
 	return &Server{
 		Host: &host,
 		Port: &port,
