@@ -104,6 +104,7 @@ func validateInputConfiguration(conf *config.Config) error {
 		return errors.New("server configuration is missing")
 	}
 
+	// TODO: this can be optional!
 	if conf.Server.Host == nil {
 		return errors.New("host not configured")
 	}
