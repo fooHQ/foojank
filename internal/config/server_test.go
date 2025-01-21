@@ -51,7 +51,7 @@ func TestParseServerFlags(t *testing.T) {
 		return v, ok
 	}
 
-	conf, err := config.ParseCommonFlags(getFlag)
+	conf, err := config.ParseServerFlags(getFlag)
 	require.NoError(t, err)
 
 	require.Equal(t, &config.Server{
