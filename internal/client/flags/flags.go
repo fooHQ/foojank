@@ -9,7 +9,5 @@ const (
 	AccountKey = "account-key"
 	LogLevel   = "log-level"
 	NoColor    = "no-color"
-	// TODO: can be removed!
-	Codebase = "codebase"
-	DataDir  = "data-dir"
+	DataDir    = "data-dir"
 )
