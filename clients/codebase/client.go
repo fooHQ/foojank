@@ -31,6 +31,22 @@ func (c *Client) BuildDir() string {
 	return filepath.Join(c.baseDir, "build")
 }
 
+func (c *Client) ModulesDir() string {
+	return filepath.Join(c.baseDir, "modules")
+}
+
+func (c *Client) ScriptsDir() string {
+	return filepath.Join(c.baseDir, "scripts")
+}
+
+func (c *Client) VesselConfigFile() string {
+	return filepath.Join(c.baseDir, "internal", "vessel", "config", "config.go")
+}
+
+func (c *Client) RunscriptConfigFile() string {
+	return filepath.Join(c.baseDir, "internal", "runscript", "config", "config.go")
+}
+
 func (c *Client) BuildAgent(ctx context.Context, os, arch string, production bool) (string, string, error) {
 	err := c.baseDirExists()
 	if err != nil {
@@ -62,8 +78,7 @@ func (c *Client) WriteAgentConfig(b []byte) error {
 		return nil
 	}
 
-	confFile := filepath.Join(c.baseDir, "internal", "vessel", "config", "config.go")
-	err = os.WriteFile(confFile, b, 0600)
+	err = os.WriteFile(c.VesselConfigFile(), b, 0600)
 	if err != nil {
 		return err
 	}
@@ -92,8 +107,7 @@ func (c *Client) WriteRunscriptConfig(b []byte) error {
 		return err
 	}
 
-	confFile := filepath.Join(c.baseDir, "internal", "runscript", "config", "config.go")
-	err = os.WriteFile(confFile, b, 0600)
+	err = os.WriteFile(c.RunscriptConfigFile(), b, 0600)
 	if err != nil {
 		return err
 	}
@@ -106,8 +120,8 @@ func (c *Client) GetScript(name string) (string, error) {
 		return "", err
 	}
 
-	scriptsDir := filepath.Join(c.baseDir, "scripts", name)
-	_, err = os.ReadDir(scriptsDir)
+	scriptDir := filepath.Join(c.ScriptsDir(), name)
+	_, err = os.ReadDir(scriptDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return "", ErrScriptNotFound
@@ -115,7 +129,7 @@ func (c *Client) GetScript(name string) (string, error) {
 		return "", err
 	}
 
-	return scriptsDir, nil
+	return scriptDir, nil
 }
 
 func (c *Client) BuildScript(name string) (string, error) {
@@ -144,8 +158,7 @@ func (c *Client) ListScripts() ([]string, error) {
 		return nil, err
 	}
 
-	scriptsDir := filepath.Join(c.baseDir, "scripts")
-	files, err := os.ReadDir(scriptsDir)
+	files, err := os.ReadDir(c.ScriptsDir())
 	if err != nil {
 		return nil, err
 	}
@@ -168,8 +181,7 @@ func (c *Client) ListModules() ([]string, error) {
 		return nil, err
 	}
 
-	scriptsDir := filepath.Join(c.baseDir, "modules")
-	files, err := os.ReadDir(scriptsDir)
+	files, err := os.ReadDir(c.ModulesDir())
 	if err != nil {
 		return nil, err
 	}
