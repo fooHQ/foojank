@@ -26,7 +26,7 @@ func NewCommand() *cli.Command {
 func action(ctx context.Context, c *cli.Command) error {
 	conf, err := actions.NewConfig(ctx, c)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "%s: cannot parse configuration: %v\n", c.FullName(), err)
+		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
 		return err
 	}
 
