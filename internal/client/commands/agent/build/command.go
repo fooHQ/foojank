@@ -102,7 +102,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	return buildAction(logger, conf, client)(ctx, c)
 }
 
-func buildAction(logger *slog.Logger, conf *config.Client, client *codebase.Client) cli.ActionFunc {
+func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Client) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
 		outputName := c.String(FlagOutput)
 		targetOs := c.String(FlagOs)
@@ -143,7 +143,7 @@ func buildAction(logger *slog.Logger, conf *config.Client, client *codebase.Clie
 
 		modules = configureModules(modules, disabledModules)
 
-		accountClaims, err := jwt.DecodeAccountClaims(*conf.AccountJWT)
+		accountClaims, err := jwt.DecodeAccountClaims(*conf.Client.AccountJWT)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot decode account JWT: %w", err)
 			logger.ErrorContext(ctx, err.Error())
@@ -151,7 +151,7 @@ func buildAction(logger *slog.Logger, conf *config.Client, client *codebase.Clie
 		}
 
 		accountPubKey := accountClaims.Subject
-		user, err := auth.NewUserAgent(agentName, accountPubKey, []byte(*conf.AccountKey))
+		user, err := auth.NewUserAgent(agentName, accountPubKey, []byte(*conf.Client.AccountKey))
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
@@ -204,7 +204,7 @@ func buildAction(logger *slog.Logger, conf *config.Client, client *codebase.Clie
 	}
 }
 
-func validateConfiguration(conf *config.Client) error {
+func validateConfiguration(conf *config.Config) error {
 	if conf.LogLevel == nil {
 		return errors.New("log level not configured")
 	}
@@ -217,15 +217,19 @@ func validateConfiguration(conf *config.Client) error {
 		return errors.New("data dir not configured")
 	}
 
-	if len(conf.Server) == 0 {
+	if conf.Client == nil {
+		return errors.New("client configuration is missing")
+	}
+
+	if len(conf.Client.Server) == 0 {
 		return errors.New("server not configured")
 	}
 
-	if conf.AccountJWT == nil {
+	if conf.Client.AccountJWT == nil {
 		return errors.New("account jwt not configured")
 	}
 
-	if conf.AccountKey == nil {
+	if conf.Client.AccountKey == nil {
 		return errors.New("account key not configured")
 	}
 

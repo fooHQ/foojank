@@ -10,7 +10,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/client/actions"
-	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/config/v2"
 	"github.com/foohq/foojank/internal/log"
 )
 
@@ -24,7 +24,13 @@ func NewCommand() *cli.Command {
 }
 
 func action(ctx context.Context, c *cli.Command) error {
-	conf, err := actions.NewConfig(ctx, c, validateConfiguration)
+	conf, err := actions.NewClientConfig(ctx, c)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%s: cannot parse configuration: %v\n", c.FullName(), err)
+		return err
+	}
+
+	err = validateConfiguration(conf)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
 		return err
@@ -43,35 +49,39 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 		}
 
 		confFile := c.Args().First()
-		input, err := config.ParseFile(confFile, true)
+		confInput, err := config.ParseFile(confFile)
 		if err != nil {
 			err := fmt.Errorf("cannot parse master configuration file: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		err = validateInputConfiguration(input)
+		err = validateInputConfiguration(confInput)
 		if err != nil {
 			err := fmt.Errorf("invalid master configuration file: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		output := config.Config{
-			Host: input.Host,
-			Port: input.Port,
-			Operator: &config.Entity{
-				JWT: input.Operator.JWT,
-			},
-			Account: &config.Entity{
-				JWT: input.Account.JWT,
-			},
-			SystemAccount: &config.Entity{
-				JWT: input.SystemAccount.JWT,
-			},
+		var confServer config.Server
+		confServer.SetHost(*confInput.Server.Host)
+		confServer.SetPort(*confInput.Server.Port)
+		confServer.SetOperatorJWT(*confInput.Server.OperatorJWT)
+		confServer.SetAccountJWT(*confInput.Server.AccountJWT)
+		confServer.SetSystemAccountJWT(*confInput.Server.SystemAccountJWT)
+
+		confCommon, err := config.NewDefaultCommon()
+		if err != nil {
+			err := fmt.Errorf("cannot generate client configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
 		}
 
-		_, _ = fmt.Fprintln(os.Stdout, output.String())
+		confOutput := config.Config{
+			Common: confCommon,
+			Server: &confServer,
+		}
+		_, _ = fmt.Fprintln(os.Stdout, confOutput.String())
 
 		return nil
 	}
@@ -90,24 +100,40 @@ func validateConfiguration(conf *config.Config) error {
 }
 
 func validateInputConfiguration(conf *config.Config) error {
-	if conf.Host == nil {
+	if conf.Server == nil {
+		return errors.New("server configuration is missing")
+	}
+
+	if conf.Server.Host == nil {
 		return errors.New("host not configured")
 	}
 
-	if conf.Port == nil {
+	if conf.Server.Port == nil {
 		return errors.New("port not configured")
 	}
 
-	if conf.Operator == nil {
-		return errors.New("operator not configured")
+	if conf.Server.OperatorJWT == nil {
+		return errors.New("operator jwt not configured")
 	}
 
-	if conf.Account == nil {
-		return errors.New("account not configured")
+	if conf.Server.OperatorKey == nil {
+		return errors.New("operator key not configured")
 	}
 
-	if conf.SystemAccount == nil {
-		return errors.New("system account not configured")
+	if conf.Server.AccountJWT == nil {
+		return errors.New("account jwt not configured")
+	}
+
+	if conf.Server.AccountKey == nil {
+		return errors.New("account key not configured")
+	}
+
+	if conf.Server.SystemAccountJWT == nil {
+		return errors.New("system account jwt not configured")
+	}
+
+	if conf.Server.SystemAccountKey == nil {
+		return errors.New("system account key not configured")
 	}
 
 	return nil

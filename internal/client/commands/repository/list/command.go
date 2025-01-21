@@ -17,7 +17,7 @@ import (
 	"github.com/foohq/foojank/internal/client/formatter"
 	jsonformatter "github.com/foohq/foojank/internal/client/formatter/json"
 	tableformatter "github.com/foohq/foojank/internal/client/formatter/table"
-	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/config/v2"
 	"github.com/foohq/foojank/internal/log"
 )
 
@@ -43,7 +43,13 @@ func NewCommand() *cli.Command {
 }
 
 func action(ctx context.Context, c *cli.Command) error {
-	conf, err := actions.NewConfig(ctx, c, validateConfiguration)
+	conf, err := actions.NewClientConfig(ctx, c)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%s: cannot parse configuration: %v\n", c.FullName(), err)
+		return err
+	}
+
+	err = validateConfiguration(conf)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
 		return err
@@ -51,7 +57,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	logger := log.New(*conf.LogLevel, *conf.NoColor)
 
-	nc, err := server.New(logger, conf.Servers, conf.User.JWT, conf.User.KeySeed)
+	nc, err := server.New(logger, conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey)
 	if err != nil {
 		err := fmt.Errorf("cannot connect to the server: %w", err)
 		logger.ErrorContext(ctx, err.Error())
@@ -161,12 +167,20 @@ func validateConfiguration(conf *config.Config) error {
 		return errors.New("no color not configured")
 	}
 
-	if conf.Servers == nil {
-		return errors.New("servers not configured")
+	if conf.Client == nil {
+		return errors.New("client configuration is missing")
 	}
 
-	if conf.User == nil {
-		return errors.New("user not configured")
+	if len(conf.Client.Server) == 0 {
+		return errors.New("server not configured")
+	}
+
+	if conf.Client.UserJWT == nil {
+		return errors.New("user jwt not configured")
+	}
+
+	if conf.Client.UserKey == nil {
+		return errors.New("user key not configured")
 	}
 
 	return nil

@@ -85,7 +85,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	logger := log.New(*conf.LogLevel, *conf.NoColor)
 
-	nc, err := server.New(logger, conf.Server, *conf.UserJWT, *conf.UserKey)
+	nc, err := server.New(logger, conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey)
 	if err != nil {
 		err := fmt.Errorf("cannot connect to the server: %w", err)
 		logger.ErrorContext(ctx, err.Error())
@@ -178,7 +178,7 @@ func listAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
 	}
 }
 
-func validateConfiguration(conf *config.Client) error {
+func validateConfiguration(conf *config.Config) error {
 	if conf.LogLevel == nil {
 		return errors.New("log level not configured")
 	}
@@ -187,15 +187,19 @@ func validateConfiguration(conf *config.Client) error {
 		return errors.New("no color not configured")
 	}
 
-	if len(conf.Server) == 0 {
+	if conf.Client == nil {
+		return errors.New("client configuration is missing")
+	}
+
+	if len(conf.Client.Server) == 0 {
 		return errors.New("server not configured")
 	}
 
-	if conf.UserJWT == nil {
+	if conf.Client.UserJWT == nil {
 		return errors.New("user jwt not configured")
 	}
 
-	if conf.UserKey == nil {
+	if conf.Client.UserKey == nil {
 		return errors.New("user key not configured")
 	}
 
