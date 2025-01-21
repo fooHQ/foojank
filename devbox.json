@@ -42,16 +42,16 @@
         "WITH_RACE=\"$(test \"$GOOS\" = \"windows\" || echo \"-race\")\"",
         "CGO_ENABLED=1 go build $WITH_RACE -tags dev -o \"$OUTPUT\" ./cmd/vessel"
       ],
-      "build-client-dev": [
-        "CGO_ENABLED=1 go build -race -tags dev -o build/client ./cmd/client"
+      "build-foojank-dev": [
+        "CGO_ENABLED=1 go build -race -tags dev -o build/foojank ./cmd/foojank"
       ],
 
       "build-agent-prod": [
         "test ! -z \"$OUTPUT\" || (echo \"OUTPUT variable not defined\" && exit 1)",
         "garble -tiny build -tags prod -o \"$OUTPUT\" ./cmd/vessel"
       ],
-      "build-client-prod": [
-        "go build -tags prod -o build/client ./cmd/client"
+      "build-foojank-prod": [
+        "go build -tags prod -o build/foojank ./cmd/foojank"
       ]
     }
   }
