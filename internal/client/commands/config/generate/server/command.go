@@ -109,6 +109,7 @@ func validateInputConfiguration(conf *config.Config) error {
 		return errors.New("host not configured")
 	}
 
+	// TODO: this can be optional!
 	if conf.Server.Port == nil {
 		return errors.New("port not configured")
 	}
