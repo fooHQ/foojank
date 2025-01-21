@@ -14,6 +14,7 @@ import (
 	"github.com/foohq/foojank/clients/repository"
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/client/actions"
+	"github.com/foohq/foojank/internal/client/flags"
 	"github.com/foohq/foojank/internal/client/formatter"
 	jsonformatter "github.com/foohq/foojank/internal/client/formatter/json"
 	tableformatter "github.com/foohq/foojank/internal/client/formatter/table"
@@ -22,7 +23,10 @@ import (
 )
 
 const (
-	FlagFormat = "format"
+	FlagFormat  = "format"
+	FlagServer  = flags.Server
+	FlagUserJWT = flags.UserJWT
+	FlagUserKey = flags.UserKey
 )
 
 func NewCommand() *cli.Command {
@@ -35,6 +39,19 @@ func NewCommand() *cli.Command {
 				Name:  FlagFormat,
 				Usage: "set output format",
 				Value: "table",
+			},
+			&cli.StringSliceFlag{
+				Name:    FlagServer,
+				Usage:   "set server URL",
+				Aliases: []string{"s"},
+			},
+			&cli.StringFlag{
+				Name:  FlagUserJWT,
+				Usage: "set user JWT token",
+			},
+			&cli.StringFlag{
+				Name:  FlagUserKey,
+				Usage: "set user secret key",
 			},
 		},
 		Action:  action,

@@ -39,7 +39,6 @@ func NewCommand() *cli.Command {
 			&cli.StringFlag{
 				Name:  FlagServiceName,
 				Usage: "filter by service name",
-				Value: "",
 			},
 			&cli.DurationFlag{
 				Name:  FlagTimeout,

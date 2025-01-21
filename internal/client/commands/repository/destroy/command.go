@@ -13,12 +13,16 @@ import (
 	"github.com/foohq/foojank/clients/repository"
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/client/actions"
+	"github.com/foohq/foojank/internal/client/flags"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/log"
 )
 
 const (
-	FlagForce = "force"
+	FlagForce   = "force"
+	FlagServer  = flags.Server
+	FlagUserJWT = flags.UserJWT
+	FlagUserKey = flags.UserKey
 )
 
 func NewCommand() *cli.Command {
@@ -31,6 +35,19 @@ func NewCommand() *cli.Command {
 				Name:    FlagForce,
 				Usage:   "force delete a non-empty repository",
 				Aliases: []string{"f"},
+			},
+			&cli.StringSliceFlag{
+				Name:    FlagServer,
+				Usage:   "set server URL",
+				Aliases: []string{"s"},
+			},
+			&cli.StringFlag{
+				Name:  FlagUserJWT,
+				Usage: "set user JWT token",
+			},
+			&cli.StringFlag{
+				Name:  FlagUserKey,
+				Usage: "set user secret key",
 			},
 		},
 		Action: action,

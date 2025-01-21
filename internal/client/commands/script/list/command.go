@@ -12,14 +12,25 @@ import (
 
 	"github.com/foohq/foojank/clients/codebase"
 	"github.com/foohq/foojank/internal/client/actions"
+	"github.com/foohq/foojank/internal/client/flags"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/log"
 )
 
+const (
+	FlagDataDir = flags.DataDir
+)
+
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:    "list",
-		Usage:   "List all scripts",
+		Name:  "list",
+		Usage: "List all scripts",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  FlagDataDir,
+				Usage: "set path to a data directory",
+			},
+		},
 		Action:  action,
 		Aliases: []string{"ls"},
 	}

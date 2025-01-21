@@ -14,9 +14,16 @@ import (
 	"github.com/foohq/foojank/clients/repository"
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/client/actions"
+	"github.com/foohq/foojank/internal/client/flags"
 	"github.com/foohq/foojank/internal/client/path"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/log"
+)
+
+const (
+	FlagServer  = flags.Server
+	FlagUserJWT = flags.UserJWT
+	FlagUserKey = flags.UserKey
 )
 
 func NewCommand() *cli.Command {
@@ -24,8 +31,23 @@ func NewCommand() *cli.Command {
 		Name:      "copy",
 		ArgsUsage: "[repository:]<file> [repository:]<destination-path>",
 		Usage:     "Copy files between local filesystem and a repository or vice versa",
-		Action:    action,
-		Aliases:   []string{"cp"},
+		Flags: []cli.Flag{
+			&cli.StringSliceFlag{
+				Name:    FlagServer,
+				Usage:   "set server URL",
+				Aliases: []string{"s"},
+			},
+			&cli.StringFlag{
+				Name:  FlagUserJWT,
+				Usage: "set user JWT token",
+			},
+			&cli.StringFlag{
+				Name:  FlagUserKey,
+				Usage: "set user secret key",
+			},
+		},
+		Action:  action,
+		Aliases: []string{"cp"},
 	}
 }
 

@@ -13,12 +13,14 @@ import (
 
 	"github.com/foohq/foojank/clients/codebase"
 	"github.com/foohq/foojank/internal/client/actions"
+	"github.com/foohq/foojank/internal/client/flags"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/log"
 )
 
 const (
 	FlagWithoutModule = "without-module"
+	FlagDataDir       = flags.DataDir
 )
 
 func NewCommand() *cli.Command {
@@ -30,6 +32,10 @@ func NewCommand() *cli.Command {
 			&cli.StringSliceFlag{
 				Name:  FlagWithoutModule,
 				Usage: "disable compilation of a module",
+			},
+			&cli.StringFlag{
+				Name:  FlagDataDir,
+				Usage: "set path to a data directory",
 			},
 		},
 		Action:  action,
