@@ -7,7 +7,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/config/v2"
 	"github.com/foohq/foojank/internal/server/flags"
 )
 
@@ -17,67 +17,28 @@ func CommandNotFound(_ context.Context, c *cli.Command, s string) {
 	os.Exit(1)
 }
 
-func NewConfig(_ context.Context, c *cli.Command, validatorFn func(*config.Config) error) (*config.Config, error) {
-	file := c.String(flags.Config)
-	mustExist := c.IsSet(flags.Config)
-	conf, err := config.ParseFile(file, mustExist)
+func NewConfig(_ context.Context, c *cli.Command) (*config.Config, error) {
+	confDefault, err := config.NewDefault()
 	if err != nil {
+		err = fmt.Errorf("cannot create a new configuration: %w", err)
+		return nil, err
+	}
+
+	file := c.String(flags.Config)
+	confFile, err := config.ParseFile(file)
+	if err != nil && !os.IsNotExist(err) {
 		err = fmt.Errorf("cannot parse configuration file '%s': %w", file, err)
 		return nil, err
 	}
 
-	if c.IsSet(flags.Host) {
-		v := c.String(flags.Host)
-		conf.Host = &v
+	confFlags, err := config.ParseFlags(func(name string) (any, bool) {
+		return c.Value(name), c.IsSet(name)
+	})
+	if err != nil {
+		err = fmt.Errorf("cannot parse configuration flags: %w", err)
+		return nil, err
 	}
 
-	if c.IsSet(flags.Port) {
-		v := c.Int(flags.Port)
-		conf.Port = &v
-	}
-
-	if c.IsSet(flags.OperatorJWT) {
-		v := c.String(flags.OperatorJWT)
-		conf.Operator = &config.Entity{
-			JWT: v,
-		}
-	}
-
-	if c.IsSet(flags.AccountJWT) {
-		v := c.String(flags.AccountJWT)
-		conf.Account = &config.Entity{
-			JWT: v,
-		}
-	}
-
-	if c.IsSet(flags.SystemAccountJWT) {
-		v := c.String(flags.SystemAccountJWT)
-		conf.SystemAccount = &config.Entity{
-			JWT: v,
-		}
-	}
-
-	if c.IsSet(flags.StoreDir) {
-		v := c.String(flags.StoreDir)
-		conf.StoreDir = &v
-	}
-
-	if c.IsSet(flags.LogLevel) {
-		v := c.String(flags.LogLevel)
-		conf.LogLevel = &v
-	}
-
-	if c.IsSet(flags.NoColor) {
-		v := c.Bool(flags.NoColor)
-		conf.NoColor = &v
-	}
-
-	if validatorFn != nil {
-		err := validatorFn(conf)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return conf, nil
+	result := config.Merge(confDefault, confFile, confFlags)
+	return result, nil
 }

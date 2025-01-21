@@ -12,7 +12,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank"
-	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/config/v2"
 	"github.com/foohq/foojank/internal/log"
 	"github.com/foohq/foojank/internal/server/actions"
 	"github.com/foohq/foojank/internal/server/flags"
@@ -27,23 +27,19 @@ func New() *cli.Command {
 			&cli.StringFlag{
 				Name:    flags.Config,
 				Usage:   "path to a configuration file",
-				Value:   config.DefaultServerConfigPath(),
 				Aliases: []string{"c"},
 			},
 			&cli.StringFlag{
 				Name:  flags.Host,
 				Usage: "bind to host",
-				Value: config.DefaultHost,
 			},
 			&cli.IntFlag{
 				Name:  flags.Port,
 				Usage: "bind to port",
-				Value: config.DefaultPort,
 			},
 			&cli.StringFlag{
 				Name:  flags.StoreDir,
 				Usage: "set store directory",
-				Value: config.DefaultServerStoreDirPath(),
 			},
 			&cli.StringFlag{
 				Name:  flags.OperatorJWT,
@@ -60,12 +56,10 @@ func New() *cli.Command {
 			&cli.StringFlag{
 				Name:  flags.LogLevel,
 				Usage: "set log level",
-				Value: config.DefaultLogLevel,
 			},
 			&cli.BoolFlag{
 				Name:  flags.NoColor,
 				Usage: "disable color output",
-				Value: config.DefaultNoColor,
 			},
 		},
 		Action:          action,
@@ -74,7 +68,13 @@ func New() *cli.Command {
 	}
 }
 func action(ctx context.Context, c *cli.Command) error {
-	conf, err := actions.NewConfig(ctx, c, validateConfiguration)
+	conf, err := actions.NewConfig(ctx, c)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%s: cannot parse configuration: %v\n", c.FullName(), err)
+		return err
+	}
+
+	err = validateConfiguration(conf)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
 		return err
@@ -87,7 +87,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func startAction(logger *slog.Logger, conf *config.Config, resolver server.AccountResolver) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		preloadOperators, err := decodeOperatorClaims(conf.Operator.JWT)
+		preloadOperators, err := decodeOperatorClaims(*conf.Server.OperatorJWT)
 		if err != nil {
 			err := fmt.Errorf("invalid configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
@@ -95,8 +95,8 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 		}
 
 		configuredAccounts := []string{
-			conf.Account.JWT,
-			conf.SystemAccount.JWT,
+			*conf.Server.AccountJWT,
+			*conf.Server.SystemAccountJWT,
 		}
 		preloadAccounts, err := decodeAccountClaims(configuredAccounts...)
 		if err != nil {
@@ -123,8 +123,8 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 			Host: "localhost",
 			Port: 4222,
 			Websocket: server.WebsocketOpts{
-				Host:  *conf.Host,
-				Port:  int(*conf.Port),
+				Host:  *conf.Server.Host,
+				Port:  int(*conf.Server.Port),
 				NoTLS: true,
 				// TODO: consider enabling the compression!
 				Compression: false,
@@ -133,7 +133,7 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 			JetStream:        true,
 			AccountResolver:  resolver,
 			TrustedOperators: preloadOperators,
-			StoreDir:         *conf.StoreDir,
+			StoreDir:         *conf.DataDir,
 		}
 		s, err := server.NewServer(opts)
 		if err != nil {
@@ -157,28 +157,32 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 }
 
 func validateConfiguration(conf *config.Config) error {
-	if conf.Host == nil {
+	if conf.DataDir == nil {
+		return errors.New("data directory not configured")
+	}
+
+	if conf.Server == nil {
+		return errors.New("server configuration is missing")
+	}
+
+	if conf.Server.Host == nil {
 		return errors.New("host not configured")
 	}
 
-	if conf.Port == nil {
+	if conf.Server.Port == nil {
 		return errors.New("port not configured")
 	}
 
-	if conf.StoreDir == nil {
-		return errors.New("store directory not configured")
+	if conf.Server.OperatorJWT == nil {
+		return errors.New("operator jwt not configured")
 	}
 
-	if conf.Operator == nil {
-		return errors.New("operator not configured")
+	if conf.Server.AccountJWT == nil {
+		return errors.New("account jwt not configured")
 	}
 
-	if conf.Account == nil {
-		return errors.New("account not configured")
-	}
-
-	if conf.SystemAccount == nil {
-		return errors.New("system account not configured")
+	if conf.Server.SystemAccountJWT == nil {
+		return errors.New("system account jwt not configured")
 	}
 
 	return nil
