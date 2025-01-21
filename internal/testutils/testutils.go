@@ -80,11 +80,13 @@ func GetUserHomeDir(t *testing.T) string {
 }
 
 func NewString(s string) *string {
-	v := s
+	return &s
+}
+
+func NewInt64(v int64) *int64 {
 	return &v
 }
 
 func NewBool(b bool) *bool {
-	v := b
-	return &v
+	return &b
 }
