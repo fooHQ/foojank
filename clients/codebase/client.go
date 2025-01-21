@@ -18,6 +18,8 @@ type Client struct {
 	baseDir string
 }
 
+// TODO: check baseDir!
+
 func New(path string) *Client {
 	return &Client{
 		baseDir: path,
