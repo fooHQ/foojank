@@ -92,9 +92,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	vesselCli := vessel.New(nc)
-	// TODO: this should probably be defined in the config!
-	codebaseDir := filepath.Join(*conf.DataDir, "src")
-	codebaseCli := codebase.New(codebaseDir)
+	codebaseCli := codebase.New(*conf.DataDir)
 	repositoryCli := repository.New(js)
 	return execAction(logger, vesselCli, codebaseCli, repositoryCli)(ctx, c)
 }

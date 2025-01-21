@@ -23,7 +23,7 @@ type Client struct {
 
 func New(path string) *Client {
 	return &Client{
-		baseDir: path,
+		baseDir: filepath.Join(path, "src"),
 	}
 }
 

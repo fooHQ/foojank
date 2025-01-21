@@ -96,9 +96,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	logger := log.New(*conf.LogLevel, *conf.NoColor)
-	// TODO: this should probably be defined in the config!
-	codebaseDir := filepath.Join(*conf.DataDir, "src")
-	client := codebase.New(codebaseDir)
+	client := codebase.New(*conf.DataDir)
 	return buildAction(logger, conf, client)(ctx, c)
 }
 
