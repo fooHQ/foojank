@@ -11,8 +11,7 @@ import (
 	"github.com/foohq/foojank/internal/config/v2"
 )
 
-// NewClientConfig TODO: RENAME ME!
-func NewClientConfig(_ context.Context, c *cli.Command) (*config.Config, error) {
+func NewConfig(_ context.Context, c *cli.Command) (*config.Config, error) {
 	confDefault, err := config.NewDefault()
 	if err != nil {
 		err = fmt.Errorf("cannot create a new configuration: %w", err)
