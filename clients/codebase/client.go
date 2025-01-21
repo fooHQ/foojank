@@ -2,6 +2,7 @@ package codebase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,13 +13,13 @@ import (
 	"github.com/foohq/foojank/fzz"
 )
 
-var ErrScriptNotFound = fmt.Errorf("script not found")
+var (
+	ErrScriptNotFound = errors.New("script not found")
+)
 
 type Client struct {
 	baseDir string
 }
-
-// TODO: check baseDir!
 
 func New(path string) *Client {
 	return &Client{
@@ -31,6 +32,11 @@ func (c *Client) BuildDir() string {
 }
 
 func (c *Client) BuildAgent(ctx context.Context, os, arch string, production bool) (string, string, error) {
+	err := c.baseDirExists()
+	if err != nil {
+		return "", "", err
+	}
+
 	script := "build-agent-dev"
 	if production {
 		script = "build-agent-prod"
@@ -51,8 +57,13 @@ func (c *Client) BuildAgent(ctx context.Context, os, arch string, production boo
 }
 
 func (c *Client) WriteAgentConfig(b []byte) error {
+	err := c.baseDirExists()
+	if err != nil {
+		return nil
+	}
+
 	confFile := filepath.Join(c.baseDir, "internal", "vessel", "config", "config.go")
-	err := os.WriteFile(confFile, b, 0600)
+	err = os.WriteFile(confFile, b, 0600)
 	if err != nil {
 		return err
 	}
@@ -60,6 +71,11 @@ func (c *Client) WriteAgentConfig(b []byte) error {
 }
 
 func (c *Client) BuildRunscript(ctx context.Context) (string, string, error) {
+	err := c.baseDirExists()
+	if err != nil {
+		return "", "", err
+	}
+
 	output := filepath.Join(c.BuildDir(), fmt.Sprintf("runscript-%s", nuid.Next()))
 	result, err := c.devboxRun(ctx, "build-runscript", map[string]string{
 		"OUTPUT": output,
@@ -71,8 +87,13 @@ func (c *Client) BuildRunscript(ctx context.Context) (string, string, error) {
 }
 
 func (c *Client) WriteRunscriptConfig(b []byte) error {
+	err := c.baseDirExists()
+	if err != nil {
+		return err
+	}
+
 	confFile := filepath.Join(c.baseDir, "internal", "runscript", "config", "config.go")
-	err := os.WriteFile(confFile, b, 0600)
+	err = os.WriteFile(confFile, b, 0600)
 	if err != nil {
 		return err
 	}
@@ -80,8 +101,13 @@ func (c *Client) WriteRunscriptConfig(b []byte) error {
 }
 
 func (c *Client) GetScript(name string) (string, error) {
+	err := c.baseDirExists()
+	if err != nil {
+		return "", err
+	}
+
 	scriptsDir := filepath.Join(c.baseDir, "scripts", name)
-	_, err := os.ReadDir(scriptsDir)
+	_, err = os.ReadDir(scriptsDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return "", ErrScriptNotFound
@@ -93,6 +119,11 @@ func (c *Client) GetScript(name string) (string, error) {
 }
 
 func (c *Client) BuildScript(name string) (string, error) {
+	err := c.baseDirExists()
+	if err != nil {
+		return "", err
+	}
+
 	scriptSrc, err := c.GetScript(name)
 	if err != nil {
 		return "", err
@@ -108,6 +139,11 @@ func (c *Client) BuildScript(name string) (string, error) {
 }
 
 func (c *Client) ListScripts() ([]string, error) {
+	err := c.baseDirExists()
+	if err != nil {
+		return nil, err
+	}
+
 	scriptsDir := filepath.Join(c.baseDir, "scripts")
 	files, err := os.ReadDir(scriptsDir)
 	if err != nil {
@@ -127,6 +163,11 @@ func (c *Client) ListScripts() ([]string, error) {
 }
 
 func (c *Client) ListModules() ([]string, error) {
+	err := c.baseDirExists()
+	if err != nil {
+		return nil, err
+	}
+
 	scriptsDir := filepath.Join(c.baseDir, "modules")
 	files, err := os.ReadDir(scriptsDir)
 	if err != nil {
@@ -156,4 +197,14 @@ func (c *Client) devboxRun(ctx context.Context, script string, env map[string]st
 	cmd.Env = environ
 	b, err := cmd.CombinedOutput()
 	return string(b), err
+}
+
+func (c *Client) baseDirExists() error {
+	_, err := os.Stat(c.baseDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("base directory '%s' does not exist", c.baseDir)
+		}
+	}
+	return nil
 }
