@@ -214,7 +214,7 @@ func validateConfiguration(conf *config.Config) error {
 	}
 
 	if conf.DataDir == nil {
-		return errors.New("data dir not configured")
+		return errors.New("data directory not configured")
 	}
 
 	if conf.Client == nil {
