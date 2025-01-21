@@ -10,12 +10,17 @@ import (
 var ErrParserError = errors.New("parser error")
 
 type Config struct {
-	*Common
-	*Client
-	*Server
+	*Common `toml:",inline"`
+	Client  *Client `toml:"client"`
+	Server  *Server `toml:"server"`
 }
 
-func NewDefaultConfig() (*Config, error) {
+func (c *Config) String() string {
+	b, _ := toml.Marshal(c)
+	return string(b)
+}
+
+func NewDefault() (*Config, error) {
 	confCommon, err := NewDefaultCommon()
 	if err != nil {
 		return nil, err
@@ -38,7 +43,7 @@ func NewDefaultConfig() (*Config, error) {
 	}, nil
 }
 
-func ParseFile(file string, v any) (*Config, error) {
+func ParseFile(file string) (*Config, error) {
 	b, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err
@@ -63,12 +68,16 @@ func ParseFlags(fn func(string) (any, bool)) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TODO: parseServerFlags
+
+	confServer, err := ParseServerFlags(fn)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Config{
 		Common: confCommon,
 		Client: confClient,
-		Server: nil, // TODO!
+		Server: confServer,
 	}, nil
 }
 
@@ -81,7 +90,7 @@ func Merge(confs ...*Config) *Config {
 
 		result.Common = MergeCommon(result.Common, conf.Common)
 		result.Client = MergeClient(result.Client, conf.Client)
-		// TODO: merge server!
+		result.Server = MergeServer(result.Server, conf.Server)
 	}
 	return &result
 }
