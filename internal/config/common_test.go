@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/foohq/foojank/internal/config/v2"
+	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/testutils"
 )
 

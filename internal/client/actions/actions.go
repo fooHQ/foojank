@@ -8,7 +8,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/client/flags"
-	"github.com/foohq/foojank/internal/config/v2"
+	"github.com/foohq/foojank/internal/config"
 )
 
 func NewConfig(_ context.Context, c *cli.Command) (*config.Config, error) {

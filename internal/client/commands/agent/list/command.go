@@ -17,7 +17,7 @@ import (
 	"github.com/foohq/foojank/internal/client/formatter"
 	jsonformatter "github.com/foohq/foojank/internal/client/formatter/json"
 	tableformatter "github.com/foohq/foojank/internal/client/formatter/table"
-	"github.com/foohq/foojank/internal/config/v2"
+	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/log"
 )
 
