@@ -1,10 +1,12 @@
 package os
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"io"
 	"io/fs"
-	"path/filepath"
+	"os"
 	"strings"
 
 	"github.com/nats-io/nats.go/jetstream"
@@ -18,9 +20,9 @@ type FS struct {
 	store jetstream.ObjectStore
 }
 
-// TODO: methods should return filepath errors, if possible!
+// TODO: context should have a timeout!
 
-func NewFS(js jetstream.JetStream, bucket string) (*FS, error) {
+func NewVirtualFS(js jetstream.JetStream, bucket string) (*FS, error) {
 	s, err := js.CreateObjectStore(context.TODO(), jetstream.ObjectStoreConfig{
 		Bucket: bucket,
 		// TODO: add configurables
@@ -37,12 +39,7 @@ func NewFS(js jetstream.JetStream, bucket string) (*FS, error) {
 	}, nil
 }
 
-func (f *FS) clean(name string) string {
-	return filepath.Clean("/" + name)
-}
-
 func (f *FS) Create(name string) (risoros.File, error) {
-	name = f.clean(name)
 	_, err := f.store.Put(context.TODO(), jetstream.ObjectMeta{
 		Name: name,
 	}, strings.NewReader(""))
@@ -50,10 +47,7 @@ func (f *FS) Create(name string) (risoros.File, error) {
 		return nil, err
 	}
 
-	return &File{
-		name:  name,
-		store: f.store,
-	}, nil
+	return f.Open(name)
 }
 
 func (f *FS) Mkdir(name string, perm risoros.FileMode) error {
@@ -65,84 +59,85 @@ func (f *FS) MkdirAll(path string, perm risoros.FileMode) error {
 }
 
 func (f *FS) Open(name string) (risoros.File, error) {
-	name = f.clean(name)
 	_, err := f.store.GetInfo(context.TODO(), name)
 	if err != nil {
 		return nil, fs.ErrNotExist
 	}
-
 	return &File{
 		name:  name,
 		store: f.store,
 	}, nil
 }
 
-func (f *FS) OpenFile(name string, flag int, perm risoros.FileMode) (risoros.File, error) {
-	//TODO implement me
-	panic("implement me")
+func (f *FS) OpenFile(name string, _ int, _ risoros.FileMode) (risoros.File, error) {
+	return f.Open(name)
 }
 
 func (f *FS) ReadFile(name string) ([]byte, error) {
-	//TODO implement me
-	panic("implement me")
+	res, err := f.store.Get(context.TODO(), name)
+	if err != nil {
+		if errors.Is(err, jetstream.ErrObjectNotFound) {
+			return nil, os.ErrNotExist
+		}
+		return nil, err
+	}
+	defer res.Close()
+	return io.ReadAll(res)
 }
 
 func (f *FS) Remove(name string) error {
-	name = f.clean(name)
 	err := f.store.Delete(context.TODO(), name)
-	if errors.Is(err, jetstream.ErrObjectNotFound) {
-		return fs.ErrNotExist
+	if err != nil {
+		if errors.Is(err, jetstream.ErrObjectNotFound) {
+			return os.ErrNotExist
+		}
+		return err
 	}
-	return err
+	return nil
 }
 
 func (f *FS) RemoveAll(path string) error {
-	// If bucket exists delete it
-	panic("implement me")
+	return f.Remove(path)
 }
 
-func (f *FS) Rename(oldpath, newpath string) error {
-	// rename object
-	panic("implement me")
+func (f *FS) Rename(oldPath, newPath string) error {
+	err := f.store.UpdateMeta(context.TODO(), oldPath, jetstream.ObjectMeta{
+		Name: newPath,
+	})
+	if err != nil {
+		if errors.Is(err, jetstream.ErrObjectNotFound) {
+			return os.ErrNotExist
+		}
+		return err
+	}
+	return nil
 }
 
 func (f *FS) Stat(name string) (risoros.FileInfo, error) {
-	//TODO implement me
-	panic("implement me")
+	// TODO
+	return nil, errors.New("unsupported")
 }
 
-func (f *FS) Symlink(oldname, newname string) error {
-	//TODO implement me
-	panic("implement me")
+func (f *FS) Symlink(oldName, newName string) error {
+	// TODO
+	return errors.New("unsupported")
 }
 
 func (f *FS) WriteFile(name string, data []byte, perm risoros.FileMode) error {
-	panic("implement me")
+	_, err := f.store.Put(context.TODO(), jetstream.ObjectMeta{
+		Name: name,
+	}, bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (f *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
-	name = f.clean(name)
-	l, err := f.store.List(context.TODO())
-	if err != nil {
-		return nil, err
-	}
-
-	var res []risoros.DirEntry
-	for i := range l {
-		cn := f.clean(l[i].Name)
-		dir := filepath.Dir(cn)
-		if name == dir {
-			res = append(res, &DirEntry{
-				name: cn,
-				mode: 0,
-			})
-		}
-	}
-	// TODO:
-	return nil, err
+	// TODO
+	return nil, errors.New("unsupported")
 }
 
 func (f *FS) WalkDir(root string, fn risoros.WalkDirFunc) error {
-	//TODO implement me
-	panic("implement me")
+	return errors.New("unsupported")
 }

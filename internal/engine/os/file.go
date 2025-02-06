@@ -3,7 +3,9 @@ package os
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io/fs"
+	"os"
 
 	"github.com/nats-io/nats.go/jetstream"
 	risoros "github.com/risor-io/risor/os"
@@ -17,33 +19,32 @@ type File struct {
 }
 
 func (f *File) Stat() (fs.FileInfo, error) {
-	//TODO implement me
-	panic("implement me")
+	// TODO
+	return nil, errors.New("not implemented")
 }
 
 func (f *File) Read(b []byte) (int, error) {
 	o, err := f.store.Get(context.TODO(), f.name)
 	if err != nil {
+		if errors.Is(err, jetstream.ErrObjectNotFound) {
+			return 0, os.ErrInvalid
+		}
 		return 0, err
 	}
-	defer o.Close()
-
 	return o.Read(b)
 }
 
 func (f *File) Close() error {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (f *File) Write(b []byte) (int, error) {
-	r := bytes.NewReader(b)
-	_, err := f.store.Put(context.TODO(), jetstream.ObjectMeta{
+	object, err := f.store.Put(context.TODO(), jetstream.ObjectMeta{
 		Name: f.name,
-	}, r)
+	}, bytes.NewReader(b))
 	if err != nil {
 		return 0, err
 	}
 
-	return int(r.Size()), nil
+	return int(object.Size), nil
 }
