@@ -25,6 +25,9 @@ func TestFS_Create(t *testing.T) {
 	_, err = fs.Create(filename)
 	require.NoError(t, err)
 
+	_, err = store.Get(context.Background(), filename)
+	require.NoError(t, err)
+
 	_, err = fs.Create(filename)
 	require.NoError(t, err)
 }
