@@ -18,6 +18,13 @@ type File struct {
 	store jetstream.ObjectStore
 }
 
+func NewFile(name string, store jetstream.ObjectStore) *File {
+	return &File{
+		name:  name,
+		store: store,
+	}
+}
+
 func (f *File) Stat() (fs.FileInfo, error) {
 	// TODO
 	return nil, errors.New("not implemented")
@@ -27,7 +34,7 @@ func (f *File) Read(b []byte) (int, error) {
 	o, err := f.store.Get(context.TODO(), f.name)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrObjectNotFound) {
-			return 0, os.ErrInvalid
+			return 0, os.ErrNotExist
 		}
 		return 0, err
 	}
