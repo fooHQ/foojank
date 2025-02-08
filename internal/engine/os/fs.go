@@ -6,7 +6,6 @@ import (
 	"errors"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/nats-io/nats.go/jetstream"
 	risoros "github.com/risor-io/risor/os"
@@ -29,7 +28,7 @@ func NewVirtualFS(store jetstream.ObjectStore) (*FS, error) {
 func (f *FS) Create(name string) (risoros.File, error) {
 	_, err := f.store.Put(context.TODO(), jetstream.ObjectMeta{
 		Name: name,
-	}, strings.NewReader(""))
+	}, nil)
 	if err != nil {
 		return nil, err
 	}
