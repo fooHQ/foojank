@@ -21,7 +21,11 @@ func TestFS_Create(t *testing.T) {
 	fs, err := engineos.NewVirtualFS(js, "test")
 	require.NoError(t, err)
 
-	_, err = fs.Create("/create/file")
+	filename := "/create/file"
+	_, err = fs.Create(filename)
+	require.NoError(t, err)
+
+	_, err = fs.Create(filename)
 	require.NoError(t, err)
 }
 
@@ -33,27 +37,101 @@ func TestFS_Open(t *testing.T) {
 	require.NoError(t, err)
 
 	filename := fmt.Sprintf("/open/file_%d", rand.Int())
-	_, err = fs.Open(filename)
-	require.ErrorIs(t, err, os.ErrNotExist)
-
 	_, err = fs.Create(filename)
 	require.NoError(t, err)
 
-	f, err := fs.Open(filename)
+	_, err = fs.Open(filename)
+	require.NoError(t, err)
+
+	_, err = fs.Open("/open/notexists")
+	require.ErrorIs(t, err, os.ErrNotExist)
+}
+
+func Test_ReadFile(t *testing.T) {
+	_, nc := testutils.NewNatsServerAndConnection(t)
+	js, err := jetstream.New(nc)
+	require.NoError(t, err)
+	fs, err := engineos.NewVirtualFS(js, "test")
+	require.NoError(t, err)
+
+	filename := fmt.Sprintf("/read_file/file_%d", rand.Int())
+	f, err := fs.Create(filename)
 	require.NoError(t, err)
 	defer func() {
 		err := f.Close()
 		require.NoError(t, err)
 	}()
 
-	const textContent = "hello world"
-	n, err := f.Write([]byte(textContent))
+	message := []byte("hello world")
+	_, err = f.Write(message)
 	require.NoError(t, err)
-	require.NotZero(t, n)
 
-	b := make([]byte, len(textContent))
-	n, err = f.Read(b)
+	b, err := fs.ReadFile(filename)
 	require.NoError(t, err)
-	require.NotZero(t, n)
-	require.Equal(t, textContent, string(b))
+	require.Equal(t, message, b)
+
+	_, err = fs.ReadFile("/read_file/notexists")
+	require.ErrorIs(t, err, os.ErrNotExist)
+}
+
+func Test_Remove(t *testing.T) {
+	_, nc := testutils.NewNatsServerAndConnection(t)
+	js, err := jetstream.New(nc)
+	require.NoError(t, err)
+	fs, err := engineos.NewVirtualFS(js, "test")
+	require.NoError(t, err)
+
+	filename := fmt.Sprintf("/remove/file_%d", rand.Int())
+	f, err := fs.Create(filename)
+	require.NoError(t, err)
+	defer func() {
+		err := f.Close()
+		require.NoError(t, err)
+	}()
+
+	err = fs.Remove(filename)
+	require.NoError(t, err)
+
+	err = fs.Remove("/remove/notexists")
+	require.ErrorIs(t, err, os.ErrNotExist)
+}
+
+func Test_Rename(t *testing.T) {
+	_, nc := testutils.NewNatsServerAndConnection(t)
+	js, err := jetstream.New(nc)
+	require.NoError(t, err)
+	fs, err := engineos.NewVirtualFS(js, "test")
+	require.NoError(t, err)
+
+	filename := fmt.Sprintf("/rename/file_%d", rand.Int())
+	f, err := fs.Create(filename)
+	require.NoError(t, err)
+	defer func() {
+		err := f.Close()
+		require.NoError(t, err)
+	}()
+
+	newFilename := filename + "_2"
+	err = fs.Rename(filename, newFilename)
+	require.NoError(t, err)
+
+	_, err = fs.Open(newFilename)
+	require.NoError(t, err)
+}
+
+func Test_WriteFile(t *testing.T) {
+	_, nc := testutils.NewNatsServerAndConnection(t)
+	js, err := jetstream.New(nc)
+	require.NoError(t, err)
+	fs, err := engineos.NewVirtualFS(js, "test")
+	require.NoError(t, err)
+
+	filename := fmt.Sprintf("/write_file/file_%d", rand.Int())
+	message := []byte("hello world")
+	err = fs.WriteFile(filename, message, 0)
+	require.NoError(t, err)
+
+	b, err := fs.ReadFile(filename)
+	require.NoError(t, err)
+	require.Equal(t, message, b)
 }

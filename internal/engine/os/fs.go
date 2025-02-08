@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"io/fs"
 	"os"
 	"strings"
 
@@ -61,7 +60,7 @@ func (f *FS) MkdirAll(path string, perm risoros.FileMode) error {
 func (f *FS) Open(name string) (risoros.File, error) {
 	_, err := f.store.GetInfo(context.TODO(), name)
 	if err != nil {
-		return nil, fs.ErrNotExist
+		return nil, os.ErrNotExist
 	}
 	return &File{
 		name:  name,
