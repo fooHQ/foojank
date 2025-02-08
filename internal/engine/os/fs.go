@@ -15,26 +15,14 @@ import (
 var _ risoros.FS = &FS{}
 
 type FS struct {
-	js    jetstream.JetStream
 	store jetstream.ObjectStore
 }
 
 // TODO: context should have a timeout!
 
-func NewVirtualFS(js jetstream.JetStream, bucket string) (*FS, error) {
-	s, err := js.CreateObjectStore(context.TODO(), jetstream.ObjectStoreConfig{
-		Bucket: bucket,
-		// TODO: add configurables
-	})
-	if err != nil {
-		if !errors.Is(err, jetstream.ErrBucketExists) {
-			return nil, err
-		}
-	}
-
+func NewVirtualFS(store jetstream.ObjectStore) (*FS, error) {
 	return &FS{
-		js:    js,
-		store: s,
+		store: store,
 	}, nil
 }
 
