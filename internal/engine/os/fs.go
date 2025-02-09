@@ -32,7 +32,6 @@ func (f *FS) Create(name string) (risoros.File, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return f.Open(name)
 }
 
