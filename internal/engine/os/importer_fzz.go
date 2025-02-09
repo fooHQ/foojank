@@ -1,4 +1,4 @@
-package importers
+package os
 
 import (
 	"archive/zip"
@@ -12,7 +12,7 @@ import (
 	"github.com/risor-io/risor/parser"
 )
 
-var _ importer.Importer = &ZipImporter{}
+var _ importer.Importer = &FzzImporter{}
 
 // Extensions contains a list of supported script extensions.
 var extensions = []string{
@@ -20,24 +20,24 @@ var extensions = []string{
 	".rsr",
 }
 
-type ZipImporter struct {
+type FzzImporter struct {
 	reader *zip.Reader
 	opts   []compiler.Option
 }
 
-func NewZipImporter(reader io.ReaderAt, size int64, opts ...compiler.Option) (*ZipImporter, error) {
+func NewFzzImporter(reader io.ReaderAt, size int64, opts ...compiler.Option) (*FzzImporter, error) {
 	r, err := zip.NewReader(reader, size)
 	if err != nil {
 		return nil, err
 	}
 
-	return &ZipImporter{
+	return &FzzImporter{
 		reader: r,
 		opts:   opts,
 	}, nil
 }
 
-func (i *ZipImporter) Import(ctx context.Context, name string) (*object.Module, error) {
+func (i *FzzImporter) Import(ctx context.Context, name string) (*object.Module, error) {
 	var text string
 	var found bool
 	for _, ext := range extensions {
@@ -63,7 +63,7 @@ func (i *ZipImporter) Import(ctx context.Context, name string) (*object.Module, 
 	return object.NewModule(name, code), nil
 }
 
-func (i *ZipImporter) readFile(name string) (string, bool) {
+func (i *FzzImporter) readFile(name string) (string, bool) {
 	file, err := i.reader.Open(name)
 	if err != nil {
 		return "", false

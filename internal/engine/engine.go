@@ -10,7 +10,7 @@ import (
 	"github.com/risor-io/risor/parser"
 	"github.com/risor-io/risor/vm"
 
-	"github.com/foohq/foojank/internal/engine/importers"
+	"github.com/foohq/foojank/internal/engine/os"
 )
 
 func CompilePackage(ctx context.Context, reader io.ReaderAt, size int64, opts ...risor.Option) (*Code, error) {
@@ -25,7 +25,7 @@ func CompilePackage(ctx context.Context, reader io.ReaderAt, size int64, opts ..
 		return nil, err
 	}
 
-	importer, err := importers.NewZipImporter(reader, size, conf.CompilerOpts()...)
+	importer, err := os.NewFzzImporter(reader, size, conf.CompilerOpts()...)
 	if err != nil {
 		return nil, err
 	}
