@@ -1,4 +1,4 @@
-package os_test
+package vfs_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	engineos "github.com/foohq/foojank/internal/engine/os"
+	engineos "github.com/foohq/foojank/internal/engine/vfs"
 	"github.com/foohq/foojank/internal/testutils"
 )
 
