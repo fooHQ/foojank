@@ -56,62 +56,105 @@ type OS struct {
 
 func (o *OS) Create(name string) (risoros.File, error) {
 	pth := o.joinPath(name)
+	if o.isVFSPrefix(pth) {
+		return nil, errors.New("vfs not implemented")
+	}
 	return os.Create(pth)
 }
 
 func (o *OS) Mkdir(name string, perm os.FileMode) error {
 	pth := o.joinPath(name)
+	if o.isVFSPrefix(pth) {
+		return errors.New("vfs not implemented")
+	}
 	return os.Mkdir(pth, perm)
 }
 
 func (o *OS) MkdirAll(path string, perm os.FileMode) error {
 	pth := o.joinPath(path)
+	if o.isVFSPrefix(pth) {
+		return errors.New("vfs not implemented")
+	}
 	return os.MkdirAll(pth, perm)
 }
 
 func (o *OS) MkdirTemp(dir, pattern string) (string, error) {
-	return os.MkdirTemp(dir, pattern)
+	pth := o.joinPath(dir)
+	if o.isVFSPrefix(pth) {
+		return "", errors.New("vfs not implemented")
+	}
+	return os.MkdirTemp(pth, pattern)
 }
 
 func (o *OS) Open(name string) (risoros.File, error) {
 	pth := o.joinPath(name)
+	if o.isVFSPrefix(pth) {
+		return nil, errors.New("vfs not implemented")
+	}
 	return os.Open(pth)
 }
 
 func (o *OS) OpenFile(name string, flag int, perm os.FileMode) (risoros.File, error) {
 	pth := o.joinPath(name)
+	if o.isVFSPrefix(pth) {
+		return nil, errors.New("vfs not implemented")
+	}
 	return os.OpenFile(pth, flag, perm)
 }
 
 func (o *OS) ReadFile(name string) ([]byte, error) {
 	pth := o.joinPath(name)
+	if o.isVFSPrefix(pth) {
+		return nil, errors.New("vfs not implemented")
+	}
 	return os.ReadFile(pth)
 }
 
 func (o *OS) Remove(name string) error {
 	pth := o.joinPath(name)
+	if o.isVFSPrefix(pth) {
+		return errors.New("vfs not implemented")
+	}
 	return os.Remove(pth)
 }
 
 func (o *OS) RemoveAll(path string) error {
 	pth := o.joinPath(path)
+	if o.isVFSPrefix(pth) {
+		return errors.New("vfs not implemented")
+	}
 	return os.RemoveAll(pth)
 }
 
 func (o *OS) Rename(oldpath, newpath string) error {
 	oldPth := o.joinPath(oldpath)
+	if o.isVFSPrefix(oldPth) {
+		return errors.New("vfs not implemented")
+	}
 	newPth := o.joinPath(newpath)
+	if o.isVFSPrefix(newPth) {
+		return errors.New("vfs not implemented")
+	}
 	return os.Rename(oldPth, newPth)
 }
 
 func (o *OS) Stat(name string) (os.FileInfo, error) {
 	pth := o.joinPath(name)
+	if o.isVFSPrefix(pth) {
+		return nil, errors.New("vfs not implemented")
+	}
 	return os.Stat(pth)
 }
 
 func (o *OS) Symlink(oldname, newname string) error {
 	oldPth := o.joinPath(oldname)
+	if o.isVFSPrefix(oldPth) {
+		return errors.New("vfs not implemented")
+	}
 	newPth := o.joinPath(newname)
+	if o.isVFSPrefix(newPth) {
+		return errors.New("vfs not implemented")
+	}
 	return os.Symlink(oldPth, newPth)
 }
 
@@ -126,6 +169,10 @@ func (o *OS) WriteFile(name string, content []byte, perm os.FileMode) error {
 
 func (o *OS) ReadDir(name string) ([]risoros.DirEntry, error) {
 	pth := o.joinPath(name)
+	if o.isVFSPrefix(pth) {
+		return nil, errors.New("vfs not implemented")
+	}
+
 	results, err := os.ReadDir(pth)
 	if err != nil {
 		return nil, err
@@ -143,6 +190,9 @@ func (o *OS) ReadDir(name string) ([]risoros.DirEntry, error) {
 
 func (o *OS) WalkDir(root string, fn risoros.WalkDirFunc) error {
 	pth := o.joinPath(root)
+	if o.isVFSPrefix(pth) {
+		return errors.New("vfs not implemented")
+	}
 	return filepath.WalkDir(pth, fn)
 }
 
@@ -156,6 +206,10 @@ func (o *OS) PathListSeparator() rune {
 
 func (o *OS) Chdir(dir string) error {
 	pth := o.joinPath(dir)
+	if o.isVFSPrefix(pth) {
+		return errors.New("vfs not implemented")
+	}
+
 	f, err := os.Open(pth)
 	if err != nil {
 		return err
@@ -259,6 +313,12 @@ func (o *OS) joinPath(name string) string {
 		return filepath.Join(o.wd, name)
 	}
 	return name
+}
+
+func (o *OS) isVFSPrefix(path string) bool {
+	prefix := string(os.PathSeparator) + "foojank" + string(os.PathSeparator)
+	path = path + string(os.PathSeparator)
+	return strings.HasPrefix(path, prefix)
 }
 
 func NewContext(ctx context.Context, options ...Option) context.Context {
