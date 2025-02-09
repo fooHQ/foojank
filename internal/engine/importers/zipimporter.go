@@ -14,6 +14,12 @@ import (
 
 var _ importer.Importer = &ZipImporter{}
 
+// Extensions contains a list of supported script extensions.
+var extensions = []string{
+	".risor",
+	".rsr",
+}
+
 type ZipImporter struct {
 	reader *zip.Reader
 	opts   []compiler.Option
