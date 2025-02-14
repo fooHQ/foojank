@@ -38,9 +38,9 @@ func WithStdout(file risoros.File) Option {
 	}
 }
 
-func WithURLHandler(scheme, host, port string, handler risoros.FS) Option {
+func WithURLHandler(scheme, host string, handler risoros.FS) Option {
 	return func(o *OS) {
-		key := strings.Join([]string{scheme, host, port}, "/")
+		key := strings.Join([]string{scheme, host}, "/")
 		o.urlHandlers[key] = handler
 	}
 }
@@ -343,7 +343,11 @@ func (o *OS) getRegisteredURLHandler(path string) (risoros.FS, string, bool) {
 		return nil, "", false
 	}
 
-	key := strings.Join([]string{u.Scheme, u.Host, u.Port()}, "/")
+	if u.Scheme == "" {
+		u.Scheme = "file"
+	}
+
+	key := strings.Join([]string{u.Scheme, u.Host}, "/")
 	handler, ok := o.urlHandlers[key]
 	pth := u.Path
 	return handler, pth, ok

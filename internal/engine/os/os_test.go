@@ -31,7 +31,7 @@ func TestOS_Create(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
-		engineos.WithURLHandler("test", "private", "", fsPrivate),
+		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -79,7 +79,7 @@ func TestOS_Mkdir(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
-		engineos.WithURLHandler("test", "private", "", fsPrivate),
+		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -131,7 +131,7 @@ func TestOS_MkdirAll(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
-		engineos.WithURLHandler("test", "private", "", fsPrivate),
+		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -183,7 +183,7 @@ func TestOS_Open(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
-		engineos.WithURLHandler("test", "private", "", fsPrivate),
+		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -231,7 +231,7 @@ func TestOS_OpenFile(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
-		engineos.WithURLHandler("test", "private", "", fsPrivate),
+		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -287,7 +287,7 @@ func TestOS_ReadFile(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
-		engineos.WithURLHandler("test", "private", "", fsPrivate),
+		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -335,7 +335,7 @@ func TestOS_Remove(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
-		engineos.WithURLHandler("test", "private", "", fsPrivate),
+		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -383,7 +383,7 @@ func TestOS_RemoveAll(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
-		engineos.WithURLHandler("test", "private", "", fsPrivate),
+		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -431,7 +431,7 @@ func TestOS_Rename(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
-		engineos.WithURLHandler("test", "private", "", fsPrivate),
+		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -464,7 +464,7 @@ func TestOS_Stat(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
-		engineos.WithURLHandler("test", "private", "", fsPrivate),
+		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -512,7 +512,7 @@ func TestOS_Symlink(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
-		engineos.WithURLHandler("test", "private", "", fsPrivate),
+		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -545,7 +545,7 @@ func TestOS_WriteFile(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
-		engineos.WithURLHandler("test", "private", "", fsPrivate),
+		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -601,7 +601,7 @@ func TestOS_ReadDir(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
-		engineos.WithURLHandler("test", "private", "", fsPrivate),
+		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -649,7 +649,7 @@ func TestOS_WalkDir(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
-		engineos.WithURLHandler("test", "private", "", fsPrivate),
+		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
