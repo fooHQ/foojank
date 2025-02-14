@@ -11,6 +11,10 @@ import (
 	risoros "github.com/risor-io/risor/os"
 )
 
+var (
+	ErrHandlerNotFound = errors.New("handler not found")
+)
+
 var _ risoros.OS = &OS{}
 
 type Option func(*OS)
@@ -45,6 +49,8 @@ func WithURLHandler(scheme, host string, handler risoros.FS) Option {
 	}
 }
 
+// TODO: add WithWorkingDir
+
 type ExitHandler func(int)
 
 func WithExitHandler(handler ExitHandler) Option {
@@ -63,34 +69,36 @@ type OS struct {
 	exitHandler ExitHandler
 }
 
+// TODO: joint with wd if file://
+
 func (o *OS) Create(name string) (risoros.File, error) {
 	handler, pth, ok := o.getRegisteredURLHandler(name)
-	if ok {
-		return handler.Create(pth)
+	if !ok {
+		return nil, ErrHandlerNotFound
 	}
-	pth = o.joinPath(name)
-	return os.Create(pth)
+	// TODO: joint with wd if file://
+	return handler.Create(pth)
 }
 
 func (o *OS) Mkdir(name string, perm os.FileMode) error {
 	handler, pth, ok := o.getRegisteredURLHandler(name)
-	if ok {
-		return handler.Mkdir(pth, perm)
+	if !ok {
+		return ErrHandlerNotFound
 	}
-	pth = o.joinPath(name)
-	return os.Mkdir(pth, perm)
+	// TODO: joint with wd if file://
+	return handler.Mkdir(pth, perm)
 }
 
 func (o *OS) MkdirAll(path string, perm os.FileMode) error {
 	handler, pth, ok := o.getRegisteredURLHandler(path)
-	if ok {
-		return handler.MkdirAll(pth, perm)
+	if !ok {
+		return ErrHandlerNotFound
 	}
-	pth = o.joinPath(path)
-	return os.MkdirAll(pth, perm)
+	return handler.MkdirAll(pth, perm)
 }
 
 func (o *OS) MkdirTemp(dir, pattern string) (string, error) {
+	// TODO
 	_, _, ok := o.getRegisteredURLHandler(dir)
 	if ok {
 		return "", errors.New("creating temporary directory is not supported")
@@ -101,76 +109,80 @@ func (o *OS) MkdirTemp(dir, pattern string) (string, error) {
 
 func (o *OS) Open(name string) (risoros.File, error) {
 	handler, pth, ok := o.getRegisteredURLHandler(name)
-	if ok {
-		return handler.Open(pth)
+	if !ok {
+		return nil, ErrHandlerNotFound
 	}
-	pth = o.joinPath(name)
-	return os.Open(pth)
+	return handler.Open(pth)
 }
 
 func (o *OS) OpenFile(name string, flag int, perm os.FileMode) (risoros.File, error) {
 	handler, pth, ok := o.getRegisteredURLHandler(name)
-	if ok {
-		return handler.OpenFile(pth, flag, perm)
+	if !ok {
+		return nil, ErrHandlerNotFound
 	}
-	pth = o.joinPath(name)
-	return os.OpenFile(pth, flag, perm)
+	return handler.OpenFile(pth, flag, perm)
 }
 
 func (o *OS) ReadFile(name string) ([]byte, error) {
 	handler, pth, ok := o.getRegisteredURLHandler(name)
-	if ok {
-		return handler.ReadFile(pth)
+	if !ok {
+		return nil, ErrHandlerNotFound
 	}
-	pth = o.joinPath(name)
-	return os.ReadFile(pth)
+	return handler.ReadFile(pth)
 }
 
 func (o *OS) Remove(name string) error {
 	handler, pth, ok := o.getRegisteredURLHandler(name)
-	if ok {
-		return handler.Remove(pth)
+	if !ok {
+		return ErrHandlerNotFound
 	}
-	pth = o.joinPath(name)
-	return os.Remove(pth)
+	return handler.Remove(pth)
 }
 
 func (o *OS) RemoveAll(path string) error {
 	handler, pth, ok := o.getRegisteredURLHandler(path)
-	if ok {
-		return handler.RemoveAll(pth)
+	if !ok {
+		return ErrHandlerNotFound
 	}
-	pth = o.joinPath(path)
-	return os.RemoveAll(pth)
+	return handler.RemoveAll(pth)
 }
 
 func (o *OS) Rename(oldpath, newpath string) error {
-	_, _, ok := o.getRegisteredURLHandler(oldpath)
-	if ok {
-		return errors.New("renaming a file is not supported")
+	oldHandler, oldPth, ok := o.getRegisteredURLHandler(oldpath)
+	if !ok {
+		return ErrHandlerNotFound
 	}
-	oldPth := o.joinPath(oldpath)
-	newPth := o.joinPath(newpath)
-	return os.Rename(oldPth, newPth)
+	newHandler, newPth, ok := o.getRegisteredURLHandler(newpath)
+	if !ok {
+		return ErrHandlerNotFound
+	}
+	if oldHandler != newHandler {
+		return errors.New("rename cannot pass filesystem boundaries")
+	}
+	return oldHandler.Rename(oldPth, newPth)
 }
 
 func (o *OS) Stat(name string) (os.FileInfo, error) {
 	handler, pth, ok := o.getRegisteredURLHandler(name)
-	if ok {
-		return handler.Stat(pth)
+	if !ok {
+		return nil, ErrHandlerNotFound
 	}
-	pth = o.joinPath(name)
-	return os.Stat(pth)
+	return handler.Stat(pth)
 }
 
 func (o *OS) Symlink(oldname, newname string) error {
-	_, _, ok := o.getRegisteredURLHandler(oldname)
-	if ok {
-		return errors.New("symlink is not supported")
+	oldHandler, oldPth, ok := o.getRegisteredURLHandler(oldname)
+	if !ok {
+		return ErrHandlerNotFound
 	}
-	oldPth := o.joinPath(oldname)
-	newPth := o.joinPath(newname)
-	return os.Symlink(oldPth, newPth)
+	newHandler, newPth, ok := o.getRegisteredURLHandler(newname)
+	if !ok {
+		return ErrHandlerNotFound
+	}
+	if oldHandler != newHandler {
+		return errors.New("symlink cannot pass filesystem boundaries")
+	}
+	return oldHandler.Symlink(oldPth, newPth)
 }
 
 func (o *OS) TempDir() string {
@@ -179,21 +191,19 @@ func (o *OS) TempDir() string {
 
 func (o *OS) WriteFile(name string, content []byte, perm os.FileMode) error {
 	handler, pth, ok := o.getRegisteredURLHandler(name)
-	if ok {
-		return handler.WriteFile(pth, content, perm)
+	if !ok {
+		return ErrHandlerNotFound
 	}
-	pth = o.joinPath(name)
-	return os.WriteFile(pth, content, perm)
+	return handler.WriteFile(pth, content, perm)
 }
 
 func (o *OS) ReadDir(name string) ([]risoros.DirEntry, error) {
 	handler, pth, ok := o.getRegisteredURLHandler(name)
-	if ok {
-		return handler.ReadDir(pth)
+	if !ok {
+		return nil, ErrHandlerNotFound
 	}
 
-	pth = o.joinPath(name)
-	results, err := os.ReadDir(pth)
+	results, err := handler.ReadDir(pth)
 	if err != nil {
 		return nil, err
 	}
@@ -210,11 +220,10 @@ func (o *OS) ReadDir(name string) ([]risoros.DirEntry, error) {
 
 func (o *OS) WalkDir(root string, fn risoros.WalkDirFunc) error {
 	handler, pth, ok := o.getRegisteredURLHandler(root)
-	if ok {
-		return handler.WalkDir(pth, fn)
+	if !ok {
+		return ErrHandlerNotFound
 	}
-	pth = o.joinPath(root)
-	return filepath.WalkDir(pth, fn)
+	return handler.WalkDir(pth, fn)
 }
 
 func (o *OS) PathSeparator() rune {
@@ -338,6 +347,7 @@ func (o *OS) joinPath(name string) string {
 }
 
 func (o *OS) getRegisteredURLHandler(path string) (risoros.FS, string, bool) {
+	// TODO: support windows paths!
 	u, err := url.Parse(path)
 	if err != nil {
 		return nil, "", false

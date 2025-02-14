@@ -28,9 +28,11 @@ func TestOS_Args(t *testing.T) {
 }
 
 func TestOS_Create(t *testing.T) {
-	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewFS(resultCh)
+	testCh := make(chan any, 1)
+	fsPrivate := testutils.NewFS(testCh)
+	fsFile := testutils.NewFS(testCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
@@ -64,13 +66,49 @@ func TestOS_Create(t *testing.T) {
 				Name: "/data/../../form.txt",
 			},
 		},
+		{
+			input: "/",
+			result: testutils.CreateResult{
+				Name: "/",
+			},
+		},
+		{
+			input: "/data/form.txt",
+			result: testutils.CreateResult{
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "/data/../form.txt",
+			result: testutils.CreateResult{
+				Name: "/data/../form.txt",
+			},
+		},
+		{
+			input: "/data/../../form.txt",
+			result: testutils.CreateResult{
+				Name: "/data/../../form.txt",
+			},
+		},
+		{
+			input: "file:///data/form.txt",
+			result: testutils.CreateResult{
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "../data/form.txt",
+			result: testutils.CreateResult{
+				Name: "../data/form.txt",
+			},
+		},
 	}
 
 	for _, test := range tests {
 		_, err := o.Create(test.input)
 		require.NoError(t, err)
 
-		result := <-resultCh
+		result := <-testCh
 		require.Equal(t, test.result, result)
 	}
 }
@@ -78,7 +116,9 @@ func TestOS_Create(t *testing.T) {
 func TestOS_Mkdir(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
+	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
@@ -116,6 +156,48 @@ func TestOS_Mkdir(t *testing.T) {
 				Perm: 0777,
 			},
 		},
+		{
+			input: "/",
+			result: testutils.MkdirResult{
+				Name: "/",
+				Perm: 0777,
+			},
+		},
+		{
+			input: "/data/form",
+			result: testutils.MkdirResult{
+				Name: "/data/form",
+				Perm: 0777,
+			},
+		},
+		{
+			input: "/data/../form",
+			result: testutils.MkdirResult{
+				Name: "/data/../form",
+				Perm: 0777,
+			},
+		},
+		{
+			input: "/data/../../form",
+			result: testutils.MkdirResult{
+				Name: "/data/../../form",
+				Perm: 0777,
+			},
+		},
+		{
+			input: "file:///data/form",
+			result: testutils.MkdirResult{
+				Name: "/data/form",
+				Perm: 0777,
+			},
+		},
+		{
+			input: "../data/form",
+			result: testutils.MkdirResult{
+				Name: "../data/form",
+				Perm: 0777,
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -130,7 +212,9 @@ func TestOS_Mkdir(t *testing.T) {
 func TestOS_MkdirAll(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
+	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
@@ -168,6 +252,48 @@ func TestOS_MkdirAll(t *testing.T) {
 				Perm: 0777,
 			},
 		},
+		{
+			input: "/",
+			result: testutils.MkdirAllResult{
+				Path: "/",
+				Perm: 0777,
+			},
+		},
+		{
+			input: "/data/form",
+			result: testutils.MkdirAllResult{
+				Path: "/data/form",
+				Perm: 0777,
+			},
+		},
+		{
+			input: "/data/../form",
+			result: testutils.MkdirAllResult{
+				Path: "/data/../form",
+				Perm: 0777,
+			},
+		},
+		{
+			input: "/data/../../form",
+			result: testutils.MkdirAllResult{
+				Path: "/data/../../form",
+				Perm: 0777,
+			},
+		},
+		{
+			input: "file:///data/form",
+			result: testutils.MkdirAllResult{
+				Path: "/data/form",
+				Perm: 0777,
+			},
+		},
+		{
+			input: "../data/form",
+			result: testutils.MkdirAllResult{
+				Path: "../data/form",
+				Perm: 0777,
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -182,7 +308,9 @@ func TestOS_MkdirAll(t *testing.T) {
 func TestOS_Open(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
+	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
@@ -216,6 +344,42 @@ func TestOS_Open(t *testing.T) {
 				Name: "/data/../../form.txt",
 			},
 		},
+		{
+			input: "/",
+			result: testutils.OpenResult{
+				Name: "/",
+			},
+		},
+		{
+			input: "/data/form.txt",
+			result: testutils.OpenResult{
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "/data/../form.txt",
+			result: testutils.OpenResult{
+				Name: "/data/../form.txt",
+			},
+		},
+		{
+			input: "/data/../../form.txt",
+			result: testutils.OpenResult{
+				Name: "/data/../../form.txt",
+			},
+		},
+		{
+			input: "file:///data/form.txt",
+			result: testutils.OpenResult{
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "../data/form.txt",
+			result: testutils.OpenResult{
+				Name: "../data/form.txt",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -230,7 +394,9 @@ func TestOS_Open(t *testing.T) {
 func TestOS_OpenFile(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
+	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
@@ -272,6 +438,54 @@ func TestOS_OpenFile(t *testing.T) {
 				Perm: 0777,
 			},
 		},
+		{
+			input: "/",
+			result: testutils.OpenFileResult{
+				Name: "/",
+				Flag: 1313,
+				Perm: 0777,
+			},
+		},
+		{
+			input: "/data/form.txt",
+			result: testutils.OpenFileResult{
+				Name: "/data/form.txt",
+				Flag: 1313,
+				Perm: 0777,
+			},
+		},
+		{
+			input: "/data/../form.txt",
+			result: testutils.OpenFileResult{
+				Name: "/data/../form.txt",
+				Flag: 1313,
+				Perm: 0777,
+			},
+		},
+		{
+			input: "/data/../../form.txt",
+			result: testutils.OpenFileResult{
+				Name: "/data/../../form.txt",
+				Flag: 1313,
+				Perm: 0777,
+			},
+		},
+		{
+			input: "file:///data/form.txt",
+			result: testutils.OpenFileResult{
+				Name: "/data/form.txt",
+				Flag: 1313,
+				Perm: 0777,
+			},
+		},
+		{
+			input: "../data/form.txt",
+			result: testutils.OpenFileResult{
+				Name: "../data/form.txt",
+				Flag: 1313,
+				Perm: 0777,
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -286,7 +500,9 @@ func TestOS_OpenFile(t *testing.T) {
 func TestOS_ReadFile(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
+	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
@@ -320,6 +536,42 @@ func TestOS_ReadFile(t *testing.T) {
 				Name: "/data/../../form.txt",
 			},
 		},
+		{
+			input: "/",
+			result: testutils.ReadFileResult{
+				Name: "/",
+			},
+		},
+		{
+			input: "/data/form.txt",
+			result: testutils.ReadFileResult{
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "/data/../form.txt",
+			result: testutils.ReadFileResult{
+				Name: "/data/../form.txt",
+			},
+		},
+		{
+			input: "/data/../../form.txt",
+			result: testutils.ReadFileResult{
+				Name: "/data/../../form.txt",
+			},
+		},
+		{
+			input: "file:///data/form.txt",
+			result: testutils.ReadFileResult{
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "../data/form.txt",
+			result: testutils.ReadFileResult{
+				Name: "../data/form.txt",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -334,7 +586,9 @@ func TestOS_ReadFile(t *testing.T) {
 func TestOS_Remove(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
+	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
@@ -368,6 +622,42 @@ func TestOS_Remove(t *testing.T) {
 				Name: "/data/../../form.txt",
 			},
 		},
+		{
+			input: "/",
+			result: testutils.RemoveResult{
+				Name: "/",
+			},
+		},
+		{
+			input: "/data/form.txt",
+			result: testutils.RemoveResult{
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "/data/../form.txt",
+			result: testutils.RemoveResult{
+				Name: "/data/../form.txt",
+			},
+		},
+		{
+			input: "/data/../../form.txt",
+			result: testutils.RemoveResult{
+				Name: "/data/../../form.txt",
+			},
+		},
+		{
+			input: "file:///data/form.txt",
+			result: testutils.RemoveResult{
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "../data/form.txt",
+			result: testutils.RemoveResult{
+				Name: "../data/form.txt",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -382,7 +672,9 @@ func TestOS_Remove(t *testing.T) {
 func TestOS_RemoveAll(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
+	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
@@ -416,6 +708,42 @@ func TestOS_RemoveAll(t *testing.T) {
 				Path: "/data/../../form.txt",
 			},
 		},
+		{
+			input: "/",
+			result: testutils.RemoveAllResult{
+				Path: "/",
+			},
+		},
+		{
+			input: "/data/form.txt",
+			result: testutils.RemoveAllResult{
+				Path: "/data/form.txt",
+			},
+		},
+		{
+			input: "/data/../form.txt",
+			result: testutils.RemoveAllResult{
+				Path: "/data/../form.txt",
+			},
+		},
+		{
+			input: "/data/../../form.txt",
+			result: testutils.RemoveAllResult{
+				Path: "/data/../../form.txt",
+			},
+		},
+		{
+			input: "file:///data/form.txt",
+			result: testutils.RemoveAllResult{
+				Path: "/data/form.txt",
+			},
+		},
+		{
+			input: "../data/form.txt",
+			result: testutils.RemoveAllResult{
+				Path: "../data/form.txt",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -430,7 +758,9 @@ func TestOS_RemoveAll(t *testing.T) {
 func TestOS_Rename(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
+	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
@@ -463,7 +793,9 @@ func TestOS_Rename(t *testing.T) {
 func TestOS_Stat(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
+	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
@@ -497,6 +829,42 @@ func TestOS_Stat(t *testing.T) {
 				Name: "/data/../../form.txt",
 			},
 		},
+		{
+			input: "/",
+			result: testutils.StatResult{
+				Name: "/",
+			},
+		},
+		{
+			input: "/data/form.txt",
+			result: testutils.StatResult{
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "/data/../form.txt",
+			result: testutils.StatResult{
+				Name: "/data/../form.txt",
+			},
+		},
+		{
+			input: "/data/../../form.txt",
+			result: testutils.StatResult{
+				Name: "/data/../../form.txt",
+			},
+		},
+		{
+			input: "file:///data/form.txt",
+			result: testutils.StatResult{
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "../data/form.txt",
+			result: testutils.StatResult{
+				Name: "../data/form.txt",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -511,7 +879,9 @@ func TestOS_Stat(t *testing.T) {
 func TestOS_Symlink(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
+	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
@@ -544,7 +914,9 @@ func TestOS_Symlink(t *testing.T) {
 func TestOS_WriteFile(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
+	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
@@ -586,6 +958,54 @@ func TestOS_WriteFile(t *testing.T) {
 				Perm: 0777,
 			},
 		},
+		{
+			input: "/",
+			result: testutils.WriteFileResult{
+				Name: "/",
+				Data: []byte("test"),
+				Perm: 0777,
+			},
+		},
+		{
+			input: "/data/form.txt",
+			result: testutils.WriteFileResult{
+				Name: "/data/form.txt",
+				Data: []byte("test"),
+				Perm: 0777,
+			},
+		},
+		{
+			input: "/data/../form.txt",
+			result: testutils.WriteFileResult{
+				Name: "/data/../form.txt",
+				Data: []byte("test"),
+				Perm: 0777,
+			},
+		},
+		{
+			input: "/data/../../form.txt",
+			result: testutils.WriteFileResult{
+				Name: "/data/../../form.txt",
+				Data: []byte("test"),
+				Perm: 0777,
+			},
+		},
+		{
+			input: "file:///data/form.txt",
+			result: testutils.WriteFileResult{
+				Name: "/data/form.txt",
+				Data: []byte("test"),
+				Perm: 0777,
+			},
+		},
+		{
+			input: "../data/form.txt",
+			result: testutils.WriteFileResult{
+				Name: "../data/form.txt",
+				Data: []byte("test"),
+				Perm: 0777,
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -600,7 +1020,9 @@ func TestOS_WriteFile(t *testing.T) {
 func TestOS_ReadDir(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
+	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
@@ -634,6 +1056,42 @@ func TestOS_ReadDir(t *testing.T) {
 				Name: "/data/../../form",
 			},
 		},
+		{
+			input: "/",
+			result: testutils.ReadDirResult{
+				Name: "/",
+			},
+		},
+		{
+			input: "/data/form.txt",
+			result: testutils.ReadDirResult{
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "/data/../form.txt",
+			result: testutils.ReadDirResult{
+				Name: "/data/../form.txt",
+			},
+		},
+		{
+			input: "/data/../../form.txt",
+			result: testutils.ReadDirResult{
+				Name: "/data/../../form.txt",
+			},
+		},
+		{
+			input: "file:///data/form.txt",
+			result: testutils.ReadDirResult{
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "../data/form.txt",
+			result: testutils.ReadDirResult{
+				Name: "../data/form.txt",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -648,7 +1106,9 @@ func TestOS_ReadDir(t *testing.T) {
 func TestOS_WalkDir(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewFS(resultCh)
+	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
@@ -684,6 +1144,42 @@ func TestOS_WalkDir(t *testing.T) {
 			result: testutils.WalkDirResult{
 				Root: "/data/../../form",
 				Fn:   nil,
+			},
+		},
+		{
+			input: "/",
+			result: testutils.WalkDirResult{
+				Root: "/",
+			},
+		},
+		{
+			input: "/data/form.txt",
+			result: testutils.WalkDirResult{
+				Root: "/data/form.txt",
+			},
+		},
+		{
+			input: "/data/../form.txt",
+			result: testutils.WalkDirResult{
+				Root: "/data/../form.txt",
+			},
+		},
+		{
+			input: "/data/../../form.txt",
+			result: testutils.WalkDirResult{
+				Root: "/data/../../form.txt",
+			},
+		},
+		{
+			input: "file:///data/form.txt",
+			result: testutils.WalkDirResult{
+				Root: "/data/form.txt",
+			},
+		},
+		{
+			input: "../data/form.txt",
+			result: testutils.WalkDirResult{
+				Root: "../data/form.txt",
 			},
 		},
 	}
