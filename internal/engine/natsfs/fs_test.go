@@ -1,4 +1,4 @@
-package vfs_test
+package natsfs_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	engineos "github.com/foohq/foojank/internal/engine/vfs"
+	engineos "github.com/foohq/foojank/internal/engine/natsfs"
 
 	"github.com/stretchr/testify/require"
 
