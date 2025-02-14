@@ -73,14 +73,11 @@ type OS struct {
 	exitHandler ExitHandler
 }
 
-// TODO: joint with wd if file://
-
 func (o *OS) Create(name string) (risoros.File, error) {
 	handler, pth, ok := o.getRegisteredURLHandler(name)
 	if !ok {
 		return nil, ErrHandlerNotFound
 	}
-	// TODO: joint with wd if file://
 	return handler.Create(pth)
 }
 
@@ -89,7 +86,6 @@ func (o *OS) Mkdir(name string, perm os.FileMode) error {
 	if !ok {
 		return ErrHandlerNotFound
 	}
-	// TODO: joint with wd if file://
 	return handler.Mkdir(pth, perm)
 }
 
