@@ -107,7 +107,7 @@ func (o *OS) MkdirTemp(dir, pattern string) (string, error) {
 	if ok {
 		return "", errors.New("creating temporary directory is not supported")
 	}
-	pth := o.joinPath(dir)
+	pth := o.joinWorkDir(dir)
 	return os.MkdirTemp(pth, pattern)
 }
 
@@ -244,7 +244,7 @@ func (o *OS) Chdir(dir string) error {
 		return errors.New("chdir is not supported")
 	}
 
-	pth := o.joinPath(dir)
+	pth := o.joinWorkDir(dir)
 	f, err := os.Open(pth)
 	if err != nil {
 		return err
@@ -343,7 +343,7 @@ func (o *OS) UserHomeDir() (string, error) {
 	return os.UserHomeDir()
 }
 
-func (o *OS) joinPath(name string) string {
+func (o *OS) joinWorkDir(name string) string {
 	if !filepath.IsAbs(name) {
 		return filepath.Join(o.wd, name)
 	}
@@ -361,10 +361,13 @@ func (o *OS) getRegisteredURLHandler(path string) (risoros.FS, string, bool) {
 		u.Scheme = "file"
 	}
 
+	if u.Scheme == "file" {
+		u.Path = o.joinWorkDir(u.Path)
+	}
+
 	key := strings.Join([]string{u.Scheme, u.Host}, "/")
 	handler, ok := o.urlHandlers[key]
-	pth := u.Path
-	return handler, pth, ok
+	return handler, u.Path, ok
 }
 
 func NewContext(ctx context.Context, options ...Option) context.Context {

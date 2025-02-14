@@ -32,6 +32,7 @@ func TestOS_Create(t *testing.T) {
 	fsPrivate := testutils.NewFS(testCh)
 	fsFile := testutils.NewFS(testCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithWorkDir("/foojank"),
 		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
@@ -99,7 +100,13 @@ func TestOS_Create(t *testing.T) {
 		{
 			input: "../data/form.txt",
 			result: testutils.CreateResult{
-				Name: "../data/form.txt",
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "./data/form.txt",
+			result: testutils.CreateResult{
+				Name: "/foojank/data/form.txt",
 			},
 		},
 	}
@@ -118,6 +125,7 @@ func TestOS_Mkdir(t *testing.T) {
 	fsPrivate := testutils.NewFS(resultCh)
 	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithWorkDir("/foojank"),
 		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
@@ -194,7 +202,14 @@ func TestOS_Mkdir(t *testing.T) {
 		{
 			input: "../data/form",
 			result: testutils.MkdirResult{
-				Name: "../data/form",
+				Name: "/data/form",
+				Perm: 0777,
+			},
+		},
+		{
+			input: "./data/form.txt",
+			result: testutils.MkdirResult{
+				Name: "/foojank/data/form.txt",
 				Perm: 0777,
 			},
 		},
@@ -214,6 +229,7 @@ func TestOS_MkdirAll(t *testing.T) {
 	fsPrivate := testutils.NewFS(resultCh)
 	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithWorkDir("/foojank"),
 		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
@@ -290,7 +306,14 @@ func TestOS_MkdirAll(t *testing.T) {
 		{
 			input: "../data/form",
 			result: testutils.MkdirAllResult{
-				Path: "../data/form",
+				Path: "/data/form",
+				Perm: 0777,
+			},
+		},
+		{
+			input: "./data/form.txt",
+			result: testutils.MkdirAllResult{
+				Path: "/foojank/data/form.txt",
 				Perm: 0777,
 			},
 		},
@@ -310,6 +333,7 @@ func TestOS_Open(t *testing.T) {
 	fsPrivate := testutils.NewFS(resultCh)
 	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithWorkDir("/foojank"),
 		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
@@ -377,7 +401,13 @@ func TestOS_Open(t *testing.T) {
 		{
 			input: "../data/form.txt",
 			result: testutils.OpenResult{
-				Name: "../data/form.txt",
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "./data/form.txt",
+			result: testutils.OpenResult{
+				Name: "/foojank/data/form.txt",
 			},
 		},
 	}
@@ -396,6 +426,7 @@ func TestOS_OpenFile(t *testing.T) {
 	fsPrivate := testutils.NewFS(resultCh)
 	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithWorkDir("/foojank"),
 		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
@@ -481,7 +512,15 @@ func TestOS_OpenFile(t *testing.T) {
 		{
 			input: "../data/form.txt",
 			result: testutils.OpenFileResult{
-				Name: "../data/form.txt",
+				Name: "/data/form.txt",
+				Flag: 1313,
+				Perm: 0777,
+			},
+		},
+		{
+			input: "./data/form.txt",
+			result: testutils.OpenFileResult{
+				Name: "/foojank/data/form.txt",
 				Flag: 1313,
 				Perm: 0777,
 			},
@@ -502,6 +541,7 @@ func TestOS_ReadFile(t *testing.T) {
 	fsPrivate := testutils.NewFS(resultCh)
 	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithWorkDir("/foojank"),
 		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
@@ -569,7 +609,13 @@ func TestOS_ReadFile(t *testing.T) {
 		{
 			input: "../data/form.txt",
 			result: testutils.ReadFileResult{
-				Name: "../data/form.txt",
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "./data/form.txt",
+			result: testutils.ReadFileResult{
+				Name: "/foojank/data/form.txt",
 			},
 		},
 	}
@@ -588,6 +634,7 @@ func TestOS_Remove(t *testing.T) {
 	fsPrivate := testutils.NewFS(resultCh)
 	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithWorkDir("/foojank"),
 		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
@@ -655,7 +702,13 @@ func TestOS_Remove(t *testing.T) {
 		{
 			input: "../data/form.txt",
 			result: testutils.RemoveResult{
-				Name: "../data/form.txt",
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "./data/form.txt",
+			result: testutils.RemoveResult{
+				Name: "/foojank/data/form.txt",
 			},
 		},
 	}
@@ -674,6 +727,7 @@ func TestOS_RemoveAll(t *testing.T) {
 	fsPrivate := testutils.NewFS(resultCh)
 	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithWorkDir("/foojank"),
 		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
@@ -741,7 +795,13 @@ func TestOS_RemoveAll(t *testing.T) {
 		{
 			input: "../data/form.txt",
 			result: testutils.RemoveAllResult{
-				Path: "../data/form.txt",
+				Path: "/data/form.txt",
+			},
+		},
+		{
+			input: "./data/form.txt",
+			result: testutils.RemoveAllResult{
+				Path: "/foojank/data/form.txt",
 			},
 		},
 	}
@@ -760,6 +820,7 @@ func TestOS_Rename(t *testing.T) {
 	fsPrivate := testutils.NewFS(resultCh)
 	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithWorkDir("/foojank"),
 		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
@@ -795,6 +856,7 @@ func TestOS_Stat(t *testing.T) {
 	fsPrivate := testutils.NewFS(resultCh)
 	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithWorkDir("/foojank"),
 		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
@@ -862,7 +924,13 @@ func TestOS_Stat(t *testing.T) {
 		{
 			input: "../data/form.txt",
 			result: testutils.StatResult{
-				Name: "../data/form.txt",
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "./data/form.txt",
+			result: testutils.StatResult{
+				Name: "/foojank/data/form.txt",
 			},
 		},
 	}
@@ -881,6 +949,7 @@ func TestOS_Symlink(t *testing.T) {
 	fsPrivate := testutils.NewFS(resultCh)
 	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithWorkDir("/foojank"),
 		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
@@ -916,6 +985,7 @@ func TestOS_WriteFile(t *testing.T) {
 	fsPrivate := testutils.NewFS(resultCh)
 	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithWorkDir("/foojank"),
 		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
@@ -1001,7 +1071,15 @@ func TestOS_WriteFile(t *testing.T) {
 		{
 			input: "../data/form.txt",
 			result: testutils.WriteFileResult{
-				Name: "../data/form.txt",
+				Name: "/data/form.txt",
+				Data: []byte("test"),
+				Perm: 0777,
+			},
+		},
+		{
+			input: "./data/form.txt",
+			result: testutils.WriteFileResult{
+				Name: "/foojank/data/form.txt",
 				Data: []byte("test"),
 				Perm: 0777,
 			},
@@ -1022,6 +1100,7 @@ func TestOS_ReadDir(t *testing.T) {
 	fsPrivate := testutils.NewFS(resultCh)
 	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithWorkDir("/foojank"),
 		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
@@ -1089,7 +1168,13 @@ func TestOS_ReadDir(t *testing.T) {
 		{
 			input: "../data/form.txt",
 			result: testutils.ReadDirResult{
-				Name: "../data/form.txt",
+				Name: "/data/form.txt",
+			},
+		},
+		{
+			input: "./data/form.txt",
+			result: testutils.ReadDirResult{
+				Name: "/foojank/data/form.txt",
 			},
 		},
 	}
@@ -1108,6 +1193,7 @@ func TestOS_WalkDir(t *testing.T) {
 	fsPrivate := testutils.NewFS(resultCh)
 	fsFile := testutils.NewFS(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithWorkDir("/foojank"),
 		engineos.WithURLHandler("file", "", fsFile),
 		engineos.WithURLHandler("test", "private", fsPrivate),
 	)
@@ -1179,7 +1265,13 @@ func TestOS_WalkDir(t *testing.T) {
 		{
 			input: "../data/form.txt",
 			result: testutils.WalkDirResult{
-				Root: "../data/form.txt",
+				Root: "/data/form.txt",
+			},
+		},
+		{
+			input: "./data/form.txt",
+			result: testutils.WalkDirResult{
+				Root: "/foojank/data/form.txt",
 			},
 		},
 	}
