@@ -19,7 +19,7 @@ type FS struct {
 
 // TODO: context should have a timeout!
 
-func NewVirtualFS(store jetstream.ObjectStore) (*FS, error) {
+func New(store jetstream.ObjectStore) (*FS, error) {
 	return &FS{
 		store: store,
 	}, nil

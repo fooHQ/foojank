@@ -18,7 +18,7 @@ func TestFS_Create(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := engineos.NewVirtualFS(store)
+	fs, err := engineos.New(store)
 	require.NoError(t, err)
 
 	filename := "/fs/create/file"
@@ -36,7 +36,7 @@ func TestFS_Open(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := engineos.NewVirtualFS(store)
+	fs, err := engineos.New(store)
 	require.NoError(t, err)
 
 	filename := fmt.Sprintf("/fs/open/file_%d", rand.Int())
@@ -54,7 +54,7 @@ func TestFS_ReadFile(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := engineos.NewVirtualFS(store)
+	fs, err := engineos.New(store)
 	require.NoError(t, err)
 
 	filename := fmt.Sprintf("/fs/read_file/file_%d", rand.Int())
@@ -74,7 +74,7 @@ func TestFS_Remove(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := engineos.NewVirtualFS(store)
+	fs, err := engineos.New(store)
 	require.NoError(t, err)
 
 	filename := fmt.Sprintf("/fs/remove/file_%d", rand.Int())
@@ -92,7 +92,7 @@ func TestFS_Rename(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := engineos.NewVirtualFS(store)
+	fs, err := engineos.New(store)
 	require.NoError(t, err)
 
 	filename := fmt.Sprintf("/fs/rename/file_%d", rand.Int())
@@ -111,7 +111,7 @@ func TestFS_WriteFile(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := engineos.NewVirtualFS(store)
+	fs, err := engineos.New(store)
 	require.NoError(t, err)
 
 	filename := fmt.Sprintf("/fs/write_file/file_%d", rand.Int())
