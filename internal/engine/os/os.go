@@ -49,7 +49,11 @@ func WithURLHandler(scheme, host string, handler risoros.FS) Option {
 	}
 }
 
-// TODO: add WithWorkingDir
+func WithWorkDir(dir string) Option {
+	return func(o *OS) {
+		o.wd = filepath.Join(string(os.PathSeparator), dir)
+	}
+}
 
 type ExitHandler func(int)
 
