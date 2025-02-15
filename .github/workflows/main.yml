@@ -5,19 +5,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: jetify-com/devbox-install-action@v0.11.0
+      - uses: jetify-com/devbox-install-action@v0.12.0
       - run: devbox run lint
 
   tests_linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: jetify-com/devbox-install-action@v0.11.0
+      - uses: jetify-com/devbox-install-action@v0.12.0
       - run: devbox run test
 
   tests_windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: jetify-com/devbox-install-action@v0.11.0
+      - uses: jetify-com/devbox-install-action@v0.12.0
       - run: devbox run test
