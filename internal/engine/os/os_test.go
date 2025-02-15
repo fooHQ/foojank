@@ -11,6 +11,8 @@ import (
 	"github.com/foohq/foojank/internal/testutils"
 )
 
+// TODO: add the rest of the tests!
+
 func TestOS_Args(t *testing.T) {
 	args := []string{
 		"first",
@@ -828,26 +830,89 @@ func TestOS_Rename(t *testing.T) {
 	require.True(t, ok)
 
 	tests := []struct {
-		input  string
+		src    string
+		dst    string
 		result testutils.RenameResult
 	}{
 		{
-			input: "test://private/",
+			src: "test://private/foo.txt",
+			dst: "test://private/bar.txt",
 			result: testutils.RenameResult{
-				OldPath: "/old.txt",
-				NewPath: "/new.txt",
+				OldPath: "/foo.txt",
+				NewPath: "/bar.txt",
+			},
+		},
+		{
+			src: "/private/foo.txt",
+			dst: "/private/bar.txt",
+			result: testutils.RenameResult{
+				OldPath: "/private/foo.txt",
+				NewPath: "/private/bar.txt",
+			},
+		},
+		{
+			src: "/private/foo.txt",
+			dst: "../bar.txt",
+			result: testutils.RenameResult{
+				OldPath: "/private/foo.txt",
+				NewPath: "/bar.txt",
+			},
+		},
+		{
+			src: "./private/foo.txt",
+			dst: "bar.txt",
+			result: testutils.RenameResult{
+				OldPath: "/foojank/private/foo.txt",
+				NewPath: "/foojank/bar.txt",
+			},
+		},
+		{
+			src: "../foo.txt",
+			dst: "./bar.txt",
+			result: testutils.RenameResult{
+				OldPath: "/foo.txt",
+				NewPath: "/foojank/bar.txt",
 			},
 		},
 	}
 
 	for _, test := range tests {
-		err := o.Rename(test.input, "/new.txt")
-		require.Error(t, err)
-		/*
-			// Check result once the Rename is implemented
-			result := <-resultCh
-			require.Equal(t, test.result, result)
-		*/
+		err := o.Rename(test.src, test.dst)
+		require.NoError(t, err)
+
+		result := <-resultCh
+		require.Equal(t, test.result, result)
+	}
+}
+
+func TestOS_Rename_ErrCrossingFSBoundaries(t *testing.T) {
+	fsPrivate := testutils.NewFS(nil)
+	fsFile := testutils.NewFS(nil)
+	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithWorkDir("/foojank"),
+		engineos.WithURLHandler("file", "", fsFile),
+		engineos.WithURLHandler("test", "private", fsPrivate),
+	)
+	o, ok := risoros.GetOS(osCtx)
+	require.True(t, ok)
+
+	tests := []struct {
+		src string
+		dst string
+	}{
+		{
+			src: "test://private/foo.txt",
+			dst: "./private/bar.txt",
+		},
+		{
+			src: "./private/bar.txt",
+			dst: "test://private/foo.txt",
+		},
+	}
+
+	for _, test := range tests {
+		err := o.Rename(test.src, test.dst)
+		require.ErrorIs(t, err, engineos.ErrCrossingFSBoundaries)
 	}
 }
 
@@ -957,26 +1022,89 @@ func TestOS_Symlink(t *testing.T) {
 	require.True(t, ok)
 
 	tests := []struct {
-		input  string
+		src    string
+		dst    string
 		result testutils.SymlinkResult
 	}{
 		{
-			input: "test://private/",
+			src: "test://private/foo.txt",
+			dst: "test://private/bar.txt",
 			result: testutils.SymlinkResult{
-				OldName: "/old.txt",
-				NewName: "/new.txt",
+				OldName: "/foo.txt",
+				NewName: "/bar.txt",
+			},
+		},
+		{
+			src: "/private/foo.txt",
+			dst: "/private/bar.txt",
+			result: testutils.SymlinkResult{
+				OldName: "/private/foo.txt",
+				NewName: "/private/bar.txt",
+			},
+		},
+		{
+			src: "/private/foo.txt",
+			dst: "../bar.txt",
+			result: testutils.SymlinkResult{
+				OldName: "/private/foo.txt",
+				NewName: "/bar.txt",
+			},
+		},
+		{
+			src: "./private/foo.txt",
+			dst: "bar.txt",
+			result: testutils.SymlinkResult{
+				OldName: "/foojank/private/foo.txt",
+				NewName: "/foojank/bar.txt",
+			},
+		},
+		{
+			src: "../foo.txt",
+			dst: "./bar.txt",
+			result: testutils.SymlinkResult{
+				OldName: "/foo.txt",
+				NewName: "/foojank/bar.txt",
 			},
 		},
 	}
 
 	for _, test := range tests {
-		err := o.Symlink(test.input, "/new.txt")
-		require.Error(t, err)
-		/*
-			// Check result once the Rename is implemented
-			result := <-resultCh
-			require.Equal(t, test.result, result)
-		*/
+		err := o.Symlink(test.src, test.dst)
+		require.NoError(t, err)
+
+		result := <-resultCh
+		require.Equal(t, test.result, result)
+	}
+}
+
+func TestOS_Symlink_ErrCrossingFSBoundaries(t *testing.T) {
+	fsPrivate := testutils.NewFS(nil)
+	fsFile := testutils.NewFS(nil)
+	osCtx := engineos.NewContext(context.Background(),
+		engineos.WithWorkDir("/foojank"),
+		engineos.WithURLHandler("file", "", fsFile),
+		engineos.WithURLHandler("test", "private", fsPrivate),
+	)
+	o, ok := risoros.GetOS(osCtx)
+	require.True(t, ok)
+
+	tests := []struct {
+		src string
+		dst string
+	}{
+		{
+			src: "test://private/foo.txt",
+			dst: "./private/bar.txt",
+		},
+		{
+			src: "./private/bar.txt",
+			dst: "test://private/foo.txt",
+		},
+	}
+
+	for _, test := range tests {
+		err := o.Symlink(test.src, test.dst)
+		require.ErrorIs(t, err, engineos.ErrCrossingFSBoundaries)
 	}
 }
 

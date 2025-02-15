@@ -12,7 +12,8 @@ import (
 )
 
 var (
-	ErrHandlerNotFound = errors.New("handler not found")
+	ErrHandlerNotFound      = errors.New("handler not found")
+	ErrCrossingFSBoundaries = errors.New("crossing filesystem boundaries")
 )
 
 var _ risoros.OS = &OS{}
@@ -157,7 +158,7 @@ func (o *OS) Rename(oldpath, newpath string) error {
 		return ErrHandlerNotFound
 	}
 	if oldHandler != newHandler {
-		return errors.New("rename cannot pass filesystem boundaries")
+		return ErrCrossingFSBoundaries
 	}
 	return oldHandler.Rename(oldPth, newPth)
 }
@@ -180,7 +181,7 @@ func (o *OS) Symlink(oldname, newname string) error {
 		return ErrHandlerNotFound
 	}
 	if oldHandler != newHandler {
-		return errors.New("symlink cannot pass filesystem boundaries")
+		return ErrCrossingFSBoundaries
 	}
 	return oldHandler.Symlink(oldPth, newPth)
 }
