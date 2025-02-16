@@ -73,12 +73,6 @@ func (s *Service) Start(ctx context.Context) error {
 		}
 	})
 
-	engineOpts := []risor.Option{
-		risor.WithoutDefaultGlobals(),
-		risor.WithGlobals(config.Modules()),
-		risor.WithGlobals(config.Builtins()),
-	}
-
 loop:
 	for {
 		select {
@@ -97,7 +91,7 @@ loop:
 			}
 			log.Debug("after load package", "repository", v.Repository, "path", v.FilePath)
 
-			err = engineCompileAndRunPackage(ctx, file, v.Args, stdin, stdout, engineOpts...)
+			err = engineCompileAndRunPackage(ctx, file, v.Args, stdin, stdout)
 			if err != nil {
 				log.Debug(err.Error())
 				_ = msg.ReplyError(errcodes.ErrEngineRun, err.Error(), "")
@@ -125,7 +119,7 @@ loop:
 	return ctx.Err()
 }
 
-func engineCompileAndRunPackage(ctx context.Context, file *repository.File, args []string, stdin, stdout risoros.File, opts ...risor.Option) error {
+func engineCompileAndRunPackage(ctx context.Context, file *repository.File, args []string, stdin, stdout risoros.File) error {
 	osCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -141,7 +135,12 @@ func engineCompileAndRunPackage(ctx context.Context, file *repository.File, args
 		}),
 	)
 
-	code, err := engine.CompilePackage(osCtx, file, int64(file.Size), opts...)
+	risorOpts := []risor.Option{
+		risor.WithoutDefaultGlobals(),
+		risor.WithGlobals(config.Modules()),
+		risor.WithGlobals(config.Builtins()),
+	}
+	code, err := engine.CompilePackage(osCtx, file, int64(file.Size), risorOpts...)
 	if err != nil {
 		return err
 	}
