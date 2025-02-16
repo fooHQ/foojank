@@ -18,11 +18,17 @@ func NewConfig(_ context.Context, c *cli.Command) (*config.Config, error) {
 		return nil, err
 	}
 
-	file := c.String(flags.Config)
-	confFile, err := config.ParseFile(file)
-	if err != nil && !os.IsNotExist(err) {
-		err = fmt.Errorf("cannot parse configuration file '%s': %w", file, err)
-		return nil, err
+	var confFile *config.Config
+	if c.IsSet(flags.Config) {
+		file := c.String(flags.Config)
+		confFile, err = config.ParseFile(file)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return nil, err
+			}
+			err = fmt.Errorf("cannot parse configuration file '%s': %w", file, err)
+			return nil, err
+		}
 	}
 
 	confFlags, err := config.ParseFlags(func(name string) (any, bool) {
