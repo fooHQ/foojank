@@ -7,10 +7,11 @@ import (
 
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/risor-io/risor"
-	risoros "github.com/risor-io/risor/os"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/foohq/foojank/internal/engine"
+	"github.com/foohq/foojank/internal/engine/filefs"
+	"github.com/foohq/foojank/internal/engine/natsfs"
 	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/vessel/config"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
@@ -36,6 +37,24 @@ func New(args Arguments) *Service {
 }
 
 func (s *Service) Start(ctx context.Context) error {
+	fileFs, err := filefs.New()
+	if err != nil {
+		log.Debug("cannot initialize filefs", "error", err)
+		return err
+	}
+
+	store, err := s.args.JetStream.ObjectStore(ctx, config.ServiceName)
+	if err != nil {
+		log.Debug("cannot open object store", "error", err)
+		return err
+	}
+
+	natsFs, err := natsfs.New(store)
+	if err != nil {
+		log.Debug("cannot initialize natsfs", "error", err)
+		return err
+	}
+
 	group, _ := errgroup.WithContext(ctx)
 	stdout := engineos.NewPipe()
 	group.Go(func() error {
@@ -93,7 +112,15 @@ loop:
 			}
 			log.Debug("after load package", "repository", v.Repository, "path", v.FilePath)
 
-			err = engineCompileAndRunPackage(ctx, file, v.Args, stdin, stdout)
+			err = engineCompileAndRunPackage(ctx,
+				file,
+				engineos.WithArgs(v.Args),
+				engineos.WithStdin(stdin),
+				engineos.WithStdout(stdout),
+				engineos.WithEnvVar("SERVICE_NAME", config.ServiceName),
+				engineos.WithURLHandler("file", "", fileFs),
+				engineos.WithURLHandler("natsfs", "", natsFs),
+			)
 			if err != nil {
 				log.Debug(err.Error())
 				_ = msg.ReplyError(errcodes.ErrEngineRun, err.Error(), "")
@@ -151,20 +178,18 @@ func fetchFile(ctx context.Context, js jetstream.JetStream, repository, filename
 	}, nil
 }
 
-func engineCompileAndRunPackage(ctx context.Context, file *File, args []string, stdin, stdout risoros.File) error {
+func engineCompileAndRunPackage(ctx context.Context, file *File, opts ...engineos.Option) error {
 	osCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	opts = append(opts, engineos.WithExitHandler(func(code int) {
+		log.Debug("on exit", "code", code)
+		cancel()
+	}))
+
 	osCtx = engineos.NewContext(
 		osCtx,
-		engineos.WithArgs(args),
-		engineos.WithStdin(stdin),
-		engineos.WithStdout(stdout),
-		engineos.WithEnvVar("SERVICE_NAME", config.ServiceName),
-		engineos.WithExitHandler(func(code int) {
-			log.Debug("on exit", "code", code)
-			cancel()
-		}),
+		opts...,
 	)
 
 	risorOpts := []risor.Option{
