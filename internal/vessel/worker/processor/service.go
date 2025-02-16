@@ -9,9 +9,9 @@ import (
 	"github.com/risor-io/risor"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/foohq/foojank/filesystems/filefs"
+	"github.com/foohq/foojank/filesystems/natsfs"
 	"github.com/foohq/foojank/internal/engine"
-	"github.com/foohq/foojank/internal/engine/filefs"
-	"github.com/foohq/foojank/internal/engine/natsfs"
 	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/vessel/config"
 	"github.com/foohq/foojank/internal/vessel/errcodes"

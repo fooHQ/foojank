@@ -7,10 +7,9 @@ import (
 	"os"
 	"testing"
 
-	engineos "github.com/foohq/foojank/internal/engine/natsfs"
-
 	"github.com/stretchr/testify/require"
 
+	engineos "github.com/foohq/foojank/filesystems/natsfs"
 	"github.com/foohq/foojank/internal/testutils"
 )
 
