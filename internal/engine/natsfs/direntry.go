@@ -10,26 +10,21 @@ type DirEntry struct {
 }
 
 func (e *DirEntry) Name() string {
-	//TODO implement me
-	panic("implement me")
+	return e.name
 }
 
 func (e *DirEntry) IsDir() bool {
-	//TODO implement me
-	panic("implement me")
+	return false
 }
 
 func (e *DirEntry) Type() fs.FileMode {
-	//TODO implement me
-	panic("implement me")
+	return e.mode
 }
 
 func (e *DirEntry) Info() (fs.FileInfo, error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, ErrUnsupportedOperation
 }
 
 func (e *DirEntry) HasInfo() bool {
-	//TODO implement me
-	panic("implement me")
+	return false
 }
