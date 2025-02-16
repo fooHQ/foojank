@@ -163,7 +163,7 @@ func (f *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
 
 		entries = append(entries, &risoros.DirEntryWrapper{
 			DirEntry: &DirEntry{
-				name: file.Name,
+				name: strings.TrimLeft(file.Name, name),
 				mode: 0777,
 			},
 		})
