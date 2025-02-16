@@ -1,13 +1,15 @@
 package processor
 
 import (
+	"bytes"
 	"context"
+	"io"
 
+	"github.com/nats-io/nats.go/jetstream"
 	"github.com/risor-io/risor"
 	risoros "github.com/risor-io/risor/os"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/foohq/foojank/clients/repository"
 	"github.com/foohq/foojank/internal/engine"
 	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/vessel/config"
@@ -17,10 +19,10 @@ import (
 )
 
 type Arguments struct {
-	DataCh     <-chan decoder.Message
-	StdinCh    <-chan decoder.Message
-	StdoutCh   chan<- []byte
-	Repository *repository.Client
+	DataCh    <-chan decoder.Message
+	StdinCh   <-chan decoder.Message
+	StdoutCh  chan<- []byte
+	JetStream jetstream.JetStream
 }
 
 type Service struct {
@@ -83,7 +85,7 @@ loop:
 			}
 
 			log.Debug("before load package", "repository", v.Repository, "path", v.FilePath)
-			file, err := s.args.Repository.GetFile(ctx, v.Repository, v.FilePath)
+			file, err := fetchFile(ctx, s.args.JetStream, v.Repository, v.FilePath)
 			if err != nil {
 				log.Debug(err.Error())
 				_ = msg.ReplyError(errcodes.ErrRepositoryGetFile, err.Error(), "")
@@ -119,7 +121,37 @@ loop:
 	return ctx.Err()
 }
 
-func engineCompileAndRunPackage(ctx context.Context, file *repository.File, args []string, stdin, stdout risoros.File) error {
+func fetchFile(ctx context.Context, js jetstream.JetStream, repository, filename string) (*File, error) {
+	s, err := js.ObjectStore(ctx, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := s.Get(ctx, filename)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Close()
+
+	b, err := io.ReadAll(res)
+	if err != nil {
+		return nil, err
+	}
+
+	info, err := res.Info()
+	if err != nil {
+		return nil, err
+	}
+
+	return &File{
+		b:        bytes.NewReader(b),
+		Name:     info.Name,
+		Size:     info.Size,
+		Modified: info.ModTime,
+	}, nil
+}
+
+func engineCompileAndRunPackage(ctx context.Context, file *File, args []string, stdin, stdout risoros.File) error {
 	osCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 

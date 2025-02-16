@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nats.go/jetstream"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/foohq/foojank/internal/vessel/connector"
@@ -17,7 +16,6 @@ type Arguments struct {
 	Version    string
 	Metadata   map[string]string
 	Connection *nats.Conn
-	Stream     jetstream.JetStream
 }
 
 type Service struct {
@@ -55,7 +53,6 @@ func (s *Service) Start(ctx context.Context) error {
 	group.Go(func() error {
 		return scheduler.New(scheduler.Arguments{
 			Connection: s.args.Connection,
-			Stream:     s.args.Stream,
 			InputCh:    decoderOutCh,
 		}).Start(groupCtx)
 	})

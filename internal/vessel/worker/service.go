@@ -8,7 +8,7 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/foohq/foojank/clients/repository"
+	"github.com/foohq/foojank/internal/vessel/log"
 	"github.com/foohq/foojank/internal/vessel/worker/connector"
 	"github.com/foohq/foojank/internal/vessel/worker/decoder"
 	"github.com/foohq/foojank/internal/vessel/worker/processor"
@@ -20,7 +20,6 @@ type Arguments struct {
 	Name       string
 	Version    string
 	Connection *nats.Conn
-	Stream     jetstream.JetStream
 	EventCh    chan<- Event
 }
 
@@ -47,11 +46,15 @@ func (s *Service) Start(ctx context.Context) error {
 		}
 	}()
 
+	jetStream, err := jetstream.New(s.args.Connection)
+	if err != nil {
+		log.Debug("cannot create a JetStream context", "error", err.Error())
+		return err
+	}
+
 	dataSubject := s.args.Name + "." + strconv.FormatUint(s.args.ID, 10) + ".DATA"
 	stdinSubject := s.args.Name + "." + strconv.FormatUint(s.args.ID, 10) + ".STDIN"
 	stdoutSubject := s.args.Name + "." + strconv.FormatUint(s.args.ID, 10) + ".STDOUT"
-
-	repo := repository.New(s.args.Stream)
 
 	connectorInfoCh := make(chan connector.InfoMessage, 1)
 	connectorOutCh := make(chan connector.Message)
@@ -87,10 +90,10 @@ func (s *Service) Start(ctx context.Context) error {
 	})
 	group.Go(func() error {
 		return processor.New(processor.Arguments{
-			DataCh:     decoderDataCh,
-			StdinCh:    decoderStdinCh,
-			StdoutCh:   processorStdoutCh,
-			Repository: repo,
+			DataCh:    decoderDataCh,
+			StdinCh:   decoderStdinCh,
+			StdoutCh:  processorStdoutCh,
+			JetStream: jetStream,
 		}).Start(groupCtx)
 	})
 	group.Go(func() error {
@@ -116,7 +119,7 @@ func (s *Service) Start(ctx context.Context) error {
 		break
 	}
 
-	err := group.Wait()
+	err = group.Wait()
 	// This must not be used in select along with ctx.
 	// Doing so would prevent sending the event up to the scheduler, ultimately causing a deadlock.
 	s.args.EventCh <- EventWorkerStopped{

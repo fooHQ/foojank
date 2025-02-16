@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nats.go/jetstream"
 
 	"github.com/foohq/foojank/internal/vessel"
 	"github.com/foohq/foojank/internal/vessel/config"
@@ -72,12 +71,6 @@ func main() {
 		log.Debug("cannot determine computer's IP address", "error", err)
 	}
 
-	js, err := jetstream.New(nc)
-	if err != nil {
-		log.Debug("cannot enable JetStream", "error", err)
-		return
-	}
-
 	err = vessel.New(vessel.Arguments{
 		Name:    config.ServiceName,
 		Version: config.ServiceVersion,
@@ -88,7 +81,6 @@ func main() {
 			"ip_address": ip.String(),
 		},
 		Connection: nc,
-		Stream:     js,
 	}).Start(ctx)
 	if err != nil {
 		log.Debug("cannot start the agent", "error", err)
