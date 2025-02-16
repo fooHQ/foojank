@@ -126,7 +126,8 @@ func (f *FS) Stat(name string) (risoros.FileInfo, error) {
 }
 
 func (f *FS) Symlink(oldName, newName string) error {
-	// TODO
+	// This operation is supported by ObjectStore, however at this point there seems to be
+	// no actual use case.
 	return ErrUnsupportedOperation
 }
 
