@@ -199,6 +199,6 @@ func TestFS_ReadDir(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, files, 0)
 
-	files, err = fs.ReadDir("")
+	_, err = fs.ReadDir("")
 	require.ErrorIs(t, err, engineos.ErrInvalidFilename)
 }

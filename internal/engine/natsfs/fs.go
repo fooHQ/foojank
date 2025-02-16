@@ -167,14 +167,11 @@ func (f *FS) WalkDir(root string, fn risoros.WalkDirFunc) error {
 func matchObjects(objects []*jetstream.ObjectInfo, path string) []risoros.DirEntry {
 	var matched []risoros.DirEntry
 	for _, object := range objects {
-		// Check if the file path starts with the mask
+		// Check if the file path starts with the path
 		if strings.HasPrefix(object.Name, path) {
-			// Remove the mask from the file path
+			// Remove the path from the file path
 			relativePath := strings.TrimPrefix(object.Name, path)
-			// If the relative path starts with a path separator, remove it
-			if strings.HasPrefix(relativePath, "/") {
-				relativePath = relativePath[1:]
-			}
+			relativePath = strings.TrimPrefix(relativePath, "/")
 			// Get the file name from the relative path
 			filename := filepath.Base(filepath.Dir(relativePath))
 			if filename == "." {
