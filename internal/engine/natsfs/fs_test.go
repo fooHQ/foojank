@@ -123,3 +123,56 @@ func TestFS_WriteFile(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, string(message), s)
 }
+
+func TestFS_ReadDir(t *testing.T) {
+	_, nc := testutils.NewNatsServerAndConnection(t)
+	store := testutils.NewNatsObjectStore(t, nc)
+
+	fs, err := engineos.New(store)
+	require.NoError(t, err)
+
+	for range 3 {
+		filename := fmt.Sprintf("/documents/file_%d", rand.Int())
+		_, err = store.PutString(context.Background(), filename, "")
+		require.NoError(t, err)
+	}
+
+	for range 2 {
+		filename := fmt.Sprintf("/music/file_%d", rand.Int())
+		_, err = store.PutString(context.Background(), filename, "")
+		require.NoError(t, err)
+	}
+
+	for range 5 {
+		filename := fmt.Sprintf("/private/documents/file_%d", rand.Int())
+		_, err = store.PutString(context.Background(), filename, "")
+		require.NoError(t, err)
+	}
+
+	files, err := fs.ReadDir("/documents")
+	require.NoError(t, err)
+	require.Len(t, files, 3)
+
+	files, err = fs.ReadDir("/music")
+	require.NoError(t, err)
+	require.Len(t, files, 2)
+
+	files, err = fs.ReadDir("/private")
+	require.NoError(t, err)
+	require.Len(t, files, 5)
+
+	files, err = fs.ReadDir("/")
+	require.NoError(t, err)
+	require.Len(t, files, 10)
+
+	files, err = fs.ReadDir("/documents/")
+	require.NoError(t, err)
+	require.Len(t, files, 0)
+
+	files, err = fs.ReadDir("documents")
+	require.NoError(t, err)
+	require.Len(t, files, 0)
+
+	files, err = fs.ReadDir("")
+	require.ErrorIs(t, err, engineos.ErrInvalidFilename)
+}

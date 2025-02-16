@@ -6,9 +6,16 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/nats-io/nats.go/jetstream"
 	risoros "github.com/risor-io/risor/os"
+)
+
+var (
+	ErrInvalidFilename      = errors.New("invalid filename")
+	ErrUnsupportedOperation = errors.New("unsupported operation")
 )
 
 var _ risoros.FS = &FS{}
@@ -36,11 +43,11 @@ func (f *FS) Create(name string) (risoros.File, error) {
 }
 
 func (f *FS) Mkdir(name string, perm risoros.FileMode) error {
-	return errors.New("unsupported")
+	return ErrUnsupportedOperation
 }
 
 func (f *FS) MkdirAll(path string, perm risoros.FileMode) error {
-	return errors.New("unsupported")
+	return ErrUnsupportedOperation
 }
 
 func (f *FS) Open(name string) (risoros.File, error) {
@@ -100,12 +107,12 @@ func (f *FS) Rename(oldPath, newPath string) error {
 
 func (f *FS) Stat(name string) (risoros.FileInfo, error) {
 	// TODO
-	return nil, errors.New("unsupported")
+	return nil, ErrUnsupportedOperation
 }
 
 func (f *FS) Symlink(oldName, newName string) error {
 	// TODO
-	return errors.New("unsupported")
+	return ErrUnsupportedOperation
 }
 
 func (f *FS) WriteFile(name string, data []byte, perm risoros.FileMode) error {
@@ -119,8 +126,34 @@ func (f *FS) WriteFile(name string, data []byte, perm risoros.FileMode) error {
 }
 
 func (f *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
-	// TODO
-	return nil, errors.New("unsupported")
+	if name == "" {
+		return nil, ErrInvalidFilename
+	}
+
+	files, err := f.store.List(context.TODO())
+	if err != nil {
+		if errors.Is(err, jetstream.ErrNoObjectsFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	entries := make([]risoros.DirEntry, 0, len(files))
+	for _, file := range files {
+		dirName := filepath.Dir(file.Name)
+		if !strings.HasPrefix(dirName, name) {
+			continue
+		}
+
+		entries = append(entries, &risoros.DirEntryWrapper{
+			DirEntry: &DirEntry{
+				name: file.Name,
+				mode: 0777,
+			},
+		})
+	}
+
+	return entries, nil
 }
 
 func (f *FS) WalkDir(root string, fn risoros.WalkDirFunc) error {
