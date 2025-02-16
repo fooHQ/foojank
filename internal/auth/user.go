@@ -91,6 +91,13 @@ func NewUserAgent(name, accountPubKey string, accountSigningKey []byte) (*User, 
 			fmt.Sprintf("$JS.API.CONSUMER.DELETE.OBJ_%s.*", name),
 			fmt.Sprintf("%s.*.STDOUT", name),
 			"_INBOX.>",
+
+			// Allow modification of object in ObjectStore
+			fmt.Sprintf("$O.%s.M.*", name),
+			fmt.Sprintf("$JS.API.STREAM.PURGE.OBJ_%s", name),
+
+			// Allow listing contents of a bucket
+			fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.*.$O.%s.M.*", name, name),
 		},
 	}
 	claimsEnc, err := claims.Encode(accountSignKeyPair)
