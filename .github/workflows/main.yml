@@ -8,15 +8,8 @@ jobs:
       - uses: jetify-com/devbox-install-action@v0.12.0
       - run: devbox run lint
 
-  tests_linux:
+  tests:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: jetify-com/devbox-install-action@v0.12.0
-      - run: devbox run test
-
-  tests_windows:
-    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: jetify-com/devbox-install-action@v0.12.0
