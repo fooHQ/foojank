@@ -2,7 +2,6 @@ package os
 
 import (
 	"io"
-	"io/fs"
 	"time"
 
 	risoros "github.com/risor-io/risor/os"
@@ -29,7 +28,7 @@ func (f *Pipe) Write(p []byte) (int, error) {
 	return f.w.Write(p)
 }
 
-func (f *Pipe) Stat() (fs.FileInfo, error) {
+func (f *Pipe) Stat() (risoros.FileInfo, error) {
 	return risoros.NewFileInfo(risoros.GenericFileInfoOpts{
 		Name:    "grr",
 		Size:    0,

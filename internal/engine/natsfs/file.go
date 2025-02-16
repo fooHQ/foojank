@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"io/fs"
 	"os"
 
 	"github.com/nats-io/nats.go/jetstream"
@@ -25,7 +24,7 @@ func NewFile(name string, store jetstream.ObjectStore) *File {
 	}
 }
 
-func (f *File) Stat() (fs.FileInfo, error) {
+func (f *File) Stat() (risoros.FileInfo, error) {
 	// TODO
 	return nil, errors.New("not implemented")
 }

@@ -1,8 +1,6 @@
 package natsfs
 
 import (
-	"io/fs"
-
 	risoros "github.com/risor-io/risor/os"
 )
 
@@ -10,7 +8,7 @@ var _ risoros.DirEntry = &DirEntry{}
 
 type DirEntry struct {
 	name string
-	mode fs.FileMode
+	mode risoros.FileMode
 }
 
 func (e *DirEntry) Name() string {
@@ -21,11 +19,11 @@ func (e *DirEntry) IsDir() bool {
 	return false
 }
 
-func (e *DirEntry) Type() fs.FileMode {
+func (e *DirEntry) Type() risoros.FileMode {
 	return e.mode
 }
 
-func (e *DirEntry) Info() (fs.FileInfo, error) {
+func (e *DirEntry) Info() (risoros.FileInfo, error) {
 	return nil, ErrUnsupportedOperation
 }
 
