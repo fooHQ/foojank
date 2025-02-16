@@ -106,8 +106,20 @@ func (f *FS) Rename(oldPath, newPath string) error {
 }
 
 func (f *FS) Stat(name string) (risoros.FileInfo, error) {
-	// TODO
-	return nil, ErrUnsupportedOperation
+	info, err := f.store.GetInfo(context.TODO(), name)
+	if err != nil {
+		if errors.Is(err, jetstream.ErrObjectNotFound) {
+			return nil, os.ErrNotExist
+		}
+		return nil, err
+	}
+
+	return &FileInfo{
+		name:    info.Name,
+		size:    int64(info.Size),
+		mode:    0777,
+		modTime: info.ModTime,
+	}, nil
 }
 
 func (f *FS) Symlink(oldName, newName string) error {
