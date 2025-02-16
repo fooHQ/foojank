@@ -53,7 +53,10 @@ func (f *FS) MkdirAll(path string, perm risoros.FileMode) error {
 func (f *FS) Open(name string) (risoros.File, error) {
 	_, err := f.store.GetInfo(context.TODO(), name)
 	if err != nil {
-		return nil, os.ErrNotExist
+		if errors.Is(err, jetstream.ErrObjectNotFound) {
+			return nil, os.ErrNotExist
+		}
+		return nil, err
 	}
 	return &File{
 		name:  name,
