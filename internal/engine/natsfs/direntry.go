@@ -2,7 +2,11 @@ package natsfs
 
 import (
 	"io/fs"
+
+	risoros "github.com/risor-io/risor/os"
 )
+
+var _ risoros.DirEntry = &DirEntry{}
 
 type DirEntry struct {
 	name string
