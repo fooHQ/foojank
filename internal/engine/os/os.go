@@ -360,6 +360,8 @@ func (o *OS) getRegisteredURLHandler(path string) (risoros.FS, string, bool) {
 
 	if u.Scheme == "file" {
 		u.Path = o.joinWorkDir(u.Path)
+	} else {
+		u.Path = filepath.Clean(u.Path)
 	}
 
 	key := strings.Join([]string{u.Scheme, u.Host}, "/")

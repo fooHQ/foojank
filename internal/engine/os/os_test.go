@@ -60,13 +60,13 @@ func TestOS_Create(t *testing.T) {
 		{
 			input: "test://private/data/../form.txt",
 			result: testutils.CreateResult{
-				Name: "/data/../form.txt",
+				Name: "/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../../form.txt",
 			result: testutils.CreateResult{
-				Name: "/data/../../form.txt",
+				Name: "/form.txt",
 			},
 		},
 		{
@@ -155,14 +155,14 @@ func TestOS_Mkdir(t *testing.T) {
 		{
 			input: "test://private/data/../form",
 			result: testutils.MkdirResult{
-				Name: "/data/../form",
+				Name: "/form",
 				Perm: 0777,
 			},
 		},
 		{
 			input: "test://private/data/../../form",
 			result: testutils.MkdirResult{
-				Name: "/data/../../form",
+				Name: "/form",
 				Perm: 0777,
 			},
 		},
@@ -259,14 +259,14 @@ func TestOS_MkdirAll(t *testing.T) {
 		{
 			input: "test://private/data/../form",
 			result: testutils.MkdirAllResult{
-				Path: "/data/../form",
+				Path: "/form",
 				Perm: 0777,
 			},
 		},
 		{
 			input: "test://private/data/../../form",
 			result: testutils.MkdirAllResult{
-				Path: "/data/../../form",
+				Path: "/form",
 				Perm: 0777,
 			},
 		},
@@ -361,13 +361,13 @@ func TestOS_Open(t *testing.T) {
 		{
 			input: "test://private/data/../form.txt",
 			result: testutils.OpenResult{
-				Name: "/data/../form.txt",
+				Name: "/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../../form.txt",
 			result: testutils.OpenResult{
-				Name: "/data/../../form.txt",
+				Name: "/form.txt",
 			},
 		},
 		{
@@ -458,7 +458,7 @@ func TestOS_OpenFile(t *testing.T) {
 		{
 			input: "test://private/data/../form.txt",
 			result: testutils.OpenFileResult{
-				Name: "/data/../form.txt",
+				Name: "/form.txt",
 				Flag: 1313,
 				Perm: 0777,
 			},
@@ -466,7 +466,7 @@ func TestOS_OpenFile(t *testing.T) {
 		{
 			input: "test://private/data/../../form.txt",
 			result: testutils.OpenFileResult{
-				Name: "/data/../../form.txt",
+				Name: "/form.txt",
 				Flag: 1313,
 				Perm: 0777,
 			},
@@ -569,13 +569,13 @@ func TestOS_ReadFile(t *testing.T) {
 		{
 			input: "test://private/data/../form.txt",
 			result: testutils.ReadFileResult{
-				Name: "/data/../form.txt",
+				Name: "/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../../form.txt",
 			result: testutils.ReadFileResult{
-				Name: "/data/../../form.txt",
+				Name: "/form.txt",
 			},
 		},
 		{
@@ -662,13 +662,13 @@ func TestOS_Remove(t *testing.T) {
 		{
 			input: "test://private/data/../form.txt",
 			result: testutils.RemoveResult{
-				Name: "/data/../form.txt",
+				Name: "/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../../form.txt",
 			result: testutils.RemoveResult{
-				Name: "/data/../../form.txt",
+				Name: "/form.txt",
 			},
 		},
 		{
@@ -755,13 +755,13 @@ func TestOS_RemoveAll(t *testing.T) {
 		{
 			input: "test://private/data/../form.txt",
 			result: testutils.RemoveAllResult{
-				Path: "/data/../form.txt",
+				Path: "/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../../form.txt",
 			result: testutils.RemoveAllResult{
-				Path: "/data/../../form.txt",
+				Path: "/form.txt",
 			},
 		},
 		{
@@ -947,13 +947,13 @@ func TestOS_Stat(t *testing.T) {
 		{
 			input: "test://private/data/../form.txt",
 			result: testutils.StatResult{
-				Name: "/data/../form.txt",
+				Name: "/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../../form.txt",
 			result: testutils.StatResult{
-				Name: "/data/../../form.txt",
+				Name: "/form.txt",
 			},
 		},
 		{
@@ -1143,7 +1143,7 @@ func TestOS_WriteFile(t *testing.T) {
 		{
 			input: "test://private/data/../form.txt",
 			result: testutils.WriteFileResult{
-				Name: "/data/../form.txt",
+				Name: "/form.txt",
 				Data: []byte("test"),
 				Perm: 0777,
 			},
@@ -1151,7 +1151,7 @@ func TestOS_WriteFile(t *testing.T) {
 		{
 			input: "test://private/data/../../form.txt",
 			result: testutils.WriteFileResult{
-				Name: "/data/../../form.txt",
+				Name: "/form.txt",
 				Data: []byte("test"),
 				Perm: 0777,
 			},
@@ -1254,13 +1254,13 @@ func TestOS_ReadDir(t *testing.T) {
 		{
 			input: "test://private/data/../form",
 			result: testutils.ReadDirResult{
-				Name: "/data/../form",
+				Name: "/form",
 			},
 		},
 		{
 			input: "test://private/data/../../form",
 			result: testutils.ReadDirResult{
-				Name: "/data/../../form",
+				Name: "/form",
 			},
 		},
 		{
@@ -1349,14 +1349,14 @@ func TestOS_WalkDir(t *testing.T) {
 		{
 			input: "test://private/data/../form",
 			result: testutils.WalkDirResult{
-				Root: "/data/../form",
+				Root: "/form",
 				Fn:   nil,
 			},
 		},
 		{
 			input: "test://private/data/../../form",
 			result: testutils.WalkDirResult{
-				Root: "/data/../../form",
+				Root: "/form",
 				Fn:   nil,
 			},
 		},
