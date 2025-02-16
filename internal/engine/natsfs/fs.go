@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
+	"sort"
 	"strings"
 
 	"github.com/nats-io/nats.go/jetstream"
@@ -154,24 +156,53 @@ func (f *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
 		return nil, err
 	}
 
-	entries := make([]risoros.DirEntry, 0, len(files))
-	for _, file := range files {
-		dirName := filepath.Dir(file.Name)
-		if !strings.HasPrefix(dirName, name) {
-			continue
-		}
-
-		entries = append(entries, &risoros.DirEntryWrapper{
-			DirEntry: &DirEntry{
-				name: strings.TrimLeft(file.Name, name),
-				mode: 0777,
-			},
-		})
-	}
-
+	entries := matchObjects(files, name)
 	return entries, nil
 }
 
 func (f *FS) WalkDir(root string, fn risoros.WalkDirFunc) error {
 	return errors.New("unsupported")
+}
+
+func matchObjects(objects []*jetstream.ObjectInfo, path string) []risoros.DirEntry {
+	var matched []risoros.DirEntry
+	for _, object := range objects {
+		// Check if the file path starts with the mask
+		if strings.HasPrefix(object.Name, path) {
+			// Remove the mask from the file path
+			relativePath := strings.TrimPrefix(object.Name, path)
+			// If the relative path starts with a path separator, remove it
+			if strings.HasPrefix(relativePath, "/") {
+				relativePath = relativePath[1:]
+			}
+			// Get the file name from the relative path
+			filename := filepath.Base(filepath.Dir(relativePath))
+			if filename == "." {
+				filename = filepath.Base(relativePath)
+			}
+			// If the dir name is not empty, add it to the matched paths
+			if filename != "" {
+				var mode risoros.FileMode
+				if filename != relativePath {
+					mode = 0755 | risoros.FileMode(os.ModeDir)
+				} else {
+					mode = 0644
+				}
+				matched = append(matched, &DirEntry{
+					name: filename,
+					mode: mode,
+				})
+			}
+		}
+	}
+
+	sort.Slice(matched, func(i, j int) bool {
+		return matched[i].Name() < matched[j].Name()
+	})
+
+	matched = slices.CompactFunc(matched, func(i, j risoros.DirEntry) bool {
+		return i.Name() == j.Name()
+	})
+
+	return matched
 }

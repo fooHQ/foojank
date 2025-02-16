@@ -16,7 +16,7 @@ func (e *DirEntry) Name() string {
 }
 
 func (e *DirEntry) IsDir() bool {
-	return false
+	return e.mode.IsDir()
 }
 
 func (e *DirEntry) Type() risoros.FileMode {

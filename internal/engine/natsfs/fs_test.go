@@ -131,20 +131,28 @@ func TestFS_ReadDir(t *testing.T) {
 	fs, err := engineos.New(store)
 	require.NoError(t, err)
 
+	filename := fmt.Sprintf("/collector_%d.dat", rand.Int())
+	_, err = store.PutString(context.Background(), filename, "")
+	require.NoError(t, err)
+
+	filename = fmt.Sprintf("/private/data_%d.log", rand.Int())
+	_, err = store.PutString(context.Background(), filename, "")
+	require.NoError(t, err)
+
 	for range 3 {
-		filename := fmt.Sprintf("/documents/file_%d", rand.Int())
+		filename := fmt.Sprintf("/documents/file_%d.pdf", rand.Int())
 		_, err = store.PutString(context.Background(), filename, "")
 		require.NoError(t, err)
 	}
 
 	for range 2 {
-		filename := fmt.Sprintf("/music/file_%d", rand.Int())
+		filename := fmt.Sprintf("/music/file_%d.mp3", rand.Int())
 		_, err = store.PutString(context.Background(), filename, "")
 		require.NoError(t, err)
 	}
 
 	for range 5 {
-		filename := fmt.Sprintf("/private/documents/file_%d", rand.Int())
+		filename := fmt.Sprintf("/private/documents/file_%d.docm", rand.Int())
 		_, err = store.PutString(context.Background(), filename, "")
 		require.NoError(t, err)
 	}
@@ -152,24 +160,42 @@ func TestFS_ReadDir(t *testing.T) {
 	files, err := fs.ReadDir("/documents")
 	require.NoError(t, err)
 	require.Len(t, files, 3)
+	require.False(t, files[0].IsDir(), "file '%s' should be a regular file", files[0].Name())
+	require.False(t, files[1].IsDir(), "file '%s' should be a regular file", files[1].Name())
+	require.False(t, files[2].IsDir(), "file '%s' should be a regular file", files[2].Name())
 
 	files, err = fs.ReadDir("/music")
 	require.NoError(t, err)
 	require.Len(t, files, 2)
+	require.False(t, files[0].IsDir(), "file '%s' should be a regular file", files[0].Name())
+	require.False(t, files[1].IsDir(), "file '%s' should be a regular file", files[1].Name())
 
 	files, err = fs.ReadDir("/private")
 	require.NoError(t, err)
-	require.Len(t, files, 5)
+	require.Len(t, files, 2)
+	require.False(t, files[0].IsDir(), "file '%s' should be a regular file", files[0].Name())
+	require.True(t, files[1].IsDir(), "file '%s' should be a directory", files[1].Name())
 
 	files, err = fs.ReadDir("/")
 	require.NoError(t, err)
-	require.Len(t, files, 10)
+	require.Len(t, files, 4)
+	require.False(t, files[0].IsDir(), "file '%s' should be a regular file", files[0].Name())
+	require.True(t, files[1].IsDir(), "file '%s' should be a directory", files[1].Name())
+	require.True(t, files[2].IsDir(), "file '%s' should be a directory", files[2].Name())
+	require.True(t, files[3].IsDir(), "file '%s' should be a directory", files[3].Name())
 
 	files, err = fs.ReadDir("/documents/")
 	require.NoError(t, err)
-	require.Len(t, files, 0)
+	require.Len(t, files, 3)
+	require.False(t, files[0].IsDir(), "file '%s' should be a regular file", files[0].Name())
+	require.False(t, files[1].IsDir(), "file '%s' should be a regular file", files[1].Name())
+	require.False(t, files[2].IsDir(), "file '%s' should be a regular file", files[2].Name())
 
 	files, err = fs.ReadDir("documents")
+	require.NoError(t, err)
+	require.Len(t, files, 0)
+
+	files, err = fs.ReadDir(".")
 	require.NoError(t, err)
 	require.Len(t, files, 0)
 
