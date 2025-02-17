@@ -1,0 +1,28 @@
+title = 'foojank'
+baseURL = 'https://foojank.com/'
+languageCode = 'en-us'
+
+enableGitInfo = true
+
+[params]
+displayUpdatedDate = true
+dateFormat = "January 2, 2006"
+
+[params.theme]
+default = 'dark'
+displayToggle = false
+
+[module.imports]
+path = 'github.com/imfing/hextra'
+
+[menu]
+main = [
+    { name = 'Install', pageRef = '/install', weight = 1 },
+    { name = 'Documentation', pageRef = '/docs', weight = 2 },
+    { name = 'GitHub', pageRef = '/github', params = { icon = 'github' }, weight = 3 },
+]
+sidebar = [
+    { name = 'Resources', params = { type = 'separator' }, weight = 1 },
+    { name = 'Support', pageRef = '/support', weight = 2 },
+    { name = 'GitHub', pageRef = '/github', weight = 3 }
+]
