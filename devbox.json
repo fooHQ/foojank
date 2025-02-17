@@ -6,7 +6,8 @@
     "upx@latest",
     "capnproto@latest",
     "garble@latest",
-    "go@1.23"
+    "go@1.23",
+    "hugo@latest"
   ],
   "env": {
     "GOROOT":      "",
