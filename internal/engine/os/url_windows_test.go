@@ -56,6 +56,13 @@ func Test_ToURL(t *testing.T) {
 				Path:   "/data",
 			},
 		},
+		{
+			path: "file://C:/Windows/System32",
+			url: &url.URL{
+				Scheme: "file",
+				Host:   "//C:",
+			},
+		},
 	}
 	for i, test := range tests {
 		u, err := os.ToURL(test.path)

@@ -10,12 +10,15 @@ import (
 
 func ToURL(path string) (*url.URL, error) {
 	volume := filepath.VolumeName(path)
-	// Is absolute path starting with volume name (i.e. C:\)...
+	// Is an absolute path starting with volume name (i.e. C:\)...
 	if strings.Contains(volume, ":") {
+		host := "//" + volume
+		pth := strings.TrimPrefix(path, volume)
+		pth = strings.ReplaceAll(pth, `\`, "/")
 		return &url.URL{
 			Scheme: "file",
-			Host:   "//" + volume,
-			Path:   strings.ReplaceAll(path, `\`, "/"),
+			Host:   host,
+			Path:   pth,
 		}, nil
 	}
 
