@@ -51,7 +51,7 @@ func WithURLHandler(scheme string, handler risoros.FS) Option {
 
 func WithWorkDir(dir string) Option {
 	return func(o *OS) {
-		u, _ := toURL(dir)
+		u, _ := ToURL(dir)
 		o.wd = u
 	}
 }
@@ -341,35 +341,15 @@ func (o *OS) UserHomeDir() (string, error) {
 	return os.UserHomeDir()
 }
 
-func (o *OS) joinWorkDir(name string) string {
-	if !filepath.IsAbs(name) {
-		return o.wd.JoinPath(name).Path
-	}
-	return filepath.Clean(name)
-}
-
 func (o *OS) getRegisteredURLHandler(path string) (risoros.FS, *url.URL, bool) {
-	u, err := toURL(path)
+	u, err := ToURL(path)
 	if err != nil {
 		return nil, nil, false
 	}
 
-	u.Path = o.joinWorkDir(u.Path)
+	u = NormalizeURL(o.wd, u)
 	handler, ok := o.urlHandlers[u.Scheme]
 	return handler, u, ok
-}
-
-func toURL(path string) (*url.URL, error) {
-	u, err := url.Parse(path)
-	if err != nil {
-		return nil, err
-	}
-
-	if u.Scheme == "" {
-		u.Scheme = "file"
-	}
-
-	return u, nil
 }
 
 func NewContext(ctx context.Context, options ...Option) context.Context {
@@ -385,9 +365,28 @@ func NewContext(ctx context.Context, options ...Option) context.Context {
 	return risoros.WithOS(ctx, o)
 }
 
+func NormalizeURL(wd, u *url.URL) *url.URL {
+	if u.Scheme == "" {
+		if wd.Scheme == "" {
+			u.Scheme = "file"
+		} else {
+			u.Scheme = wd.Scheme
+		}
+	}
+
+	if !path.IsAbs(u.Path) {
+		u.Host = wd.Host
+		u.Path = path.Join(wd.Path, u.Path)
+	} else {
+		u.Path = path.Clean(u.Path)
+	}
+
+	return u
+}
+
 func initWD() *url.URL {
 	wd, _ := os.Getwd()
-	u, _ := toURL(wd)
+	u, _ := ToURL(wd)
 	return u
 }
 

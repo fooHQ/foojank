@@ -2,6 +2,7 @@ package os_test
 
 import (
 	"context"
+	"net/url"
 	"testing"
 
 	risoros "github.com/risor-io/risor/os"
@@ -1410,5 +1411,124 @@ func TestOS_WalkDir(t *testing.T) {
 
 		result := <-resultCh
 		require.Equal(t, test.result, result)
+	}
+}
+
+func Test_NormalizeURL(t *testing.T) {
+	tests := []struct {
+		workingDir *url.URL
+		path       *url.URL
+		result     *url.URL
+	}{
+		{
+			workingDir: &url.URL{
+				Scheme: "file",
+				Path:   "/",
+			},
+			path: &url.URL{
+				Path: "test",
+			},
+			result: &url.URL{
+				Scheme: "file",
+				Path:   "/test",
+			},
+		},
+		{
+			workingDir: &url.URL{
+				Scheme: "file",
+				Path:   "/",
+			},
+			path: &url.URL{
+				Scheme: "smb",
+				Host:   "192.168.0.1",
+				Path:   "/test",
+			},
+			result: &url.URL{
+				Scheme: "smb",
+				Host:   "192.168.0.1",
+				Path:   "/test",
+			},
+		},
+		{
+			workingDir: &url.URL{
+				Scheme: "smb",
+				Host:   "192.168.0.1",
+				Path:   "/test",
+			},
+			path: &url.URL{
+				Scheme: "file",
+				Path:   "/var/log",
+			},
+			result: &url.URL{
+				Scheme: "file",
+				Path:   "/var/log",
+			},
+		},
+		{
+			workingDir: &url.URL{
+				Scheme: "smb",
+				Host:   "192.168.0.1",
+				Path:   "/var/log",
+			},
+			path: &url.URL{
+				Path: "../lib",
+			},
+			result: &url.URL{
+				Scheme: "smb",
+				Host:   "192.168.0.1",
+				Path:   "/var/lib",
+			},
+		},
+		{
+			workingDir: &url.URL{
+				Scheme: "smb",
+				Host:   "192.168.0.1",
+				Path:   "/var/log",
+			},
+			path: &url.URL{
+				Scheme: "smb",
+				Host:   "192.168.0.2",
+				Path:   "/var/lib",
+			},
+			result: &url.URL{
+				Scheme: "smb",
+				Host:   "192.168.0.2",
+				Path:   "/var/lib",
+			},
+		},
+		{
+			workingDir: &url.URL{
+				Scheme: "file",
+				Host:   "//C:",
+				Path:   "/Users/user/Desktop",
+			},
+			path: &url.URL{
+				Path: "../",
+			},
+			result: &url.URL{
+				Scheme: "file",
+				Host:   "//C:",
+				Path:   "/Users/user",
+			},
+		},
+		{
+			workingDir: &url.URL{
+				Scheme: "file",
+				Host:   "//192.168.0.1/shared",
+				Path:   "/",
+			},
+			path: &url.URL{
+				Path: "../",
+			},
+			result: &url.URL{
+				Scheme: "file",
+				Host:   "//192.168.0.1/shared",
+				Path:   "/",
+			},
+		},
+	}
+	for i, test := range tests {
+		result := engineos.NormalizeURL(test.workingDir, test.path)
+		require.Equal(t, test.result, result, "failed to normalize URL (test %d/%d)", i+1, len(tests))
 	}
 }
