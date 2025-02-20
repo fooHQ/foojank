@@ -43,10 +43,9 @@ func WithStdout(file risoros.File) Option {
 	}
 }
 
-func WithURLHandler(scheme, host string, handler risoros.FS) Option {
+func WithURLHandler(scheme string, handler risoros.FS) Option {
 	return func(o *OS) {
-		key := strings.Join([]string{scheme, host}, "/")
-		o.urlHandlers[key] = handler
+		o.urlHandlers[scheme] = handler
 	}
 }
 
@@ -76,27 +75,27 @@ type OS struct {
 }
 
 func (o *OS) Create(name string) (risoros.File, error) {
-	handler, pth, ok := o.getRegisteredURLHandler(name)
+	handler, fURL, ok := o.getRegisteredURLHandler(name)
 	if !ok {
 		return nil, ErrHandlerNotFound
 	}
-	return handler.Create(pth)
+	return handler.Create(fURL.Path)
 }
 
 func (o *OS) Mkdir(name string, perm os.FileMode) error {
-	handler, pth, ok := o.getRegisteredURLHandler(name)
+	handler, fURL, ok := o.getRegisteredURLHandler(name)
 	if !ok {
 		return ErrHandlerNotFound
 	}
-	return handler.Mkdir(pth, perm)
+	return handler.Mkdir(fURL.Path, perm)
 }
 
 func (o *OS) MkdirAll(path string, perm os.FileMode) error {
-	handler, pth, ok := o.getRegisteredURLHandler(path)
+	handler, fURL, ok := o.getRegisteredURLHandler(path)
 	if !ok {
 		return ErrHandlerNotFound
 	}
-	return handler.MkdirAll(pth, perm)
+	return handler.MkdirAll(fURL.Path, perm)
 }
 
 func (o *OS) MkdirTemp(dir, pattern string) (string, error) {
@@ -110,81 +109,81 @@ func (o *OS) MkdirTemp(dir, pattern string) (string, error) {
 }
 
 func (o *OS) Open(name string) (risoros.File, error) {
-	handler, pth, ok := o.getRegisteredURLHandler(name)
+	handler, fURL, ok := o.getRegisteredURLHandler(name)
 	if !ok {
 		return nil, ErrHandlerNotFound
 	}
-	return handler.Open(pth)
+	return handler.Open(fURL.Path)
 }
 
 func (o *OS) OpenFile(name string, flag int, perm os.FileMode) (risoros.File, error) {
-	handler, pth, ok := o.getRegisteredURLHandler(name)
+	handler, fURL, ok := o.getRegisteredURLHandler(name)
 	if !ok {
 		return nil, ErrHandlerNotFound
 	}
-	return handler.OpenFile(pth, flag, perm)
+	return handler.OpenFile(fURL.Path, flag, perm)
 }
 
 func (o *OS) ReadFile(name string) ([]byte, error) {
-	handler, pth, ok := o.getRegisteredURLHandler(name)
+	handler, fURL, ok := o.getRegisteredURLHandler(name)
 	if !ok {
 		return nil, ErrHandlerNotFound
 	}
-	return handler.ReadFile(pth)
+	return handler.ReadFile(fURL.Path)
 }
 
 func (o *OS) Remove(name string) error {
-	handler, pth, ok := o.getRegisteredURLHandler(name)
+	handler, fURL, ok := o.getRegisteredURLHandler(name)
 	if !ok {
 		return ErrHandlerNotFound
 	}
-	return handler.Remove(pth)
+	return handler.Remove(fURL.Path)
 }
 
 func (o *OS) RemoveAll(path string) error {
-	handler, pth, ok := o.getRegisteredURLHandler(path)
+	handler, fURL, ok := o.getRegisteredURLHandler(path)
 	if !ok {
 		return ErrHandlerNotFound
 	}
-	return handler.RemoveAll(pth)
+	return handler.RemoveAll(fURL.Path)
 }
 
 func (o *OS) Rename(oldpath, newpath string) error {
-	oldHandler, oldPth, ok := o.getRegisteredURLHandler(oldpath)
+	oldHandler, oldURL, ok := o.getRegisteredURLHandler(oldpath)
 	if !ok {
 		return ErrHandlerNotFound
 	}
-	newHandler, newPth, ok := o.getRegisteredURLHandler(newpath)
+	newHandler, newURL, ok := o.getRegisteredURLHandler(newpath)
 	if !ok {
 		return ErrHandlerNotFound
 	}
 	if oldHandler != newHandler {
 		return ErrCrossingFSBoundaries
 	}
-	return oldHandler.Rename(oldPth, newPth)
+	return oldHandler.Rename(oldURL.Path, newURL.Path)
 }
 
 func (o *OS) Stat(name string) (os.FileInfo, error) {
-	handler, pth, ok := o.getRegisteredURLHandler(name)
+	handler, fURL, ok := o.getRegisteredURLHandler(name)
 	if !ok {
 		return nil, ErrHandlerNotFound
 	}
-	return handler.Stat(pth)
+	return handler.Stat(fURL.Path)
 }
 
 func (o *OS) Symlink(oldname, newname string) error {
-	oldHandler, oldPth, ok := o.getRegisteredURLHandler(oldname)
+	oldHandler, oldURL, ok := o.getRegisteredURLHandler(oldname)
 	if !ok {
 		return ErrHandlerNotFound
 	}
-	newHandler, newPth, ok := o.getRegisteredURLHandler(newname)
+	newHandler, newURL, ok := o.getRegisteredURLHandler(newname)
 	if !ok {
 		return ErrHandlerNotFound
 	}
 	if oldHandler != newHandler {
 		return ErrCrossingFSBoundaries
 	}
-	return oldHandler.Symlink(oldPth, newPth)
+	return oldHandler.Symlink(oldURL.Path, newURL.Path)
 }
 
 func (o *OS) TempDir() string {
@@ -192,20 +191,20 @@ func (o *OS) TempDir() string {
 }
 
 func (o *OS) WriteFile(name string, content []byte, perm os.FileMode) error {
-	handler, pth, ok := o.getRegisteredURLHandler(name)
+	handler, fURL, ok := o.getRegisteredURLHandler(name)
 	if !ok {
 		return ErrHandlerNotFound
 	}
-	return handler.WriteFile(pth, content, perm)
+	return handler.WriteFile(fURL.Path, content, perm)
 }
 
 func (o *OS) ReadDir(name string) ([]risoros.DirEntry, error) {
-	handler, pth, ok := o.getRegisteredURLHandler(name)
+	handler, fURL, ok := o.getRegisteredURLHandler(name)
 	if !ok {
 		return nil, ErrHandlerNotFound
 	}
 
-	results, err := handler.ReadDir(pth)
+	results, err := handler.ReadDir(fURL.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -221,11 +220,11 @@ func (o *OS) ReadDir(name string) ([]risoros.DirEntry, error) {
 }
 
 func (o *OS) WalkDir(root string, fn risoros.WalkDirFunc) error {
-	handler, pth, ok := o.getRegisteredURLHandler(root)
+	handler, fURL, ok := o.getRegisteredURLHandler(root)
 	if !ok {
 		return ErrHandlerNotFound
 	}
-	return handler.WalkDir(pth, fn)
+	return handler.WalkDir(fURL.Path, fn)
 }
 
 func (o *OS) PathSeparator() rune {
@@ -237,12 +236,12 @@ func (o *OS) PathListSeparator() rune {
 }
 
 func (o *OS) Chdir(dir string) error {
-	handler, pth, ok := o.getRegisteredURLHandler(dir)
+	handler, fURL, ok := o.getRegisteredURLHandler(dir)
 	if !ok {
 		return ErrHandlerNotFound
 	}
 
-	f, err := handler.Open(pth)
+	f, err := handler.Open(fURL.Path)
 	if err != nil {
 		return err
 	}
@@ -254,7 +253,7 @@ func (o *OS) Chdir(dir string) error {
 	}
 
 	if !info.IsDir() {
-		return errors.New("chdir " + pth + ": file is not a directory")
+		return errors.New("chdir " + fURL.Path + ": file is not a directory")
 	}
 
 	// TODO!!!
@@ -345,24 +344,18 @@ func (o *OS) joinWorkDir(name string) string {
 	if !filepath.IsAbs(name) {
 		return o.wd.JoinPath(name).Path
 	}
-	return name
+	return filepath.Clean(name)
 }
 
-func (o *OS) getRegisteredURLHandler(path string) (risoros.FS, string, bool) {
+func (o *OS) getRegisteredURLHandler(path string) (risoros.FS, *url.URL, bool) {
 	u, err := toURL(path)
 	if err != nil {
-		return nil, "", false
+		return nil, nil, false
 	}
 
-	if u.Scheme == "file" {
-		u.Path = o.joinWorkDir(u.Path)
-	} else {
-		u.Path = filepath.Clean(u.Path)
-	}
-
-	key := strings.Join([]string{u.Scheme, u.Host}, "/")
-	handler, ok := o.urlHandlers[key]
-	return handler, u.Path, ok
+	u.Path = o.joinWorkDir(u.Path)
+	handler, ok := o.urlHandlers[u.Scheme]
+	return handler, u, ok
 }
 
 func toURL(path string) (*url.URL, error) {
