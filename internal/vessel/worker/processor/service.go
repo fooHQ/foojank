@@ -118,8 +118,8 @@ loop:
 				engineos.WithStdin(stdin),
 				engineos.WithStdout(stdout),
 				engineos.WithEnvVar("SERVICE_NAME", config.ServiceName),
-				engineos.WithURLHandler("file", "", fileFs),
-				engineos.WithURLHandler("natsfs", "", natsFs),
+				engineos.WithURLHandler("file", fileFs),
+				engineos.WithURLHandler("natsfs", natsFs),
 			)
 			if err != nil {
 				log.Debug(err.Error())
