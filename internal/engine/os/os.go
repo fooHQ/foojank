@@ -261,7 +261,11 @@ func (o *OS) Chdir(dir string) error {
 }
 
 func (o *OS) Getwd() (dir string, err error) {
-	return o.wd.String(), nil
+	wd := o.wd.Path
+	if o.wd.Scheme != "file" {
+		wd = o.wd.Scheme + "://" + o.wd.Host + wd
+	}
+	return wd, nil
 }
 
 func (o *OS) Stdout() risoros.File {
