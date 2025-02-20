@@ -348,14 +348,9 @@ func (o *OS) joinWorkDir(name string) string {
 }
 
 func (o *OS) getRegisteredURLHandler(path string) (risoros.FS, string, bool) {
-	// TODO: support windows paths!
-	u, err := url.Parse(path)
+	u, err := toURL(path)
 	if err != nil {
 		return nil, "", false
-	}
-
-	if u.Scheme == "" {
-		u.Scheme = "file"
 	}
 
 	if u.Scheme == "file" {
@@ -367,6 +362,19 @@ func (o *OS) getRegisteredURLHandler(path string) (risoros.FS, string, bool) {
 	key := strings.Join([]string{u.Scheme, u.Host}, "/")
 	handler, ok := o.urlHandlers[key]
 	return handler, u.Path, ok
+}
+
+func toURL(path string) (*url.URL, error) {
+	u, err := url.Parse(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if u.Scheme == "" {
+		u.Scheme = "file"
+	}
+
+	return u, nil
 }
 
 func NewContext(ctx context.Context, options ...Option) context.Context {
