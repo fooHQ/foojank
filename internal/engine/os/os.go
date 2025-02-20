@@ -52,7 +52,8 @@ func WithURLHandler(scheme, host string, handler risoros.FS) Option {
 
 func WithWorkDir(dir string) Option {
 	return func(o *OS) {
-		o.wd = filepath.Join(string(os.PathSeparator), dir)
+		u, _ := toURL(dir)
+		o.wd = u
 	}
 }
 
@@ -65,7 +66,7 @@ func WithExitHandler(handler ExitHandler) Option {
 }
 
 type OS struct {
-	wd          string
+	wd          *url.URL
 	environ     map[string]string
 	stdin       risoros.File
 	stdout      risoros.File
@@ -236,35 +237,35 @@ func (o *OS) PathListSeparator() rune {
 }
 
 func (o *OS) Chdir(dir string) error {
-	_, _, ok := o.getRegisteredURLHandler(dir)
-	if ok {
-		return errors.New("chdir is not supported")
+	handler, pth, ok := o.getRegisteredURLHandler(dir)
+	if !ok {
+		return ErrHandlerNotFound
 	}
 
-	pth := o.joinWorkDir(dir)
-	f, err := os.Open(pth)
+	f, err := handler.Open(pth)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	// Checks whether the file is a directory by trying to read the entries.
-	_, err = f.Readdirnames(0)
+	info, err := f.Stat()
 	if err != nil {
-		// Trying hard to return the same error string as stdlib's os.Chdir.
-		var pathErr *os.PathError
-		if errors.As(err, &pathErr) {
-			return errors.New("chdir " + pth + ": " + pathErr.Unwrap().Error())
-		}
 		return err
 	}
 
-	o.wd = pth
+	if !info.IsDir() {
+		return errors.New("chdir " + pth + ": file is not a directory")
+	}
+
+	// TODO!!!
+	// TODO!!!
+	// TODO!!!
+	//o.wd =
 	return nil
 }
 
 func (o *OS) Getwd() (dir string, err error) {
-	return o.wd, nil
+	return o.wd.String(), nil
 }
 
 func (o *OS) Stdout() risoros.File {
@@ -342,7 +343,7 @@ func (o *OS) UserHomeDir() (string, error) {
 
 func (o *OS) joinWorkDir(name string) string {
 	if !filepath.IsAbs(name) {
-		return filepath.Join(o.wd, name)
+		return o.wd.JoinPath(name).Path
 	}
 	return name
 }
@@ -390,9 +391,10 @@ func NewContext(ctx context.Context, options ...Option) context.Context {
 	return risoros.WithOS(ctx, o)
 }
 
-func initWD() string {
+func initWD() *url.URL {
 	wd, _ := os.Getwd()
-	return wd
+	u, _ := toURL(wd)
+	return u
 }
 
 func initEnviron() map[string]string {
