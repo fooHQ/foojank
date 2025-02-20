@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/url"
 	"os"
-	"path/filepath"
+	"path"
 	"strings"
 
 	risoros "github.com/risor-io/risor/os"
@@ -99,13 +99,7 @@ func (o *OS) MkdirAll(path string, perm os.FileMode) error {
 }
 
 func (o *OS) MkdirTemp(dir, pattern string) (string, error) {
-	// TODO
-	_, _, ok := o.getRegisteredURLHandler(dir)
-	if ok {
-		return "", errors.New("creating temporary directory is not supported")
-	}
-	pth := o.joinWorkDir(dir)
-	return os.MkdirTemp(pth, pattern)
+	return "", errors.New("not implemented")
 }
 
 func (o *OS) Open(name string) (risoros.File, error) {
