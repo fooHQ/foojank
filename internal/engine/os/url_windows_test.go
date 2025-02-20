@@ -57,7 +57,15 @@ func Test_ToURL(t *testing.T) {
 			},
 		},
 		{
-			path: "file://C:/Windows/System32",
+			path: `C:/Windows/System32`,
+			url: &url.URL{
+				Scheme: "file",
+				Host:   "//C:",
+				Path:   "/Windows/System32",
+			},
+		},
+		{
+			path: "file:///C:/Windows/System32",
 			url: &url.URL{
 				Scheme: "file",
 				Host:   "//C:",
