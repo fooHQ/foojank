@@ -1499,30 +1499,28 @@ func Test_NormalizeURL(t *testing.T) {
 		{
 			workingDir: &url.URL{
 				Scheme: "file",
-				Host:   "//C:",
-				Path:   "/Users/user/Desktop",
+				Path:   "/C:/Users/user/Desktop",
 			},
 			path: &url.URL{
 				Path: "../",
 			},
 			result: &url.URL{
 				Scheme: "file",
-				Host:   "//C:",
-				Path:   "/Users/user",
+				Path:   "/C:/Users/user",
 			},
 		},
 		{
 			workingDir: &url.URL{
 				Scheme: "file",
-				Host:   "//192.168.0.1/shared",
-				Path:   "/",
+				Host:   "192.168.0.1",
+				Path:   "/shared",
 			},
 			path: &url.URL{
 				Path: "../",
 			},
 			result: &url.URL{
 				Scheme: "file",
-				Host:   "//192.168.0.1/shared",
+				Host:   "192.168.0.1",
 				Path:   "/",
 			},
 		},
