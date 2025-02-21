@@ -14,18 +14,13 @@ func ToURL(path string) (*url.URL, error) {
 	if strings.Contains(volume, ":") {
 		// Is an absolute path starting with volume name (i.e. C:\)...
 		return &url.URL{
-			Scheme: "file",
-			Path:   "/" + pth,
+			Path: "/" + pth,
 		}, nil
 	}
 
 	u, err := url.Parse(pth)
 	if err != nil {
 		return nil, err
-	}
-
-	if u.Scheme == "" {
-		u.Scheme = "file"
 	}
 
 	return u, nil
