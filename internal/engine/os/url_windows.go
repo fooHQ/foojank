@@ -9,38 +9,23 @@ import (
 )
 
 func ToURL(path string) (*url.URL, error) {
+	pth := strings.ReplaceAll(path, `\`, "/")
 	volume := filepath.VolumeName(path)
-	// Is an absolute path starting with volume name (i.e. C:\)...
 	if strings.Contains(volume, ":") {
-		host := "//" + volume
-		pth := strings.TrimPrefix(path, volume)
-		pth = strings.ReplaceAll(pth, `\`, "/")
+		// Is an absolute path starting with volume name (i.e. C:\)...
 		return &url.URL{
 			Scheme: "file",
-			Host:   host,
-			Path:   pth,
+			Path:   "/" + pth,
 		}, nil
 	}
 
-	// Is UNC path...
-	if strings.HasPrefix(volume, `\\`) {
-		host := strings.ReplaceAll(volume, `\`, "/")
-		pth := strings.TrimPrefix(path, volume)
-		pth = strings.ReplaceAll(pth, `\`, "/")
-		if pth == "" {
-			pth = "/"
-		}
-		return &url.URL{
-			Scheme: "file",
-			Host:   host,
-			Path:   pth,
-		}, nil
-	}
-
-	path = strings.ReplaceAll(path, `\`, "/")
-	u, err := url.Parse(path)
+	u, err := url.Parse(pth)
 	if err != nil {
 		return nil, err
+	}
+
+	if u.Scheme == "" {
+		u.Scheme = "file"
 	}
 
 	return u, nil
