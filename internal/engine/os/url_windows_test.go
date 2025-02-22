@@ -17,27 +17,27 @@ func Test_ToURL(t *testing.T) {
 	}{
 		{
 			path: `C:\Windows\System32`,
-			url:  "file:///C:/Windows/System32",
+			url:  "/C:/Windows/System32",
 		},
 		{
 			path: `C:/Windows/System32`,
-			url:  "file:///C:/Windows/System32",
+			url:  "/C:/Windows/System32",
 		},
 		{
 			path: `\\192.168.0.1\shared\data`,
-			url:  "file://192.168.0.1/shared/data",
+			url:  "//192.168.0.1/shared/data",
 		},
 		{
 			path: `\\192.168.0.1\shared`,
-			url:  "file://192.168.0.1/shared",
+			url:  "//192.168.0.1/shared",
 		},
 		{
 			path: `//192.168.0.1/shared/data`,
-			url:  "file://192.168.0.1/shared/data",
+			url:  "//192.168.0.1/shared/data",
 		},
 		{
 			path: `C:/Windows/System32`,
-			url:  "file:///C:/Windows/System32",
+			url:  "/C:/Windows/System32",
 		},
 		{
 			path: "file:///C:/Windows/System32",
