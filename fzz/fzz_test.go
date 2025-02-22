@@ -23,7 +23,7 @@ func TestBuild(t *testing.T) {
 }
 
 func TestBuildIsEmpty(t *testing.T) {
-	src, err := os.MkdirTemp("/tmp/", "fzz")
+	src, err := os.MkdirTemp(os.TempDir(), "fzz")
 	require.NoError(t, err)
 	defer os.RemoveAll(src)
 
