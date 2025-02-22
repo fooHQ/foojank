@@ -1524,6 +1524,21 @@ func Test_NormalizeURL(t *testing.T) {
 				Path:   "/",
 			},
 		},
+		{
+			workingDir: &url.URL{
+				Scheme: "file",
+				Host:   "192.168.0.1",
+				Path:   "/shared",
+			},
+			path: &url.URL{
+				Path: "/test",
+			},
+			result: &url.URL{
+				Scheme: "file",
+				Host:   "192.168.0.1",
+				Path:   "/test",
+			},
+		},
 	}
 	for i, test := range tests {
 		result := engineos.NormalizeURL(test.workingDir, test.path)

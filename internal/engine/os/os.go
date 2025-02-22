@@ -255,10 +255,7 @@ func (o *OS) Chdir(dir string) error {
 }
 
 func (o *OS) Getwd() (dir string, err error) {
-	wd := o.wd.Path
-	if o.wd.Scheme != "file" {
-		wd = o.wd.Scheme + "://" + o.wd.Host + wd
-	}
+	wd := o.wd.String()
 	return wd, nil
 }
 
@@ -366,10 +363,10 @@ func NormalizeURL(wd, u *url.URL) *url.URL {
 		} else {
 			u.Scheme = wd.Scheme
 		}
+		u.Host = wd.Host
 	}
 
 	if !path.IsAbs(u.Path) {
-		u.Host = wd.Host
 		u.Path = path.Join(wd.Path, u.Path)
 	} else {
 		u.Path = path.Clean(u.Path)
