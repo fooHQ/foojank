@@ -32,12 +32,12 @@ func TestOS_Args(t *testing.T) {
 
 func TestOS_Create(t *testing.T) {
 	testCh := make(chan any, 1)
-	fsPrivate := testutils.NewFS(testCh)
-	fsFile := testutils.NewFS(testCh)
+	fsPrivate := testutils.NewURIHandler(testCh)
+	fsFile := testutils.NewURIHandler(testCh)
 	osCtx := engineos.NewContext(context.Background(),
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURLHandler("file", fsFile),
-		engineos.WithURLHandler("test", fsPrivate),
+		engineos.WithURIHandler("file", fsFile),
+		engineos.WithURIHandler("test", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -125,12 +125,12 @@ func TestOS_Create(t *testing.T) {
 
 func TestOS_Mkdir(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewFS(resultCh)
-	fsFile := testutils.NewFS(resultCh)
+	fsPrivate := testutils.NewURIHandler(resultCh)
+	fsFile := testutils.NewURIHandler(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURLHandler("file", fsFile),
-		engineos.WithURLHandler("test", fsPrivate),
+		engineos.WithURIHandler("file", fsFile),
+		engineos.WithURIHandler("test", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -229,12 +229,12 @@ func TestOS_Mkdir(t *testing.T) {
 
 func TestOS_MkdirAll(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewFS(resultCh)
-	fsFile := testutils.NewFS(resultCh)
+	fsPrivate := testutils.NewURIHandler(resultCh)
+	fsFile := testutils.NewURIHandler(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURLHandler("file", fsFile),
-		engineos.WithURLHandler("test", fsPrivate),
+		engineos.WithURIHandler("file", fsFile),
+		engineos.WithURIHandler("test", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -333,12 +333,12 @@ func TestOS_MkdirAll(t *testing.T) {
 
 func TestOS_Open(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewFS(resultCh)
-	fsFile := testutils.NewFS(resultCh)
+	fsPrivate := testutils.NewURIHandler(resultCh)
+	fsFile := testutils.NewURIHandler(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURLHandler("file", fsFile),
-		engineos.WithURLHandler("test", fsPrivate),
+		engineos.WithURIHandler("file", fsFile),
+		engineos.WithURIHandler("test", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -426,12 +426,12 @@ func TestOS_Open(t *testing.T) {
 
 func TestOS_OpenFile(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewFS(resultCh)
-	fsFile := testutils.NewFS(resultCh)
+	fsPrivate := testutils.NewURIHandler(resultCh)
+	fsFile := testutils.NewURIHandler(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURLHandler("file", fsFile),
-		engineos.WithURLHandler("test", fsPrivate),
+		engineos.WithURIHandler("file", fsFile),
+		engineos.WithURIHandler("test", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -541,12 +541,12 @@ func TestOS_OpenFile(t *testing.T) {
 
 func TestOS_ReadFile(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewFS(resultCh)
-	fsFile := testutils.NewFS(resultCh)
+	fsPrivate := testutils.NewURIHandler(resultCh)
+	fsFile := testutils.NewURIHandler(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURLHandler("file", fsFile),
-		engineos.WithURLHandler("test", fsPrivate),
+		engineos.WithURIHandler("file", fsFile),
+		engineos.WithURIHandler("test", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -634,12 +634,12 @@ func TestOS_ReadFile(t *testing.T) {
 
 func TestOS_Remove(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewFS(resultCh)
-	fsFile := testutils.NewFS(resultCh)
+	fsPrivate := testutils.NewURIHandler(resultCh)
+	fsFile := testutils.NewURIHandler(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURLHandler("file", fsFile),
-		engineos.WithURLHandler("test", fsPrivate),
+		engineos.WithURIHandler("file", fsFile),
+		engineos.WithURIHandler("test", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -727,12 +727,12 @@ func TestOS_Remove(t *testing.T) {
 
 func TestOS_RemoveAll(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewFS(resultCh)
-	fsFile := testutils.NewFS(resultCh)
+	fsPrivate := testutils.NewURIHandler(resultCh)
+	fsFile := testutils.NewURIHandler(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURLHandler("file", fsFile),
-		engineos.WithURLHandler("test", fsPrivate),
+		engineos.WithURIHandler("file", fsFile),
+		engineos.WithURIHandler("test", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -820,12 +820,12 @@ func TestOS_RemoveAll(t *testing.T) {
 
 func TestOS_Rename(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewFS(resultCh)
-	fsFile := testutils.NewFS(resultCh)
+	fsPrivate := testutils.NewURIHandler(resultCh)
+	fsFile := testutils.NewURIHandler(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURLHandler("file", fsFile),
-		engineos.WithURLHandler("test", fsPrivate),
+		engineos.WithURIHandler("file", fsFile),
+		engineos.WithURIHandler("test", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -887,12 +887,12 @@ func TestOS_Rename(t *testing.T) {
 }
 
 func TestOS_Rename_ErrCrossingFSBoundaries(t *testing.T) {
-	fsPrivate := testutils.NewFS(nil)
-	fsFile := testutils.NewFS(nil)
+	fsPrivate := testutils.NewURIHandler(nil)
+	fsFile := testutils.NewURIHandler(nil)
 	osCtx := engineos.NewContext(context.Background(),
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURLHandler("file", fsFile),
-		engineos.WithURLHandler("test", fsPrivate),
+		engineos.WithURIHandler("file", fsFile),
+		engineos.WithURIHandler("test", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -919,12 +919,12 @@ func TestOS_Rename_ErrCrossingFSBoundaries(t *testing.T) {
 
 func TestOS_Stat(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewFS(resultCh)
-	fsFile := testutils.NewFS(resultCh)
+	fsPrivate := testutils.NewURIHandler(resultCh)
+	fsFile := testutils.NewURIHandler(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURLHandler("file", fsFile),
-		engineos.WithURLHandler("test", fsPrivate),
+		engineos.WithURIHandler("file", fsFile),
+		engineos.WithURIHandler("test", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -1012,12 +1012,12 @@ func TestOS_Stat(t *testing.T) {
 
 func TestOS_Symlink(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewFS(resultCh)
-	fsFile := testutils.NewFS(resultCh)
+	fsPrivate := testutils.NewURIHandler(resultCh)
+	fsFile := testutils.NewURIHandler(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURLHandler("file", fsFile),
-		engineos.WithURLHandler("test", fsPrivate),
+		engineos.WithURIHandler("file", fsFile),
+		engineos.WithURIHandler("test", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -1079,12 +1079,12 @@ func TestOS_Symlink(t *testing.T) {
 }
 
 func TestOS_Symlink_ErrCrossingFSBoundaries(t *testing.T) {
-	fsPrivate := testutils.NewFS(nil)
-	fsFile := testutils.NewFS(nil)
+	fsPrivate := testutils.NewURIHandler(nil)
+	fsFile := testutils.NewURIHandler(nil)
 	osCtx := engineos.NewContext(context.Background(),
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURLHandler("file", fsFile),
-		engineos.WithURLHandler("test", fsPrivate),
+		engineos.WithURIHandler("file", fsFile),
+		engineos.WithURIHandler("test", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -1111,12 +1111,12 @@ func TestOS_Symlink_ErrCrossingFSBoundaries(t *testing.T) {
 
 func TestOS_WriteFile(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewFS(resultCh)
-	fsFile := testutils.NewFS(resultCh)
+	fsPrivate := testutils.NewURIHandler(resultCh)
+	fsFile := testutils.NewURIHandler(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURLHandler("file", fsFile),
-		engineos.WithURLHandler("test", fsPrivate),
+		engineos.WithURIHandler("file", fsFile),
+		engineos.WithURIHandler("test", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -1226,12 +1226,12 @@ func TestOS_WriteFile(t *testing.T) {
 
 func TestOS_ReadDir(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewFS(resultCh)
-	fsFile := testutils.NewFS(resultCh)
+	fsPrivate := testutils.NewURIHandler(resultCh)
+	fsFile := testutils.NewURIHandler(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURLHandler("file", fsFile),
-		engineos.WithURLHandler("test", fsPrivate),
+		engineos.WithURIHandler("file", fsFile),
+		engineos.WithURIHandler("test", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
@@ -1319,12 +1319,12 @@ func TestOS_ReadDir(t *testing.T) {
 
 func TestOS_WalkDir(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewFS(resultCh)
-	fsFile := testutils.NewFS(resultCh)
+	fsPrivate := testutils.NewURIHandler(resultCh)
+	fsFile := testutils.NewURIHandler(resultCh)
 	osCtx := engineos.NewContext(context.Background(),
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURLHandler("file", fsFile),
-		engineos.WithURLHandler("test", fsPrivate),
+		engineos.WithURIHandler("file", fsFile),
+		engineos.WithURIHandler("test", fsPrivate),
 	)
 	o, ok := risoros.GetOS(osCtx)
 	require.True(t, ok)
