@@ -185,3 +185,17 @@ func (fs *FS) WalkDir(root string, fn risoros.WalkDirFunc) error {
 	}
 	return nil
 }
+
+type URIHandler struct {
+	resultCh chan<- any
+}
+
+func NewURIHandler(resultCh chan<- any) *URIHandler {
+	return &URIHandler{
+		resultCh: resultCh,
+	}
+}
+
+func (h *URIHandler) GetFS(host string) (risoros.FS, error) {
+	return NewFS(h.resultCh), nil
+}
