@@ -37,23 +37,14 @@ func New(args Arguments) *Service {
 }
 
 func (s *Service) Start(ctx context.Context) error {
-	fileFs, err := filefs.New()
-	if err != nil {
-		log.Debug("cannot initialize filefs", "error", err)
-		return err
-	}
-
 	store, err := s.args.JetStream.ObjectStore(ctx, config.ServiceName)
 	if err != nil {
 		log.Debug("cannot open object store", "error", err)
 		return err
 	}
 
-	natsFs, err := natsfs.New(store)
-	if err != nil {
-		log.Debug("cannot initialize natsfs", "error", err)
-		return err
-	}
+	natsfsHandler := natsfs.NewURIHandler(store)
+	filefsHandler := filefs.NewURIHandler()
 
 	group, _ := errgroup.WithContext(ctx)
 	stdout := engineos.NewPipe()
@@ -118,8 +109,8 @@ loop:
 				engineos.WithStdin(stdin),
 				engineos.WithStdout(stdout),
 				engineos.WithEnvVar("SERVICE_NAME", config.ServiceName),
-				engineos.WithURLHandler("file", fileFs),
-				engineos.WithURLHandler("natsfs", natsFs),
+				engineos.WithURIHandler("file", filefsHandler),
+				engineos.WithURIHandler("natsfs", natsfsHandler),
 			)
 			if err != nil {
 				log.Debug(err.Error())
