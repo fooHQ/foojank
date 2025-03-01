@@ -28,10 +28,10 @@ type FS struct {
 
 // TODO: context should have a timeout!
 
-func New(store jetstream.ObjectStore) (*FS, error) {
+func NewFS(store jetstream.ObjectStore) *FS {
 	return &FS{
 		store: store,
-	}, nil
+	}
 }
 
 func (f *FS) Create(name string) (risoros.File, error) {
