@@ -11,8 +11,8 @@ var _ risoros.FS = &FS{}
 
 type FS struct{}
 
-func New() (*FS, error) {
-	return &FS{}, nil
+func NewFS() *FS {
+	return &FS{}
 }
 
 func (f *FS) Create(name string) (risoros.File, error) {
