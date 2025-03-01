@@ -24,3 +24,15 @@ func ToURL(path string) (*url.URL, error) {
 
 	return u, nil
 }
+
+func ToPath(u *url.URL) string {
+	if strings.Contains(u.Path, ":") {
+		return u.Path[1:]
+	}
+
+	if u.Host != "" {
+		return "//" + u.Host + u.Path
+	}
+
+	return u.Path
+}
