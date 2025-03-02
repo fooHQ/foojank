@@ -1,4 +1,4 @@
-package natsfs
+package nats
 
 import (
 	risoros "github.com/risor-io/risor/os"

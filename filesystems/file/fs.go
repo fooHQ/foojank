@@ -1,4 +1,4 @@
-package filefs
+package file
 
 import (
 	"os"

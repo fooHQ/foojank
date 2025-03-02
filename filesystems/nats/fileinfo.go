@@ -1,4 +1,4 @@
-package natsfs
+package nats
 
 import (
 	"time"

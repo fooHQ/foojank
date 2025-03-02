@@ -9,8 +9,8 @@ import (
 	"github.com/risor-io/risor"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/foohq/foojank/filesystems/filefs"
-	"github.com/foohq/foojank/filesystems/natsfs"
+	filefs "github.com/foohq/foojank/filesystems/file"
+	natsfs "github.com/foohq/foojank/filesystems/nats"
 	"github.com/foohq/foojank/internal/engine"
 	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/vessel/config"
@@ -110,7 +110,7 @@ loop:
 				engineos.WithStdout(stdout),
 				engineos.WithEnvVar("SERVICE_NAME", config.ServiceName),
 				engineos.WithURIHandler("file", filefsHandler),
-				engineos.WithURIHandler("natsfs", natsfsHandler),
+				engineos.WithURIHandler("nats", natsfsHandler),
 			)
 			if err != nil {
 				log.Debug(err.Error())

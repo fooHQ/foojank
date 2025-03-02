@@ -1,4 +1,4 @@
-package natsfs_test
+package nats_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	engineos "github.com/foohq/foojank/filesystems/natsfs"
+	engineos "github.com/foohq/foojank/filesystems/nats"
 	"github.com/foohq/foojank/internal/testutils"
 )
 
