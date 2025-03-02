@@ -5,6 +5,8 @@ import (
 
 	"github.com/nats-io/nats.go/jetstream"
 	risoros "github.com/risor-io/risor/os"
+
+	"github.com/foohq/foojank/internal/uri"
 )
 
 type URIHandler struct {
@@ -18,5 +20,6 @@ func NewURIHandler(store jetstream.ObjectStore) *URIHandler {
 }
 
 func (h *URIHandler) GetFS(u *url.URL) (risoros.FS, string, error) {
-	return h.fs, "", nil
+	pth := uri.ToPath(u)
+	return h.fs, pth, nil
 }

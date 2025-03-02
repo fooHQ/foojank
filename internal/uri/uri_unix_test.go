@@ -1,6 +1,6 @@
 //go:build unix
 
-package filefs_test
+package uri_test
 
 import (
 	"net/url"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/foohq/foojank/filesystems/filefs"
+	"github.com/foohq/foojank/internal/uri"
 )
 
 func Test_ToPath(t *testing.T) {
@@ -28,7 +28,7 @@ func Test_ToPath(t *testing.T) {
 	for i, test := range tests {
 		u, err := url.Parse(test.url)
 		require.NoError(t, err)
-		p := filefs.ToPath(u)
+		p := uri.ToPath(u)
 		require.Equal(t, test.path, p, "failed to convert URL to path (test %d/%d)", i+1, len(tests))
 	}
 }

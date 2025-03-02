@@ -1,6 +1,6 @@
 //go:build windows
 
-package filefs
+package uri
 
 import (
 	"net/url"

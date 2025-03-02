@@ -4,6 +4,8 @@ import (
 	"net/url"
 
 	risoros "github.com/risor-io/risor/os"
+
+	"github.com/foohq/foojank/internal/uri"
 )
 
 type URIHandler struct {
@@ -17,6 +19,6 @@ func NewURIHandler() *URIHandler {
 }
 
 func (h *URIHandler) GetFS(u *url.URL) (risoros.FS, string, error) {
-	pth := ToPath(u)
+	pth := uri.ToPath(u)
 	return h.fs, pth, nil
 }

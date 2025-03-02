@@ -1,6 +1,6 @@
 //go:build unix
 
-package filefs
+package uri
 
 import (
 	"net/url"
