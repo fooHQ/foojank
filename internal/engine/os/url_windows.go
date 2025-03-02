@@ -4,13 +4,15 @@ package os
 
 import (
 	"net/url"
+	"path/filepath"
 	"strings"
 )
 
 // ToURL converts path to `file://` URL. The function MUST NOT modify scheme. If the scheme is empty, it MUST remain empty.
 func ToURL(path string) (*url.URL, error) {
 	pth := strings.ReplaceAll(path, `\`, "/")
-	if strings.Contains(pth, ":") {
+	volume := filepath.VolumeName(pth)
+	if strings.Contains(volume, ":") {
 		// Is an absolute path starting with volume name (i.e. C:\)...
 		return &url.URL{
 			Path: "/" + pth,
