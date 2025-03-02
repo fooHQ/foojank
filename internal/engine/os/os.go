@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	risoros "github.com/risor-io/risor/os"
+
+	"github.com/foohq/foojank/internal/uri"
 )
 
 var (
@@ -50,7 +52,7 @@ func WithURIHandler(scheme string, handler URIHandler) Option {
 
 func WithWorkDir(dir string) Option {
 	return func(o *OS) {
-		u, _ := ToURL(dir)
+		u, _ := uri.ToURL(dir)
 		o.wd = u
 	}
 }
@@ -356,7 +358,7 @@ func (o *OS) Chdir(dir string) error {
 }
 
 func (o *OS) Getwd() (dir string, err error) {
-	wd := ToFullPath(o.wd)
+	wd := uri.ToFullPath(o.wd)
 	return wd, nil
 }
 
@@ -434,12 +436,12 @@ func (o *OS) UserHomeDir() (string, error) {
 }
 
 func (o *OS) getRegisteredURIHandler(path string) (URIHandler, *url.URL, error) {
-	u, err := ToURL(path)
+	u, err := uri.ToURL(path)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	u = NormalizeURL(o.wd, u)
+	u = uri.NormalizeURL(o.wd, u)
 	handler, ok := o.uriHandlers[u.Scheme]
 	if !ok {
 		return nil, nil, ErrHandlerNotFound
@@ -463,7 +465,7 @@ func NewContext(ctx context.Context, options ...Option) context.Context {
 
 func initWD() *url.URL {
 	wd, _ := os.Getwd()
-	u, _ := ToURL(wd)
+	u, _ := uri.ToURL(wd)
 	// TODO: normalize URL!
 	return u
 }
