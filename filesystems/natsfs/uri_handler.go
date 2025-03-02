@@ -1,6 +1,8 @@
 package natsfs
 
 import (
+	"net/url"
+
 	"github.com/nats-io/nats.go/jetstream"
 	risoros "github.com/risor-io/risor/os"
 
@@ -19,6 +21,6 @@ func NewURIHandler(store jetstream.ObjectStore) *URIHandler {
 	}
 }
 
-func (h *URIHandler) GetFS(_ string) (risoros.FS, error) {
+func (h *URIHandler) GetFS(u *url.URL) (risoros.FS, error) {
 	return h.fs, nil
 }

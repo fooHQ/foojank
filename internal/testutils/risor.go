@@ -1,6 +1,8 @@
 package testutils
 
 import (
+	"net/url"
+
 	risoros "github.com/risor-io/risor/os"
 )
 
@@ -196,6 +198,6 @@ func NewURIHandler(resultCh chan<- any) *URIHandler {
 	}
 }
 
-func (h *URIHandler) GetFS(host string) (risoros.FS, error) {
+func (h *URIHandler) GetFS(_ *url.URL) (risoros.FS, error) {
 	return NewFS(h.resultCh), nil
 }

@@ -1,6 +1,8 @@
 package filefs
 
 import (
+	"net/url"
+
 	risoros "github.com/risor-io/risor/os"
 
 	engineos "github.com/foohq/foojank/internal/engine/os"
@@ -18,6 +20,6 @@ func NewURIHandler() *URIHandler {
 	}
 }
 
-func (h *URIHandler) GetFS(_ string) (risoros.FS, error) {
+func (h *URIHandler) GetFS(u *url.URL) (risoros.FS, error) {
 	return h.fs, nil
 }
