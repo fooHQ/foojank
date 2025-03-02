@@ -1,18 +1,39 @@
-//go:build unix
+//go:build windows
 
 package os
 
 import (
 	"net/url"
 	"path"
+	"path/filepath"
+	"strings"
 )
 
 // ToURL converts path to a URL. The function MUST NOT modify scheme. If the scheme is empty, it MUST remain empty.
 func ToURL(path string) (*url.URL, error) {
-	return url.Parse(path)
+	pth := strings.ReplaceAll(path, `\`, "/")
+	volume := filepath.VolumeName(pth)
+	if strings.Contains(volume, ":") {
+		// Is an absolute path starting with volume name (i.e. C:\)...
+		return &url.URL{
+			Path: "/" + pth,
+		}, nil
+	}
+
+	u, err := url.Parse(pth)
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
 }
 
+// ToFullPath converts url to full file path.
 func ToFullPath(u *url.URL) string {
+	if strings.Contains(u.Path, ":") {
+		return u.Path[1:]
+	}
+
 	if u.Host != "" {
 		if u.Scheme != "" && u.Scheme != "file" {
 			return u.Scheme + "://" + u.Host + u.Path
@@ -23,12 +44,8 @@ func ToFullPath(u *url.URL) string {
 	return u.Path
 }
 
-func ToPath(u *url.URL) string {
-	return u.Path
-}
-
 func IsAbsoluteURL(u *url.URL) bool {
-	return u.Scheme != "" || u.Host != ""
+	return u.Scheme != "" || u.Host != "" || (u.Path != "" && filepath.VolumeName(u.Path[1:]) != "")
 }
 
 func NormalizeURL(wd, u *url.URL) *url.URL {

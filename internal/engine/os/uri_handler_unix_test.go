@@ -1,4 +1,4 @@
-//go:build windows
+//go:build unix
 
 package os_test
 
@@ -17,36 +17,28 @@ func Test_ToURL(t *testing.T) {
 		url  string
 	}{
 		{
-			path: `C:\Windows\System32`,
-			url:  "/C:/Windows/System32",
+			path: "/home/user/test",
+			url:  "/home/user/test",
 		},
 		{
-			path: `C:/Windows/System32`,
-			url:  "/C:/Windows/System32",
+			path: "./home/user/test",
+			url:  "./home/user/test",
 		},
 		{
-			path: `\\192.168.0.1\shared\data`,
-			url:  "//192.168.0.1/shared/data",
+			path: "../../home/user/test",
+			url:  "../../home/user/test",
 		},
 		{
-			path: `\\192.168.0.1\shared`,
-			url:  "//192.168.0.1/shared",
+			path: "test",
+			url:  "test",
 		},
 		{
-			path: `//192.168.0.1/shared/data`,
-			url:  "//192.168.0.1/shared/data",
+			path: ".",
+			url:  ".",
 		},
 		{
-			path: `C:/Windows/System32`,
-			url:  "/C:/Windows/System32",
-		},
-		{
-			path: "file:///C:/Windows/System32",
-			url:  "file:///C:/Windows/System32",
-		},
-		{
-			path: "file://192.168.0.1/shared/data",
-			url:  "file://192.168.0.1/shared/data",
+			path: "file:///home/user/test",
+			url:  "file:///home/user/test",
 		},
 	}
 	for i, test := range tests {
@@ -62,28 +54,16 @@ func Test_ToFullPath(t *testing.T) {
 		path string
 	}{
 		{
-			url:  "/C:/Windows/System32",
-			path: "C:/Windows/System32",
+			url:  "file:///home/user/test",
+			path: "/home/user/test",
 		},
 		{
-			url:  "//192.168.0.1/shared/data",
-			path: "//192.168.0.1/shared/data",
+			url:  "/home/user/test",
+			path: "/home/user/test",
 		},
 		{
-			url:  "//192.168.0.1/shared",
-			path: "//192.168.0.1/shared",
-		},
-		{
-			url:  "file:///C:/Windows/System32",
-			path: "C:/Windows/System32",
-		},
-		{
-			url:  "file://192.168.0.1/shared/data",
-			path: "//192.168.0.1/shared/data",
-		},
-		{
-			url:  "ftp://192.168.0.2/shared/data",
-			path: "ftp://192.168.0.2/shared/data",
+			url:  "ftp://127.0.0.1/home/user/test",
+			path: "ftp://127.0.0.1/home/user/test",
 		},
 	}
 	for i, test := range tests {
@@ -92,56 +72,6 @@ func Test_ToFullPath(t *testing.T) {
 		p := engineos.ToFullPath(u)
 		require.Equal(t, test.path, p, "failed to convert URL to path (test %d/%d)", i+1, len(tests))
 	}
-}
-
-func Test_ToPath(t *testing.T) {
-	tests := []struct {
-		url  string
-		path string
-	}{
-		{
-			url:  "/C:/Windows/System32",
-			path: "C:/Windows/System32",
-		},
-		{
-			url:  "//192.168.0.1/shared/data",
-			path: "/shared/data",
-		},
-		{
-			url:  "//192.168.0.1/shared",
-			path: "/shared",
-		},
-		{
-			url:  "file:///C:/Windows/System32",
-			path: "C:/Windows/System32",
-		},
-		{
-			url:  "file://192.168.0.1/shared/data",
-			path: "/shared/data",
-		},
-		{
-			url:  "ftp://192.168.0.2/shared/data",
-			path: "/shared/data",
-		},
-		{
-			url:  "test://private/",
-			path: "/",
-		},
-	}
-	for i, test := range tests {
-		u, err := url.Parse(test.url)
-		require.NoError(t, err)
-		p := engineos.ToPath(u)
-		require.Equal(t, test.path, p, "failed to convert URL to path (test %d/%d)", i+1, len(tests))
-	}
-}
-
-func Test_IsAbsoluteURL(t *testing.T) {
-	// TODO
-	_ = []struct {
-		url    *url.URL
-		result bool
-	}{}
 }
 
 func Test_NormalizeURL(t *testing.T) {
@@ -229,19 +159,6 @@ func Test_NormalizeURL(t *testing.T) {
 		{
 			workingDir: &url.URL{
 				Scheme: "file",
-				Path:   "/C:/Users/user/Desktop",
-			},
-			path: &url.URL{
-				Path: "../",
-			},
-			result: &url.URL{
-				Scheme: "file",
-				Path:   "/C:/Users/user",
-			},
-		},
-		{
-			workingDir: &url.URL{
-				Scheme: "file",
 				Host:   "192.168.0.1",
 				Path:   "/shared",
 			},
@@ -267,20 +184,6 @@ func Test_NormalizeURL(t *testing.T) {
 				Scheme: "file",
 				Host:   "192.168.0.1",
 				Path:   "/test",
-			},
-		},
-		{
-			workingDir: &url.URL{
-				Scheme: "file",
-				Host:   "192.168.0.1",
-				Path:   "/shared/test",
-			},
-			path: &url.URL{
-				Path: "/C:/Users/user/Desktop",
-			},
-			result: &url.URL{
-				Scheme: "file",
-				Path:   "/C:/Users/user/Desktop",
 			},
 		},
 	}
