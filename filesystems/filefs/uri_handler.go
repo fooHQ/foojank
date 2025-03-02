@@ -4,11 +4,7 @@ import (
 	"net/url"
 
 	risoros "github.com/risor-io/risor/os"
-
-	engineos "github.com/foohq/foojank/internal/engine/os"
 )
-
-var _ engineos.URIHandler = &URIHandler{}
 
 type URIHandler struct {
 	fs risoros.FS
@@ -20,6 +16,7 @@ func NewURIHandler() *URIHandler {
 	}
 }
 
-func (h *URIHandler) GetFS(u *url.URL) (risoros.FS, error) {
-	return h.fs, nil
+func (h *URIHandler) GetFS(u *url.URL) (risoros.FS, string, error) {
+	pth := ToPath(u)
+	return h.fs, pth, nil
 }
