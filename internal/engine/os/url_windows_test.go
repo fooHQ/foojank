@@ -93,6 +93,10 @@ func Test_ToPath(t *testing.T) {
 			url:  "file://192.168.0.1/shared/data",
 			path: "//192.168.0.1/shared/data",
 		},
+		{
+			url:  "ftp://192.168.0.1/shared/data",
+			path: "ftp://192.168.0.1/shared/data",
+		},
 	}
 	for i, test := range tests {
 		u, err := url.Parse(test.url)
