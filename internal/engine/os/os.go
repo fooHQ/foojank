@@ -289,7 +289,7 @@ func (o *OS) Chdir(dir string) error {
 }
 
 func (o *OS) Getwd() (dir string, err error) {
-	wd := o.wd.String()
+	wd := ToFullPath(o.wd)
 	return wd, nil
 }
 
