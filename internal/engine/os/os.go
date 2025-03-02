@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/url"
 	"os"
-	"path"
 	"strings"
 
 	risoros "github.com/risor-io/risor/os"
@@ -397,25 +396,6 @@ func NewContext(ctx context.Context, options ...Option) context.Context {
 	}
 
 	return risoros.WithOS(ctx, o)
-}
-
-func NormalizeURL(wd, u *url.URL) *url.URL {
-	if u.Scheme == "" {
-		if wd.Scheme == "" {
-			u.Scheme = "file"
-		} else {
-			u.Scheme = wd.Scheme
-		}
-		u.Host = wd.Host
-	}
-
-	if !path.IsAbs(u.Path) {
-		u.Path = path.Join(wd.Path, u.Path)
-	} else {
-		u.Path = path.Clean(u.Path)
-	}
-
-	return u
 }
 
 func initWD() *url.URL {
