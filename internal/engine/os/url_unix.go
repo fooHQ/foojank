@@ -10,3 +10,14 @@ import (
 func ToURL(path string) (*url.URL, error) {
 	return url.Parse(path)
 }
+
+func ToPath(u *url.URL) string {
+	if u.Host != "" {
+		if u.Scheme != "" && u.Scheme != "file" {
+			return u.Scheme + "://" + u.Host + u.Path
+		}
+		return "//" + u.Host + u.Path
+	}
+
+	return u.Path
+}
