@@ -11,7 +11,7 @@ func ToURL(path string) (*url.URL, error) {
 	return url.Parse(path)
 }
 
-func ToPath(u *url.URL) string {
+func ToFullPath(u *url.URL) string {
 	if u.Host != "" {
 		if u.Scheme != "" && u.Scheme != "file" {
 			return u.Scheme + "://" + u.Host + u.Path
@@ -19,5 +19,9 @@ func ToPath(u *url.URL) string {
 		return "//" + u.Host + u.Path
 	}
 
+	return u.Path
+}
+
+func ToPath(u *url.URL) string {
 	return u.Path
 }

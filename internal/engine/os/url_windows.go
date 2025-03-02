@@ -25,7 +25,8 @@ func ToURL(path string) (*url.URL, error) {
 	return u, nil
 }
 
-func ToPath(u *url.URL) string {
+// ToFullPath converts url to full file path.
+func ToFullPath(u *url.URL) string {
 	if strings.Contains(u.Path, ":") {
 		return u.Path[1:]
 	}
@@ -35,6 +36,15 @@ func ToPath(u *url.URL) string {
 			return u.Scheme + "://" + u.Host + u.Path
 		}
 		return "//" + u.Host + u.Path
+	}
+
+	return u.Path
+}
+
+// ToPath converts url to file path.
+func ToPath(u *url.URL) string {
+	if strings.Contains(u.Path, ":") {
+		return u.Path[1:]
 	}
 
 	return u.Path
