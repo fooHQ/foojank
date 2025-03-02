@@ -7,5 +7,5 @@ import (
 )
 
 type URIHandler interface {
-	GetFS(u *url.URL) (risoros.FS, error)
+	GetFS(*url.URL) (risoros.FS, string, error)
 }

@@ -79,8 +79,12 @@ func (o *OS) Create(name string) (risoros.File, error) {
 		return nil, err
 	}
 
-	pth := ToPath(fURL)
-	return handler.Create(pth)
+	fs, pth, err := handler.GetFS(fURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return fs.Create(pth)
 }
 
 func (o *OS) Mkdir(name string, perm os.FileMode) error {
@@ -89,8 +93,12 @@ func (o *OS) Mkdir(name string, perm os.FileMode) error {
 		return err
 	}
 
-	pth := ToPath(fURL)
-	return handler.Mkdir(pth, perm)
+	fs, pth, err := handler.GetFS(fURL)
+	if err != nil {
+		return err
+	}
+
+	return fs.Mkdir(pth, perm)
 }
 
 func (o *OS) MkdirAll(path string, perm os.FileMode) error {
@@ -99,8 +107,12 @@ func (o *OS) MkdirAll(path string, perm os.FileMode) error {
 		return err
 	}
 
-	pth := ToPath(fURL)
-	return handler.MkdirAll(pth, perm)
+	fs, pth, err := handler.GetFS(fURL)
+	if err != nil {
+		return err
+	}
+
+	return fs.MkdirAll(pth, perm)
 }
 
 func (o *OS) MkdirTemp(dir, pattern string) (string, error) {
@@ -113,8 +125,12 @@ func (o *OS) Open(name string) (risoros.File, error) {
 		return nil, err
 	}
 
-	pth := ToPath(fURL)
-	return handler.Open(pth)
+	fs, pth, err := handler.GetFS(fURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return fs.Open(pth)
 }
 
 func (o *OS) OpenFile(name string, flag int, perm os.FileMode) (risoros.File, error) {
@@ -123,8 +139,12 @@ func (o *OS) OpenFile(name string, flag int, perm os.FileMode) (risoros.File, er
 		return nil, err
 	}
 
-	pth := ToPath(fURL)
-	return handler.OpenFile(pth, flag, perm)
+	fs, pth, err := handler.GetFS(fURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return fs.OpenFile(pth, flag, perm)
 }
 
 func (o *OS) ReadFile(name string) ([]byte, error) {
@@ -133,8 +153,12 @@ func (o *OS) ReadFile(name string) ([]byte, error) {
 		return nil, err
 	}
 
-	pth := ToPath(fURL)
-	return handler.ReadFile(pth)
+	fs, pth, err := handler.GetFS(fURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return fs.ReadFile(pth)
 }
 
 func (o *OS) Remove(name string) error {
@@ -143,8 +167,12 @@ func (o *OS) Remove(name string) error {
 		return err
 	}
 
-	pth := ToPath(fURL)
-	return handler.Remove(pth)
+	fs, pth, err := handler.GetFS(fURL)
+	if err != nil {
+		return err
+	}
+
+	return fs.Remove(pth)
 }
 
 func (o *OS) RemoveAll(path string) error {
@@ -153,12 +181,16 @@ func (o *OS) RemoveAll(path string) error {
 		return err
 	}
 
-	pth := ToPath(fURL)
-	return handler.RemoveAll(pth)
+	fs, pth, err := handler.GetFS(fURL)
+	if err != nil {
+		return err
+	}
+
+	return fs.RemoveAll(pth)
 }
 
 func (o *OS) Rename(oldpath, newpath string) error {
-	oldHandler, oldURL, err := o.getRegisteredURIHandler(oldpath)
+	handler, oldURL, err := o.getRegisteredURIHandler(oldpath)
 	if err != nil {
 		return err
 	}
@@ -172,9 +204,17 @@ func (o *OS) Rename(oldpath, newpath string) error {
 		return ErrCrossingFSBoundaries
 	}
 
-	oldPth := ToPath(oldURL)
-	newPth := ToPath(newURL)
-	return oldHandler.Rename(oldPth, newPth)
+	fs, oldPth, err := handler.GetFS(oldURL)
+	if err != nil {
+		return err
+	}
+
+	_, newPth, err := handler.GetFS(newURL)
+	if err != nil {
+		return err
+	}
+
+	return fs.Rename(oldPth, newPth)
 }
 
 func (o *OS) Stat(name string) (os.FileInfo, error) {
@@ -183,12 +223,16 @@ func (o *OS) Stat(name string) (os.FileInfo, error) {
 		return nil, err
 	}
 
-	pth := ToPath(fURL)
-	return handler.Stat(pth)
+	fs, pth, err := handler.GetFS(fURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return fs.Stat(pth)
 }
 
 func (o *OS) Symlink(oldname, newname string) error {
-	oldHandler, oldURL, err := o.getRegisteredURIHandler(oldname)
+	handler, oldURL, err := o.getRegisteredURIHandler(oldname)
 	if err != nil {
 		return err
 	}
@@ -202,9 +246,17 @@ func (o *OS) Symlink(oldname, newname string) error {
 		return ErrCrossingFSBoundaries
 	}
 
-	oldPth := ToPath(oldURL)
-	newPth := ToPath(newURL)
-	return oldHandler.Symlink(oldPth, newPth)
+	fs, oldPth, err := handler.GetFS(oldURL)
+	if err != nil {
+		return err
+	}
+
+	_, newPth, err := handler.GetFS(newURL)
+	if err != nil {
+		return err
+	}
+
+	return fs.Symlink(oldPth, newPth)
 }
 
 func (o *OS) TempDir() string {
@@ -217,8 +269,12 @@ func (o *OS) WriteFile(name string, content []byte, perm os.FileMode) error {
 		return err
 	}
 
-	pth := ToPath(fURL)
-	return handler.WriteFile(pth, content, perm)
+	fs, pth, err := handler.GetFS(fURL)
+	if err != nil {
+		return err
+	}
+
+	return fs.WriteFile(pth, content, perm)
 }
 
 func (o *OS) ReadDir(name string) ([]risoros.DirEntry, error) {
@@ -227,8 +283,12 @@ func (o *OS) ReadDir(name string) ([]risoros.DirEntry, error) {
 		return nil, err
 	}
 
-	pth := ToPath(fURL)
-	results, err := handler.ReadDir(pth)
+	fs, pth, err := handler.GetFS(fURL)
+	if err != nil {
+		return nil, err
+	}
+
+	results, err := fs.ReadDir(pth)
 	if err != nil {
 		return nil, err
 	}
@@ -249,8 +309,12 @@ func (o *OS) WalkDir(root string, fn risoros.WalkDirFunc) error {
 		return err
 	}
 
-	pth := ToPath(fURL)
-	return handler.WalkDir(pth, fn)
+	fs, pth, err := handler.GetFS(fURL)
+	if err != nil {
+		return err
+	}
+
+	return fs.WalkDir(pth, fn)
 }
 
 func (o *OS) PathSeparator() rune {
@@ -267,8 +331,12 @@ func (o *OS) Chdir(dir string) error {
 		return err
 	}
 
-	pth := ToPath(fURL)
-	f, err := handler.Open(pth)
+	fs, pth, err := handler.GetFS(fURL)
+	if err != nil {
+		return err
+	}
+
+	f, err := fs.Open(pth)
 	if err != nil {
 		return err
 	}
@@ -365,7 +433,7 @@ func (o *OS) UserHomeDir() (string, error) {
 	return os.UserHomeDir()
 }
 
-func (o *OS) getRegisteredURIHandler(path string) (risoros.FS, *url.URL, error) {
+func (o *OS) getRegisteredURIHandler(path string) (URIHandler, *url.URL, error) {
 	u, err := ToURL(path)
 	if err != nil {
 		return nil, nil, err
@@ -377,12 +445,7 @@ func (o *OS) getRegisteredURIHandler(path string) (risoros.FS, *url.URL, error) 
 		return nil, nil, ErrHandlerNotFound
 	}
 
-	fs, err := handler.GetFS(u)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return fs, u, nil
+	return handler, u, nil
 }
 
 func NewContext(ctx context.Context, options ...Option) context.Context {
