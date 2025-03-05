@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	FlagForce   = "force"
+	FlagForce   = flags.Force
 	FlagServer  = flags.Server
 	FlagUserJWT = flags.UserJWT
 	FlagUserKey = flags.UserKey
