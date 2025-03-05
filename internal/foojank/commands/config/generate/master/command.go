@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
@@ -13,13 +14,25 @@ import (
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
+	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
+)
+
+const (
+	FlagForce = flags.Force
 )
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:   "master",
-		Usage:  "Generate new master config",
+		Name:  "master",
+		Usage: "Generate new master config",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    FlagForce,
+				Usage:   "force overwrite a file if it already exists",
+				Aliases: []string{"f"},
+			},
+		},
 		Action: action,
 	}
 }
@@ -43,6 +56,8 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func createAction(logger *slog.Logger) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
+		force := c.Bool(FlagForce)
+
 		operatorName := fmt.Sprintf("OP%s", nuid.Next())
 		operator, err := auth.NewOperator(operatorName)
 		if err != nil {
@@ -83,7 +98,34 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 		output.Server.SetAccountKey(account.SigningKey)
 		output.Server.SetSystemAccountJWT(systemAccount.JWT)
 		output.Server.SetSystemAccountKey(systemAccount.Key)
-		_, _ = fmt.Fprintln(os.Stdout, output.String())
+
+		pth := config.DefaultMasterConfigPath
+		dirPth := filepath.Dir(pth)
+		if os.MkdirAll(dirPth, 0755) != nil {
+			err := fmt.Errorf("cannot generate configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		opts := os.O_CREATE | os.O_WRONLY | os.O_EXCL
+		if force {
+			opts = opts &^ os.O_EXCL
+		}
+
+		f, err := os.OpenFile(pth, opts, 0600)
+		if err != nil {
+			err := fmt.Errorf("cannot generate configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+		defer f.Close()
+
+		_, err = f.Write(output.Bytes())
+		if err != nil {
+			err := fmt.Errorf("cannot generate configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
 
 		return nil
 	}
