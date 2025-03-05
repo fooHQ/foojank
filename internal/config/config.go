@@ -20,6 +20,11 @@ func (c *Config) String() string {
 	return string(b)
 }
 
+func (c *Config) Bytes() []byte {
+	b, _ := toml.Marshal(c)
+	return b
+}
+
 func NewDefault() (*Config, error) {
 	confCommon, err := NewDefaultCommon()
 	if err != nil {
