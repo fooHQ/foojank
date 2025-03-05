@@ -10,4 +10,5 @@ const (
 	LogLevel   = "log-level"
 	NoColor    = "no-color"
 	DataDir    = "data-dir"
+	Force      = "force"
 )
