@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nuid"
@@ -14,15 +15,26 @@ import (
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
+	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
+)
+
+const (
+	FlagForce = flags.Force
 )
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:      "client",
-		ArgsUsage: "<config-file>",
-		Usage:     "Generate client config from master/client config",
-		Action:    action,
+		Name:   "client",
+		Usage:  "Generate client config from master/client config",
+		Action: action,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    FlagForce,
+				Usage:   "force overwrite a file if it already exists",
+				Aliases: []string{"f"},
+			},
+		},
 	}
 }
 
@@ -45,14 +57,9 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func generateAction(logger *slog.Logger) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		if c.Args().Len() != 1 {
-			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
+		force := c.Bool(FlagForce)
 
-		confFile := c.Args().First()
-		confInput, err := config.ParseFile(confFile)
+		confInput, err := config.ParseFile(config.DefaultMasterConfigPath)
 		if err != nil {
 			err := fmt.Errorf("cannot parse configuration file: %w", err)
 			logger.ErrorContext(ctx, err.Error())
@@ -100,7 +107,34 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 			Common: confCommon,
 			Client: &confClient,
 		}
-		_, _ = fmt.Fprintln(os.Stdout, confOutput.String())
+
+		pth := config.DefaultClientConfigPath
+		dirPth := filepath.Dir(pth)
+		if os.MkdirAll(dirPth, 0755) != nil {
+			err := fmt.Errorf("cannot generate configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		opts := os.O_CREATE | os.O_WRONLY | os.O_EXCL
+		if force {
+			opts = opts &^ os.O_EXCL
+		}
+
+		f, err := os.OpenFile(pth, opts, 0600)
+		if err != nil {
+			err := fmt.Errorf("cannot generate client configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+		defer f.Close()
+
+		_, err = f.Write(confOutput.Bytes())
+		if err != nil {
+			err := fmt.Errorf("cannot generate client configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
 
 		return nil
 	}
