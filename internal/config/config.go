@@ -9,6 +9,12 @@ import (
 
 var ErrParserError = errors.New("parser error")
 
+var (
+	DefaultMasterConfigPath = userConfigDir() + string(os.PathSeparator) + "master.conf"
+	DefaultClientConfigPath = userConfigDir() + string(os.PathSeparator) + "client.conf"
+	DefaultServerConfigPath = userConfigDir() + string(os.PathSeparator) + "server.conf"
+)
+
 type Config struct {
 	*Common `toml:",inline"`
 	Client  *Client `toml:"client"`
@@ -98,4 +104,12 @@ func Merge(confs ...*Config) *Config {
 		result.Server = MergeServer(result.Server, conf.Server)
 	}
 	return &result
+}
+
+func userConfigDir() string {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return "."
+	}
+	return dir + string(os.PathSeparator) + "foojank"
 }
