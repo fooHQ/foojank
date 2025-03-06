@@ -16,10 +16,9 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:      "server",
-		ArgsUsage: "<master-config>",
-		Usage:     "Generate server config from master config",
-		Action:    action,
+		Name:   "server",
+		Usage:  "Generate server config from master config",
+		Action: action,
 	}
 }
 
@@ -42,14 +41,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func generateAction(logger *slog.Logger) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		if c.Args().Len() != 1 {
-			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		confFile := c.Args().First()
-		confInput, err := config.ParseFile(confFile)
+		confInput, err := config.ParseFile(config.DefaultMasterConfigPath)
 		if err != nil {
 			err := fmt.Errorf("cannot parse master configuration file: %w", err)
 			logger.ErrorContext(ctx, err.Error())
