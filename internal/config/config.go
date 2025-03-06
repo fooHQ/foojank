@@ -12,7 +12,6 @@ var ErrParserError = errors.New("parser error")
 var (
 	DefaultMasterConfigPath = userConfigDir() + string(os.PathSeparator) + "master.conf"
 	DefaultClientConfigPath = userConfigDir() + string(os.PathSeparator) + "client.conf"
-	DefaultServerConfigPath = userConfigDir() + string(os.PathSeparator) + "server.conf"
 )
 
 type Config struct {
