@@ -11,24 +11,17 @@ import (
 	"github.com/foohq/foojank/internal/foojank/flags"
 )
 
-func NewConfig(_ context.Context, c *cli.Command) (*config.Config, error) {
+func NewConfig(ctx context.Context, c *cli.Command) (*config.Config, error) {
 	confDefault, err := config.NewDefault()
 	if err != nil {
 		err = fmt.Errorf("cannot create a new configuration: %w", err)
 		return nil, err
 	}
 
-	var confFile *config.Config
-	if c.IsSet(flags.Config) {
-		file := c.String(flags.Config)
-		confFile, err = config.ParseFile(file)
-		if err != nil {
-			if os.IsNotExist(err) {
-				return nil, err
-			}
-			err = fmt.Errorf("cannot parse configuration file '%s': %w", file, err)
-			return nil, err
-		}
+	confFile, file, err := parseConfigFile(ctx, c)
+	if err != nil {
+		err = fmt.Errorf("cannot parse configuration file '%s': %w", file, err)
+		return nil, err
 	}
 
 	confFlags, err := config.ParseFlags(func(name string) (any, bool) {
@@ -41,6 +34,27 @@ func NewConfig(_ context.Context, c *cli.Command) (*config.Config, error) {
 
 	result := config.Merge(confDefault, confFile, confFlags)
 	return result, nil
+}
+
+func parseConfigFile(_ context.Context, c *cli.Command) (*config.Config, string, error) {
+	var file string
+	if c.IsSet(flags.Config) {
+		file = c.String(flags.Config)
+	} else {
+		file = config.DefaultClientConfigPath
+	}
+
+	conf, err := config.ParseFile(file)
+	if err != nil {
+		// The default config file does not exist, ignore the error.
+		if os.IsNotExist(err) && !c.IsSet(flags.Config) {
+			return nil, file, nil
+		}
+
+		return nil, file, err
+	}
+
+	return conf, file, nil
 }
 
 func CommandNotFound(_ context.Context, c *cli.Command, s string) {
