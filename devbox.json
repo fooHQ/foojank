@@ -19,7 +19,7 @@
     ],
     "scripts": {
       "docs": [
-        "docsify server ./docs"
+        "hugo serve -s ./docs"
       ],
       "test": [
         "CGO_ENABLED=1 go test -race ./..."
