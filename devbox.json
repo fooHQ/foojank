@@ -28,30 +28,22 @@
         "golangci-lint run --timeout 10m"
       ],
       "generate-proto": [
-        "test -d ./build/go-capnp || git clone -b v3.0.1-alpha.2 --depth 1 https://github.com/capnproto/go-capnp ./build/go-capnp",
-        "cd ./build/go-capnp && go build -o ../capnpc-go ./capnpc-go && cd -",
-        "go generate ./proto/capnp"
+        "./devbox.sh generate_proto"
       ],
       "build-runscript": [
-        "test ! -z \"$OUTPUT\" || (echo \"OUTPUT variable not defined\" && exit 1)",
-        "go build -tags dev -o \"$OUTPUT\" ./cmd/runscript"
+        "./devbox.sh build_runscript"
       ],
-
       "build-agent-dev": [
-        "test ! -z \"$OUTPUT\" || (echo \"OUTPUT variable not defined\" && exit 1)",
-        "WITH_RACE=\"$(test \"$GOOS\" = \"windows\" || echo \"-race\")\"",
-        "CGO_ENABLED=1 go build $WITH_RACE -tags dev -o \"$OUTPUT\" ./cmd/vessel"
+        "./devbox.sh build_agent_dev"
+      ],
+      "build-agent-prod": [
+        "./devbox.sh build_agent_prod"
       ],
       "build-foojank-dev": [
-        "CGO_ENABLED=1 go build -race -tags dev -o build/foojank ./cmd/foojank"
-      ],
-
-      "build-agent-prod": [
-        "test ! -z \"$OUTPUT\" || (echo \"OUTPUT variable not defined\" && exit 1)",
-        "garble -tiny build -tags prod -o \"$OUTPUT\" ./cmd/vessel"
+        "./devbox.sh build_foojank_dev"
       ],
       "build-foojank-prod": [
-        "go build -tags prod -o build/foojank ./cmd/foojank"
+        "./devbox.sh build_foojank_prod"
       ]
     }
   }
