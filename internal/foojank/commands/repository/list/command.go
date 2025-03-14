@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strconv"
 
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/urfave/cli/v3"
@@ -124,7 +123,7 @@ func listAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 				})
 				for _, file := range files {
 					name := file.Name
-					size := strconv.FormatUint(file.Size, 10)
+					size := formatBytes(file.Size)
 					modified := file.Modified.String()
 					table.AddRow([]string{
 						name,
@@ -155,7 +154,7 @@ func listAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 		})
 		for _, repo := range repos {
 			name := repo.Name
-			size := strconv.FormatUint(repo.Size, 10)
+			size := formatBytes(repo.Size)
 			description := repo.Description
 			table.AddRow([]string{
 				name,
@@ -173,6 +172,39 @@ func listAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 
 		return nil
 	}
+}
+
+func formatBytes(size uint64) string {
+	const (
+		_  = iota
+		KB = 1 << (10 * iota) // 1 << 10 = 1024
+		MB
+		GB
+		TB
+	)
+
+	var unit string
+	var value float64
+
+	switch {
+	case size >= TB:
+		value = float64(size) / TB
+		unit = "TB"
+	case size >= GB:
+		value = float64(size) / GB
+		unit = "GB"
+	case size >= MB:
+		value = float64(size) / MB
+		unit = "MB"
+	case size >= KB:
+		value = float64(size) / KB
+		unit = "kB"
+	default:
+		value = float64(size)
+		unit = "B"
+	}
+
+	return fmt.Sprintf("%.2f %s", value, unit)
 }
 
 func validateConfiguration(conf *config.Config) error {
