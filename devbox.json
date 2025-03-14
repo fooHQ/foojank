@@ -3,10 +3,10 @@
   "packages": [
     "natscli@0.1.5",
     "capnproto@1.0.2",
-    "garble@0.13.0",
     "hugo@0.143.0",
     "go@1.24",
-    "golangci-lint@1.64.5"
+    "golangci-lint@1.64.5",
+    "garble@0.14.1"
   ],
   "env": {
     "GOROOT":      "",

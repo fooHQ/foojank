@@ -49,51 +49,51 @@
         }
       }
     },
-    "garble@0.13.0": {
-      "last_modified": "2025-02-07T11:26:36Z",
-      "resolved": "github:NixOS/nixpkgs/d98abf5cf5914e5e4e9d57205e3af55ca90ffc1d#garble",
+    "garble@0.14.1": {
+      "last_modified": "2025-02-17T23:19:04Z",
+      "resolved": "github:NixOS/nixpkgs/f0295845e58ada369322524631821b01c0db13a7#garble",
       "source": "devbox-search",
-      "version": "0.13.0",
+      "version": "0.14.1",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/1lc9pnz30kaqdhf1ay56lb548wkxra8p-garble-0.13.0",
+              "path": "/nix/store/2n8rqngvsn4a4gfj75s3q171qnp06w59-garble-0.14.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/1lc9pnz30kaqdhf1ay56lb548wkxra8p-garble-0.13.0"
+          "store_path": "/nix/store/2n8rqngvsn4a4gfj75s3q171qnp06w59-garble-0.14.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/0ckw9qrfzwyvb81xxzxzzjwi1wdxbqp8-garble-0.13.0",
+              "path": "/nix/store/4kmhbb1cjssgczsvpwii5qzvxsvcqxmi-garble-0.14.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/0ckw9qrfzwyvb81xxzxzzjwi1wdxbqp8-garble-0.13.0"
+          "store_path": "/nix/store/4kmhbb1cjssgczsvpwii5qzvxsvcqxmi-garble-0.14.1"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/ppax1vkwlcf98bljcfbx3lx1z6ba2cw2-garble-0.13.0",
+              "path": "/nix/store/17i5hdavxpzc17jyhb4hp3d1syfygkk1-garble-0.14.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/ppax1vkwlcf98bljcfbx3lx1z6ba2cw2-garble-0.13.0"
+          "store_path": "/nix/store/17i5hdavxpzc17jyhb4hp3d1syfygkk1-garble-0.14.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/6771a6qmfyxsgj31g5j8bnahx040mk6v-garble-0.13.0",
+              "path": "/nix/store/6dla3pkx1kv6fpjfbb67ghsa8q2ji5ly-garble-0.14.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/6771a6qmfyxsgj31g5j8bnahx040mk6v-garble-0.13.0"
+          "store_path": "/nix/store/6dla3pkx1kv6fpjfbb67ghsa8q2ji5ly-garble-0.14.1"
         }
       }
     },
