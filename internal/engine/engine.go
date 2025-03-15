@@ -57,6 +57,10 @@ type Error struct {
 	err error
 }
 
+func (e *Error) Unwrap() error {
+	return e.err
+}
+
 func (e *Error) Error() string {
 	var parserErr parser.ParserError
 	if errors.As(e.err, &parserErr) {
