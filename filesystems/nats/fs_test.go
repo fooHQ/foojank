@@ -9,14 +9,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	engineos "github.com/foohq/foojank/filesystems/nats"
+	natsfs "github.com/foohq/foojank/filesystems/nats"
 	"github.com/foohq/foojank/internal/testutils"
 )
 
 func TestFS_Create(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
-	fs := engineos.NewFS(store)
+	fs := natsfs.NewFS(store)
 
 	filename := "/fs/create/file"
 	_, err := fs.Create(filename)
@@ -32,7 +32,7 @@ func TestFS_Create(t *testing.T) {
 func TestFS_Open(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
-	fs := engineos.NewFS(store)
+	fs := natsfs.NewFS(store)
 
 	filename := fmt.Sprintf("/fs/open/file_%d", rand.Int())
 	_, err := store.PutString(context.Background(), filename, "")
@@ -48,7 +48,7 @@ func TestFS_Open(t *testing.T) {
 func TestFS_ReadFile(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
-	fs := engineos.NewFS(store)
+	fs := natsfs.NewFS(store)
 
 	filename := fmt.Sprintf("/fs/read_file/file_%d", rand.Int())
 	message := "hello world"
@@ -66,7 +66,7 @@ func TestFS_ReadFile(t *testing.T) {
 func TestFS_Remove(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
-	fs := engineos.NewFS(store)
+	fs := natsfs.NewFS(store)
 
 	filename := fmt.Sprintf("/fs/remove/file_%d", rand.Int())
 	_, err := store.PutString(context.Background(), filename, "")
@@ -82,7 +82,7 @@ func TestFS_Remove(t *testing.T) {
 func TestFS_Rename(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
-	fs := engineos.NewFS(store)
+	fs := natsfs.NewFS(store)
 
 	filename := fmt.Sprintf("/fs/rename/file_%d", rand.Int())
 	_, err := store.PutString(context.Background(), filename, "")
@@ -99,7 +99,7 @@ func TestFS_Rename(t *testing.T) {
 func TestFS_WriteFile(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
-	fs := engineos.NewFS(store)
+	fs := natsfs.NewFS(store)
 
 	filename := fmt.Sprintf("/fs/write_file/file_%d", rand.Int())
 	message := []byte("hello world")
@@ -114,7 +114,7 @@ func TestFS_WriteFile(t *testing.T) {
 func TestFS_ReadDir(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
-	fs := engineos.NewFS(store)
+	fs := natsfs.NewFS(store)
 
 	filename := fmt.Sprintf("/collector_%d.dat", rand.Int())
 	_, err := store.PutString(context.Background(), filename, "")
@@ -185,5 +185,5 @@ func TestFS_ReadDir(t *testing.T) {
 	require.Len(t, files, 0)
 
 	_, err = fs.ReadDir("")
-	require.ErrorIs(t, err, engineos.ErrInvalidFilename)
+	require.ErrorIs(t, err, natsfs.ErrInvalidFilename)
 }
