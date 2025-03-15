@@ -3,6 +3,7 @@ package processor
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 
 	"github.com/nats-io/nats.go/jetstream"
@@ -109,7 +110,7 @@ loop:
 				engineos.WithURIHandler("file", filefs.NewURIHandler()),
 				engineos.WithURIHandler("nats", natsfs.NewURIHandler(store)),
 			)
-			if err != nil {
+			if err != nil && !errors.Is(err, context.Canceled) {
 				log.Debug(err.Error())
 				_ = msg.ReplyError(errcodes.ErrEngineRun, err.Error(), "")
 				continue
