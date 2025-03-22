@@ -54,18 +54,19 @@ func (r Request) Reply() string {
 	return r.FReplySubject
 }
 
-func NewNatsServer(port int) *server.Server {
+func NewNatsServer() *server.Server {
 	opts := natsserver.DefaultTestOptions
 	opts.NoLog = false
-	opts.Port = port
+	opts.Port = -1 // Pick a random port
+	opts.Debug = true
 	opts.JetStream = true
 	opts.StoreDir = "/tmp/nats-server"
-	return natsserver.RunServer(&opts)
+	srv := natsserver.RunServer(&opts)
+	return srv
 }
 
 func NewNatsServerAndConnection(t *testing.T) (*server.Server, *nats.Conn) {
-	const port = 14444
-	s := NewNatsServer(port)
+	s := NewNatsServer()
 	nc, err := nats.Connect(s.ClientURL())
 	require.NoError(t, err)
 	t.Cleanup(func() {
