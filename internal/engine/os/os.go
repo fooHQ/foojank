@@ -353,7 +353,8 @@ func (o *OS) Chdir(dir string) error {
 		return errors.New("chdir " + pth + ": file is not a directory")
 	}
 
-	o.wd = fURL
+	newURL := *fURL
+	o.wd = &newURL
 	return nil
 }
 
