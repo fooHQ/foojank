@@ -1,205 +1,409 @@
 package nats
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"io"
 	"os"
-	"path/filepath"
-	"slices"
-	"sort"
+	"path"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/nats-io/nats.go/jetstream"
 	risoros "github.com/risor-io/risor/os"
+
+	memfs "github.com/foohq/foojank/filesystems/mem"
+	"github.com/foohq/foojank/internal/vessel/log"
 )
 
 var (
-	ErrInvalidFilename      = errors.New("invalid filename")
-	ErrUnsupportedOperation = errors.New("unsupported operation")
+	ErrDirectoriesNotSupported = errors.New("directories not supported")
+	ErrSymlinksNotSupported    = errors.New("symlinks not supported")
+	ErrBadDescriptor           = errors.New("bad descriptor")
+	ErrIsDirectory             = errors.New("is a directory")
 )
 
-var _ risoros.FS = &FS{}
-
 type FS struct {
-	store jetstream.ObjectStore
+	cache   *memfs.FS
+	store   jetstream.ObjectStore
+	watcher jetstream.ObjectWatcher
+	mu      sync.Mutex
+	ctx     context.Context
+	cancel  context.CancelFunc
 }
 
-// TODO: context should have a timeout!
-
-func NewFS(store jetstream.ObjectStore) *FS {
-	return &FS{
-		store: store,
-	}
-}
-
-func (f *FS) Create(name string) (risoros.File, error) {
-	_, err := f.store.Put(context.TODO(), jetstream.ObjectMeta{
-		Name: name,
-	}, nil)
+func NewFS(store jetstream.ObjectStore) (*FS, error) {
+	// We probably do not need the cancellable context here since there yet no way to cancel it.
+	watcher, err := store.Watch(context.Background())
 	if err != nil {
 		return nil, err
 	}
-	return f.Open(name)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	fs := &FS{
+		cache:   memfs.NewFS(),
+		store:   store,
+		watcher: watcher,
+		ctx:     ctx,
+		cancel:  cancel,
+	}
+
+	// Start watching for updates, which includes historical data
+	go fs.watchUpdates()
+
+	return fs, nil
 }
 
-func (f *FS) Mkdir(name string, perm risoros.FileMode) error {
-	return ErrUnsupportedOperation
-}
+// watchUpdates listens for NATS ObjectStore events to keep cache structure in sync
+func (fs *FS) watchUpdates() {
+	updateCh := fs.watcher.Updates()
+	for {
+		select {
+		case update, ok := <-updateCh:
+			if !ok {
+				return
+			}
 
-func (f *FS) MkdirAll(path string, perm risoros.FileMode) error {
-	return ErrUnsupportedOperation
-}
+			if update == nil { // Initial nil signals history complete
+				continue
+			}
 
-func (f *FS) Open(name string) (risoros.File, error) {
-	_, err := f.store.GetInfo(context.TODO(), name)
-	if err != nil {
-		if errors.Is(err, jetstream.ErrObjectNotFound) {
-			return nil, os.ErrNotExist
+			fs.mu.Lock()
+			pth := cleanPath(update.Name)
+			if update.Deleted {
+				_ = fs.cache.RemoveAll(pth)
+			} else if update.Opts != nil && update.Opts.Link != nil {
+				// Handle symlinks
+				_ = fs.cache.Symlink(update.Opts.Link.Name, pth)
+			} else {
+				// Create an empty file in cache to mark existence
+				_ = fs.cache.MkdirAll(pth, 0755)
+				_ = fs.cache.WriteFile(pth, nil, 0644)
+			}
+			fs.mu.Unlock()
+
+		case <-fs.ctx.Done():
+			return
 		}
+	}
+}
+
+// Create creates a new file (NATS + cache structure)
+func (fs *FS) Create(name string) (risoros.File, error) {
+	return fs.OpenFile(name, risoros.O_RDWR|risoros.O_CREATE|risoros.O_TRUNC, 0666)
+}
+
+// Mkdir returns an error as explicit directory creation is not supported
+func (fs *FS) Mkdir(_ string, _ risoros.FileMode) error {
+	return ErrDirectoriesNotSupported
+}
+
+// MkdirAll returns an error as explicit directory creation is not supported
+func (fs *FS) MkdirAll(_ string, _ risoros.FileMode) error {
+	return ErrDirectoriesNotSupported
+}
+
+// Open opens a file for reading (fetches content from NATS)
+func (fs *FS) Open(name string) (risoros.File, error) {
+	return fs.OpenFile(name, risoros.O_RDONLY, 0)
+}
+
+// OpenFile opens a file with specified flags (cache structure + NATS for content)
+func (fs *FS) OpenFile(name string, flag int, perm risoros.FileMode) (risoros.File, error) {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
+
+	pth := cleanPath(name)
+
+	// Check cache for existence
+	_, err := fs.cache.Stat(pth)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
-	return &File{
-		name:  name,
-		store: f.store,
+
+	exists := err == nil
+	if !exists && flag&risoros.O_CREATE == 0 {
+		return nil, os.ErrNotExist
+	}
+
+	if flag&risoros.O_CREATE != 0 {
+		// Create on NATS
+		if _, err := fs.store.Put(fs.ctx, jetstream.ObjectMeta{Name: pth}, strings.NewReader("")); err != nil {
+			return nil, err
+		}
+
+		dirPath := path.Dir(pth)
+		if err := fs.cache.MkdirAll(dirPath, 0755); err != nil {
+			return nil, err
+		}
+
+		// Update cache structure
+		if err := fs.cache.WriteFile(pth, nil, perm); err != nil {
+			return nil, err
+		}
+	}
+
+	f, err := fs.cache.OpenFile(pth, flag, perm)
+	if err != nil {
+		return nil, err
+	}
+
+	info, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch content from NATS for reading
+	var o jetstream.ObjectResult
+	if flag&risoros.O_WRONLY == 0 && !info.IsDir() {
+		o, err = fs.store.Get(fs.ctx, pth)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &natsFile{
+		File: f,
+		fs:   fs,
+		flag: flag,
+		path: pth,
+		obj:  o,
 	}, nil
 }
 
-func (f *FS) OpenFile(name string, _ int, _ risoros.FileMode) (risoros.File, error) {
-	return f.Open(name)
-}
-
-func (f *FS) ReadFile(name string) ([]byte, error) {
-	res, err := f.store.Get(context.TODO(), name)
+// ReadFile reads the entire contents of a file from NATS
+func (fs *FS) ReadFile(name string) ([]byte, error) {
+	f, err := fs.OpenFile(name, risoros.O_RDONLY, 0)
 	if err != nil {
-		if errors.Is(err, jetstream.ErrObjectNotFound) {
-			return nil, os.ErrNotExist
-		}
 		return nil, err
 	}
-	defer res.Close()
-	return io.ReadAll(res)
-}
+	defer f.Close()
 
-func (f *FS) Remove(name string) error {
-	err := f.store.Delete(context.TODO(), name)
+	info, err := f.Stat()
 	if err != nil {
-		if errors.Is(err, jetstream.ErrObjectNotFound) {
-			return os.ErrNotExist
-		}
-		return err
-	}
-	return nil
-}
-
-func (f *FS) RemoveAll(path string) error {
-	return f.Remove(path)
-}
-
-func (f *FS) Rename(oldPath, newPath string) error {
-	err := f.store.UpdateMeta(context.TODO(), oldPath, jetstream.ObjectMeta{
-		Name: newPath,
-	})
-	if err != nil {
-		if errors.Is(err, jetstream.ErrObjectNotFound) {
-			return os.ErrNotExist
-		}
-		return err
-	}
-	return nil
-}
-
-func (f *FS) Stat(name string) (risoros.FileInfo, error) {
-	info, err := f.store.GetInfo(context.TODO(), name)
-	if err != nil {
-		if errors.Is(err, jetstream.ErrObjectNotFound) {
-			return nil, os.ErrNotExist
-		}
 		return nil, err
 	}
 
-	return &FileInfo{
-		name:    info.Name,
-		size:    int64(info.Size),
-		mode:    0777,
-		modTime: info.ModTime,
-	}, nil
-}
-
-func (f *FS) Symlink(oldName, newName string) error {
-	// This operation is supported by ObjectStore, however at this point there seems to be
-	// no actual use case.
-	return ErrUnsupportedOperation
-}
-
-func (f *FS) WriteFile(name string, data []byte, perm risoros.FileMode) error {
-	_, err := f.store.Put(context.TODO(), jetstream.ObjectMeta{
-		Name: name,
-	}, bytes.NewReader(data))
+	b := make([]byte, info.Size())
+	_, err = f.Read(b)
 	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (f *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
-	if name == "" {
-		return nil, ErrInvalidFilename
-	}
-
-	files, err := f.store.List(context.TODO())
-	if err != nil {
-		if errors.Is(err, jetstream.ErrNoObjectsFound) {
-			return nil, nil
-		}
 		return nil, err
 	}
 
-	entries := matchObjects(files, name)
-	return entries, nil
+	return b, nil
 }
 
-func (f *FS) WalkDir(root string, fn risoros.WalkDirFunc) error {
-	return errors.New("unsupported")
+// Remove removes a file
+func (fs *FS) Remove(name string) error {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
+
+	pth := cleanPath(name)
+	err := fs.store.Delete(fs.ctx, pth)
+	if err != nil {
+		return err
+	}
+
+	return fs.cache.Remove(pth)
 }
 
-func matchObjects(objects []*jetstream.ObjectInfo, path string) []risoros.DirEntry {
-	var matched []risoros.DirEntry
-	for _, object := range objects {
-		// Check if the file path starts with the path
-		if strings.HasPrefix(object.Name, path) {
-			// Remove the path from the file path
-			relativePath := strings.TrimPrefix(object.Name, path)
-			relativePath = strings.TrimPrefix(relativePath, "/")
-			// Get the file name from the relative path
-			filename := filepath.Base(filepath.Dir(relativePath))
-			if filename == "." {
-				filename = filepath.Base(relativePath)
-			}
-			// If the dir name is not empty, add it to the matched paths
-			if filename != "" {
-				var mode risoros.FileMode
-				if filename != relativePath {
-					mode = 0755 | risoros.FileMode(os.ModeDir)
-				} else {
-					mode = 0644
-				}
-				matched = append(matched, &DirEntry{
-					name: filename,
-					mode: mode,
-				})
+// RemoveAll removes a path and its implied children
+func (fs *FS) RemoveAll(pth string) error {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
+
+	cleaned := cleanPath(pth)
+	objects, err := fs.store.List(fs.ctx)
+	if err != nil && !errors.Is(err, jetstream.ErrNoObjectsFound) {
+		return err
+	}
+
+	for _, obj := range objects {
+		if strings.HasPrefix(obj.Name, cleaned) {
+			if err := fs.store.Delete(fs.ctx, obj.Name); err != nil {
+				return err
 			}
 		}
 	}
+	return fs.cache.RemoveAll(cleaned)
+}
 
-	sort.Slice(matched, func(i, j int) bool {
-		return matched[i].Name() < matched[j].Name()
-	})
+// Rename renames a file
+func (fs *FS) Rename(oldpath, newpath string) error {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
 
-	matched = slices.CompactFunc(matched, func(i, j risoros.DirEntry) bool {
-		return i.Name() == j.Name()
-	})
+	oldClean := cleanPath(oldpath)
+	newClean := cleanPath(newpath)
 
-	return matched
+	err := fs.store.UpdateMeta(fs.ctx, oldClean, jetstream.ObjectMeta{Name: newClean})
+	if err != nil {
+		return err
+	}
+
+	return fs.cache.Rename(oldClean, newClean)
+}
+
+// Stat returns file information (cache only)
+func (fs *FS) Stat(name string) (risoros.FileInfo, error) {
+	return fs.cache.Stat(cleanPath(name))
+}
+
+// Symlink creates a symbolic link
+func (fs *FS) Symlink(oldname, newname string) error {
+	return ErrSymlinksNotSupported
+}
+
+// WriteFile writes data to a file
+func (fs *FS) WriteFile(name string, data []byte, perm risoros.FileMode) error {
+	f, err := fs.OpenFile(name, risoros.O_WRONLY|risoros.O_CREATE, perm)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = f.Write(data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ReadDir reads directory contents from the cache
+func (fs *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
+	log.Debug("natsfs: read directory", "name", name, "cleaned", cleanPath(name))
+	name = cleanPath(name)
+	return fs.cache.ReadDir(name)
+}
+
+// WalkDir walks the directory tree in the cache
+func (fs *FS) WalkDir(root string, fn risoros.WalkDirFunc) error {
+	return fs.cache.WalkDir(cleanPath(root), fn)
+}
+
+// Close shuts down the filesystem
+func (fs *FS) Close() error {
+	err := fs.watcher.Stop()
+	if err != nil {
+		return err
+	}
+	fs.cancel()
+	return nil
+}
+
+// natsFile wraps a memfs.FS file to sync writes back to NATS
+type natsFile struct {
+	risoros.File
+	fs      *FS
+	flag    int
+	path    string
+	obj     jetstream.ObjectResult
+	content []byte
+	offset  int64
+	mu      sync.Mutex
+}
+
+func (f *natsFile) Read(b []byte) (int, error) {
+	if f.flag&risoros.O_WRONLY != 0 {
+		return 0, ErrBadDescriptor
+	}
+
+	if f.obj == nil {
+		return 0, os.ErrInvalid
+	}
+
+	return f.obj.Read(b)
+}
+
+func (f *natsFile) Stat() (risoros.FileInfo, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.obj != nil {
+		info, err := f.obj.Info()
+		if err != nil {
+			return nil, err
+		}
+		return &fileInfo{
+			info: info,
+		}, nil
+	}
+	return f.fs.cache.Stat(f.path)
+}
+
+// Write overrides the underlying file write to sync to NATS
+func (f *natsFile) Write(b []byte) (int, error) {
+	if f.flag&risoros.O_WRONLY == 0 && f.flag&risoros.O_RDWR == 0 {
+		return 0, ErrBadDescriptor
+	}
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	f.content = append(f.content[:f.offset], b...)
+	f.offset += int64(len(b))
+	return len(b), nil
+}
+
+// Close syncs any final changes to NATS (if needed)
+func (f *natsFile) Close() error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.obj != nil {
+		err := f.obj.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(f.content) > 0 {
+		f.fs.mu.Lock()
+		defer f.fs.mu.Unlock()
+		_, err := f.fs.store.PutBytes(f.fs.ctx, f.path, f.content)
+		if err != nil {
+			return err
+		}
+	}
+
+	err := f.File.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type fileInfo struct {
+	info *jetstream.ObjectInfo
+}
+
+func (f *fileInfo) Name() string {
+	return f.info.Name
+}
+
+func (f *fileInfo) Size() int64 {
+	return int64(f.info.Size)
+}
+
+func (f *fileInfo) Mode() risoros.FileMode {
+	return 0666
+}
+
+func (f *fileInfo) ModTime() time.Time {
+	return f.info.ModTime
+}
+
+func (f *fileInfo) IsDir() bool {
+	return false
+}
+
+func (f *fileInfo) Sys() any {
+	return nil
+}
+
+// Helper function to clean paths
+func cleanPath(pth string) string {
+	return path.Clean("/" + pth)
 }

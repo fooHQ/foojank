@@ -44,6 +44,13 @@ func (s *Service) Start(ctx context.Context) error {
 		return err
 	}
 
+	fileFSHandler := filefs.NewURIHandler()
+	natsFSHandler, err := natsfs.NewURIHandler(store)
+	if err != nil {
+		log.Debug("cannot create natsfs handler", "error", err)
+		return err
+	}
+
 	group, _ := errgroup.WithContext(ctx)
 	stdout := engineos.NewPipe()
 	group.Go(func() error {
@@ -107,8 +114,8 @@ loop:
 				engineos.WithStdin(stdin),
 				engineos.WithStdout(stdout),
 				engineos.WithEnvVar("SERVICE_NAME", config.ServiceName),
-				engineos.WithURIHandler("file", filefs.NewURIHandler()),
-				engineos.WithURIHandler("nats", natsfs.NewURIHandler(store)),
+				engineos.WithURIHandler("file", fileFSHandler),
+				engineos.WithURIHandler("nats", natsFSHandler),
 			)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				log.Debug(err.Error())

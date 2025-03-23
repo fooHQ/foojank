@@ -13,10 +13,15 @@ type URIHandler struct {
 	fs risoros.FS
 }
 
-func NewURIHandler(store jetstream.ObjectStore) *URIHandler {
-	return &URIHandler{
-		fs: NewFS(store),
+func NewURIHandler(store jetstream.ObjectStore) (*URIHandler, error) {
+	fs, err := NewFS(store)
+	if err != nil {
+		return nil, err
 	}
+
+	return &URIHandler{
+		fs: fs,
+	}, nil
 }
 
 func (h *URIHandler) GetFS(u *url.URL) (risoros.FS, string, error) {
