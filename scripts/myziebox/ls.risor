@@ -1,3 +1,33 @@
+import os
+import time
+
+func print_info(info) {
+    mod_time := info.mod_time.format("Jan 02 15:04:05 2006")
+    printf("%s %10d %s %s\n", info.mode, info.size, mod_time, info.name)
+}
+
+func list_file(file) {
+    print_info(file.info)
+}
+
+func list_directory(file) {
+    children := try(func(){
+        return os.read_dir(file.path)
+    }, func(err){
+        print(err)
+    })
+
+    if children == nil {
+        return
+    }
+
+    print("total " + string(len(children)))
+
+    for _, child := range children {
+        print_info(child.info())
+    }
+}
+
 var app = cli.app({
     name: "ls",
     usage: "List directory contents",
@@ -7,14 +37,42 @@ var app = cli.app({
             args.append(".")
         }
 
-        for _, f := range args {
-            if len(args) > 1 {
-                printf("%s:\n", f)
+        dirs := []
+        files := []
+        for _, file := range args {
+            info := try(func(){
+                return os.stat(file)
+            }, func(err){
+                print(err)
+            })
+
+            if info == nil {
+                continue
             }
 
-            for _, f := range ls(f) {
-                print(f.name)
+            if info.is_dir {
+                dirs.append({
+                    path: file,
+                    info: info,
+                })
+            } else {
+                files.append({
+                    path: file,
+                    info: info,
+                })
             }
+        }
+
+        for _, file := range files {
+            list_file(file)
+        }
+
+        for _, dir := range dirs {
+            if len(args) > 1 {
+                print(dir.name + ":")
+            }
+
+            list_directory(dir)
         }
     }
 })
