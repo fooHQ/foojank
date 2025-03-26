@@ -38,9 +38,14 @@ func NewFS(store jetstream.ObjectStore) (*FS, error) {
 		return nil, err
 	}
 
+	cache, err := memfs.NewFS()
+	if err != nil {
+		return nil, err
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	fs := &FS{
-		cache:   memfs.NewFS(),
+		cache:   cache,
 		store:   store,
 		watcher: watcher,
 		ctx:     ctx,
