@@ -44,7 +44,12 @@ func (s *Service) Start(ctx context.Context) error {
 		return err
 	}
 
-	fileFSHandler := filefs.NewURIHandler()
+	fileFSHandler, err := filefs.NewURIHandler()
+	if err != nil {
+		log.Debug("cannot create file handler", "error", err)
+		return err
+	}
+
 	natsFSHandler, err := natsfs.NewURIHandler(store)
 	if err != nil {
 		log.Debug("cannot create natsfs handler", "error", err)

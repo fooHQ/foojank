@@ -12,10 +12,15 @@ type URIHandler struct {
 	fs risoros.FS
 }
 
-func NewURIHandler() *URIHandler {
-	return &URIHandler{
-		fs: NewFS(),
+func NewURIHandler() (*URIHandler, error) {
+	fs, err := NewFS()
+	if err != nil {
+		return nil, err
 	}
+
+	return &URIHandler{
+		fs: fs,
+	}, nil
 }
 
 func (h *URIHandler) GetFS(u *url.URL) (risoros.FS, string, error) {
