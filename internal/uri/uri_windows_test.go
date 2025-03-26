@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	engineos "github.com/foohq/foojank/internal/uri"
+	"github.com/foohq/foojank/internal/uri"
 )
 
 func Test_ToURL(t *testing.T) {
@@ -50,7 +50,7 @@ func Test_ToURL(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		u, err := engineos.ToURL(test.path)
+		u, err := uri.ToURL(test.path)
 		require.NoError(t, err)
 		require.Equal(t, test.url, u.String(), "failed to convert path to URL (test %d/%d)", i+1, len(tests))
 	}
@@ -123,7 +123,7 @@ func Test_ToFullPath(t *testing.T) {
 	for i, test := range tests {
 		u, err := url.Parse(test.url)
 		require.NoError(t, err)
-		p := engineos.ToFullPath(u)
+		p := uri.ToFullPath(u)
 		require.Equal(t, test.path, p, "failed to convert URL to path (test %d/%d)", i+1, len(tests))
 	}
 }
@@ -277,7 +277,7 @@ func Test_NormalizeURL(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		result := engineos.NormalizeURL(test.workingDir, test.path)
+		result := uri.NormalizeURL(test.workingDir, test.path)
 		require.Equal(t, test.result, result, "failed to normalize URL (test %d/%d)", i+1, len(tests))
 	}
 }
