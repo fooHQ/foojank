@@ -115,10 +115,10 @@ func TestOS_Create(t *testing.T) {
 
 	for i, test := range tests {
 		_, err := o.Create(test.input)
-		require.NoError(t, err, "test %d", i)
+		require.NoError(t, err, "test %d/%d", i+1, len(tests))
 
 		result := <-testCh
-		require.Equal(t, test.result, result)
+		require.Equal(t, test.result, result, "test %d/%d", i+1, len(tests))
 	}
 }
 
@@ -217,12 +217,12 @@ func TestOS_Mkdir(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		err := o.Mkdir(test.input, 0777)
-		require.NoError(t, err)
+		require.NoError(t, err, "test %d/%d", i+1, len(tests))
 
 		result := <-resultCh
-		require.Equal(t, test.result, result)
+		require.Equal(t, test.result, result, "test %d/%d", i+1, len(tests))
 	}
 }
 
@@ -321,12 +321,12 @@ func TestOS_MkdirAll(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		err := o.MkdirAll(test.input, 0777)
-		require.NoError(t, err)
+		require.NoError(t, err, "test %d/%d", i+1, len(tests))
 
 		result := <-resultCh
-		require.Equal(t, test.result, result)
+		require.Equal(t, test.result, result, "test %d/%d", i+1, len(tests))
 	}
 }
 
@@ -414,12 +414,12 @@ func TestOS_Open(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		_, err := o.Open(test.input)
-		require.NoError(t, err)
+		require.NoError(t, err, "test %d/%d", i+1, len(tests))
 
 		result := <-resultCh
-		require.Equal(t, test.result, result)
+		require.Equal(t, test.result, result, "test %d/%d", i+1, len(tests))
 	}
 }
 
@@ -529,12 +529,12 @@ func TestOS_OpenFile(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		_, err := o.OpenFile(test.input, 1313, 0777)
-		require.NoError(t, err)
+		require.NoError(t, err, "test %d/%d", i+1, len(tests))
 
 		result := <-resultCh
-		require.Equal(t, test.result, result)
+		require.Equal(t, test.result, result, "test %d/%d", i+1, len(tests))
 	}
 }
 
@@ -622,12 +622,12 @@ func TestOS_ReadFile(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		_, err := o.ReadFile(test.input)
-		require.NoError(t, err)
+		require.NoError(t, err, "test %d/%d", i+1, len(tests))
 
 		result := <-resultCh
-		require.Equal(t, test.result, result)
+		require.Equal(t, test.result, result, "test %d/%d", i+1, len(tests))
 	}
 }
 
@@ -715,12 +715,12 @@ func TestOS_Remove(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		err := o.Remove(test.input)
-		require.NoError(t, err)
+		require.NoError(t, err, "test %d/%d", i+1, len(tests))
 
 		result := <-resultCh
-		require.Equal(t, test.result, result)
+		require.Equal(t, test.result, result, "test %d/%d", i+1, len(tests))
 	}
 }
 
@@ -808,12 +808,12 @@ func TestOS_RemoveAll(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		err := o.RemoveAll(test.input)
-		require.NoError(t, err)
+		require.NoError(t, err, "test %d/%d", i+1, len(tests))
 
 		result := <-resultCh
-		require.Equal(t, test.result, result)
+		require.Equal(t, test.result, result, "test %d/%d", i+1, len(tests))
 	}
 }
 
@@ -876,12 +876,12 @@ func TestOS_Rename(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		err := o.Rename(test.src, test.dst)
-		require.NoError(t, err)
+		require.NoError(t, err, "test %d/%d", i+1, len(tests))
 
 		result := <-resultCh
-		require.Equal(t, test.result, result)
+		require.Equal(t, test.result, result, "test %d/%d", i+1, len(tests))
 	}
 }
 
@@ -910,9 +910,9 @@ func TestOS_Rename_ErrCrossingFSBoundaries(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		err := o.Rename(test.src, test.dst)
-		require.ErrorIs(t, err, engineos.ErrCrossingFSBoundaries)
+		require.ErrorIs(t, err, engineos.ErrCrossingFSBoundaries, "test %d/%d", i+1, len(tests))
 	}
 }
 
@@ -1000,12 +1000,12 @@ func TestOS_Stat(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		_, err := o.Stat(test.input)
-		require.NoError(t, err)
+		require.NoError(t, err, "test %d/%d", i+1, len(tests))
 
 		result := <-resultCh
-		require.Equal(t, test.result, result)
+		require.Equal(t, test.result, result, "test %d/%d", i+1, len(tests))
 	}
 }
 
@@ -1068,12 +1068,12 @@ func TestOS_Symlink(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		err := o.Symlink(test.src, test.dst)
-		require.NoError(t, err)
+		require.NoError(t, err, "test %d/%d", i+1, len(tests))
 
 		result := <-resultCh
-		require.Equal(t, test.result, result)
+		require.Equal(t, test.result, result, "test %d/%d", i+1, len(tests))
 	}
 }
 
@@ -1102,9 +1102,9 @@ func TestOS_Symlink_ErrCrossingFSBoundaries(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		err := o.Symlink(test.src, test.dst)
-		require.ErrorIs(t, err, engineos.ErrCrossingFSBoundaries)
+		require.ErrorIs(t, err, engineos.ErrCrossingFSBoundaries, "test %d/%d", i+1, len(tests))
 	}
 }
 
@@ -1214,12 +1214,12 @@ func TestOS_WriteFile(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		err := o.WriteFile(test.input, []byte("test"), 0777)
-		require.NoError(t, err)
+		require.NoError(t, err, "test %d/%d", i+1, len(tests))
 
 		result := <-resultCh
-		require.Equal(t, test.result, result)
+		require.Equal(t, test.result, result, "test %d/%d", i+1, len(tests))
 	}
 }
 
@@ -1307,12 +1307,12 @@ func TestOS_ReadDir(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		_, err := o.ReadDir(test.input)
-		require.NoError(t, err)
+		require.NoError(t, err, "test %d/%d", i+1, len(tests))
 
 		result := <-resultCh
-		require.Equal(t, test.result, result)
+		require.Equal(t, test.result, result, "test %d/%d", i+1, len(tests))
 	}
 }
 
@@ -1404,11 +1404,11 @@ func TestOS_WalkDir(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		err := o.WalkDir(test.input, nil)
-		require.NoError(t, err)
+		require.NoError(t, err, "test %d/%d", i+1, len(tests))
 
 		result := <-resultCh
-		require.Equal(t, test.result, result)
+		require.Equal(t, test.result, result, "test %d/%d", i+1, len(tests))
 	}
 }
