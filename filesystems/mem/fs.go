@@ -62,8 +62,6 @@ func (fs *FS) Mkdir(name string, perm risoros.FileMode) error {
 
 // MkdirAll creates a directory and all necessary parents
 func (fs *FS) MkdirAll(pth string, perm risoros.FileMode) error {
-	fs.mu.Lock()
-	defer fs.mu.Unlock()
 	return fs.mkdirAllInternal(cleanPath(pth), perm)
 }
 
@@ -422,19 +420,24 @@ func (fs *FS) getNode(pth string) (*node, error) {
 	parts := strings.Split(pth[1:], "/")
 	current := fs.root
 
-	current.mu.RLock()
-	defer current.mu.RUnlock()
-
 	for _, part := range parts {
+		current.mu.RLock()
+
 		if !current.isDir {
+			current.mu.RUnlock()
 			return nil, errors.New("not a directory")
 		}
-		if next, ok := current.children[part]; ok {
-			current = next
-		} else {
+
+		next, ok := current.children[part]
+		if !ok {
+			current.mu.RUnlock()
 			return nil, os.ErrNotExist
 		}
+
+		current.mu.RUnlock()
+		current = next
 	}
+
 	return current, nil
 }
 
@@ -483,14 +486,17 @@ func (fs *FS) mkdirAllInternal(pth string, perm risoros.FileMode) error {
 	parts := strings.Split(pth[1:], "/")
 	current := fs.root
 
-	current.mu.Lock()
-	defer current.mu.Unlock()
-
 	for _, part := range parts {
-		if next, ok := current.children[part]; ok {
+		current.mu.Lock()
+		next, ok := current.children[part]
+		if ok {
+			current.mu.Unlock()
+			next.mu.RLock()
 			if !next.isDir {
+				next.mu.RUnlock()
 				return errors.New("path component is not a directory")
 			}
+			next.mu.RUnlock()
 			current = next
 		} else {
 			newNode := &node{
@@ -501,6 +507,7 @@ func (fs *FS) mkdirAllInternal(pth string, perm risoros.FileMode) error {
 				modTime:  time.Now(),
 			}
 			current.children[part] = newNode
+			current.mu.Unlock()
 			current = newNode
 		}
 	}

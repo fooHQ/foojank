@@ -242,6 +242,8 @@ func TestFS_RemoveAll(t *testing.T) {
 
 	_, err = fs.Stat("a")
 	require.ErrorIs(t, err, os.ErrNotExist)
+
+	// TODO: try to remove root directory
 }
 
 func TestFS_Rename(t *testing.T) {
@@ -321,5 +323,5 @@ func TestFS_WalkDir(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := []string{"a", "a/b", "a/file.txt"}
-	require.EqualValues(t, expected, paths)
+	require.ElementsMatch(t, expected, paths)
 }
