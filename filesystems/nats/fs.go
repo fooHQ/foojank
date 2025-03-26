@@ -77,7 +77,7 @@ func (fs *FS) watchUpdates() {
 				_ = fs.cache.Symlink(update.Opts.Link.Name, pth)
 			} else {
 				// Create an empty file in cache to mark existence
-				_ = fs.cache.MkdirAll(pth, 0755)
+				_ = fs.cache.MkdirAll(path.Dir(pth), 0755)
 				_ = fs.cache.WriteFile(pth, nil, 0644)
 			}
 			fs.mu.Unlock()
@@ -132,8 +132,7 @@ func (fs *FS) OpenFile(name string, flag int, perm risoros.FileMode) (risoros.Fi
 			return nil, err
 		}
 
-		dirPath := path.Dir(pth)
-		if err := fs.cache.MkdirAll(dirPath, 0755); err != nil {
+		if err := fs.cache.MkdirAll(path.Dir(pth), 0755); err != nil {
 			return nil, err
 		}
 
@@ -317,9 +316,6 @@ func (f *natsFile) Read(b []byte) (int, error) {
 }
 
 func (f *natsFile) Stat() (risoros.FileInfo, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-
 	if f.obj != nil {
 		info, err := f.obj.Info()
 		if err != nil {
@@ -359,8 +355,6 @@ func (f *natsFile) Close() error {
 	}
 
 	if len(f.content) > 0 {
-		f.fs.mu.Lock()
-		defer f.fs.mu.Unlock()
 		_, err := f.fs.store.PutBytes(f.fs.ctx, f.path, f.content)
 		if err != nil {
 			return err
