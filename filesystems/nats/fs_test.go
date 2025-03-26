@@ -13,7 +13,6 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/stretchr/testify/require"
 
-	memfs "github.com/foohq/foojank/filesystems/mem"
 	natsfs "github.com/foohq/foojank/filesystems/nats"
 	"github.com/foohq/foojank/internal/testutils"
 )
@@ -193,10 +192,10 @@ func TestFS_OpenFile(t *testing.T) {
 	t.Run("OpenWriteRootDirectory", func(t *testing.T) {
 		filename := "/"
 		_, err := fs.OpenFile(filename, os.O_RDWR, 0)
-		require.ErrorIs(t, err, memfs.ErrIsDirectory)
+		require.ErrorIs(t, err, natsfs.ErrIsDirectory)
 
 		_, err = fs.OpenFile(filename, os.O_WRONLY, 0)
-		require.ErrorIs(t, err, memfs.ErrIsDirectory)
+		require.ErrorIs(t, err, natsfs.ErrIsDirectory)
 	})
 
 	t.Run("OpenWriteDirectory", func(t *testing.T) {
@@ -206,8 +205,7 @@ func TestFS_OpenFile(t *testing.T) {
 
 		dirname := filepath.Dir(filename)
 		_, err = fs.OpenFile(dirname, os.O_RDWR, 0)
-		// TODO: get rid of memfs
-		require.ErrorIs(t, err, memfs.ErrIsDirectory)
+		require.ErrorIs(t, err, natsfs.ErrIsDirectory)
 	})
 
 	t.Run("OpenReadRootDirectory", func(t *testing.T) {

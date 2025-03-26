@@ -20,7 +20,7 @@ var (
 	ErrDirectoriesNotSupported = errors.New("directories not supported")
 	ErrSymlinksNotSupported    = errors.New("symlinks not supported")
 	ErrBadDescriptor           = errors.New("bad descriptor")
-	ErrIsDirectory             = errors.New("is a directory")
+	ErrIsDirectory             = memfs.ErrIsDirectory
 )
 
 type FS struct {
