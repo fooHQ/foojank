@@ -74,6 +74,7 @@ func TestFS_Open(t *testing.T) {
 }
 
 func TestFS_OpenFile(t *testing.T) {
+	t.Parallel()
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
