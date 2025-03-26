@@ -36,7 +36,7 @@ type FS struct {
 }
 
 // NewFS creates a new virtual filesystem
-func NewFS() *FS {
+func NewFS() (*FS, error) {
 	return &FS{
 		root: &node{
 			name:     "/",
@@ -45,7 +45,7 @@ func NewFS() *FS {
 			modTime:  time.Now(),
 			mode:     0755,
 		},
-	}
+	}, nil
 }
 
 // Create creates a new file

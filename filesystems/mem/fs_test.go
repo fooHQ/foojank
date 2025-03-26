@@ -14,7 +14,9 @@ import (
 )
 
 func TestFS_Create(t *testing.T) {
-	fs := memfs.NewFS()
+	fs, err := memfs.NewFS()
+	require.NoError(t, err)
+
 	f, err := fs.Create("test.txt")
 	require.NoError(t, err)
 	defer f.Close()
@@ -25,8 +27,10 @@ func TestFS_Create(t *testing.T) {
 }
 
 func TestFS_Mkdir(t *testing.T) {
-	fs := memfs.NewFS()
-	err := fs.Mkdir("dir", 0755)
+	fs, err := memfs.NewFS()
+	require.NoError(t, err)
+
+	err = fs.Mkdir("dir", 0755)
 	require.NoError(t, err)
 
 	info, err := fs.Stat("dir")
@@ -35,8 +39,10 @@ func TestFS_Mkdir(t *testing.T) {
 }
 
 func TestFS_MkdirAll(t *testing.T) {
-	fs := memfs.NewFS()
-	err := fs.MkdirAll("a/b/c", 0755)
+	fs, err := memfs.NewFS()
+	require.NoError(t, err)
+
+	err = fs.MkdirAll("a/b/c", 0755)
 	require.NoError(t, err)
 
 	info, err := fs.Stat("a/b/c")
@@ -45,8 +51,10 @@ func TestFS_MkdirAll(t *testing.T) {
 }
 
 func TestFS_Open(t *testing.T) {
-	fs := memfs.NewFS()
-	_, err := fs.Create("test.txt")
+	fs, err := memfs.NewFS()
+	require.NoError(t, err)
+
+	_, err = fs.Create("test.txt")
 	require.NoError(t, err)
 
 	f, err := fs.Open("test.txt")
@@ -55,7 +63,9 @@ func TestFS_Open(t *testing.T) {
 }
 
 func TestFS_OpenFile(t *testing.T) {
-	fs := memfs.NewFS()
+	t.Parallel()
+	fs, err := memfs.NewFS()
+	require.NoError(t, err)
 
 	t.Run("CreateWriteOnly", func(t *testing.T) {
 		filename := fmt.Sprintf("file_%d", rand.Int())
@@ -211,8 +221,10 @@ func TestFS_OpenFile(t *testing.T) {
 }
 
 func TestFS_ReadFile(t *testing.T) {
-	fs := memfs.NewFS()
-	err := fs.WriteFile("test.txt", []byte("hello"), 0644)
+	fs, err := memfs.NewFS()
+	require.NoError(t, err)
+
+	err = fs.WriteFile("test.txt", []byte("hello"), 0644)
 	require.NoError(t, err)
 
 	data, err := fs.ReadFile("test.txt")
@@ -221,8 +233,10 @@ func TestFS_ReadFile(t *testing.T) {
 }
 
 func TestFS_Remove(t *testing.T) {
-	fs := memfs.NewFS()
-	_, err := fs.Create("test.txt")
+	fs, err := memfs.NewFS()
+	require.NoError(t, err)
+
+	_, err = fs.Create("test.txt")
 	require.NoError(t, err)
 
 	err = fs.Remove("test.txt")
@@ -233,22 +247,24 @@ func TestFS_Remove(t *testing.T) {
 }
 
 func TestFS_RemoveAll(t *testing.T) {
-	fs := memfs.NewFS()
-	err := fs.MkdirAll("a/b/c", 0755)
+	fs, err := memfs.NewFS()
 	require.NoError(t, err)
 
-	err = fs.RemoveAll("a")
+	err = fs.MkdirAll("a/b/c", 0755)
 	require.NoError(t, err)
 
-	_, err = fs.Stat("a")
+	err = fs.RemoveAll("/")
+	require.NoError(t, err)
+
+	_, err = fs.Stat("/a")
 	require.ErrorIs(t, err, os.ErrNotExist)
-
-	// TODO: try to remove root directory
 }
 
 func TestFS_Rename(t *testing.T) {
-	fs := memfs.NewFS()
-	_, err := fs.Create("old.txt")
+	fs, err := memfs.NewFS()
+	require.NoError(t, err)
+
+	_, err = fs.Create("old.txt")
 	require.NoError(t, err)
 
 	err = fs.Rename("old.txt", "new.txt")
@@ -262,8 +278,10 @@ func TestFS_Rename(t *testing.T) {
 }
 
 func TestFS_Stat(t *testing.T) {
-	fs := memfs.NewFS()
-	_, err := fs.Create("test.txt")
+	fs, err := memfs.NewFS()
+	require.NoError(t, err)
+
+	_, err = fs.Create("test.txt")
 	require.NoError(t, err)
 
 	info, err := fs.Stat("test.txt")
@@ -272,8 +290,10 @@ func TestFS_Stat(t *testing.T) {
 }
 
 func TestFS_Symlink(t *testing.T) {
-	fs := memfs.NewFS()
-	_, err := fs.Create("target.txt")
+	fs, err := memfs.NewFS()
+	require.NoError(t, err)
+
+	_, err = fs.Create("target.txt")
 	require.NoError(t, err)
 
 	err = fs.Symlink("target.txt", "link.txt")
@@ -285,8 +305,10 @@ func TestFS_Symlink(t *testing.T) {
 }
 
 func TestFS_WriteFile(t *testing.T) {
-	fs := memfs.NewFS()
-	err := fs.WriteFile("test.txt", []byte("hello"), 0644)
+	fs, err := memfs.NewFS()
+	require.NoError(t, err)
+
+	err = fs.WriteFile("test.txt", []byte("hello"), 0644)
 	require.NoError(t, err)
 
 	data, err := fs.ReadFile("test.txt")
@@ -295,9 +317,12 @@ func TestFS_WriteFile(t *testing.T) {
 }
 
 func TestFS_ReadDir(t *testing.T) {
-	fs := memfs.NewFS()
-	err := fs.Mkdir("dir", 0755)
+	fs, err := memfs.NewFS()
 	require.NoError(t, err)
+
+	err = fs.Mkdir("dir", 0755)
+	require.NoError(t, err)
+
 	_, err = fs.Create("dir/file.txt")
 	require.NoError(t, err)
 
@@ -308,9 +333,12 @@ func TestFS_ReadDir(t *testing.T) {
 }
 
 func TestFS_WalkDir(t *testing.T) {
-	fs := memfs.NewFS()
-	err := fs.MkdirAll("a/b", 0755)
+	fs, err := memfs.NewFS()
 	require.NoError(t, err)
+
+	err = fs.MkdirAll("a/b", 0755)
+	require.NoError(t, err)
+
 	_, err = fs.Create("a/file.txt")
 	require.NoError(t, err)
 
