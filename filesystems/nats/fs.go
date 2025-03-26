@@ -13,7 +13,6 @@ import (
 	risoros "github.com/risor-io/risor/os"
 
 	memfs "github.com/foohq/foojank/filesystems/mem"
-	"github.com/foohq/foojank/internal/vessel/log"
 )
 
 var (
@@ -271,7 +270,6 @@ func (fs *FS) WriteFile(name string, data []byte, perm risoros.FileMode) error {
 
 // ReadDir reads directory contents from the cache
 func (fs *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
-	log.Debug("natsfs: read directory", "name", name, "cleaned", cleanPath(name))
 	name = cleanPath(name)
 	return fs.cache.ReadDir(name)
 }
