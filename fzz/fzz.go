@@ -70,6 +70,11 @@ func Build(src, dst string) error {
 		return err
 	}
 
+	err = f.Close()
+	if err != nil {
+		return err
+	}
+
 	err = os.Rename(f.Name(), dst)
 	if err != nil {
 		return err
