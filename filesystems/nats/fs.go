@@ -31,9 +31,9 @@ type FS struct {
 	cancel  context.CancelFunc
 }
 
-func NewFS(store jetstream.ObjectStore) (*FS, error) {
+func NewFS(ctx context.Context, store jetstream.ObjectStore) (*FS, error) {
 	// We probably do not need the cancellable context here since there yet no way to cancel it.
-	watcher, err := store.Watch(context.Background())
+	watcher, err := store.Watch(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func NewFS(store jetstream.ObjectStore) (*FS, error) {
 		return nil, err
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	fs := &FS{
 		cache:   cache,
 		store:   store,

@@ -1,6 +1,7 @@
 package nats
 
 import (
+	"context"
 	"net/url"
 
 	"github.com/nats-io/nats.go/jetstream"
@@ -13,8 +14,8 @@ type URIHandler struct {
 	fs risoros.FS
 }
 
-func NewURIHandler(store jetstream.ObjectStore) (*URIHandler, error) {
-	fs, err := NewFS(store)
+func NewURIHandler(ctx context.Context, store jetstream.ObjectStore) (*URIHandler, error) {
+	fs, err := NewFS(ctx, store)
 	if err != nil {
 		return nil, err
 	}
