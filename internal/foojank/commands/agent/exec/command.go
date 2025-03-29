@@ -128,15 +128,6 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 			return err
 		}
 
-		repoName := agentID.ServiceName()
-		err = repositoryCli.Create(ctx, repoName, "")
-		if err != nil {
-			// FIXME: for some reason existing repository does not cause the method to fail...
-			err := fmt.Errorf("cannot create repository '%s': %w", repoName, err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
 		f, err := os.Open(pkgPath)
 		if err != nil {
 			err := fmt.Errorf("cannot open file '%s': %w", pkgPath, err)
@@ -145,6 +136,7 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 		}
 		defer f.Close()
 
+		repoName := agentID.ServiceName()
 		pkgExecPath := filepath.Join(string(os.PathSeparator), "_cache", filepath.Base(pkgPath))
 		err = repositoryCli.PutFile(ctx, repoName, pkgExecPath, f)
 		if err != nil {
