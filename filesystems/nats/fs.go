@@ -215,20 +215,20 @@ func (fs *FS) RemoveAll(pth string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	cleaned := cleanPath(pth)
 	objects, err := fs.store.List(fs.ctx)
 	if err != nil && !errors.Is(err, jetstream.ErrNoObjectsFound) {
 		return err
 	}
 
+	pth = cleanPath(pth)
 	for _, obj := range objects {
-		if strings.HasPrefix(obj.Name, cleaned) {
+		if strings.HasPrefix(obj.Name, pth) {
 			if err := fs.store.Delete(fs.ctx, obj.Name); err != nil {
 				return err
 			}
 		}
 	}
-	return fs.cache.RemoveAll(cleaned)
+	return fs.cache.RemoveAll(pth)
 }
 
 // Rename renames a file
@@ -236,15 +236,14 @@ func (fs *FS) Rename(oldpath, newpath string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	oldClean := cleanPath(oldpath)
-	newClean := cleanPath(newpath)
-
-	err := fs.store.UpdateMeta(fs.ctx, oldClean, jetstream.ObjectMeta{Name: newClean})
+	oldpath = cleanPath(oldpath)
+	newpath = cleanPath(newpath)
+	err := fs.store.UpdateMeta(fs.ctx, oldpath, jetstream.ObjectMeta{Name: newpath})
 	if err != nil {
 		return err
 	}
 
-	return fs.cache.Rename(oldClean, newClean)
+	return fs.cache.Rename(oldpath, newpath)
 }
 
 // Stat returns file information (cache only)
