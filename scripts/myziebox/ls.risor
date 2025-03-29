@@ -1,13 +1,14 @@
 import os
 import time
 
-func print_info(info) {
+func print_file(file) {
+    info := file.info
     mod_time := info.mod_time.format("Jan 02 15:04:05 2006")
-    printf("%s %10d %s %s\n", info.mode, info.size, mod_time, info.name)
+    printf("%s %10d %s %s\n", info.mode, info.size, mod_time, file.path)
 }
 
 func list_file(file) {
-    print_info(file.info)
+    print_file(file)
 }
 
 func list_directory(file) {
@@ -24,7 +25,10 @@ func list_directory(file) {
     print("total " + string(len(children)))
 
     for _, child := range children {
-        print_info(child.info())
+        print_file({
+            path: child.name,
+            info: child.info(),
+        })
     }
 }
 
