@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nats.go/jetstream"
 	"golang.org/x/sync/errgroup"
 
 	engineos "github.com/foohq/foojank/internal/engine/os"
@@ -20,7 +19,6 @@ type Arguments struct {
 	Name        string
 	Version     string
 	Connection  *nats.Conn
-	ObjectStore jetstream.ObjectStore
 	URIHandlers map[string]engineos.URIHandler
 	EventCh     chan<- Event
 }
@@ -89,7 +87,6 @@ func (s *Service) Start(ctx context.Context) error {
 			DataCh:      decoderDataCh,
 			StdinCh:     decoderStdinCh,
 			StdoutCh:    processorStdoutCh,
-			ObjectStore: s.args.ObjectStore,
 			URIHandlers: s.args.URIHandlers,
 		}).Start(groupCtx)
 	})

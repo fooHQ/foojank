@@ -73,7 +73,7 @@ loop:
 				workerID++
 				wCtx, cancel := context.WithCancel(ctx)
 				workers[workerID] = state{
-					w:      s.createWorker(wCtx, workerID, store, uriHandlers, eventCh),
+					w:      s.createWorker(wCtx, workerID, uriHandlers, eventCh),
 					cancel: cancel,
 				}
 
@@ -147,7 +147,6 @@ loop:
 func (s *Service) createWorker(
 	ctx context.Context,
 	workerID uint64,
-	store jetstream.ObjectStore,
 	uriHandlers map[string]engineos.URIHandler,
 	eventCh chan<- worker.Event,
 ) *worker.Service {
@@ -157,7 +156,6 @@ func (s *Service) createWorker(
 		Name:        config.ServiceName,
 		Version:     config.ServiceVersion,
 		Connection:  s.args.Connection,
-		ObjectStore: store,
 		URIHandlers: uriHandlers,
 		EventCh:     eventCh,
 	})

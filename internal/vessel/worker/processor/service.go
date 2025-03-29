@@ -6,12 +6,12 @@ import (
 	"errors"
 	"io"
 
-	"github.com/nats-io/nats.go/jetstream"
 	"github.com/risor-io/risor"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/foohq/foojank/internal/engine"
 	engineos "github.com/foohq/foojank/internal/engine/os"
+	"github.com/foohq/foojank/internal/uri"
 	"github.com/foohq/foojank/internal/vessel/config"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
 	"github.com/foohq/foojank/internal/vessel/log"
@@ -19,11 +19,9 @@ import (
 )
 
 type Arguments struct {
-	DataCh   <-chan decoder.Message
-	StdinCh  <-chan decoder.Message
-	StdoutCh chan<- []byte
-	// TODO: ObjectStore can probably be deleted. fetchFile can be replaced by reading from "natsfs"!!!
-	ObjectStore jetstream.ObjectStore
+	DataCh      <-chan decoder.Message
+	StdinCh     <-chan decoder.Message
+	StdoutCh    chan<- []byte
 	URIHandlers map[string]engineos.URIHandler
 }
 
@@ -87,7 +85,7 @@ loop:
 			}
 
 			log.Debug("before load package", "repository", v.Repository, "path", v.FilePath)
-			file, err := fetchFile(ctx, s.args.ObjectStore, v.FilePath)
+			file, err := downloadFile(s.args.URIHandlers, v.FilePath)
 			if err != nil {
 				log.Debug(err.Error())
 				_ = msg.ReplyError(errcodes.ErrRepositoryGetFile, err.Error(), "")
@@ -130,28 +128,43 @@ loop:
 	return ctx.Err()
 }
 
-func fetchFile(ctx context.Context, store jetstream.ObjectStore, filename string) (*File, error) {
-	res, err := store.Get(ctx, filename)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Close()
-
-	b, err := io.ReadAll(res)
+func downloadFile(uriHandlers map[string]engineos.URIHandler, pth string) (*File, error) {
+	u, err := uri.ToURL(pth)
 	if err != nil {
 		return nil, err
 	}
 
-	info, err := res.Info()
+	handler, ok := uriHandlers[u.Scheme]
+	if !ok {
+		return nil, engineos.ErrHandlerNotFound
+	}
+
+	fs, pth, err := handler.GetFS(u)
+	if err != nil {
+		return nil, err
+	}
+
+	f, err := fs.Open(pth)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	info, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := io.ReadAll(f)
 	if err != nil {
 		return nil, err
 	}
 
 	return &File{
 		b:        bytes.NewReader(b),
-		Name:     info.Name,
-		Size:     info.Size,
-		Modified: info.ModTime,
+		Name:     pth,
+		Size:     uint64(info.Size()),
+		Modified: info.ModTime(),
 	}, nil
 }
 
