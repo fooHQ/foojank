@@ -15,6 +15,7 @@ import (
 	"github.com/foohq/foojank/clients/vessel"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
+	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/foojank/formatter"
 	jsonformatter "github.com/foohq/foojank/internal/foojank/formatter/json"
 	tableformatter "github.com/foohq/foojank/internal/foojank/formatter/table"
@@ -26,9 +27,9 @@ const (
 	FlagServiceName = "service-name"
 	FlagTimeout     = "timeout"
 	FlagFormat      = "format"
-	FlagServer      = "server"
-	FlagUserJWT     = "user-jwt"
-	FlagUserKey     = "user-key"
+	FlagServer      = flags.Server
+	FlagUserJWT     = flags.UserJWT
+	FlagUserKey     = flags.UserKey
 )
 
 func NewCommand() *cli.Command {
