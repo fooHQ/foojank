@@ -10,8 +10,6 @@ import (
 	"github.com/risor-io/risor"
 	"golang.org/x/sync/errgroup"
 
-	filefs "github.com/foohq/foojank/filesystems/file"
-	natsfs "github.com/foohq/foojank/filesystems/nats"
 	"github.com/foohq/foojank/internal/engine"
 	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/vessel/config"
@@ -21,10 +19,12 @@ import (
 )
 
 type Arguments struct {
-	DataCh    <-chan decoder.Message
-	StdinCh   <-chan decoder.Message
-	StdoutCh  chan<- []byte
-	JetStream jetstream.JetStream
+	DataCh   <-chan decoder.Message
+	StdinCh  <-chan decoder.Message
+	StdoutCh chan<- []byte
+	// TODO: ObjectStore can probably be deleted. fetchFile can be replaced by reading from "natsfs"!!!
+	ObjectStore jetstream.ObjectStore
+	URIHandlers map[string]engineos.URIHandler
 }
 
 type Service struct {
@@ -38,24 +38,6 @@ func New(args Arguments) *Service {
 }
 
 func (s *Service) Start(ctx context.Context) error {
-	store, err := s.args.JetStream.ObjectStore(ctx, config.ServiceName)
-	if err != nil {
-		log.Debug("cannot open object store", "error", err)
-		return err
-	}
-
-	fileFSHandler, err := filefs.NewURIHandler()
-	if err != nil {
-		log.Debug("cannot create file handler", "error", err)
-		return err
-	}
-
-	natsFSHandler, err := natsfs.NewURIHandler(store)
-	if err != nil {
-		log.Debug("cannot create natsfs handler", "error", err)
-		return err
-	}
-
 	group, _ := errgroup.WithContext(ctx)
 	stdout := engineos.NewPipe()
 	group.Go(func() error {
@@ -105,7 +87,7 @@ loop:
 			}
 
 			log.Debug("before load package", "repository", v.Repository, "path", v.FilePath)
-			file, err := fetchFile(ctx, s.args.JetStream, v.Repository, v.FilePath)
+			file, err := fetchFile(ctx, s.args.ObjectStore, v.FilePath)
 			if err != nil {
 				log.Debug(err.Error())
 				_ = msg.ReplyError(errcodes.ErrRepositoryGetFile, err.Error(), "")
@@ -119,8 +101,7 @@ loop:
 				engineos.WithStdin(stdin),
 				engineos.WithStdout(stdout),
 				engineos.WithEnvVar("SERVICE_NAME", config.ServiceName),
-				engineos.WithURIHandler("file", fileFSHandler),
-				engineos.WithURIHandler("nats", natsFSHandler),
+				engineos.WithURIHandlers(s.args.URIHandlers),
 			)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				log.Debug(err.Error())
@@ -149,13 +130,8 @@ loop:
 	return ctx.Err()
 }
 
-func fetchFile(ctx context.Context, js jetstream.JetStream, repository, filename string) (*File, error) {
-	s, err := js.ObjectStore(ctx, repository)
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := s.Get(ctx, filename)
+func fetchFile(ctx context.Context, store jetstream.ObjectStore, filename string) (*File, error) {
+	res, err := store.Get(ctx, filename)
 	if err != nil {
 		return nil, err
 	}

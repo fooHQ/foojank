@@ -5,7 +5,11 @@ import (
 	"sync"
 
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 
+	filefs "github.com/foohq/foojank/filesystems/file"
+	natsfs "github.com/foohq/foojank/filesystems/nats"
+	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/vessel/config"
 	"github.com/foohq/foojank/internal/vessel/decoder"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
@@ -34,6 +38,31 @@ func (s *Service) Start(ctx context.Context) error {
 	var workers = make(map[uint64]state)
 	var eventCh = make(chan worker.Event)
 
+	jetStream, err := jetstream.New(s.args.Connection)
+	if err != nil {
+		log.Debug("cannot create a JetStream context", "error", err.Error())
+		return err
+	}
+
+	store, err := jetStream.ObjectStore(ctx, config.ServiceName)
+	if err != nil {
+		log.Debug("cannot open object store", "error", err)
+		return err
+	}
+
+	uriHandlers := make(map[string]engineos.URIHandler)
+	uriHandlers["file"], err = filefs.NewURIHandler()
+	if err != nil {
+		log.Debug("cannot create file handler", "error", err)
+		return err
+	}
+
+	uriHandlers["nats"], err = natsfs.NewURIHandler(ctx, store)
+	if err != nil {
+		log.Debug("cannot create nats handler", "error", err)
+		return err
+	}
+
 loop:
 	for {
 		select {
@@ -44,7 +73,7 @@ loop:
 				workerID++
 				wCtx, cancel := context.WithCancel(ctx)
 				workers[workerID] = state{
-					w:      s.createWorker(wCtx, workerID, eventCh),
+					w:      s.createWorker(wCtx, workerID, store, uriHandlers, eventCh),
 					cancel: cancel,
 				}
 
@@ -115,14 +144,22 @@ loop:
 	return nil
 }
 
-func (s *Service) createWorker(ctx context.Context, workerID uint64, eventCh chan<- worker.Event) *worker.Service {
+func (s *Service) createWorker(
+	ctx context.Context,
+	workerID uint64,
+	store jetstream.ObjectStore,
+	uriHandlers map[string]engineos.URIHandler,
+	eventCh chan<- worker.Event,
+) *worker.Service {
 	log.Debug("creating a new worker", "id", workerID)
 	w := worker.New(worker.Arguments{
-		ID:         workerID,
-		Name:       config.ServiceName,
-		Version:    config.ServiceVersion,
-		Connection: s.args.Connection,
-		EventCh:    eventCh,
+		ID:          workerID,
+		Name:        config.ServiceName,
+		Version:     config.ServiceVersion,
+		Connection:  s.args.Connection,
+		ObjectStore: store,
+		URIHandlers: uriHandlers,
+		EventCh:     eventCh,
 	})
 
 	s.wg.Add(1)
