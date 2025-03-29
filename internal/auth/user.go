@@ -94,6 +94,7 @@ func NewUserAgent(name, accountPubKey string, accountSigningKey []byte) (*User, 
 
 			// Allow modification of object in ObjectStore
 			fmt.Sprintf("$O.%s.M.*", name),
+			fmt.Sprintf("$O.%s.C.*", name),
 			fmt.Sprintf("$JS.API.STREAM.PURGE.OBJ_%s", name),
 
 			// Allow listing contents of a bucket
