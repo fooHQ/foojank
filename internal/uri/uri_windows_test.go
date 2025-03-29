@@ -57,6 +57,20 @@ func Test_ToURL(t *testing.T) {
 			path: "nats://example.com/_cache/file.fzz",
 			url:  "nats://example.com/_cache/file.fzz",
 		},
+
+		// Relative path
+		{
+			path: ".",
+			url:  ".",
+		},
+		{
+			path: "..",
+			url:  "..",
+		},
+		{
+			path: "../test",
+			url:  "../test",
+		},
 	}
 	for i, test := range tests {
 		u, err := uri.ToURL(test.path)
