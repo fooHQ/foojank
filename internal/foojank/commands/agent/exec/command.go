@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path"
 	"path/filepath"
 	"sync"
 	"time"
@@ -137,7 +138,7 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 		defer f.Close()
 
 		repoName := agentID.ServiceName()
-		pkgExecPath := filepath.Join(string(os.PathSeparator), "_cache", filepath.Base(pkgPath))
+		pkgExecPath := path.Join("/", "_cache", filepath.Base(pkgPath))
 		err = repositoryCli.PutFile(ctx, repoName, pkgExecPath, f)
 		if err != nil {
 			err := fmt.Errorf("cannot copy file '%s' to the repository '%s' as '%s': %v", pkgPath, repoName, pkgExecPath, err)
@@ -232,7 +233,9 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			code, err := vesselCli.Execute(ctx, worker, repoName, pkgExecPath, scriptArgs, stdinCh, stdoutCh)
+			fullPath := "nats://" + pkgExecPath
+			// TODO: repository parameter can be deleted!
+			code, err := vesselCli.Execute(ctx, worker, "", fullPath, scriptArgs, stdinCh, stdoutCh)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				err := fmt.Errorf("execute request failed: %w", err)
 				logger.ErrorContext(ctx, err.Error())
