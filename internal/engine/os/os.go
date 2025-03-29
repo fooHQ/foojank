@@ -44,6 +44,12 @@ func WithStdout(file risoros.File) Option {
 	}
 }
 
+func WithURIHandlers(handlers map[string]URIHandler) Option {
+	return func(o *OS) {
+		o.uriHandlers = handlers
+	}
+}
+
 func WithURIHandler(scheme string, handler URIHandler) Option {
 	return func(o *OS) {
 		o.uriHandlers[scheme] = handler
