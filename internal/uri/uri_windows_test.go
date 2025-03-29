@@ -110,8 +110,12 @@ func Test_ToPath(t *testing.T) {
 			path: "//192.168.0.1/shared/data",
 		},
 		{
-			url:  "nats:///_cache/file",
-			path: "/_cache/file",
+			url:  "nats://example.com/_cache/file.fzz",
+			path: "/_cache/file.fzz",
+		},
+		{
+			url:  "nats:///_cache/file.fzz",
+			path: "/_cache/file.fzz",
 		},
 	}
 	for i, test := range tests {

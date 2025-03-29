@@ -34,7 +34,7 @@ func ToPath(u *url.URL) string {
 		return u.Path[1:]
 	}
 
-	if u.Host != "" {
+	if (u.Scheme == "" || u.Scheme == "file") && u.Host != "" {
 		return "//" + u.Host + u.Path
 	}
 
