@@ -27,9 +27,9 @@ import (
 )
 
 const (
-	FlagServer  = "server"
-	FlagUserJWT = "user-jwt"
-	FlagUserKey = "user-key"
+	FlagServer  = flags.Server
+	FlagUserJWT = flags.UserJWT
+	FlagUserKey = flags.UserKey
 	FlagDataDir = flags.DataDir
 )
 
