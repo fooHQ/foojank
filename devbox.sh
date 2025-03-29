@@ -22,7 +22,7 @@ build_agent_prod() {
     fi
 
     WITH_LDFLAGS="-w -s"
-    if [ "$GOOS" == "windows" ]; then
+    if [ "$GOOS" = "windows" ]; then
         WITH_LDFLAGS="$WITH_LDFLAGS -H windowsgui"
     fi
 
@@ -54,9 +54,9 @@ generate_proto() {
         git clone -b v3.0.1-alpha.2 --depth 1 https://github.com/capnproto/go-capnp ./build/go-capnp
     fi
 
-    cd ./build/go-capnp
+    cd ./build/go-capnp || exit 1
     go build -modfile go.mod -o ../capnpc-go ./capnpc-go
-    cd -
+    cd - || exit 1
     go generate ./proto/capnp
 }
 
