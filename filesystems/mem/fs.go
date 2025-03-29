@@ -370,7 +370,11 @@ func (fi *fileInfo) Size() int64 {
 }
 
 func (fi *fileInfo) Mode() risoros.FileMode {
-	return fi.node.mode
+	mode := fi.node.mode
+	if fi.node.isDir {
+		mode = os.ModeDir | mode
+	}
+	return mode
 }
 
 func (fi *fileInfo) ModTime() time.Time {
