@@ -21,7 +21,7 @@ func TestFS_Create(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := natsfs.NewFS(store)
+	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
 
@@ -36,7 +36,7 @@ func TestFS_Mkdir(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := natsfs.NewFS(store)
+	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
 
@@ -48,7 +48,7 @@ func TestFS_MkdirAll(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := natsfs.NewFS(store)
+	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
 
@@ -60,7 +60,7 @@ func TestFS_Open(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := natsfs.NewFS(store)
+	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
 
@@ -78,7 +78,7 @@ func TestFS_OpenFile(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := natsfs.NewFS(store)
+	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
 
@@ -240,7 +240,7 @@ func TestFS_ReadFile(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := natsfs.NewFS(store)
+	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
 
@@ -259,7 +259,7 @@ func TestFS_Remove(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := natsfs.NewFS(store)
+	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
 
@@ -283,7 +283,7 @@ func TestFS_RemoveAll(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := natsfs.NewFS(store)
+	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
 
@@ -305,7 +305,7 @@ func TestFS_Rename(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := natsfs.NewFS(store)
+	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
 
@@ -328,7 +328,7 @@ func TestFS_Stat(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := natsfs.NewFS(store)
+	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
 
@@ -347,7 +347,7 @@ func TestFS_Symlink(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := natsfs.NewFS(store)
+	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
 
@@ -359,7 +359,7 @@ func TestFS_WriteFile(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := natsfs.NewFS(store)
+	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
 
@@ -377,7 +377,7 @@ func TestFS_ReadDir(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := natsfs.NewFS(store)
+	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
 
@@ -403,7 +403,7 @@ func TestFS_WalkDir(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := natsfs.NewFS(store)
+	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
 
@@ -430,7 +430,7 @@ func TestFS_Close(t *testing.T) {
 	_, nc := testutils.NewNatsServerAndConnection(t)
 	store := testutils.NewNatsObjectStore(t, nc)
 
-	fs, err := natsfs.NewFS(store)
+	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
 
