@@ -16,6 +16,7 @@ func Test_ToURL(t *testing.T) {
 		path string
 		url  string
 	}{
+		// Volume: path
 		{
 			path: `C:\Windows\System32`,
 			url:  "/C:/Windows/System32",
@@ -24,22 +25,22 @@ func Test_ToURL(t *testing.T) {
 			path: `C:/Windows/System32`,
 			url:  "/C:/Windows/System32",
 		},
+
+		// UNC path
 		{
 			path: `\\192.168.0.1\shared\data`,
 			url:  "//192.168.0.1/shared/data",
-		},
-		{
-			path: `\\192.168.0.1\shared`,
-			url:  "//192.168.0.1/shared",
 		},
 		{
 			path: `//192.168.0.1/shared/data`,
 			url:  "//192.168.0.1/shared/data",
 		},
 		{
-			path: `C:/Windows/System32`,
-			url:  "/C:/Windows/System32",
+			path: `//192.168.0.1/shared`,
+			url:  "//192.168.0.1/shared",
 		},
+
+		// URI:// path
 		{
 			path: "file:///C:/Windows/System32",
 			url:  "file:///C:/Windows/System32",
@@ -47,6 +48,14 @@ func Test_ToURL(t *testing.T) {
 		{
 			path: "file://192.168.0.1/shared/data",
 			url:  "file://192.168.0.1/shared/data",
+		},
+		{
+			path: "nats:///_cache/file.fzz",
+			url:  "nats:///_cache/file.fzz",
+		},
+		{
+			path: "nats://example.com/_cache/file.fzz",
+			url:  "nats://example.com/_cache/file.fzz",
 		},
 	}
 	for i, test := range tests {
@@ -61,10 +70,13 @@ func Test_ToPath(t *testing.T) {
 		url  string
 		path string
 	}{
+		// Volume: path
 		{
 			url:  "/C:/Windows/System32",
 			path: "C:/Windows/System32",
 		},
+
+		// UNC path
 		{
 			url:  "//192.168.0.1/shared/data",
 			path: "//192.168.0.1/shared/data",
@@ -73,6 +85,8 @@ func Test_ToPath(t *testing.T) {
 			url:  "//192.168.0.1/shared",
 			path: "//192.168.0.1/shared",
 		},
+
+		// URI:// path
 		{
 			url:  "file:///C:/Windows/System32",
 			path: "C:/Windows/System32",
@@ -80,6 +94,10 @@ func Test_ToPath(t *testing.T) {
 		{
 			url:  "file://192.168.0.1/shared/data",
 			path: "//192.168.0.1/shared/data",
+		},
+		{
+			url:  "nats:///_cache/file",
+			path: "/_cache/file",
 		},
 	}
 	for i, test := range tests {
@@ -95,10 +113,13 @@ func Test_ToFullPath(t *testing.T) {
 		url  string
 		path string
 	}{
+		// Volume: path
 		{
 			url:  "/C:/Windows/System32",
 			path: "C:/Windows/System32",
 		},
+
+		// UNC path
 		{
 			url:  "//192.168.0.1/shared/data",
 			path: "//192.168.0.1/shared/data",
@@ -107,6 +128,8 @@ func Test_ToFullPath(t *testing.T) {
 			url:  "//192.168.0.1/shared",
 			path: "//192.168.0.1/shared",
 		},
+
+		// URI:// path
 		{
 			url:  "file:///C:/Windows/System32",
 			path: "C:/Windows/System32",
@@ -116,8 +139,12 @@ func Test_ToFullPath(t *testing.T) {
 			path: "//192.168.0.1/shared/data",
 		},
 		{
-			url:  "ftp://192.168.0.2/shared/data",
-			path: "ftp://192.168.0.2/shared/data",
+			url:  "nats://example.com/_cache/file.fzz",
+			path: "nats://example.com/_cache/file.fzz",
+		},
+		{
+			url:  "nats:///_cache/file.fzz",
+			path: "nats:///_cache/file.fzz",
 		},
 	}
 	for i, test := range tests {
