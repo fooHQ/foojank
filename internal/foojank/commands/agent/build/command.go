@@ -7,14 +7,18 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/nats-io/jwt/v2"
+	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/clients/codebase"
+	"github.com/foohq/foojank/clients/repository"
+	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
@@ -29,6 +33,9 @@ const (
 	FlagDev           = "dev"
 	FlagWithServer    = "with-server"
 	FlagWithoutModule = "without-module"
+	FlagServer        = flags.Server
+	FlagUserJWT       = flags.UserJWT
+	FlagUserKey       = flags.UserKey
 	FlagAccountJWT    = flags.AccountJWT
 	FlagAccountKey    = flags.AccountKey
 	FlagDataDir       = flags.DataDir
@@ -65,6 +72,19 @@ func NewCommand() *cli.Command {
 				Name:  FlagWithoutModule,
 				Usage: "disable compilation of a module",
 			},
+			&cli.StringSliceFlag{
+				Name:    FlagServer,
+				Usage:   "set server URL",
+				Aliases: []string{"s"},
+			},
+			&cli.StringFlag{
+				Name:  FlagUserJWT,
+				Usage: "set user JWT token",
+			},
+			&cli.StringFlag{
+				Name:  FlagUserKey,
+				Usage: "set user secret key",
+			},
 			&cli.StringFlag{
 				Name:  FlagAccountJWT,
 				Usage: "set account JWT",
@@ -96,11 +116,27 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	logger := log.New(*conf.LogLevel, *conf.NoColor)
-	client := codebase.New(*conf.DataDir)
-	return buildAction(logger, conf, client)(ctx, c)
+
+	nc, err := server.New(logger, conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey)
+	if err != nil {
+		err := fmt.Errorf("cannot connect to the server: %w", err)
+		logger.ErrorContext(ctx, err.Error())
+		return err
+	}
+
+	js, err := jetstream.New(nc)
+	if err != nil {
+		err := fmt.Errorf("cannot create a JetStream context: %w", err)
+		logger.ErrorContext(ctx, err.Error())
+		return err
+	}
+
+	codebaseCli := codebase.New(*conf.DataDir)
+	repositoryCli := repository.New(js)
+	return buildAction(logger, conf, codebaseCli, repositoryCli)(ctx, c)
 }
 
-func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Client) cli.ActionFunc {
+func buildAction(logger *slog.Logger, conf *config.Config, codebaseCli *codebase.Client, repositoryCli *repository.Client) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
 		outputName := c.String(FlagOutput)
 		targetOs := c.String(FlagOs)
@@ -121,6 +157,14 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 			outputName = filepath.Join(wd, agentName)
 		}
 
+		if targetOs == "" {
+			targetOs = runtime.GOOS
+		}
+
+		if targetArch == "" {
+			targetArch = runtime.GOARCH
+		}
+
 		if targetOs == "windows" && !strings.HasSuffix(outputName, ".exe") {
 			outputName += ".exe"
 		}
@@ -132,7 +176,7 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 			return err
 		}
 
-		modules, err := client.ListModules()
+		modules, err := codebaseCli.ListModules()
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot get a list of modules: %w", err)
 			logger.ErrorContext(ctx, err.Error())
@@ -175,16 +219,26 @@ func buildAction(logger *slog.Logger, conf *config.Config, client *codebase.Clie
 			return err
 		}
 
-		err = client.WriteAgentConfig(confOutput)
+		err = codebaseCli.WriteAgentConfig(confOutput)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot write agent configuration to a file: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		binPath, output, err := client.BuildAgent(ctx, targetOs, targetArch, !devBuild)
+		binPath, output, err := codebaseCli.BuildAgent(ctx, targetOs, targetArch, !devBuild)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: %w\n%s", err, output)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		repoName := agentName
+		repoDescription := fmt.Sprintf("Agent %s (%s/%s)", repoName, targetOs, targetArch)
+		err = repositoryCli.Create(ctx, repoName, repoDescription)
+		if err != nil {
+			_ = os.Remove(binPath)
+			err := fmt.Errorf("cannot create repository '%s': %w", repoName, err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
@@ -221,6 +275,14 @@ func validateConfiguration(conf *config.Config) error {
 
 	if len(conf.Client.Server) == 0 {
 		return errors.New("server not configured")
+	}
+
+	if conf.Client.UserJWT == nil {
+		return errors.New("user jwt not configured")
+	}
+
+	if conf.Client.UserKey == nil {
+		return errors.New("user key not configured")
 	}
 
 	if conf.Client.AccountJWT == nil {
