@@ -28,8 +28,7 @@ struct DestroyWorkerResponse {}
 
 struct ExecuteRequest {
     args @0 :List(Text);
-    repository @1 :Text;
-    filePath @2 :Text;
+    filePath @1 :Text;
 }
 
 struct ExecuteResponse {

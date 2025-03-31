@@ -69,9 +69,8 @@ func (m MessageResponse) Error() *MessageError {
 }
 
 type ExecuteRequest struct {
-	Args       []string
-	Repository string
-	FilePath   string
+	Args     []string
+	FilePath string
 }
 
 type ExecuteResponse struct {

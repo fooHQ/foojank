@@ -84,14 +84,14 @@ loop:
 				continue
 			}
 
-			log.Debug("before load package", "repository", v.Repository, "path", v.FilePath)
+			log.Debug("before load package", "path", v.FilePath)
 			file, err := downloadFile(s.args.URIHandlers, v.FilePath)
 			if err != nil {
 				log.Debug(err.Error())
 				_ = msg.ReplyError(errcodes.ErrRepositoryGetFile, err.Error(), "")
 				continue
 			}
-			log.Debug("after load package", "repository", v.Repository, "path", v.FilePath)
+			log.Debug("after load package", "path", v.FilePath)
 
 			err = engineCompileAndRunPackage(ctx,
 				file,

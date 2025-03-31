@@ -47,7 +47,7 @@ func TestService(t *testing.T) {
 	}
 
 	{
-		b, err := proto.NewExecuteRequest("foojank1", "/scripts/test.fzz", []string{"/scripts/test.fzz"})
+		b, err := proto.NewExecuteRequest("/scripts/test.fzz", []string{"/scripts/test.fzz"})
 		require.NoError(t, err)
 		req := testutils.Request{
 			FSubject:   "data",
@@ -60,7 +60,6 @@ func TestService(t *testing.T) {
 		require.IsType(t, decoder.ExecuteRequest{}, outMsg.Data())
 		data := outMsg.Data().(decoder.ExecuteRequest)
 		require.Equal(t, []string{"/scripts/test.fzz"}, data.Args)
-		require.Equal(t, "foojank1", data.Repository)
 		require.Equal(t, "/scripts/test.fzz", data.FilePath)
 		err = outMsg.Reply(decoder.ExecuteResponse{
 			Code: 1,

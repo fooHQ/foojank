@@ -136,7 +136,7 @@ func NewGetWorkerResponse(serviceName, serviceID string) ([]byte, error) {
 	return msg.Message().Marshal()
 }
 
-func NewExecuteRequest(repository, filePath string, args []string) ([]byte, error) {
+func NewExecuteRequest(filePath string, args []string) ([]byte, error) {
 	msg, err := newMessage()
 	if err != nil {
 		return nil, err
@@ -153,11 +153,6 @@ func NewExecuteRequest(repository, filePath string, args []string) ([]byte, erro
 	}
 
 	err = msgExecute.SetArgs(argsList)
-	if err != nil {
-		return nil, err
-	}
-
-	err = msgExecute.SetRepository(repository)
 	if err != nil {
 		return nil, err
 	}
