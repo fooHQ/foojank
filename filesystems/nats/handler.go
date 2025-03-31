@@ -11,7 +11,7 @@ import (
 )
 
 type URIHandler struct {
-	fs risoros.FS
+	fs *FS
 }
 
 func NewURIHandler(ctx context.Context, store jetstream.ObjectStore) (*URIHandler, error) {
@@ -28,4 +28,8 @@ func NewURIHandler(ctx context.Context, store jetstream.ObjectStore) (*URIHandle
 func (h *URIHandler) GetFS(u *url.URL) (risoros.FS, string, error) {
 	pth := uri.ToPath(u)
 	return h.fs, pth, nil
+}
+
+func (h *URIHandler) Close() error {
+	return h.fs.Close()
 }
