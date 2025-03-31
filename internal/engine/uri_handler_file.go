@@ -9,7 +9,7 @@ import (
 	"github.com/foohq/foojank/internal/uri"
 )
 
-const URIFile = "mem"
+const URIFile = "file"
 
 type FileURIHandler struct {
 	fs *filefs.FS
