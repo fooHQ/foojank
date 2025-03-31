@@ -8,4 +8,5 @@ import (
 
 type URIHandler interface {
 	GetFS(*url.URL) (risoros.FS, string, error)
+	Close() error
 }
