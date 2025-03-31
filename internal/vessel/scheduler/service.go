@@ -49,19 +49,32 @@ func (s *Service) Start(ctx context.Context) error {
 		return err
 	}
 
-	uriHandlers := make(map[string]engineos.URIHandler)
-	uriHandlers[engine.URIFile], err = engine.NewFileURIHandler()
+	memHandler, err := engine.NewMemURIHandler()
+	if err != nil {
+		log.Debug("cannot create mem handler", "error", err)
+		return err
+	}
+	defer memHandler.Close()
+
+	fileHandler, err := engine.NewFileURIHandler()
 	if err != nil {
 		log.Debug("cannot create file handler", "error", err)
 		return err
 	}
+	defer fileHandler.Close()
 
-	uriHandlers[engine.URINats], err = engine.NewNatsURIHandler(ctx, store)
+	natsHandler, err := engine.NewNatsURIHandler(ctx, store)
 	if err != nil {
 		log.Debug("cannot create nats handler", "error", err)
 		return err
 	}
-	defer uriHandlers["nats"].Close()
+	defer natsHandler.Close()
+
+	uriHandlers := map[string]engineos.URIHandler{
+		engine.URIMem:  memHandler,
+		engine.URIFile: fileHandler,
+		engine.URINats: natsHandler,
+	}
 
 loop:
 	for {
