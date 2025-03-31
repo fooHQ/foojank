@@ -7,8 +7,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 
-	filefs "github.com/foohq/foojank/filesystems/file"
-	natsfs "github.com/foohq/foojank/filesystems/nats"
+	"github.com/foohq/foojank/internal/engine"
 	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/vessel/config"
 	"github.com/foohq/foojank/internal/vessel/decoder"
@@ -51,17 +50,18 @@ func (s *Service) Start(ctx context.Context) error {
 	}
 
 	uriHandlers := make(map[string]engineos.URIHandler)
-	uriHandlers["file"], err = filefs.NewURIHandler()
+	uriHandlers[engine.URIFile], err = engine.NewFileURIHandler()
 	if err != nil {
 		log.Debug("cannot create file handler", "error", err)
 		return err
 	}
 
-	uriHandlers["nats"], err = natsfs.NewURIHandler(ctx, store)
+	uriHandlers[engine.URINats], err = engine.NewNatsURIHandler(ctx, store)
 	if err != nil {
 		log.Debug("cannot create nats handler", "error", err)
 		return err
 	}
+	defer uriHandlers["nats"].Close()
 
 loop:
 	for {
