@@ -204,3 +204,7 @@ func (h *URIHandler) GetFS(u *url.URL) (risoros.FS, string, error) {
 	pth := uri.ToPath(u)
 	return h.fs, pth, nil
 }
+
+func (h *URIHandler) Close() error {
+	return nil
+}
