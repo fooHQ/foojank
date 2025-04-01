@@ -1,4 +1,4 @@
 ---
-title: Install foojank
+title: Install Foojank
 weight: 1
 ---
