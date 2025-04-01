@@ -1,7 +1,7 @@
-title = 'foojank'
+title = 'Foojank'
 baseURL = 'https://foojank.com/'
 languageCode = 'en-us'
-
+enableInlineShortcodes = true
 enableGitInfo = true
 
 [params]
