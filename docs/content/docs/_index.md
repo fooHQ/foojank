@@ -28,4 +28,11 @@ clients over a WebSocket connection, as well as NATS's ObjectStore to implement 
 protocols or system resources, such as SSH, SMB, NATS, Windows Registry, and more. Custom virtual filesystems can be implemented as well.
 
 - **Simplicity and Local-First Principle**: Foojank tasks are performed with a single command-line tool. Tool's ergonomics were highly inspired by Docker but with intention to keep the
-number of commands low. Most workflows were designed with the Local-First principle in mind to make debugging of custom modules, scripts, and other modifications straightforward.
+number of commands low. Most workflows were designed with the Local-First principle in mind to make debugging of custom changes feel natural.
+
+- **Implemented in Go**: Go is a cross-platform, compiled, statically typed programming language developed by Google. Some of
+  the strengths of Go is its relative simplicity, fast compilation, out-of-box cross-compilation, and statically linked binaries.
+
+- **Self-contained**: All dependencies required by the framework are versioned with [devbox](), which uses Nix to manage the dependencies.
+Thanks to Nix, multiple versions of the same software can coexist without a conflict or need to change your
+operating system.
