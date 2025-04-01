@@ -1,8 +1,8 @@
 <div align="center">
-  <h1>foojank</h1>
+  <h1>Foojank</h1>
 
   <p>
-    <strong>foojank</strong> is a cross-platform command & control (C2) framework.
+    <strong>Foojank</strong> is a cross-platform command & control (C2) framework.
   </p>
 
   <p>
