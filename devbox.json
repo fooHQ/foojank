@@ -3,7 +3,6 @@
   "packages": [
     "natscli@0.1.5",
     "capnproto@1.0.2",
-    "hugo@0.143.0",
     "go@1.24",
     "golangci-lint@1.64.5",
     "garble@0.14.1"
@@ -18,9 +17,6 @@
       "echo 'Welcome to devbox!' > /dev/null"
     ],
     "scripts": {
-      "docs": [
-        "hugo serve -s ./docs"
-      ],
       "test": [
         "CGO_ENABLED=1 go test -race ./..."
       ],
