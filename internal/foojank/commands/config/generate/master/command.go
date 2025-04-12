@@ -16,6 +16,7 @@ import (
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
+	"github.com/foohq/foojank/internal/sstls"
 )
 
 const (
@@ -81,6 +82,38 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 			return err
 		}
 
+		//
+		// Generate server key and certificate
+		//
+		key, err := sstls.GenerateKey()
+		if err != nil {
+			err := fmt.Errorf("cannot generate configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		// TODO: change name!
+		certTemplate, err := sstls.NewCertificateTemplate("Test company")
+		if err != nil {
+			err := fmt.Errorf("cannot generate configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		cert, err := sstls.EncodeCertificate(certTemplate, certTemplate, key.Public(), key)
+		if err != nil {
+			err := fmt.Errorf("cannot generate configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		keyEncoded, err := sstls.EncodeKey(key)
+		if err != nil {
+			err := fmt.Errorf("cannot generate configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
 		output, err := config.NewDefault()
 		if err != nil {
 			err := fmt.Errorf("cannot generate configuration: %w", err)
@@ -90,6 +123,7 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 
 		output.Client.SetAccountJWT(account.JWT)
 		output.Client.SetAccountKey(account.Key)
+		output.Client.SetTLSCACert(cert)
 
 		output.Server.SetOperatorJWT(operator.JWT)
 		output.Server.SetOperatorKey(operator.Key)
@@ -98,6 +132,8 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 		output.Server.SetAccountKey(account.SigningKey)
 		output.Server.SetSystemAccountJWT(systemAccount.JWT)
 		output.Server.SetSystemAccountKey(systemAccount.Key)
+		output.Server.SetTLSCert(cert)
+		output.Server.SetTLSKey(keyEncoded)
 
 		pth := config.DefaultMasterConfigPath
 		dirPth := filepath.Dir(pth)
