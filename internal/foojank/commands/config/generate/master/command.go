@@ -142,7 +142,7 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 			return err
 		}
 
-		opts := os.O_CREATE | os.O_WRONLY | os.O_EXCL
+		opts := os.O_CREATE | os.O_WRONLY | os.O_EXCL | os.O_TRUNC
 		if force {
 			opts = opts &^ os.O_EXCL
 		}
