@@ -3,6 +3,7 @@ package config
 
 var (
 	Servers = []string{}
+	TLSCACertificate = ""
 	UserJWT = ""
 	UserKeySeed = ""
 	ServiceName = ""

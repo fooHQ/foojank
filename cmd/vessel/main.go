@@ -11,6 +11,7 @@ import (
 
 	"github.com/nats-io/nats.go"
 
+	"github.com/foohq/foojank/internal/sstls"
 	"github.com/foohq/foojank/internal/vessel"
 	"github.com/foohq/foojank/internal/vessel/config"
 	"github.com/foohq/foojank/internal/vessel/log"
@@ -40,6 +41,7 @@ func main() {
 		nats.CustomInboxPrefix("_INBOX_"+config.ServiceName),
 		nats.RetryOnFailedConnect(true),
 		nats.MaxReconnects(-1),
+		nats.ClientTLSConfig(nil, sstls.DecodeCertificateHandler(config.TLSCACertificate)),
 		nats.ConnectHandler(func(_ *nats.Conn) {
 			log.Debug("connected to the server")
 		}),
