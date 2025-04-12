@@ -67,7 +67,7 @@ func executePackage(ctx context.Context, pkgPath string, pkgArgs []string) error
 		return err
 	}
 
-	memHandler, err := engine.NewMemURIHandler()
+	memHandler, err := engineos.NewMemURIHandler()
 	if err != nil {
 		err := fmt.Errorf("cannot create mem handler: %w", err)
 		return err
@@ -84,7 +84,7 @@ func executePackage(ctx context.Context, pkgPath string, pkgArgs []string) error
 		// Work directory is also adjusted to begin at "/", which is the only
 		// directory which exists in an empty MemFS.
 		engineos.WithWorkDir("/"),
-		engineos.WithURIHandler(engine.URIFile, memHandler),
+		engineos.WithURIHandler(engineos.URIFile, memHandler),
 	)
 	opts := []risor.Option{
 		risor.WithoutDefaultGlobals(),

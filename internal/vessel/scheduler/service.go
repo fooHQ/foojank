@@ -7,7 +7,6 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 
-	"github.com/foohq/foojank/internal/engine"
 	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/vessel/config"
 	"github.com/foohq/foojank/internal/vessel/decoder"
@@ -49,21 +48,21 @@ func (s *Service) Start(ctx context.Context) error {
 		return err
 	}
 
-	memHandler, err := engine.NewMemURIHandler()
+	memHandler, err := engineos.NewMemURIHandler()
 	if err != nil {
 		log.Debug("cannot create mem handler", "error", err)
 		return err
 	}
 	defer memHandler.Close()
 
-	fileHandler, err := engine.NewFileURIHandler()
+	fileHandler, err := engineos.NewFileURIHandler()
 	if err != nil {
 		log.Debug("cannot create file handler", "error", err)
 		return err
 	}
 	defer fileHandler.Close()
 
-	natsHandler, err := engine.NewNatsURIHandler(ctx, store)
+	natsHandler, err := engineos.NewNatsURIHandler(ctx, store)
 	if err != nil {
 		log.Debug("cannot create nats handler", "error", err)
 		return err
@@ -71,9 +70,9 @@ func (s *Service) Start(ctx context.Context) error {
 	defer natsHandler.Close()
 
 	uriHandlers := map[string]engineos.URIHandler{
-		engine.URIMem:  memHandler,
-		engine.URIFile: fileHandler,
-		engine.URINats: natsHandler,
+		engineos.URIMem:  memHandler,
+		engineos.URIFile: fileHandler,
+		engineos.URINats: natsHandler,
 	}
 
 loop:
