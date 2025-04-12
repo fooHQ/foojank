@@ -2,6 +2,7 @@ package start
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -15,6 +16,7 @@ import (
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
+	"github.com/foohq/foojank/internal/sstls"
 )
 
 const (
@@ -24,6 +26,8 @@ const (
 	FlagSystemAccountJWT = "system-account-jwt"
 	FlagAccountJWT       = flags.AccountJWT
 	FlagDataDir          = flags.DataDir
+	FlagTLSCertificate   = "tls-certificate"
+	FlagTLSKey           = "tls-key"
 )
 
 func NewCommand() *cli.Command {
@@ -50,6 +54,14 @@ func NewCommand() *cli.Command {
 			&cli.StringFlag{
 				Name:  FlagSystemAccountJWT,
 				Usage: "set system account JWT token",
+			},
+			&cli.StringFlag{
+				Name:  FlagTLSCertificate,
+				Usage: "set TLS certificate",
+			},
+			&cli.StringFlag{
+				Name:  FlagTLSKey,
+				Usage: "set TLS key",
 			},
 			&cli.StringFlag{
 				Name:  FlagDataDir,
@@ -90,6 +102,7 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 
 		configuredAccounts := []string{
 			*conf.Server.AccountJWT,
+			// NOTICE: System account must always be defined as the last in the configuredAccounts.
 			*conf.Server.SystemAccountJWT,
 		}
 		preloadAccounts, err := decodeAccountClaims(configuredAccounts...)
@@ -110,20 +123,41 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 			}
 		}
 
-		// This is a footgun waiting to hurt someone.
-		// System account must always be defined as the last in the configuredAccounts.
-		systemAccountPubKey := preloadAccounts[len(preloadAccounts)-1].Subject
+		certRaw, cert, err := sstls.DecodeCertificate(*conf.Server.TLSCertificate)
+		if err != nil {
+			err := fmt.Errorf("cannot parse TLS certificate: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		key, err := sstls.DecodeKey(*conf.Server.TLSKey)
+		if err != nil {
+			err := fmt.Errorf("cannot parse TLS key: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
 		opts := &server.Options{
 			Host: "localhost",
 			Port: 4222,
 			Websocket: server.WebsocketOpts{
-				Host:  *conf.Server.Host,
-				Port:  int(*conf.Server.Port),
-				NoTLS: true,
-				// TODO: consider enabling the compression!
+				Host: *conf.Server.Host,
+				Port: int(*conf.Server.Port),
+				TLSConfig: &tls.Config{
+					MinVersion: tls.VersionTLS12,
+					Certificates: []tls.Certificate{
+						{
+							Certificate: [][]byte{
+								certRaw,
+							},
+							PrivateKey: key,
+							Leaf:       cert,
+						},
+					},
+				},
 				Compression: false,
 			},
-			SystemAccount:    systemAccountPubKey,
+			SystemAccount:    preloadAccounts[len(preloadAccounts)-1].Subject,
 			JetStream:        true,
 			AccountResolver:  resolver,
 			TrustedOperators: preloadOperators,
@@ -177,6 +211,14 @@ func validateConfiguration(conf *config.Config) error {
 
 	if conf.Server.SystemAccountJWT == nil {
 		return errors.New("system account jwt not configured")
+	}
+
+	if conf.Server.TLSCertificate == nil {
+		return errors.New("tls certificate not configured")
+	}
+
+	if conf.Server.TLSKey == nil {
+		return errors.New("tls key not configured")
 	}
 
 	return nil
