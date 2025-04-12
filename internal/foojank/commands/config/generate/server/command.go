@@ -61,6 +61,8 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 		confServer.SetOperatorJWT(*confInput.Server.OperatorJWT)
 		confServer.SetAccountJWT(*confInput.Server.AccountJWT)
 		confServer.SetSystemAccountJWT(*confInput.Server.SystemAccountJWT)
+		confServer.SetTLSCert(*confInput.Server.TLSCertificate)
+		confServer.SetTLSKey(*confInput.Server.TLSKey)
 
 		confCommon, err := config.NewDefaultCommon()
 		if err != nil {
@@ -128,6 +130,14 @@ func validateInputConfiguration(conf *config.Config) error {
 
 	if conf.Server.SystemAccountKey == nil {
 		return errors.New("system account key not configured")
+	}
+
+	if conf.Server.TLSCertificate == nil {
+		return errors.New("tls certificate not configured")
+	}
+
+	if conf.Server.TLSKey == nil {
+		return errors.New("tls key not configured")
 	}
 
 	return nil
