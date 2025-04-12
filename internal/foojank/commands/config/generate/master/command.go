@@ -136,8 +136,7 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 		output.Server.SetTLSKey(keyEncoded)
 
 		pth := config.DefaultMasterConfigPath
-		dirPth := filepath.Dir(pth)
-		if os.MkdirAll(dirPth, 0755) != nil {
+		if os.MkdirAll(filepath.Dir(pth), 0755) != nil {
 			err := fmt.Errorf("cannot generate configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
