@@ -14,6 +14,8 @@ type Server struct {
 	AccountKey       *string `toml:"account_key,omitempty"`
 	SystemAccountJWT *string `toml:"system_account_jwt,omitempty"`
 	SystemAccountKey *string `toml:"system_account_key,omitempty"`
+	TLSCertificate   *string `toml:"tls_certificate,omitempty"`
+	TLSKey           *string `toml:"tls_key,omitempty"`
 }
 
 func (s *Server) SetHost(host string) {
@@ -48,9 +50,17 @@ func (s *Server) SetSystemAccountKey(key string) {
 	s.SystemAccountKey = &key
 }
 
+func (s *Server) SetTLSCert(cert string) {
+	s.TLSCertificate = &cert
+}
+
+func (s *Server) SetTLSKey(key string) {
+	s.TLSKey = &key
+}
+
 func NewDefaultServer() (*Server, error) {
 	host := "0.0.0.0"
-	port := int64(80)
+	port := int64(443)
 	return &Server{
 		Host: &host,
 		Port: &port,
@@ -124,6 +134,22 @@ func ParseServerFlags(fn func(string) (any, bool)) (*Server, error) {
 			result.SetSystemAccountKey(s)
 			return nil
 		},
+		"tls_certificate": func(name string, v any) error {
+			s, ok := v.(string)
+			if !ok {
+				return fmt.Errorf("--%s must be a string", name)
+			}
+			result.SetTLSCert(s)
+			return nil
+		},
+		"tls_key": func(name string, v any) error {
+			s, ok := v.(string)
+			if !ok {
+				return fmt.Errorf("--%s must be a string", name)
+			}
+			result.SetTLSKey(s)
+			return nil
+		},
 	}
 	for fieldName, set := range configFields {
 		flagName := strings.ReplaceAll(fieldName, "_", "-")
@@ -178,6 +204,14 @@ func MergeServer(confs ...*Server) *Server {
 
 		if conf.SystemAccountKey != nil {
 			result.SetSystemAccountKey(*conf.SystemAccountKey)
+		}
+
+		if conf.TLSCertificate != nil {
+			result.SetTLSCert(*conf.TLSCertificate)
+		}
+
+		if conf.TLSKey != nil {
+			result.SetTLSKey(*conf.TLSKey)
 		}
 	}
 	return &result

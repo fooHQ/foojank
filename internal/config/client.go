@@ -6,11 +6,12 @@ import (
 )
 
 type Client struct {
-	Server     []string `toml:"server,omitempty"`
-	UserJWT    *string  `toml:"user_jwt,omitempty"`
-	UserKey    *string  `toml:"user_key,omitempty"`
-	AccountJWT *string  `toml:"account_jwt,omitempty"`
-	AccountKey *string  `toml:"account_key,omitempty"`
+	Server           []string `toml:"server,omitempty"`
+	UserJWT          *string  `toml:"user_jwt,omitempty"`
+	UserKey          *string  `toml:"user_key,omitempty"`
+	AccountJWT       *string  `toml:"account_jwt,omitempty"`
+	AccountKey       *string  `toml:"account_key,omitempty"`
+	TLSCACertificate *string  `toml:"tls_ca_certificate,omitempty"`
 }
 
 func (c *Client) SetServer(server []string) {
@@ -35,10 +36,14 @@ func (c *Client) SetAccountKey(key string) {
 	c.AccountKey = &key
 }
 
+func (c *Client) SetTLSCACert(cert string) {
+	c.TLSCACertificate = &cert
+}
+
 func NewDefaultClient() (*Client, error) {
 	return &Client{
 		Server: []string{
-			"ws://localhost",
+			"wss://localhost",
 		},
 	}, nil
 }
@@ -86,6 +91,14 @@ func ParseClientFlags(fn func(string) (any, bool)) (*Client, error) {
 			result.SetAccountKey(s)
 			return nil
 		},
+		"tls_ca_certificate": func(name string, v any) error {
+			s, ok := v.(string)
+			if !ok {
+				return fmt.Errorf("--%s must be a string", name)
+			}
+			result.SetTLSCACert(s)
+			return nil
+		},
 	}
 	for fieldName, set := range configFields {
 		flagName := strings.ReplaceAll(fieldName, "_", "-")
@@ -128,6 +141,10 @@ func MergeClient(confs ...*Client) *Client {
 
 		if conf.AccountKey != nil {
 			result.SetAccountKey(*conf.AccountKey)
+		}
+
+		if conf.TLSCACertificate != nil {
+			result.SetTLSCACert(*conf.TLSCACertificate)
 		}
 	}
 	return &result
