@@ -95,6 +95,7 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 		confClient.SetUserKey(user.Key)
 		confClient.SetAccountJWT(*confInput.Client.AccountJWT)
 		confClient.SetAccountKey(*confInput.Client.AccountKey)
+		confClient.SetTLSCACert(*confInput.Client.TLSCACertificate)
 
 		confCommon, err := config.NewDefaultCommon()
 		if err != nil {
@@ -167,6 +168,10 @@ func validateInputConfiguration(conf *config.Config) error {
 
 	if conf.Client.AccountKey == nil {
 		return errors.New("account key not configured")
+	}
+
+	if conf.Client.TLSCACertificate == nil {
+		return errors.New("tls ca file not configured")
 	}
 
 	return nil
