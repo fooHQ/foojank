@@ -6,13 +6,22 @@ import (
 	"strings"
 
 	"github.com/nats-io/nats.go"
+
+	"github.com/foohq/foojank/internal/sstls"
 )
 
-func New(logger *slog.Logger, servers []string, userJWT, userKey string) (*nats.Conn, error) {
+func New(
+	logger *slog.Logger,
+	servers []string,
+	userJWT,
+	userKey,
+	caCertFile string,
+) (*nats.Conn, error) {
 	nc, err := nats.Connect(
 		strings.Join(servers, ","),
 		nats.UserJWTAndSeed(userJWT, userKey),
 		nats.MaxReconnects(-1),
+		nats.ClientTLSConfig(nil, sstls.DecodeCertificateHandler(caCertFile)),
 		nats.ConnectHandler(func(_ *nats.Conn) {
 			logger.Debug("connected to the server")
 		}),

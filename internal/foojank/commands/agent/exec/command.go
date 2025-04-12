@@ -28,10 +28,11 @@ import (
 )
 
 const (
-	FlagServer  = flags.Server
-	FlagUserJWT = flags.UserJWT
-	FlagUserKey = flags.UserKey
-	FlagDataDir = flags.DataDir
+	FlagServer           = flags.Server
+	FlagUserJWT          = flags.UserJWT
+	FlagUserKey          = flags.UserKey
+	FlagTLSCACertificate = flags.TLSCACertificate
+	FlagDataDir          = flags.DataDir
 )
 
 func NewCommand() *cli.Command {
@@ -52,6 +53,10 @@ func NewCommand() *cli.Command {
 			&cli.StringFlag{
 				Name:  FlagUserKey,
 				Usage: "set user secret key",
+			},
+			&cli.StringFlag{
+				Name:  FlagTLSCACertificate,
+				Usage: "set TLS CA certificate",
 			},
 			&cli.StringFlag{
 				Name:  FlagDataDir,
@@ -78,7 +83,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	logger := log.New(*conf.LogLevel, *conf.NoColor)
 
-	nc, err := server.New(logger, conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey)
+	nc, err := server.New(logger, conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey, *conf.Client.TLSCACertificate)
 	if err != nil {
 		err := fmt.Errorf("cannot connect to the server: %w", err)
 		logger.ErrorContext(ctx, err.Error())
@@ -294,6 +299,10 @@ func validateConfiguration(conf *config.Config) error {
 
 	if conf.Client.UserKey == nil {
 		return errors.New("user key not configured")
+	}
+
+	if conf.Client.TLSCACertificate == nil {
+		return errors.New("tls ca certificate not configured")
 	}
 
 	return nil

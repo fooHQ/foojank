@@ -27,18 +27,19 @@ import (
 )
 
 const (
-	FlagOs            = "os"
-	FlagArch          = "arch"
-	FlagOutput        = "output"
-	FlagDev           = "dev"
-	FlagWithServer    = "with-server"
-	FlagWithoutModule = "without-module"
-	FlagServer        = flags.Server
-	FlagUserJWT       = flags.UserJWT
-	FlagUserKey       = flags.UserKey
-	FlagAccountJWT    = flags.AccountJWT
-	FlagAccountKey    = flags.AccountKey
-	FlagDataDir       = flags.DataDir
+	FlagOs               = "os"
+	FlagArch             = "arch"
+	FlagOutput           = "output"
+	FlagDev              = "dev"
+	FlagWithServer       = "with-server"
+	FlagWithoutModule    = "without-module"
+	FlagServer           = flags.Server
+	FlagUserJWT          = flags.UserJWT
+	FlagUserKey          = flags.UserKey
+	FlagAccountJWT       = flags.AccountJWT
+	FlagAccountKey       = flags.AccountKey
+	FlagTLSCACertificate = flags.TLSCACertificate
+	FlagDataDir          = flags.DataDir
 )
 
 func NewCommand() *cli.Command {
@@ -94,6 +95,10 @@ func NewCommand() *cli.Command {
 				Usage: "set account signing key",
 			},
 			&cli.StringFlag{
+				Name:  FlagTLSCACertificate,
+				Usage: "set TLS CA certificate",
+			},
+			&cli.StringFlag{
 				Name:  FlagDataDir,
 				Usage: "set path to a data directory",
 			},
@@ -117,7 +122,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	logger := log.New(*conf.LogLevel, *conf.NoColor)
 
-	nc, err := server.New(logger, conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey)
+	nc, err := server.New(logger, conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey, *conf.Client.TLSCACertificate)
 	if err != nil {
 		err := fmt.Errorf("cannot connect to the server: %w", err)
 		logger.ErrorContext(ctx, err.Error())
@@ -201,7 +206,8 @@ func buildAction(logger *slog.Logger, conf *config.Config, codebaseCli *codebase
 		}
 
 		agentConf := templateData{
-			Servers: servers,
+			Servers:          servers,
+			TLSCACertificate: *conf.Client.TLSCACertificate,
 			User: templateDataUser{
 				JWT:     user.JWT,
 				KeySeed: user.Key,
@@ -291,6 +297,10 @@ func validateConfiguration(conf *config.Config) error {
 
 	if conf.Client.AccountKey == nil {
 		return errors.New("account key not configured")
+	}
+
+	if conf.Client.TLSCACertificate == nil {
+		return errors.New("tls ca certificate not configured")
 	}
 
 	return nil
