@@ -1,7 +1,10 @@
 name: Workflow
 on: [push, pull_request]
+permissions:
+  contents: write
 jobs:
   linter:
+    name: Lint source files
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -9,6 +12,7 @@ jobs:
       - run: devbox run lint
 
   tests_linux:
+    name: Run tests (Linux)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,6 +20,7 @@ jobs:
       - run: devbox run test
 
   tests_windows:
+    name: Run tests (Windows)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,3 +28,48 @@ jobs:
         with:
           go-version: "1.24"
       - run: go test ./...
+
+  build:
+    name: Build executable file
+    needs: [linter, tests_linux, tests_windows]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        GOOS:
+          - linux
+          - darwin
+        GOARCH:
+          - amd64
+          - arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jetify-com/devbox-install-action@v0.12.0
+      - run: devbox run build-foojank-prod
+        env:
+          GOOS: "${{ matrix.GOOS }}"
+          GOARCH: "${{ matrix.GOARCH }}"
+          OUTPUT: build/foojank-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: foojank-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
+          path: build/foojank-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
+          if-no-files-found: error
+          retention-days: 1
+          overwrite: true
+
+  release:
+    name: Create a release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: foojank-*
+          path: .
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          fail_on_unmatched_files: true
+          files: |
+            foojank-*
