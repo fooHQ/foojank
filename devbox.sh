@@ -32,12 +32,20 @@ build_agent_prod() {
 }
 
 build_foojank_dev() {
+    if [ -z "$OUTPUT" ]; then
+        OUTPUT="build/foojank"
+    fi
+
     export CGO_ENABLED=1
-    go build -race -tags dev -o build/foojank ./cmd/foojank
+    go build -race -tags dev -o "$OUTPUT" ./cmd/foojank
 }
 
 build_foojank_prod() {
-    go build -tags prod -o build/foojank ./cmd/foojank
+    if [ -z "$OUTPUT" ]; then
+        OUTPUT="build/foojank"
+    fi
+
+    go build -tags prod -o "$OUTPUT" ./cmd/foojank
 }
 
 build_runscript() {
