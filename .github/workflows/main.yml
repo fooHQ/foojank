@@ -71,6 +71,12 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
+          name: version.txt
+          path: .
+          merge-multiple: true
+      - run: v="$(echo "${{ github.ref }}" | cut -d '/' -f 3)"; grep -q "${v:1}" version.txt || (echo "version.txt does not match with the tagged version"; exit 1)
+      - uses: actions/download-artifact@v4
+        with:
           pattern: foojank-*
           path: .
           merge-multiple: true
