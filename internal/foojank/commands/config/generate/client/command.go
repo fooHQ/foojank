@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nuid"
@@ -15,26 +14,15 @@ import (
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
-	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
-)
-
-const (
-	FlagForce = flags.Force
 )
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:   "client",
-		Usage:  "Generate client config from master/client config",
-		Action: action,
-		Flags: []cli.Flag{
-			&cli.BoolFlag{
-				Name:    FlagForce,
-				Usage:   "force overwrite a file if it already exists",
-				Aliases: []string{"f"},
-			},
-		},
+		Name:      "client",
+		ArgsUsage: "<file>",
+		Usage:     "Generate client configuration from server/client configuration file",
+		Action:    action,
 	}
 }
 
@@ -57,45 +45,52 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func generateAction(logger *slog.Logger) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		force := c.Bool(FlagForce)
+		if c.Args().Len() != 1 {
+			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
 
-		confInput, err := config.ParseFile(config.DefaultMasterConfigPath)
+		configPth := c.Args().First()
+		confInput, err := config.ParseFile(configPth)
 		if err != nil {
 			err := fmt.Errorf("cannot parse configuration file: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		err = validateInputConfiguration(confInput)
-		if err != nil {
-			err := fmt.Errorf("invalid input configuration file: %w", err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		accountClaims, err := jwt.DecodeAccountClaims(*confInput.Client.AccountJWT)
-		if err != nil {
-			err := fmt.Errorf("cannot build an agent: cannot decode account JWT: %w", err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		accountPubKey := accountClaims.Subject
-		username := fmt.Sprintf("MG%s", nuid.Next())
-		user, err := auth.NewUserManager(username, accountPubKey, []byte(*confInput.Client.AccountKey))
+		confClient, err := fromConfig(confInput)
 		if err != nil {
 			err := fmt.Errorf("cannot generate client configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		var confClient config.Client
-		confClient.SetServer(confInput.Client.Server)
+		err = validateClientConfiguration(confClient)
+		if err != nil {
+			err := fmt.Errorf("invalid input configuration file: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		accountClaims, err := jwt.DecodeAccountClaims(*confClient.AccountJWT)
+		if err != nil {
+			err := fmt.Errorf("cannot decode account JWT: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		accountPubKey := accountClaims.Subject
+		username := fmt.Sprintf("MG%s", nuid.Next())
+		user, err := auth.NewUserManager(username, accountPubKey, []byte(*confClient.AccountKey))
+		if err != nil {
+			err := fmt.Errorf("cannot generate client configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
 		confClient.SetUserJWT(user.JWT)
 		confClient.SetUserKey(user.Key)
-		confClient.SetAccountJWT(*confInput.Client.AccountJWT)
-		confClient.SetAccountKey(*confInput.Client.AccountKey)
-		confClient.SetTLSCACert(*confInput.Client.TLSCACertificate)
 
 		confCommon, err := config.NewDefaultCommon()
 		if err != nil {
@@ -106,36 +101,9 @@ func generateAction(logger *slog.Logger) cli.ActionFunc {
 
 		confOutput := config.Config{
 			Common: confCommon,
-			Client: &confClient,
+			Client: confClient,
 		}
-
-		pth := config.DefaultClientConfigPath
-		dirPth := filepath.Dir(pth)
-		if os.MkdirAll(dirPth, 0755) != nil {
-			err := fmt.Errorf("cannot generate configuration: %w", err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		opts := os.O_CREATE | os.O_WRONLY | os.O_EXCL | os.O_TRUNC
-		if force {
-			opts = opts &^ os.O_EXCL
-		}
-
-		f, err := os.OpenFile(pth, opts, 0600)
-		if err != nil {
-			err := fmt.Errorf("cannot generate client configuration: %w", err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-		defer f.Close()
-
-		_, err = f.Write(confOutput.Bytes())
-		if err != nil {
-			err := fmt.Errorf("cannot generate client configuration: %w", err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
+		_, _ = fmt.Fprintln(os.Stdout, confOutput.String())
 
 		return nil
 	}
@@ -153,26 +121,47 @@ func validateConfiguration(conf *config.Config) error {
 	return nil
 }
 
-func validateInputConfiguration(conf *config.Config) error {
-	if conf.Client == nil {
-		return errors.New("client configuration is missing")
+func fromConfig(conf *config.Config) (*config.Client, error) {
+	var confs []*config.Client
+
+	confDef, err := config.NewDefaultClient()
+	if err != nil {
+		return nil, err
 	}
 
-	if len(conf.Client.Server) == 0 {
-		return errors.New("server not configured")
+	confs = append(confs, confDef)
+
+	if conf.Client != nil {
+		confs = append(confs, conf.Client)
 	}
 
-	if conf.Client.AccountJWT == nil {
+	if conf.Server != nil {
+		confs = append(confs, convertServerToClientConfig(conf.Server))
+	}
+
+	return config.MergeClient(confs...), nil
+}
+
+func validateClientConfiguration(conf *config.Client) error {
+	if conf.AccountJWT == nil {
 		return errors.New("account jwt not configured")
 	}
 
-	if conf.Client.AccountKey == nil {
+	if conf.AccountKey == nil {
 		return errors.New("account key not configured")
 	}
 
-	if conf.Client.TLSCACertificate == nil {
-		return errors.New("tls ca file not configured")
+	if conf.TLSCACertificate == nil {
+		return errors.New("tls ca certificate not configured")
 	}
 
 	return nil
+}
+
+func convertServerToClientConfig(conf *config.Server) *config.Client {
+	return &config.Client{
+		AccountJWT:       conf.AccountJWT,
+		AccountKey:       conf.AccountKey,
+		TLSCACertificate: conf.TLSCertificate,
+	}
 }

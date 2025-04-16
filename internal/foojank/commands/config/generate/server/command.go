@@ -7,17 +7,20 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
 
+	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/log"
+	"github.com/foohq/foojank/internal/sstls"
 )
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:   "server",
-		Usage:  "Generate server config from master config",
+		Usage:  "Generate server configuration",
 		Action: action,
 	}
 }
@@ -36,44 +39,93 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	logger := log.New(*conf.LogLevel, *conf.NoColor)
-	return generateAction(logger)(ctx, c)
+	return createAction(logger)(ctx, c)
 }
 
-func generateAction(logger *slog.Logger) cli.ActionFunc {
+func createAction(logger *slog.Logger) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		confInput, err := config.ParseFile(config.DefaultMasterConfigPath)
+		operatorName := fmt.Sprintf("OP%s", nuid.Next())
+		operator, err := auth.NewOperator(operatorName)
 		if err != nil {
-			err := fmt.Errorf("cannot parse master configuration file: %w", err)
+			err := fmt.Errorf("cannot generate configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		err = validateInputConfiguration(confInput)
+		accountName := fmt.Sprintf("AC%s", nuid.Next())
+		account, err := auth.NewAccount(accountName, []byte(operator.SigningKey), true)
 		if err != nil {
-			err := fmt.Errorf("invalid master configuration file: %w", err)
+			err := fmt.Errorf("cannot generate configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		var confServer config.Server
-		confServer.SetHost(*confInput.Server.Host)
-		confServer.SetPort(*confInput.Server.Port)
-		confServer.SetOperatorJWT(*confInput.Server.OperatorJWT)
-		confServer.SetAccountJWT(*confInput.Server.AccountJWT)
-		confServer.SetSystemAccountJWT(*confInput.Server.SystemAccountJWT)
-		confServer.SetTLSCert(*confInput.Server.TLSCertificate)
-		confServer.SetTLSKey(*confInput.Server.TLSKey)
+		systemAccount, err := auth.NewAccount("SYS", []byte(operator.SigningKey), false)
+		if err != nil {
+			err := fmt.Errorf("cannot generate configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		//
+		// Generate server key and certificate
+		//
+		key, err := sstls.GenerateKey()
+		if err != nil {
+			err := fmt.Errorf("cannot generate configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		// TODO: change name!
+		certTemplate, err := sstls.NewCertificateTemplate("Test company")
+		if err != nil {
+			err := fmt.Errorf("cannot generate configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		cert, err := sstls.EncodeCertificate(certTemplate, certTemplate, key.Public(), key)
+		if err != nil {
+			err := fmt.Errorf("cannot generate configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		keyEncoded, err := sstls.EncodeKey(key)
+		if err != nil {
+			err := fmt.Errorf("cannot generate configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		confServer, err := config.NewDefaultServer()
+		if err != nil {
+			err := fmt.Errorf("cannot generate configuration: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		confServer.SetOperatorJWT(operator.JWT)
+		confServer.SetOperatorKey(operator.Key)
+		confServer.SetAccountJWT(account.JWT)
+		// TODO: account's key is lost here!
+		confServer.SetAccountKey(account.SigningKey)
+		confServer.SetSystemAccountJWT(systemAccount.JWT)
+		confServer.SetSystemAccountKey(systemAccount.Key)
+		confServer.SetTLSCert(cert)
+		confServer.SetTLSKey(keyEncoded)
 
 		confCommon, err := config.NewDefaultCommon()
 		if err != nil {
-			err := fmt.Errorf("cannot generate client configuration: %w", err)
+			err := fmt.Errorf("cannot generate configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
 		confOutput := config.Config{
 			Common: confCommon,
-			Server: &confServer,
+			Server: confServer,
 		}
 		_, _ = fmt.Fprintln(os.Stdout, confOutput.String())
 
@@ -88,56 +140,6 @@ func validateConfiguration(conf *config.Config) error {
 
 	if conf.NoColor == nil {
 		return errors.New("no color not configured")
-	}
-
-	return nil
-}
-
-func validateInputConfiguration(conf *config.Config) error {
-	if conf.Server == nil {
-		return errors.New("server configuration is missing")
-	}
-
-	// TODO: this can be optional!
-	if conf.Server.Host == nil {
-		return errors.New("host not configured")
-	}
-
-	// TODO: this can be optional!
-	if conf.Server.Port == nil {
-		return errors.New("port not configured")
-	}
-
-	if conf.Server.OperatorJWT == nil {
-		return errors.New("operator jwt not configured")
-	}
-
-	if conf.Server.OperatorKey == nil {
-		return errors.New("operator key not configured")
-	}
-
-	if conf.Server.AccountJWT == nil {
-		return errors.New("account jwt not configured")
-	}
-
-	if conf.Server.AccountKey == nil {
-		return errors.New("account key not configured")
-	}
-
-	if conf.Server.SystemAccountJWT == nil {
-		return errors.New("system account jwt not configured")
-	}
-
-	if conf.Server.SystemAccountKey == nil {
-		return errors.New("system account key not configured")
-	}
-
-	if conf.Server.TLSCertificate == nil {
-		return errors.New("tls certificate not configured")
-	}
-
-	if conf.Server.TLSKey == nil {
-		return errors.New("tls key not configured")
 	}
 
 	return nil
