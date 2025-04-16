@@ -10,7 +10,6 @@ import (
 var ErrParserError = errors.New("parser error")
 
 var (
-	DefaultMasterConfigPath = userConfigDir() + string(os.PathSeparator) + "master.conf"
 	DefaultClientConfigPath = userConfigDir() + string(os.PathSeparator) + "client.conf"
 )
 
