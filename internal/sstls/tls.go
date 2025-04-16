@@ -10,8 +10,6 @@ import (
 	"encoding/base64"
 	"math/big"
 	"time"
-
-	"github.com/foohq/foojank/internal/vessel/config"
 )
 
 func GenerateKey() (*ecdsa.PrivateKey, error) {
@@ -73,7 +71,7 @@ func DecodeCertificate(s string) ([]byte, *x509.Certificate, error) {
 
 func DecodeCertificateHandler(s string) func() (*x509.CertPool, error) {
 	return func() (*x509.CertPool, error) {
-		_, cert, err := DecodeCertificate(config.TLSCACertificate)
+		_, cert, err := DecodeCertificate(s)
 		if err != nil {
 			return nil, err
 		}
@@ -82,17 +80,6 @@ func DecodeCertificateHandler(s string) func() (*x509.CertPool, error) {
 		pool.AddCert(cert)
 		return pool, nil
 	}
-}
-
-func DecodeCertificateToPool(s string) (*x509.CertPool, error) {
-	_, cert, err := DecodeCertificate(s)
-	if err != nil {
-		return nil, err
-	}
-
-	pool := x509.NewCertPool()
-	pool.AddCert(cert)
-	return pool, nil
 }
 
 func DecodeKey(s string) (crypto.PrivateKey, error) {
