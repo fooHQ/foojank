@@ -56,6 +56,12 @@ jobs:
           if-no-files-found: error
           retention-days: 1
           overwrite: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: version.txt
+          path: version.txt
+          retention-days: 1
+          overwrite: true
 
   release:
     name: Create a release
