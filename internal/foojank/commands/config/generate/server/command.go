@@ -104,7 +104,6 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 			return err
 		}
 
-		// TODO: change name!
 		certTemplate, err := sstls.NewCertificateTemplate(organization, dnsNames)
 		if err != nil {
 			err := fmt.Errorf("cannot generate configuration: %w", err)
