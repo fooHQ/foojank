@@ -17,10 +17,25 @@ import (
 	"github.com/foohq/foojank/internal/sstls"
 )
 
+const (
+	FlagTLSOrganization = "tls-organization"
+	FlagTLSDNSName      = "tls-dns-name"
+)
+
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:   "server",
-		Usage:  "Generate server configuration",
+		Name:  "server",
+		Usage: "Generate server configuration",
+		Flags: []cli.Flag{
+			&cli.StringSliceFlag{
+				Name:  FlagTLSDNSName,
+				Usage: "set DNS names valid for TLS certificate",
+			},
+			&cli.StringFlag{
+				Name:  FlagTLSOrganization,
+				Usage: "set organization name on TLS certificate",
+			},
+		},
 		Action: action,
 	}
 }
@@ -44,6 +59,18 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func createAction(logger *slog.Logger) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
+		dnsNames := c.StringSlice(FlagTLSDNSName)
+		if len(dnsNames) == 0 {
+			err := errors.New("cannot generate configuration: no DNS name provided for server's TLS certificate")
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		organization := c.String(FlagTLSOrganization)
+		if organization == "" {
+			organization = "ACME Co"
+		}
+
 		operatorName := fmt.Sprintf("OP%s", nuid.Next())
 		operator, err := auth.NewOperator(operatorName)
 		if err != nil {
@@ -78,7 +105,7 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 		}
 
 		// TODO: change name!
-		certTemplate, err := sstls.NewCertificateTemplate("Test company")
+		certTemplate, err := sstls.NewCertificateTemplate(organization, dnsNames)
 		if err != nil {
 			err := fmt.Errorf("cannot generate configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
