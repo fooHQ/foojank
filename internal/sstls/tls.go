@@ -6,7 +6,6 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/base64"
 	"math/big"
 	"time"
@@ -16,7 +15,7 @@ func GenerateKey() (*ecdsa.PrivateKey, error) {
 	return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 }
 
-func NewCertificateTemplate(org string, dnsNames []string) (*x509.Certificate, error) {
+func NewCertificateTemplate() (*x509.Certificate, error) {
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
@@ -28,12 +27,8 @@ func NewCertificateTemplate(org string, dnsNames []string) (*x509.Certificate, e
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().AddDate(1, 0, 0),
 		BasicConstraintsValid: true,
-		Subject: pkix.Name{
-			Organization: []string{org},
-		},
-		DNSNames: dnsNames,
-		KeyUsage: x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-		IsCA:     true,
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		IsCA:                  true,
 	}, nil
 }
 

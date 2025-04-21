@@ -2,9 +2,11 @@ package server
 
 import (
 	"context"
+	"crypto/x509/pkix"
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"os"
 
 	"github.com/nats-io/nuid"
@@ -18,8 +20,8 @@ import (
 )
 
 const (
+	FlagTLSSubjectName  = "tls-subject-name"
 	FlagTLSOrganization = "tls-organization"
-	FlagTLSDNSName      = "tls-dns-name"
 )
 
 func NewCommand() *cli.Command {
@@ -28,8 +30,8 @@ func NewCommand() *cli.Command {
 		Usage: "Generate server configuration",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
-				Name:  FlagTLSDNSName,
-				Usage: "set DNS names valid for TLS certificate",
+				Name:  FlagTLSSubjectName,
+				Usage: "set subject names for TLS certificate",
 			},
 			&cli.StringFlag{
 				Name:  FlagTLSOrganization,
@@ -59,11 +61,24 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func createAction(logger *slog.Logger) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		dnsNames := c.StringSlice(FlagTLSDNSName)
-		if len(dnsNames) == 0 {
+		subjectNames := c.StringSlice(FlagTLSSubjectName)
+		if len(subjectNames) == 0 {
 			err := errors.New("cannot generate configuration: no DNS name provided for server's TLS certificate")
 			logger.ErrorContext(ctx, err.Error())
 			return err
+		}
+
+		var (
+			hostnames []string
+			ips       []net.IP
+		)
+		for _, subjectName := range subjectNames {
+			ip := net.ParseIP(subjectName)
+			if ip != nil {
+				ips = append(ips, ip)
+				continue
+			}
+			hostnames = append(hostnames, subjectName)
 		}
 
 		organization := c.String(FlagTLSOrganization)
@@ -104,12 +119,18 @@ func createAction(logger *slog.Logger) cli.ActionFunc {
 			return err
 		}
 
-		certTemplate, err := sstls.NewCertificateTemplate(organization, dnsNames)
+		certTemplate, err := sstls.NewCertificateTemplate()
 		if err != nil {
 			err := fmt.Errorf("cannot generate configuration: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
+
+		certTemplate.Subject = pkix.Name{
+			OrganizationalUnit: []string{organization},
+		}
+		certTemplate.DNSNames = hostnames
+		certTemplate.IPAddresses = ips
 
 		cert, err := sstls.EncodeCertificate(certTemplate, certTemplate, key.Public(), key)
 		if err != nil {
