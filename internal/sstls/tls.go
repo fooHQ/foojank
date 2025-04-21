@@ -16,7 +16,7 @@ func GenerateKey() (*ecdsa.PrivateKey, error) {
 	return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 }
 
-func NewCertificateTemplate(org string) (*x509.Certificate, error) {
+func NewCertificateTemplate(org string, dnsNames []string) (*x509.Certificate, error) {
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
@@ -31,7 +31,7 @@ func NewCertificateTemplate(org string) (*x509.Certificate, error) {
 		Subject: pkix.Name{
 			Organization: []string{org},
 		},
-		DNSNames: []string{"localhost"},
+		DNSNames: dnsNames,
 		KeyUsage: x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		IsCA:     true,
 	}, nil
