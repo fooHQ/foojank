@@ -19,6 +19,5 @@ func NewCommand() *cli.Command {
 			exec.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
-		HideHelpCommand: true,
 	}
 }
