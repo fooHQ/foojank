@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/risor-io/risor"
+	"github.com/risor-io/risor/vm"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank"
@@ -42,7 +43,7 @@ func runAction() cli.ActionFunc {
 
 		pkgPath := c.Args().First()
 		pkgArgs := c.Args().Tail()
-		err := executePackage(ctx, pkgPath, pkgArgs)
+		err := engineCompileAndRunPackage(ctx, pkgPath, pkgArgs)
 		if err != nil {
 			err := fmt.Errorf("cannot execute a package: %w", err)
 			_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
@@ -53,7 +54,7 @@ func runAction() cli.ActionFunc {
 	}
 }
 
-func executePackage(ctx context.Context, pkgPath string, pkgArgs []string) error {
+func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []string) error {
 	f, err := os.Open(pkgPath)
 	if err != nil {
 		err := fmt.Errorf("cannot open a package: %w", err)
@@ -74,6 +75,13 @@ func executePackage(ctx context.Context, pkgPath string, pkgArgs []string) error
 	}
 	defer memHandler.Close()
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	exitHandler := func(code int) {
+		cancel()
+	}
+
 	osCtx := engineos.NewContext(
 		ctx,
 		engineos.WithArgs(pkgArgs),
@@ -85,17 +93,26 @@ func executePackage(ctx context.Context, pkgPath string, pkgArgs []string) error
 		// directory which exists in an empty MemFS.
 		engineos.WithWorkDir("/"),
 		engineos.WithURIHandler(engineos.URIFile, memHandler),
+		engineos.WithExitHandler(exitHandler),
 	)
-	opts := []risor.Option{
-		risor.WithoutDefaultGlobals(),
-		risor.WithGlobals(config.Modules()),
-		risor.WithGlobals(config.Builtins()),
-	}
-	c, err := engine.CompilePackage(osCtx, f, info.Size(), opts...)
+
+	code, err := engine.Bootstrap(osCtx)
 	if err != nil {
-		err := fmt.Errorf("cannot compile a package: %w", err)
 		return err
 	}
 
-	return c.Run(osCtx)
+	conf := risor.NewConfig(
+		risor.WithoutDefaultGlobals(),
+		risor.WithGlobals(config.Modules()),
+		risor.WithGlobals(config.Builtins()),
+	)
+
+	importer, err := engineos.NewFzzImporter(f, info.Size(), conf.CompilerOpts()...)
+	if err != nil {
+		return err
+	}
+
+	vmOpts := conf.VMOpts()
+	vmOpts = append(vmOpts, vm.WithImporter(importer))
+	return code.Run(osCtx, vmOpts...)
 }

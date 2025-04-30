@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/risor-io/risor"
+	"github.com/risor-io/risor/vm"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/foohq/foojank/internal/engine"
@@ -169,34 +170,44 @@ func downloadFile(uriHandlers map[string]engineos.URIHandler, pth string) (*File
 }
 
 func engineCompileAndRunPackage(ctx context.Context, file *File, opts ...engineos.Option) error {
-	osCtx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	opts = append(opts, engineos.WithExitHandler(func(code int) {
+	exitHandler := func(code int) {
 		log.Debug("on exit", "code", code)
 		cancel()
-	}))
+	}
 
-	osCtx = engineos.NewContext(
-		osCtx,
-		opts...,
+	osCtx := engineos.NewContext(
+		ctx,
+		append(opts, engineos.WithExitHandler(exitHandler))...,
 	)
 
-	risorOpts := []risor.Option{
+	code, err := engine.Bootstrap(osCtx)
+	if err != nil {
+		return err
+	}
+
+	conf := risor.NewConfig(
 		risor.WithoutDefaultGlobals(),
 		risor.WithGlobals(config.Modules()),
 		risor.WithGlobals(config.Builtins()),
-	}
-	code, err := engine.CompilePackage(osCtx, file, int64(file.Size), risorOpts...)
+	)
+
+	importer, err := engineos.NewFzzImporter(file, int64(file.Size), conf.CompilerOpts()...)
 	if err != nil {
 		return err
 	}
 
 	log.Debug("before run")
-	err = code.Run(osCtx)
+
+	vmOpts := conf.VMOpts()
+	vmOpts = append(vmOpts, vm.WithImporter(importer))
+	err = code.Run(osCtx, vmOpts...)
 	if err != nil {
 		return err
 	}
+
 	log.Debug("after run")
 
 	return nil

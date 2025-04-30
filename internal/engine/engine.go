@@ -3,49 +3,34 @@ package engine
 import (
 	"context"
 	"errors"
-	"io"
 
-	"github.com/risor-io/risor"
 	"github.com/risor-io/risor/compiler"
 	"github.com/risor-io/risor/parser"
 	"github.com/risor-io/risor/vm"
-
-	"github.com/foohq/foojank/internal/engine/os"
 )
 
-func CompilePackage(ctx context.Context, reader io.ReaderAt, size int64, opts ...risor.Option) (*Code, error) {
-	conf := risor.NewConfig(opts...)
+func Bootstrap(ctx context.Context) (*Code, error) {
 	prog, err := parser.Parse(ctx, "import main")
 	if err != nil {
 		return nil, err
 	}
 
-	code, err := compiler.Compile(prog, conf.CompilerOpts()...)
+	code, err := compiler.Compile(prog)
 	if err != nil {
 		return nil, err
 	}
 
-	importer, err := os.NewFzzImporter(reader, size, conf.CompilerOpts()...)
-	if err != nil {
-		return nil, err
-	}
-
-	// Recreate risor config but include the custom importer this time.
-	opts = append(opts, risor.WithImporter(importer))
 	return &Code{
 		code: code,
-		opts: opts,
 	}, nil
 }
 
 type Code struct {
 	code *compiler.Code
-	opts []risor.Option
 }
 
-func (c *Code) Run(ctx context.Context) error {
-	opts := risor.NewConfig(c.opts...)
-	_, err := vm.Run(ctx, c.code, opts.VMOpts()...)
+func (c *Code) Run(ctx context.Context, opts ...vm.Option) error {
+	_, err := vm.Run(ctx, c.code, opts...)
 	if err != nil {
 		return &Error{err}
 	}
