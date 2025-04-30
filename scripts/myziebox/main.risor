@@ -7,9 +7,13 @@ import help
 import cmds
 
 func prompt() {
-    name := os.getenv("SERVICE_NAME")
+    username := os.getenv("USER")
+    if username == "" {
+        username = os.getenv("USERNAME")
+    }
+    hostname := os.hostname()
     wd := os.getwd()
-    printf("%s:%s > ", name, wd)
+    printf("%s@%s:%s$ ", username, hostname, wd)
 }
 
 var app = cli.app({
