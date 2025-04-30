@@ -2,22 +2,84 @@ import os
 import strings
 import filepath
 
+func copy_file(src, dst) {
+    src_file := os.open(src)
+    dst_file := os.create(dst)
+    for {
+        b := src_file.read(byte_slice(65535))
+        if len(b) == 0 {
+            break
+        }
+        dst_file.write(b)
+    }
+
+    dst_file.close()
+    src_file.close()
+}
+
+func copy_directory(src, dst) {
+    os.mkdir_all(dst, 0755)
+    filepath.walk_dir(src, func(src_pth, dir_entry, err){
+        if err != nil {
+            return err
+        }
+
+        rel_pth := filepath.rel(filepath.abs(src), filepath.abs(src_pth))
+        dst_pth := filepath.join(dst, rel_pth)
+
+        if dir_entry.is_dir {
+            return os.mkdir_all(dst_pth, 0755)
+        }
+
+        return copy_file(src_pth, dst_pth)
+    })
+}
+
 var app = cli.app({
     name: "cp",
     usage: "Copy files",
+    flags: [
+        cli.flag({
+            name: "r",
+            usage: "copy directories recursively",
+            value: false,
+            type: "bool",
+        }),
+    ],
     action: func(c) {
         args := c.args()
-        if len(args) < 2 {
-            print("not enough arguments")
-            return
-        } else if len(args) > 2 {
-            print ("too many arguments")
-            return
-        }
+        srcs := args[:len(args) - 1]
+        dst := args[len(args) - 1]
 
-        src := args[0]
-        dst := args[1]
-        cp(src, dst)
+         dst_info := try(func(){
+             return os.stat(dst)
+         }, func(err) {
+             return err
+         })
+         dst_is_dir := type(dst_info) != "error" && dst_info.is_dir
+
+         for _, src := range srcs {
+            src_info := os.stat(src)
+
+            if src_info.is_dir {
+                if !c.bool("r") {
+                    error(sprintf("cp: %q is a directory; use -r to copy recursively", src))
+                }
+
+                target_dir := dst
+                if dst_is_dir {
+                    target_dir = filepath.join(dst, filepath.base(src))
+                }
+
+                copy_directory(src, target_dir)
+            } else {
+                target_pth := dst
+                if dst_is_dir {
+                    target_pth = filepath.join(dst, filepath.base(src))
+                }
+
+                copy_file(src, target_pth)
+            }
+         }
     }
 })
-
