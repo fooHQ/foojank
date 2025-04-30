@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"sync"
 
 	"github.com/risor-io/risor/compiler"
 	"github.com/risor-io/risor/importer"
@@ -21,8 +22,10 @@ var extensions = []string{
 }
 
 type FzzImporter struct {
-	reader *zip.Reader
-	opts   []compiler.Option
+	reader    *zip.Reader
+	opts      []compiler.Option
+	codeCache map[string]*compiler.Code
+	mux       sync.Mutex
 }
 
 func NewFzzImporter(reader io.ReaderAt, size int64, opts ...compiler.Option) (*FzzImporter, error) {
@@ -32,12 +35,21 @@ func NewFzzImporter(reader io.ReaderAt, size int64, opts ...compiler.Option) (*F
 	}
 
 	return &FzzImporter{
-		reader: r,
-		opts:   opts,
+		reader:    r,
+		opts:      opts,
+		codeCache: map[string]*compiler.Code{},
 	}, nil
 }
 
 func (i *FzzImporter) Import(ctx context.Context, name string) (*object.Module, error) {
+	i.mux.Lock()
+	defer i.mux.Unlock()
+
+	code, ok := i.codeCache[name]
+	if ok {
+		return object.NewModule(name, code), nil
+	}
+
 	var text string
 	var found bool
 	for _, ext := range extensions {
@@ -55,10 +67,13 @@ func (i *FzzImporter) Import(ctx context.Context, name string) (*object.Module, 
 		return nil, err
 	}
 
-	code, err := compiler.Compile(prog, i.opts...)
+	// TODO: add filename (compiler.WithFilename)
+	code, err = compiler.Compile(prog, i.opts...)
 	if err != nil {
 		return nil, err
 	}
+
+	i.codeCache[name] = code
 
 	return object.NewModule(name, code), nil
 }
