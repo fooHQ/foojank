@@ -9,28 +9,18 @@ import (
 	"github.com/risor-io/risor/vm"
 )
 
-func Bootstrap(ctx context.Context) (*Code, error) {
+func Run(ctx context.Context, opts ...vm.Option) error {
 	prog, err := parser.Parse(ctx, "import main")
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	code, err := compiler.Compile(prog)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &Code{
-		code: code,
-	}, nil
-}
-
-type Code struct {
-	code *compiler.Code
-}
-
-func (c *Code) Run(ctx context.Context, opts ...vm.Option) error {
-	_, err := vm.Run(ctx, c.code, opts...)
+	_, err = vm.Run(ctx, code, opts...)
 	if err != nil {
 		return &Error{err}
 	}

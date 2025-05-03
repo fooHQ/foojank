@@ -183,11 +183,6 @@ func engineCompileAndRunPackage(ctx context.Context, file *File, opts ...engineo
 		append(opts, engineos.WithExitHandler(exitHandler))...,
 	)
 
-	code, err := engine.Bootstrap(osCtx)
-	if err != nil {
-		return err
-	}
-
 	conf := risor.NewConfig(
 		risor.WithoutDefaultGlobals(),
 		risor.WithGlobals(config.Modules()),
@@ -203,7 +198,7 @@ func engineCompileAndRunPackage(ctx context.Context, file *File, opts ...engineo
 
 	vmOpts := conf.VMOpts()
 	vmOpts = append(vmOpts, vm.WithImporter(importer))
-	err = code.Run(osCtx, vmOpts...)
+	err = engine.Run(osCtx, vmOpts...)
 	if err != nil {
 		return err
 	}

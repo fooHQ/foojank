@@ -96,11 +96,6 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 		engineos.WithExitHandler(exitHandler),
 	)
 
-	code, err := engine.Bootstrap(osCtx)
-	if err != nil {
-		return err
-	}
-
 	conf := risor.NewConfig(
 		risor.WithoutDefaultGlobals(),
 		risor.WithGlobals(config.Modules()),
@@ -114,5 +109,5 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 
 	vmOpts := conf.VMOpts()
 	vmOpts = append(vmOpts, vm.WithImporter(importer))
-	return code.Run(osCtx, vmOpts...)
+	return engine.Run(osCtx, vmOpts...)
 }
