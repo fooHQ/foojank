@@ -482,7 +482,7 @@ func (o *OS) getRegisteredURIHandler(path string) (URIHandler, *url.URL, error) 
 	return handler, u, nil
 }
 
-func NewContext(ctx context.Context, options ...Option) context.Context {
+func New(options ...Option) *OS {
 	o := &OS{
 		wd:          initWD(),
 		environ:     initEnviron(),
@@ -491,7 +491,11 @@ func NewContext(ctx context.Context, options ...Option) context.Context {
 	for _, option := range options {
 		option(o)
 	}
+	return o
+}
 
+func NewContext(ctx context.Context, options ...Option) context.Context {
+	o := New(options...)
 	return risoros.WithOS(ctx, o)
 }
 
