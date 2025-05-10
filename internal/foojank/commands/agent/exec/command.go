@@ -38,7 +38,7 @@ const (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "execute",
-		ArgsUsage: "<id> <script-name>",
+		ArgsUsage: "<id> [script-name]",
 		Usage:     "Execute a script on an agent",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
@@ -108,17 +108,21 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		if c.Args().Len() < 2 {
+		if c.Args().Len() < 1 {
 			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		allArgs := c.Args().Slice()
-		id := allArgs[0]
-		scriptName := allArgs[1]
+		args := c.Args()
+		id := args.First()
 		// Script arguments should include the name of the script as well.
-		scriptArgs := allArgs[1:]
+		scriptArgs := args.Tail()
+
+		scriptName := ""
+		if len(scriptArgs) > 0 {
+			scriptName = scriptArgs[0]
+		}
 
 		agentID, err := vessel.ParseID(id)
 		if err != nil {
