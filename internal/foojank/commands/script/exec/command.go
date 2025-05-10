@@ -142,6 +142,9 @@ func execRunscript(ctx context.Context, binPath, pkgPath string, args ...string)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Cancel = func() error {
+		return cmd.Process.Signal(os.Interrupt)
+	}
 	return cmd.Run()
 }
 
