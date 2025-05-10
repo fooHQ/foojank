@@ -21,6 +21,7 @@ func prompt() {
 var app = cli.app({
     name: "execute",
     usage: "Execute a system command",
+    hide_help_command: true,
     action: func(c) {
         args := c.args()
         if len(args) > 0 {

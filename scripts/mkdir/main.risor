@@ -4,6 +4,7 @@ import os
 var app = cli.app({
     name: "mkdir",
     usage: "Make directories",
+    hide_help_command: true,
     flags: [
         # TODO: use string (octal value is converted to decimal)
         cli.flag({

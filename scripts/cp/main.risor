@@ -38,6 +38,7 @@ func copy_directory(src, dst) {
 var app = cli.app({
     name: "cp",
     usage: "Copy files",
+    hide_help_command: true,
     flags: [
         cli.flag({
             name: "r",

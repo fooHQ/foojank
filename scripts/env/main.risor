@@ -3,6 +3,7 @@ import os
 var app = cli.app({
     name: "env",
     usage: "Set or print environment",
+    hide_help_command: true,
     action: func(c) {
         # TODO: only printing works at the moment!
         for _, v := range os.environ() {

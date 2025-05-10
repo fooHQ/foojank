@@ -3,6 +3,7 @@ import cmds
 var app = cli.app({
     name: "help",
     usage: "Show available commands and usage information",
+    hide_help_command: true,
     action: func(c) {
         args := c.args()
         if len(args) == 0 {
