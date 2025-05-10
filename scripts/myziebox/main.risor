@@ -2,9 +2,9 @@ import cli
 import strings
 import os
 import term
-
-import help
 import cmds
+
+from help import app as help
 
 func prompt() {
     username := os.getenv("USER")
@@ -39,7 +39,7 @@ var app = cli.app({
                 })
             } else if c == "help" {
                  try(func(){
-                     help.app.run(args)
+                     help.run(args)
                  }, func(err){
                      print(err)
                  })

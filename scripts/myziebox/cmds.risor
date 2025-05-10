@@ -1,23 +1,23 @@
-import cat
-import cd
-import pwd
-import env
-import exit
-import ls
-import mkdir
-import rm
-import execute
-import cp
+from "cat/main" import app as cat
+from "cd/main" import app as cd
+from "pwd/main" import app as pwd
+from "env/main" import app as env
+from "exit/main" import app as exit
+from "ls/main" import app as ls
+from "mkdir/main" import app as mkdir
+from "rm/main" import app as rm
+from "execute/main" import app as execute
+from "cp/main" import app as cp
 
 var commands = {
-    "cat": cat.app,
-    "cd": cd.app,
-    "pwd": pwd.app,
-    "env": env.app,
-    "exit": exit.app,
-    "ls": ls.app,
-    "mkdir": mkdir.app,
-    "rm": rm.app,
-    "execute": execute.app,
-    "cp": cp.app,
+    "cat": cat,
+    "cd": cd,
+    "pwd": pwd,
+    "env": env,
+    "exit": exit,
+    "ls": ls,
+    "mkdir": mkdir,
+    "rm": rm,
+    "execute": execute,
+    "cp": cp,
 }
