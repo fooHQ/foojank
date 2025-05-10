@@ -25,7 +25,7 @@ const (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "execute",
-		ArgsUsage: "<script-name>",
+		ArgsUsage: "[script-name]",
 		Usage:     "Execute a script locally",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
@@ -62,12 +62,6 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
-		if c.Args().Len() < 1 {
-			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
 		disabledModules := c.StringSlice(FlagWithoutModule)
 		scriptName := c.Args().First()
 
@@ -111,7 +105,8 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 			return err
 		}
 
-		err = execRunscript(ctx, binPath, pkgPath, c.Args().Slice()...)
+		args := c.Args().Slice()
+		err = execRunscript(ctx, binPath, pkgPath, args)
 		if err != nil && !errors.Is(err, context.Canceled) {
 			logger.ErrorContext(ctx, err.Error())
 			return err
@@ -137,8 +132,9 @@ func validateConfiguration(conf *config.Config) error {
 	return nil
 }
 
-func execRunscript(ctx context.Context, binPath, pkgPath string, args ...string) error {
-	cmd := exec.CommandContext(ctx, binPath, append([]string{pkgPath}, args...)...)
+func execRunscript(ctx context.Context, binPath, pkgPath string, args []string) error {
+	cmd := exec.CommandContext(ctx, binPath, pkgPath)
+	cmd.Args = append(cmd.Args, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
