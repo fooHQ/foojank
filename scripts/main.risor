@@ -19,6 +19,7 @@ func prompt() {
 var app = cli.app({
     name: "myziebox",
     usage: "Multi-tool script inspired by busybox",
+    hide_help_command: true,
     action: func(c) {
         for {
             args := term.read_line(os.stdin, prompt)

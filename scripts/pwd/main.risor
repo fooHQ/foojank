@@ -1,6 +1,7 @@
 var app = cli.app({
     name: "pwd",
     usage: "Print current working directory",
+    hide_help_command: true,
     action: func(c) {
         print(os.getwd())
     }

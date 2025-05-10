@@ -3,6 +3,7 @@ import os
 var app = cli.app({
     name: "exit",
     usage: "Exit from the session",
+    hide_help_command: true,
     action: func(c) {
         os.exit(0)
     }

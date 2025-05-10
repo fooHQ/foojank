@@ -3,6 +3,7 @@ import os
 var app = cli.app({
     name: "rm",
     usage: "Remove file or directory",
+    hide_help_command: true,
     flags: [
         cli.flag({
             name: "r",

@@ -35,6 +35,7 @@ func list_directory(file) {
 var app = cli.app({
     name: "ls",
     usage: "List directory contents",
+    hide_help_command: true,
     action: func(c) {
         args := c.args()
         if len(args) == 0 {
