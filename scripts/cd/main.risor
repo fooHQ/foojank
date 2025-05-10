@@ -12,3 +12,7 @@ var app = cli.app({
         os.chdir(dir)
     }
 })
+
+func main() {
+    app.run(os.args())
+}

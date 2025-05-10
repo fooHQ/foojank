@@ -44,3 +44,7 @@ var app = cli.app({
         }
     }
 })
+
+func main() {
+    app.run(os.args())
+}
