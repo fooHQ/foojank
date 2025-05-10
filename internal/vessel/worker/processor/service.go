@@ -11,6 +11,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/foohq/foojank/internal/engine"
+	"github.com/foohq/foojank/internal/engine/importer"
 	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/uri"
 	"github.com/foohq/foojank/internal/vessel/config"
@@ -189,7 +190,7 @@ func engineCompileAndRunPackage(ctx context.Context, file *File, opts ...engineo
 		risor.WithGlobals(config.Builtins()),
 	)
 
-	importer, err := engineos.NewFzzImporter(file, int64(file.Size), conf.CompilerOpts()...)
+	importer, err := importer.NewFzzImporter(file, int64(file.Size), conf.CompilerOpts()...)
 	if err != nil {
 		return err
 	}

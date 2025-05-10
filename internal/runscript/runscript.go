@@ -12,6 +12,7 @@ import (
 
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/internal/engine"
+	"github.com/foohq/foojank/internal/engine/importer"
 	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/runscript/actions"
 	"github.com/foohq/foojank/internal/runscript/config"
@@ -103,7 +104,7 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 		risor.WithGlobals(config.Builtins()),
 	)
 
-	importer, err := engineos.NewFzzImporter(f, info.Size(), conf.CompilerOpts()...)
+	importer, err := importer.NewFzzImporter(f, info.Size(), conf.CompilerOpts()...)
 	if err != nil {
 		return err
 	}
