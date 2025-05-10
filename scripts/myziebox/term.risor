@@ -1,5 +1,6 @@
 import shlex
 import os
+import errors
 
 func read_line(f, prompt) {
 	buf := byte_slice(255)
@@ -16,7 +17,14 @@ func read_line(f, prompt) {
 
 	for {
 	    promptFn()
-		line := string(f.read(buf))
+	    line := try(func(){
+		    return string(f.read(buf))
+	    }, func(err){
+	        if !errors.is(err, os.err_closed) {
+	            print(err)
+	        }
+	    })
+
 		if !strings.contains(line, '\n') {
 			continue
 		}
