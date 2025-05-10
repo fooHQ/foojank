@@ -14,7 +14,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/otiai10/copy v1.14.1
 	github.com/pelletier/go-toml/v2 v2.2.4
-	github.com/risor-io/risor v1.7.0
+	github.com/risor-io/risor v1.6.1-0.20250505120824-c9d8d0ade6e2
 	github.com/risor-io/risor/modules/cli v1.7.0
 	github.com/stretchr/testify v1.10.0
 	github.com/u-root/u-root v0.14.0
@@ -39,7 +39,6 @@ require (
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
-	golang.org/x/text v0.24.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

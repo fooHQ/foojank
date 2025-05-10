@@ -442,7 +442,7 @@ func (o *OS) UserHomeDir() (string, error) {
 	return os.UserHomeDir()
 }
 
-/*func (o *OS) CurrentUser() (risoros.User, error) {
+func (o *OS) CurrentUser() (risoros.User, error) {
 	// TODO implement me
 	return nil, errors.New("not implemented")
 }
@@ -465,7 +465,7 @@ func (o *OS) LookupGroup(name string) (risoros.Group, error) {
 func (o *OS) LookupGid(gid string) (risoros.Group, error) {
 	// TODO implement me
 	return nil, errors.New("not implemented")
-}*/
+}
 
 func (o *OS) getRegisteredURIHandler(path string) (URIHandler, *url.URL, error) {
 	u, err := uri.ToURL(path)
