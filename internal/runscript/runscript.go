@@ -21,7 +21,7 @@ func New() *cli.Command {
 	return &cli.Command{
 		Name:            "runscript",
 		ArgsUsage:       "<package>",
-		Usage:           "Run Risor script locally",
+		Usage:           "Execute Risor script locally",
 		Version:         foojank.Version(),
 		Action:          action,
 		CommandNotFound: actions.CommandNotFound,
