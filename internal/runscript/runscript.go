@@ -2,6 +2,7 @@ package runscript
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -44,7 +45,7 @@ func runAction() cli.ActionFunc {
 		pkgPath := c.Args().First()
 		pkgArgs := c.Args().Tail()
 		err := engineCompileAndRunPackage(ctx, pkgPath, pkgArgs)
-		if err != nil {
+		if err != nil && !errors.Is(err, context.Canceled) {
 			err := fmt.Errorf("cannot execute a package: %w", err)
 			_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
 			return err
@@ -109,5 +110,10 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 
 	vmOpts := conf.VMOpts()
 	vmOpts = append(vmOpts, vm.WithImporter(importer))
-	return engine.Run(osCtx, vmOpts...)
+	err = engine.Run(osCtx, vmOpts...)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
