@@ -9,8 +9,14 @@ import (
 	"github.com/risor-io/risor/vm"
 )
 
+const entrypoint = `
+from main import main
+
+main()
+`
+
 func Run(ctx context.Context, opts ...vm.Option) error {
-	prog, err := parser.Parse(ctx, "import main")
+	prog, err := parser.Parse(ctx, entrypoint)
 	if err != nil {
 		return err
 	}
