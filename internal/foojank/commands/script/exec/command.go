@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/urfave/cli/v3"
 
@@ -18,16 +19,21 @@ import (
 )
 
 const (
+	FlagScript        = flags.Script
 	FlagWithoutModule = "without-module"
 	FlagDataDir       = flags.DataDir
 )
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:      "execute",
-		ArgsUsage: "[script-name]",
-		Usage:     "Execute a script locally",
+		Name:  "execute",
+		Usage: "Execute a script locally",
 		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    FlagScript,
+				Usage:   "script to execute",
+				Aliases: []string{"s"},
+			},
 			&cli.StringSliceFlag{
 				Name:  FlagWithoutModule,
 				Usage: "disable compilation of a module",
@@ -62,8 +68,17 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 	return func(ctx context.Context, c *cli.Command) error {
+		// Script arguments should include the name of the script as well.
+		var scriptArgs []string
+		var scriptName string
+		if c.IsSet(FlagScript) {
+			scriptArgs = strings.Fields(c.String(FlagScript))
+			if len(scriptArgs) != 0 {
+				scriptName = scriptArgs[0]
+			}
+		}
+
 		disabledModules := c.StringSlice(FlagWithoutModule)
-		scriptName := c.Args().First()
 
 		pkgPath, err := client.BuildScript(scriptName)
 		if err != nil {
@@ -105,8 +120,7 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 			return err
 		}
 
-		args := c.Args().Slice()
-		err = execRunscript(ctx, binPath, pkgPath, args)
+		err = execRunscript(ctx, binPath, pkgPath, scriptArgs)
 		if err != nil && !errors.Is(err, context.Canceled) {
 			logger.ErrorContext(ctx, err.Error())
 			return err
