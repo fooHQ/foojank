@@ -67,8 +67,8 @@ func (i *FzzImporter) Import(ctx context.Context, name string) (*object.Module, 
 		return nil, err
 	}
 
-	// TODO: add filename (compiler.WithFilename)
-	code, err = compiler.Compile(prog, i.opts...)
+	opts := append(i.opts, compiler.WithFilename(name))
+	code, err = compiler.Compile(prog, opts...)
 	if err != nil {
 		return nil, err
 	}
