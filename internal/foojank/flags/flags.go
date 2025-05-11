@@ -12,4 +12,5 @@ const (
 	DataDir          = "data-dir"
 	Force            = "force"
 	TLSCACertificate = "tls-ca-certificate"
+	Script           = "script"
 )

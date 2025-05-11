@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 )
 
 const (
+	FlagScript           = flags.Script
 	FlagServer           = flags.Server
 	FlagUserJWT          = flags.UserJWT
 	FlagUserKey          = flags.UserKey
@@ -38,9 +40,14 @@ const (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "execute",
-		ArgsUsage: "<id> [script-name]",
+		ArgsUsage: "<id>",
 		Usage:     "Execute a script on an agent",
 		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    FlagScript,
+				Usage:   "script to execute",
+				Aliases: []string{"s"},
+			},
 			&cli.StringSliceFlag{
 				Name:  FlagServer,
 				Usage: "set server URL",
@@ -107,20 +114,22 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		if c.Args().Len() < 1 {
+		if c.Args().Len() != 1 {
 			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		args := c.Args()
-		id := args.First()
-		// Script arguments should include the name of the script as well.
-		scriptArgs := args.Tail()
+		id := c.Args().First()
 
-		scriptName := ""
-		if len(scriptArgs) > 0 {
-			scriptName = scriptArgs[0]
+		// Script arguments should include the name of the script as well.
+		var scriptArgs []string
+		var scriptName string
+		if c.IsSet(FlagScript) {
+			scriptArgs = strings.Fields(c.String(FlagScript))
+			if len(scriptArgs) != 0 {
+				scriptName = scriptArgs[0]
+			}
 		}
 
 		agentID, err := vessel.ParseID(id)
