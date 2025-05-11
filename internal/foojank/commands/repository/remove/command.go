@@ -33,9 +33,8 @@ func NewCommand() *cli.Command {
 		Usage:     "Remove file from a repository",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
-				Name:    FlagServer,
-				Usage:   "set server URL",
-				Aliases: []string{"s"},
+				Name:  FlagServer,
+				Usage: "set server URL",
 			},
 			&cli.StringFlag{
 				Name:  FlagUserJWT,

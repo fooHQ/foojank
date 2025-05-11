@@ -74,9 +74,8 @@ func NewCommand() *cli.Command {
 				Usage: "disable compilation of a module",
 			},
 			&cli.StringSliceFlag{
-				Name:    FlagServer,
-				Usage:   "set server URL",
-				Aliases: []string{"s"},
+				Name:  FlagServer,
+				Usage: "set server URL",
 			},
 			&cli.StringFlag{
 				Name:  FlagUserJWT,

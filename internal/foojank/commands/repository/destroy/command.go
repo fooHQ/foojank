@@ -38,9 +38,8 @@ func NewCommand() *cli.Command {
 				Aliases: []string{"f"},
 			},
 			&cli.StringSliceFlag{
-				Name:    FlagServer,
-				Usage:   "set server URL",
-				Aliases: []string{"s"},
+				Name:  FlagServer,
+				Usage: "set server URL",
 			},
 			&cli.StringFlag{
 				Name:  FlagUserJWT,

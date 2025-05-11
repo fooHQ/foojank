@@ -42,9 +42,8 @@ func NewCommand() *cli.Command {
 		Usage:     "Execute a script on an agent",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
-				Name:    FlagServer,
-				Usage:   "set server URL",
-				Aliases: []string{"s"},
+				Name:  FlagServer,
+				Usage: "set server URL",
 			},
 			&cli.StringFlag{
 				Name:  FlagUserJWT,

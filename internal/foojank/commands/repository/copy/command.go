@@ -34,9 +34,8 @@ func NewCommand() *cli.Command {
 		Usage:     "Copy files between local filesystem and a repository or vice versa",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
-				Name:    FlagServer,
-				Usage:   "set server URL",
-				Aliases: []string{"s"},
+				Name:  FlagServer,
+				Usage: "set server URL",
 			},
 			&cli.StringFlag{
 				Name:  FlagUserJWT,
