@@ -1,17 +1,15 @@
 package processor
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"errors"
 	"io"
 
-	"github.com/risor-io/risor"
-	"github.com/risor-io/risor/vm"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/foohq/foojank/internal/engine"
-	"github.com/foohq/foojank/internal/engine/importer"
 	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/uri"
 	"github.com/foohq/foojank/internal/vessel/config"
@@ -179,24 +177,22 @@ func engineCompileAndRunPackage(ctx context.Context, file *File, opts ...engineo
 		cancel()
 	}
 	opts = append(opts, engineos.WithExitHandler(exitHandler))
+	o := engineos.New(opts...)
 
-	conf := risor.NewConfig(
-		risor.WithOS(engineos.New(opts...)),
-		risor.WithoutDefaultGlobals(),
-		risor.WithGlobals(config.Modules()),
-		risor.WithGlobals(config.Builtins()),
-	)
-
-	imp, err := importer.NewFzzImporter(file, int64(file.Size), conf.CompilerOpts()...)
+	zr, err := zip.NewReader(file, int64(file.Size))
 	if err != nil {
 		return err
 	}
 
 	log.Debug("before run")
 
-	vmOpts := conf.VMOpts()
-	vmOpts = append(vmOpts, vm.WithImporter(imp))
-	err = engine.Run(ctx, vmOpts...)
+	err = engine.Run(
+		ctx,
+		zr,
+		engine.WithOS(o),
+		engine.WithGlobals(config.Modules()),
+		engine.WithGlobals(config.Builtins()),
+	)
 	if err != nil {
 		return err
 	}
