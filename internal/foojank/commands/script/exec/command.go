@@ -86,6 +86,7 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
+		defer os.Remove(pkgPath)
 
 		modules, err := client.ListModules()
 		if err != nil {
@@ -119,6 +120,7 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
+		defer os.Remove(binPath)
 
 		err = execRunscript(ctx, binPath, pkgPath, scriptArgs)
 		if err != nil && !errors.Is(err, context.Canceled) {
