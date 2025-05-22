@@ -1,10 +1,8 @@
 package os_test
 
 import (
-	"context"
 	"testing"
 
-	risoros "github.com/risor-io/risor/os"
 	"github.com/stretchr/testify/require"
 
 	engineos "github.com/foohq/foojank/internal/engine/os"
@@ -19,12 +17,9 @@ func TestOS_Args(t *testing.T) {
 		"second",
 		"third",
 	}
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithArgs(args),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
-
 	actualArgs := o.Args()
 	require.Equal(t, args, actualArgs)
 }
@@ -33,13 +28,11 @@ func TestOS_Create(t *testing.T) {
 	testCh := make(chan any, 1)
 	fsPrivate := testutils.NewURIHandler(testCh)
 	fsFile := testutils.NewURIHandler(testCh)
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
 		engineos.WithURIHandler("file", fsFile),
 		engineos.WithURIHandler("test", fsPrivate),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
 
 	tests := []struct {
 		input  string
@@ -126,13 +119,11 @@ func TestOS_Mkdir(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewURIHandler(resultCh)
 	fsFile := testutils.NewURIHandler(resultCh)
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
 		engineos.WithURIHandler("file", fsFile),
 		engineos.WithURIHandler("test", fsPrivate),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
 
 	tests := []struct {
 		input  string
@@ -230,13 +221,11 @@ func TestOS_MkdirAll(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewURIHandler(resultCh)
 	fsFile := testutils.NewURIHandler(resultCh)
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
 		engineos.WithURIHandler("file", fsFile),
 		engineos.WithURIHandler("test", fsPrivate),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
 
 	tests := []struct {
 		input  string
@@ -334,13 +323,11 @@ func TestOS_Open(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewURIHandler(resultCh)
 	fsFile := testutils.NewURIHandler(resultCh)
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
 		engineos.WithURIHandler("file", fsFile),
 		engineos.WithURIHandler("test", fsPrivate),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
 
 	tests := []struct {
 		input  string
@@ -427,13 +414,11 @@ func TestOS_OpenFile(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewURIHandler(resultCh)
 	fsFile := testutils.NewURIHandler(resultCh)
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
 		engineos.WithURIHandler("file", fsFile),
 		engineos.WithURIHandler("test", fsPrivate),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
 
 	tests := []struct {
 		input  string
@@ -542,13 +527,11 @@ func TestOS_ReadFile(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewURIHandler(resultCh)
 	fsFile := testutils.NewURIHandler(resultCh)
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
 		engineos.WithURIHandler("file", fsFile),
 		engineos.WithURIHandler("test", fsPrivate),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
 
 	tests := []struct {
 		input  string
@@ -635,13 +618,11 @@ func TestOS_Remove(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewURIHandler(resultCh)
 	fsFile := testutils.NewURIHandler(resultCh)
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
 		engineos.WithURIHandler("file", fsFile),
 		engineos.WithURIHandler("test", fsPrivate),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
 
 	tests := []struct {
 		input  string
@@ -728,13 +709,11 @@ func TestOS_RemoveAll(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewURIHandler(resultCh)
 	fsFile := testutils.NewURIHandler(resultCh)
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
 		engineos.WithURIHandler("file", fsFile),
 		engineos.WithURIHandler("test", fsPrivate),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
 
 	tests := []struct {
 		input  string
@@ -821,13 +800,11 @@ func TestOS_Rename(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewURIHandler(resultCh)
 	fsFile := testutils.NewURIHandler(resultCh)
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
 		engineos.WithURIHandler("file", fsFile),
 		engineos.WithURIHandler("test", fsPrivate),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
 
 	tests := []struct {
 		src    string
@@ -888,13 +865,11 @@ func TestOS_Rename(t *testing.T) {
 func TestOS_Rename_ErrCrossingFSBoundaries(t *testing.T) {
 	fsPrivate := testutils.NewURIHandler(nil)
 	fsFile := testutils.NewURIHandler(nil)
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
 		engineos.WithURIHandler("file", fsFile),
 		engineos.WithURIHandler("test", fsPrivate),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
 
 	tests := []struct {
 		src string
@@ -920,13 +895,11 @@ func TestOS_Stat(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewURIHandler(resultCh)
 	fsFile := testutils.NewURIHandler(resultCh)
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
 		engineos.WithURIHandler("file", fsFile),
 		engineos.WithURIHandler("test", fsPrivate),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
 
 	tests := []struct {
 		input  string
@@ -1013,13 +986,11 @@ func TestOS_Symlink(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewURIHandler(resultCh)
 	fsFile := testutils.NewURIHandler(resultCh)
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
 		engineos.WithURIHandler("file", fsFile),
 		engineos.WithURIHandler("test", fsPrivate),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
 
 	tests := []struct {
 		src    string
@@ -1080,13 +1051,11 @@ func TestOS_Symlink(t *testing.T) {
 func TestOS_Symlink_ErrCrossingFSBoundaries(t *testing.T) {
 	fsPrivate := testutils.NewURIHandler(nil)
 	fsFile := testutils.NewURIHandler(nil)
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
 		engineos.WithURIHandler("file", fsFile),
 		engineos.WithURIHandler("test", fsPrivate),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
 
 	tests := []struct {
 		src string
@@ -1112,13 +1081,11 @@ func TestOS_WriteFile(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewURIHandler(resultCh)
 	fsFile := testutils.NewURIHandler(resultCh)
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
 		engineos.WithURIHandler("file", fsFile),
 		engineos.WithURIHandler("test", fsPrivate),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
 
 	tests := []struct {
 		input  string
@@ -1227,13 +1194,11 @@ func TestOS_ReadDir(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewURIHandler(resultCh)
 	fsFile := testutils.NewURIHandler(resultCh)
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
 		engineos.WithURIHandler("file", fsFile),
 		engineos.WithURIHandler("test", fsPrivate),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
 
 	tests := []struct {
 		input  string
@@ -1320,13 +1285,11 @@ func TestOS_WalkDir(t *testing.T) {
 	resultCh := make(chan any, 1)
 	fsPrivate := testutils.NewURIHandler(resultCh)
 	fsFile := testutils.NewURIHandler(resultCh)
-	osCtx := engineos.NewContext(context.Background(),
+	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
 		engineos.WithURIHandler("file", fsFile),
 		engineos.WithURIHandler("test", fsPrivate),
 	)
-	o, ok := risoros.GetOS(osCtx)
-	require.True(t, ok)
 
 	tests := []struct {
 		input  string

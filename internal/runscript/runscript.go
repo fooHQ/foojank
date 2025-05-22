@@ -84,8 +84,7 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 		cancel()
 	}
 
-	osCtx := engineos.NewContext(
-		ctx,
+	o := engineos.New(
 		engineos.WithArgs(pkgArgs),
 		engineos.WithStdin(os.Stdin),
 		engineos.WithStdout(os.Stdout),
@@ -102,16 +101,17 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 		risor.WithoutDefaultGlobals(),
 		risor.WithGlobals(config.Modules()),
 		risor.WithGlobals(config.Builtins()),
+		risor.WithOS(o),
 	)
 
-	importer, err := importer.NewFzzImporter(f, info.Size(), conf.CompilerOpts()...)
+	imp, err := importer.NewFzzImporter(f, info.Size(), conf.CompilerOpts()...)
 	if err != nil {
 		return err
 	}
 
 	vmOpts := conf.VMOpts()
-	vmOpts = append(vmOpts, vm.WithImporter(importer))
-	err = engine.Run(osCtx, vmOpts...)
+	vmOpts = append(vmOpts, vm.WithImporter(imp))
+	err = engine.Run(ctx, vmOpts...)
 	if err != nil {
 		return err
 	}

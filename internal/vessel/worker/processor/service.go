@@ -178,19 +178,16 @@ func engineCompileAndRunPackage(ctx context.Context, file *File, opts ...engineo
 		log.Debug("on exit", "code", code)
 		cancel()
 	}
-
-	osCtx := engineos.NewContext(
-		ctx,
-		append(opts, engineos.WithExitHandler(exitHandler))...,
-	)
+	opts = append(opts, engineos.WithExitHandler(exitHandler))
 
 	conf := risor.NewConfig(
+		risor.WithOS(engineos.New(opts...)),
 		risor.WithoutDefaultGlobals(),
 		risor.WithGlobals(config.Modules()),
 		risor.WithGlobals(config.Builtins()),
 	)
 
-	importer, err := importer.NewFzzImporter(file, int64(file.Size), conf.CompilerOpts()...)
+	imp, err := importer.NewFzzImporter(file, int64(file.Size), conf.CompilerOpts()...)
 	if err != nil {
 		return err
 	}
@@ -198,8 +195,8 @@ func engineCompileAndRunPackage(ctx context.Context, file *File, opts ...engineo
 	log.Debug("before run")
 
 	vmOpts := conf.VMOpts()
-	vmOpts = append(vmOpts, vm.WithImporter(importer))
-	err = engine.Run(osCtx, vmOpts...)
+	vmOpts = append(vmOpts, vm.WithImporter(imp))
+	err = engine.Run(ctx, vmOpts...)
 	if err != nil {
 		return err
 	}
