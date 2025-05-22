@@ -18,8 +18,12 @@ func New() *Formatter {
 
 func (f *Formatter) Write(o io.Writer, table *formatter.Table) error {
 	w := tablewriter.NewWriter(o)
-	w.SetHeader(table.Columns())
-	w.AppendBulk(table.Rows())
-	w.Render()
-	return nil
+	w.Header(table.Columns())
+
+	err := w.Bulk(table.Rows())
+	if err != nil {
+		return err
+	}
+
+	return w.Render()
 }
