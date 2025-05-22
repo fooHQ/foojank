@@ -1,18 +1,16 @@
 package runscript
 
 import (
+	"archive/zip"
 	"context"
 	"errors"
 	"fmt"
 	"os"
 
-	"github.com/risor-io/risor"
-	"github.com/risor-io/risor/vm"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/internal/engine"
-	"github.com/foohq/foojank/internal/engine/importer"
 	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/runscript/actions"
 	"github.com/foohq/foojank/internal/runscript/config"
@@ -97,21 +95,18 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 		engineos.WithExitHandler(exitHandler),
 	)
 
-	conf := risor.NewConfig(
-		risor.WithoutDefaultGlobals(),
-		risor.WithGlobals(config.Modules()),
-		risor.WithGlobals(config.Builtins()),
-		risor.WithOS(o),
-	)
-
-	imp, err := importer.NewFzzImporter(f, info.Size(), conf.CompilerOpts()...)
+	zr, err := zip.NewReader(f, info.Size())
 	if err != nil {
 		return err
 	}
 
-	vmOpts := conf.VMOpts()
-	vmOpts = append(vmOpts, vm.WithImporter(imp))
-	err = engine.Run(ctx, vmOpts...)
+	err = engine.Run(
+		ctx,
+		zr,
+		engine.WithOS(o),
+		engine.WithGlobals(config.Modules()),
+		engine.WithGlobals(config.Builtins()),
+	)
 	if err != nil {
 		return err
 	}
