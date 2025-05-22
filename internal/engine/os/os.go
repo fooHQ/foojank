@@ -1,7 +1,6 @@
 package os
 
 import (
-	"context"
 	"errors"
 	"net/url"
 	"os"
@@ -492,11 +491,6 @@ func New(options ...Option) *OS {
 		option(o)
 	}
 	return o
-}
-
-func NewContext(ctx context.Context, options ...Option) context.Context {
-	o := New(options...)
-	return risoros.WithOS(ctx, o)
 }
 
 func initWD() *url.URL {
