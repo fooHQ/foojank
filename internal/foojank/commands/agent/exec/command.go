@@ -145,6 +145,7 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
+		defer os.Remove(pkgPath)
 
 		f, err := os.Open(pkgPath)
 		if err != nil {
