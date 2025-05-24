@@ -22,6 +22,7 @@ var (
 	ErrIsDirectory          = memfs.ErrIsDirectory
 	ErrSymlinksNotSupported = errors.New("symlinks not supported")
 	ErrBadDescriptor        = errors.New("bad descriptor")
+	ErrNotSynced            = errors.New("filesystem not synchronized")
 )
 
 type FS struct {
@@ -31,6 +32,7 @@ type FS struct {
 	mu      sync.Mutex
 	ctx     context.Context
 	cancel  context.CancelFunc
+	synced  chan struct{}
 }
 
 func NewFS(ctx context.Context, store jetstream.ObjectStore) (*FS, error) {
@@ -52,6 +54,7 @@ func NewFS(ctx context.Context, store jetstream.ObjectStore) (*FS, error) {
 		watcher: watcher,
 		ctx:     ctx,
 		cancel:  cancel,
+		synced:  make(chan struct{}),
 	}
 
 	// Start watching for updates, which includes historical data
@@ -71,6 +74,7 @@ func (fs *FS) watchUpdates() {
 			}
 
 			if update == nil { // Initial nil signals history complete
+				close(fs.synced)
 				continue
 			}
 
@@ -108,6 +112,10 @@ func (fs *FS) Mkdir(name string, perm risoros.FileMode) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
+	if !fs.isSynced() {
+		return ErrNotSynced
+	}
+
 	pth := cleanPath(name)
 
 	revert, err := fs.mkdirCache(pth, perm)
@@ -127,6 +135,10 @@ func (fs *FS) Mkdir(name string, perm risoros.FileMode) error {
 func (fs *FS) MkdirAll(pth string, perm risoros.FileMode) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
+
+	if !fs.isSynced() {
+		return ErrNotSynced
+	}
 
 	pth = cleanPath(pth)
 
@@ -204,6 +216,10 @@ func (fs *FS) Open(name string) (risoros.File, error) {
 func (fs *FS) OpenFile(name string, flag int, perm risoros.FileMode) (risoros.File, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
+
+	if !fs.isSynced() {
+		return nil, ErrNotSynced
+	}
 
 	pth := cleanPath(name)
 
@@ -295,6 +311,10 @@ func (fs *FS) Remove(name string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
+	if !fs.isSynced() {
+		return ErrNotSynced
+	}
+
 	pth := cleanPath(name)
 	err := fs.store.Delete(fs.ctx, pth)
 	if err != nil {
@@ -314,6 +334,10 @@ func (fs *FS) Remove(name string) error {
 func (fs *FS) RemoveAll(pth string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
+
+	if !fs.isSynced() {
+		return ErrNotSynced
+	}
 
 	objects, err := fs.store.List(fs.ctx)
 	if err != nil && !errors.Is(err, jetstream.ErrNoObjectsFound) {
@@ -337,6 +361,10 @@ func (fs *FS) Rename(oldpath, newpath string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
+	if !fs.isSynced() {
+		return ErrNotSynced
+	}
+
 	oldpath = cleanPath(oldpath)
 	newpath = cleanPath(newpath)
 	err := fs.store.UpdateMeta(fs.ctx, oldpath, jetstream.ObjectMeta{Name: newpath})
@@ -349,6 +377,13 @@ func (fs *FS) Rename(oldpath, newpath string) error {
 
 // Stat returns file information (cache only)
 func (fs *FS) Stat(name string) (risoros.FileInfo, error) {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
+
+	if !fs.isSynced() {
+		return nil, ErrNotSynced
+	}
+
 	return fs.cache.Stat(cleanPath(name))
 }
 
@@ -375,12 +410,26 @@ func (fs *FS) WriteFile(name string, data []byte, perm risoros.FileMode) error {
 
 // ReadDir reads directory contents from the cache
 func (fs *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
+
+	if !fs.isSynced() {
+		return nil, ErrNotSynced
+	}
+
 	name = cleanPath(name)
 	return fs.cache.ReadDir(name)
 }
 
 // WalkDir walks the directory tree in the cache
 func (fs *FS) WalkDir(root string, fn risoros.WalkDirFunc) error {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
+
+	if !fs.isSynced() {
+		return ErrNotSynced
+	}
+
 	return fs.cache.WalkDir(cleanPath(root), fn)
 }
 
@@ -392,6 +441,24 @@ func (fs *FS) Close() error {
 	}
 	fs.cancel()
 	return nil
+}
+
+func (fs *FS) Wait(ctx context.Context) error {
+	select {
+	case <-fs.synced:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (fs *FS) isSynced() bool {
+	select {
+	case <-fs.synced:
+		return true
+	default:
+		return false
+	}
 }
 
 // natsFile wraps a memfs.FS file to sync writes back to NATS

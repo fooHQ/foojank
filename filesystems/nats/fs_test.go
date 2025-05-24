@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/stretchr/testify/require"
@@ -25,6 +26,11 @@ func TestFS_Create(t *testing.T) {
 	require.NoError(t, err)
 	defer fs.Close()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = fs.Wait(ctx)
+	require.NoError(t, err)
+
 	_, err = fs.Create("/test.txt")
 	require.NoError(t, err)
 
@@ -39,6 +45,11 @@ func TestFS_Mkdir(t *testing.T) {
 	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = fs.Wait(ctx)
+	require.NoError(t, err)
 
 	err = fs.Mkdir("/dir", 0755)
 	require.NoError(t, err)
@@ -65,6 +76,11 @@ func TestFS_MkdirAll(t *testing.T) {
 	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = fs.Wait(ctx)
+	require.NoError(t, err)
 
 	err = fs.MkdirAll("/dir/sub", 0755)
 	require.NoError(t, err)
@@ -96,6 +112,11 @@ func TestFS_Open(t *testing.T) {
 	require.NoError(t, err)
 	defer fs.Close()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = fs.Wait(ctx)
+	require.NoError(t, err)
+
 	err = fs.WriteFile("/test.txt", nil, 0644)
 	require.NoError(t, err)
 
@@ -113,6 +134,11 @@ func TestFS_OpenFile(t *testing.T) {
 	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = fs.Wait(ctx)
+	require.NoError(t, err)
 
 	t.Run("CreateWriteOnly", func(t *testing.T) {
 		filename := fmt.Sprintf("file_%d", rand.Int())
@@ -276,6 +302,11 @@ func TestFS_ReadFile(t *testing.T) {
 	require.NoError(t, err)
 	defer fs.Close()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = fs.Wait(ctx)
+	require.NoError(t, err)
+
 	err = fs.WriteFile("/test.txt", []byte("content"), 0644)
 	require.NoError(t, err)
 
@@ -294,6 +325,11 @@ func TestFS_Remove(t *testing.T) {
 	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = fs.Wait(ctx)
+	require.NoError(t, err)
 
 	err = fs.WriteFile("/test.txt", nil, 0644)
 	require.NoError(t, err)
@@ -319,6 +355,11 @@ func TestFS_RemoveAll(t *testing.T) {
 	require.NoError(t, err)
 	defer fs.Close()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = fs.Wait(ctx)
+	require.NoError(t, err)
+
 	err = fs.WriteFile("/test/a.txt", []byte("a"), 0644)
 	require.NoError(t, err)
 	err = fs.WriteFile("/test/b.txt", []byte("b"), 0644)
@@ -340,6 +381,11 @@ func TestFS_Rename(t *testing.T) {
 	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = fs.Wait(ctx)
+	require.NoError(t, err)
 
 	err = fs.WriteFile("/old.txt", []byte("content"), 0644)
 	require.NoError(t, err)
@@ -364,6 +410,11 @@ func TestFS_Stat(t *testing.T) {
 	require.NoError(t, err)
 	defer fs.Close()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = fs.Wait(ctx)
+	require.NoError(t, err)
+
 	err = fs.WriteFile("/test.txt", []byte("content"), 0644)
 	require.NoError(t, err)
 
@@ -383,6 +434,11 @@ func TestFS_Symlink(t *testing.T) {
 	require.NoError(t, err)
 	defer fs.Close()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = fs.Wait(ctx)
+	require.NoError(t, err)
+
 	err = fs.Symlink("/target.txt", "/link.txt")
 	require.Equal(t, natsfs.ErrSymlinksNotSupported, err)
 }
@@ -394,6 +450,11 @@ func TestFS_WriteFile(t *testing.T) {
 	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = fs.Wait(ctx)
+	require.NoError(t, err)
 
 	err = fs.WriteFile("/test.txt", []byte("content"), 0644)
 	require.NoError(t, err)
@@ -412,6 +473,11 @@ func TestFS_ReadDir(t *testing.T) {
 	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = fs.Wait(ctx)
+	require.NoError(t, err)
 
 	err = fs.WriteFile("/test/a.txt", []byte("a"), 0644)
 	require.NoError(t, err)
@@ -439,6 +505,11 @@ func TestFS_WalkDir(t *testing.T) {
 	require.NoError(t, err)
 	defer fs.Close()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = fs.Wait(ctx)
+	require.NoError(t, err)
+
 	err = fs.WriteFile("/test/a.txt", []byte("a"), 0644)
 	require.NoError(t, err)
 	err = fs.WriteFile("/test/sub/b.txt", []byte("b"), 0644)
@@ -465,6 +536,11 @@ func TestFS_Close(t *testing.T) {
 	fs, err := natsfs.NewFS(context.Background(), store)
 	require.NoError(t, err)
 	defer fs.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = fs.Wait(ctx)
+	require.NoError(t, err)
 
 	err = fs.Close()
 	require.NoError(t, err)
