@@ -251,8 +251,7 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			fullPath := "nats://" + pkgExecPath
-			code, err := vesselCli.Execute(ctx, worker, fullPath, scriptArgs, stdinCh, stdoutCh)
+			code, err := vesselCli.Execute(ctx, worker, pkgExecPath, scriptArgs, stdinCh, stdoutCh)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				err := fmt.Errorf("execute request failed: %w", err)
 				logger.ErrorContext(ctx, err.Error())
