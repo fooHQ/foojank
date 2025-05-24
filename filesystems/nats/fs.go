@@ -1,6 +1,7 @@
 package nats
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"os"
@@ -16,10 +17,11 @@ import (
 )
 
 var (
-	ErrDirectoriesNotSupported = errors.New("directories not supported")
-	ErrSymlinksNotSupported    = errors.New("symlinks not supported")
-	ErrBadDescriptor           = errors.New("bad descriptor")
-	ErrIsDirectory             = memfs.ErrIsDirectory
+	ErrInvalid              = os.ErrInvalid
+	ErrNotExist             = os.ErrNotExist
+	ErrIsDirectory          = memfs.ErrIsDirectory
+	ErrSymlinksNotSupported = errors.New("symlinks not supported")
+	ErrBadDescriptor        = errors.New("bad descriptor")
 )
 
 type FS struct {
@@ -80,9 +82,13 @@ func (fs *FS) watchUpdates() {
 				// Handle symlinks
 				_ = fs.cache.Symlink(update.Opts.Link.Name, pth)
 			} else {
-				// Create an empty file in cache to mark existence
-				_ = fs.cache.MkdirAll(path.Dir(pth), 0755)
-				_ = fs.cache.WriteFile(pth, nil, 0644)
+				if isDir(update) {
+					_ = fs.cache.MkdirAll(pth, 0755)
+				} else if isFile(update) {
+					// Create an empty file in cache to mark existence
+					_ = fs.cache.MkdirAll(path.Dir(pth), 0755)
+					_ = fs.cache.WriteFile(pth, nil, 0644)
+				}
 			}
 			fs.mu.Unlock()
 
@@ -98,13 +104,95 @@ func (fs *FS) Create(name string) (risoros.File, error) {
 }
 
 // Mkdir returns an error as explicit directory creation is not supported
-func (fs *FS) Mkdir(_ string, _ risoros.FileMode) error {
-	return ErrDirectoriesNotSupported
+func (fs *FS) Mkdir(name string, perm risoros.FileMode) error {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
+
+	pth := cleanPath(name)
+
+	revert, err := fs.mkdirCache(pth, perm)
+	if err != nil {
+		return err
+	}
+
+	if _, err := fs.store.Put(fs.ctx, newObjectMetadata(pth, typeDir), strings.NewReader("")); err != nil {
+		revert()
+		return err
+	}
+
+	return nil
 }
 
 // MkdirAll returns an error as explicit directory creation is not supported
-func (fs *FS) MkdirAll(_ string, _ risoros.FileMode) error {
-	return ErrDirectoriesNotSupported
+func (fs *FS) MkdirAll(pth string, perm risoros.FileMode) error {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
+
+	pth = cleanPath(pth)
+
+	revert, err := fs.mkdirAllCache(pth, perm)
+	if err != nil {
+		return err
+	}
+
+	if _, err := fs.store.Put(fs.ctx, newObjectMetadata(pth, typeDir), strings.NewReader("")); err != nil {
+		revert()
+		return err
+	}
+
+	return nil
+}
+
+func (fs *FS) mkdirCache(pth string, perm risoros.FileMode) (func(), error) {
+	err := fs.cache.Mkdir(pth, perm)
+	if err != nil {
+		return nil, err
+	}
+
+	revertFn := func() {
+		_ = fs.cache.Remove(pth)
+	}
+
+	return revertFn, nil
+}
+
+func (fs *FS) mkdirAllCache(pth string, perm risoros.FileMode) (func(), error) {
+	var createdDirs []string
+	var parentDir string
+
+	for _, dir := range strings.Split(pth, "/") {
+		dirPth := cleanPath(path.Join(parentDir, dir))
+		parentDir = dirPth
+		err := fs.cache.Mkdir(dirPth, perm)
+		if err != nil {
+			if !errors.Is(err, memfs.ErrExist) {
+				return nil, err
+			}
+			continue
+		}
+
+		createdDirs = append(createdDirs, dirPth)
+	}
+
+	revertFn := func() {
+		for i := len(createdDirs) - 1; i >= 0; i-- {
+			_ = fs.cache.Remove(createdDirs[i])
+		}
+	}
+
+	return revertFn, nil
+}
+
+func (fs *FS) writeFileCache(name string, data []byte, perm risoros.FileMode) (func(), error) {
+	if err := fs.cache.WriteFile(name, data, perm); err != nil {
+		return nil, err
+	}
+
+	revertFn := func() {
+		_ = fs.cache.Remove(name)
+	}
+
+	return revertFn, nil
 }
 
 // Open opens a file for reading (fetches content from NATS)
@@ -121,27 +209,31 @@ func (fs *FS) OpenFile(name string, flag int, perm risoros.FileMode) (risoros.Fi
 
 	// Check cache for existence
 	_, err := fs.cache.Stat(pth)
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
+	if err != nil && !errors.Is(err, memfs.ErrNotExist) {
 		return nil, err
 	}
 
 	exists := err == nil
 	if !exists && flag&risoros.O_CREATE == 0 {
-		return nil, os.ErrNotExist
+		return nil, ErrNotExist
 	}
 
 	if flag&risoros.O_CREATE != 0 {
+		revertDirs, err := fs.mkdirCache(path.Dir(pth), 0755)
+		if err != nil && !errors.Is(err, memfs.ErrExist) {
+			return nil, err
+		}
+
+		revertFile, err := fs.writeFileCache(pth, nil, perm)
+		if err != nil {
+			revertDirs()
+			return nil, err
+		}
+
 		// Create on NATS
-		if _, err := fs.store.Put(fs.ctx, jetstream.ObjectMeta{Name: pth}, strings.NewReader("")); err != nil {
-			return nil, err
-		}
-
-		if err := fs.cache.MkdirAll(path.Dir(pth), 0755); err != nil {
-			return nil, err
-		}
-
-		// Update cache structure
-		if err := fs.cache.WriteFile(pth, nil, perm); err != nil {
+		if _, err := fs.store.Put(fs.ctx, newObjectMetadata(pth, typeFile), strings.NewReader("")); err != nil {
+			revertFile()
+			revertDirs()
 			return nil, err
 		}
 	}
@@ -158,10 +250,12 @@ func (fs *FS) OpenFile(name string, flag int, perm risoros.FileMode) (risoros.Fi
 
 	// Fetch content from NATS for reading
 	var o jetstream.ObjectResult
-	if flag&risoros.O_WRONLY == 0 && !info.IsDir() {
+	if flag&risoros.O_WRONLY == 0 {
 		o, err = fs.store.Get(fs.ctx, pth)
 		if err != nil {
-			return nil, err
+			if !errors.Is(err, jetstream.ErrObjectNotFound) || !info.IsDir() {
+				return nil, err
+			}
 		}
 	}
 
@@ -207,7 +301,13 @@ func (fs *FS) Remove(name string) error {
 		return err
 	}
 
-	return fs.cache.Remove(pth)
+	err = fs.cache.Remove(pth)
+	if err != nil {
+		println("not in cache")
+		return err
+	}
+
+	return nil
 }
 
 // RemoveAll removes a path and its implied children
@@ -228,6 +328,7 @@ func (fs *FS) RemoveAll(pth string) error {
 			}
 		}
 	}
+
 	return fs.cache.RemoveAll(pth)
 }
 
@@ -311,7 +412,7 @@ func (f *natsFile) Read(b []byte) (int, error) {
 	}
 
 	if f.obj == nil {
-		return 0, os.ErrInvalid
+		return 0, ErrInvalid
 	}
 
 	return f.obj.Read(b)
@@ -357,7 +458,7 @@ func (f *natsFile) Close() error {
 	}
 
 	if len(f.content) > 0 {
-		_, err := f.fs.store.PutBytes(f.fs.ctx, f.path, f.content)
+		_, err := f.fs.store.Put(f.fs.ctx, newObjectMetadata(f.path, typeFile), bytes.NewReader(f.content))
 		if err != nil {
 			return err
 		}
@@ -392,7 +493,7 @@ func (f *fileInfo) ModTime() time.Time {
 }
 
 func (f *fileInfo) IsDir() bool {
-	return false
+	return isDir(f.info)
 }
 
 func (f *fileInfo) Sys() any {
@@ -402,4 +503,32 @@ func (f *fileInfo) Sys() any {
 // Helper function to clean paths
 func cleanPath(pth string) string {
 	return path.Clean("/" + pth)
+}
+
+const (
+	metadataKeyType = "file-type"
+)
+
+const (
+	typeFile = "f"
+	typeDir  = "d"
+)
+
+func newObjectMetadata(name string, fileType string) jetstream.ObjectMeta {
+	return jetstream.ObjectMeta{
+		Name: name,
+		Metadata: map[string]string{
+			metadataKeyType: fileType,
+		},
+	}
+}
+
+func isFile(info *jetstream.ObjectInfo) bool {
+	v, ok := info.Metadata[metadataKeyType]
+	return ok && v == typeFile
+}
+
+func isDir(info *jetstream.ObjectInfo) bool {
+	v, ok := info.Metadata[metadataKeyType]
+	return ok && v == typeDir
 }

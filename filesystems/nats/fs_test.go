@@ -41,7 +41,21 @@ func TestFS_Mkdir(t *testing.T) {
 	defer fs.Close()
 
 	err = fs.Mkdir("/dir", 0755)
-	require.Equal(t, natsfs.ErrDirectoriesNotSupported, err)
+	require.NoError(t, err)
+
+	info, err := fs.Stat("/dir")
+	require.NoError(t, err)
+	require.True(t, info.IsDir())
+
+	_, err = fs.Create("/dir/file")
+	require.NoError(t, err)
+
+	_, err = fs.Stat("/dir/file")
+	require.NoError(t, err)
+
+	info, err = fs.Stat("/dir/file")
+	require.NoError(t, err)
+	require.False(t, info.IsDir())
 }
 
 func TestFS_MkdirAll(t *testing.T) {
@@ -53,7 +67,25 @@ func TestFS_MkdirAll(t *testing.T) {
 	defer fs.Close()
 
 	err = fs.MkdirAll("/dir/sub", 0755)
-	require.Equal(t, natsfs.ErrDirectoriesNotSupported, err)
+	require.NoError(t, err)
+
+	info, err := fs.Stat("/dir")
+	require.NoError(t, err)
+	require.True(t, info.IsDir())
+
+	info, err = fs.Stat("/dir/sub")
+	require.NoError(t, err)
+	require.True(t, info.IsDir())
+
+	_, err = fs.Create("/dir/file")
+	require.NoError(t, err)
+
+	_, err = fs.Stat("/dir/file")
+	require.NoError(t, err)
+
+	info, err = fs.Stat("/dir/file")
+	require.NoError(t, err)
+	require.False(t, info.IsDir())
 }
 
 func TestFS_Open(t *testing.T) {
@@ -221,7 +253,7 @@ func TestFS_OpenFile(t *testing.T) {
 	})
 
 	t.Run("OpenReadDirectory", func(t *testing.T) {
-		filename := fmt.Sprintf("dir_%d", rand.Int())
+		filename := fmt.Sprintf("file_%d", rand.Int())
 		err := fs.WriteFile(filename, nil, 0644)
 		require.NoError(t, err)
 
