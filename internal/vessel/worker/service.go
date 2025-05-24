@@ -8,6 +8,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	engineos "github.com/foohq/foojank/internal/engine/os"
+	"github.com/foohq/foojank/internal/repository"
 	"github.com/foohq/foojank/internal/vessel/worker/connector"
 	"github.com/foohq/foojank/internal/vessel/worker/decoder"
 	"github.com/foohq/foojank/internal/vessel/worker/processor"
@@ -19,6 +20,7 @@ type Arguments struct {
 	Name        string
 	Version     string
 	Connection  *nats.Conn
+	Repository  *repository.Repository
 	URIHandlers map[string]engineos.URIHandler
 	EventCh     chan<- Event
 }
@@ -87,6 +89,7 @@ func (s *Service) Start(ctx context.Context) error {
 			DataCh:      decoderDataCh,
 			StdinCh:     decoderStdinCh,
 			StdoutCh:    processorStdoutCh,
+			Repository:  s.args.Repository,
 			URIHandlers: s.args.URIHandlers,
 		}).Start(groupCtx)
 	})

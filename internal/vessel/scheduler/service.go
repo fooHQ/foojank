@@ -8,6 +8,7 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 
 	engineos "github.com/foohq/foojank/internal/engine/os"
+	"github.com/foohq/foojank/internal/repository"
 	"github.com/foohq/foojank/internal/vessel/config"
 	"github.com/foohq/foojank/internal/vessel/decoder"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
@@ -48,6 +49,13 @@ func (s *Service) Start(ctx context.Context) error {
 		return err
 	}
 
+	repo, err := repository.New(ctx, store)
+	if err != nil {
+		log.Debug("cannot create repository", "error", err)
+		return err
+	}
+	defer repo.Close()
+
 	memHandler, err := engineos.NewMemURIHandler()
 	if err != nil {
 		log.Debug("cannot create mem handler", "error", err)
@@ -85,7 +93,7 @@ loop:
 				workerID++
 				wCtx, cancel := context.WithCancel(ctx)
 				workers[workerID] = state{
-					w:      s.createWorker(wCtx, workerID, uriHandlers, eventCh),
+					w:      s.createWorker(wCtx, workerID, repo, uriHandlers, eventCh),
 					cancel: cancel,
 				}
 
@@ -159,6 +167,7 @@ loop:
 func (s *Service) createWorker(
 	ctx context.Context,
 	workerID uint64,
+	repo *repository.Repository,
 	uriHandlers map[string]engineos.URIHandler,
 	eventCh chan<- worker.Event,
 ) *worker.Service {
@@ -168,6 +177,7 @@ func (s *Service) createWorker(
 		Name:        config.ServiceName,
 		Version:     config.ServiceVersion,
 		Connection:  s.args.Connection,
+		Repository:  repo,
 		URIHandlers: uriHandlers,
 		EventCh:     eventCh,
 	})
