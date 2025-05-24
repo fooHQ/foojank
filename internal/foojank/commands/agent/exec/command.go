@@ -171,18 +171,6 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 			return err
 		}
 
-		defer func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-			defer cancel()
-
-			err := repositoryCli.DeleteFile(ctx, repoName, pkgExecPath)
-			if err != nil {
-				err := fmt.Errorf("cannot delete file '%s' from the repository '%s': %v", pkgExecPath, repoName, err)
-				logger.ErrorContext(ctx, err.Error())
-				return
-			}
-		}()
-
 		service, err := vesselCli.GetInfo(ctx, agentID)
 		if err != nil {
 			err := fmt.Errorf("get info request failed: %w", err)
