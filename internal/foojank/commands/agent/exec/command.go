@@ -147,17 +147,24 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 		}
 		defer os.Remove(pkgPath)
 
-		f, err := os.Open(pkgPath)
+		b, err := os.ReadFile(pkgPath)
 		if err != nil {
-			err := fmt.Errorf("cannot open file '%s': %w", pkgPath, err)
+			err := fmt.Errorf("cannot read file '%s': %w", pkgPath, err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
-		defer f.Close()
 
 		repoName := agentID.ServiceName()
+		repo, err := repositoryCli.Get(ctx, repoName)
+		if err != nil {
+			err := fmt.Errorf("cannot find repository '%s': %w", repoName, err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+		defer repo.Close()
+
 		pkgExecPath := path.Join("/", "_cache", filepath.Base(pkgPath))
-		err = repositoryCli.PutFile(ctx, repoName, pkgExecPath, f)
+		err = repo.WriteFile(pkgExecPath, b, 0644)
 		if err != nil {
 			err := fmt.Errorf("cannot copy file '%s' to the repository '%s' as '%s': %v", pkgPath, repoName, pkgExecPath, err)
 			logger.ErrorContext(ctx, err.Error())
