@@ -13,6 +13,8 @@ import (
 )
 
 var (
+	ErrExist         = os.ErrExist
+	ErrNotExist      = os.ErrNotExist
 	ErrBadDescriptor = errors.New("bad descriptor")
 	ErrIsDirectory   = errors.New("is a directory")
 )
@@ -106,7 +108,7 @@ func (fs *FS) OpenFile(name string, flag int, perm risoros.FileMode) (risoros.Fi
 	}
 
 	if flag&risoros.O_CREATE == 0 {
-		return nil, os.ErrNotExist
+		return nil, ErrNotExist
 	}
 
 	n := &node{
@@ -161,7 +163,7 @@ func (fs *FS) Remove(name string) error {
 		delete(parent.children, base)
 		return nil
 	}
-	return os.ErrNotExist
+	return ErrNotExist
 }
 
 // RemoveAll removes a path and all its children
@@ -187,7 +189,7 @@ func (fs *FS) RemoveAll(pth string) error {
 		delete(parent.children, base)
 		return nil
 	}
-	return os.ErrNotExist
+	return ErrNotExist
 }
 
 // Rename renames a file or directory
@@ -218,11 +220,11 @@ func (fs *FS) Rename(oldpath, newpath string) error {
 
 	n, exists := oldParent.children[oldBase]
 	if !exists {
-		return os.ErrNotExist
+		return ErrNotExist
 	}
 
 	if _, exists := newParent.children[newBase]; exists {
-		return os.ErrExist
+		return ErrExist
 	}
 
 	n.name = newBase
@@ -255,7 +257,7 @@ func (fs *FS) Symlink(oldname, newname string) error {
 	defer parent.mu.Unlock()
 
 	if _, exists := parent.children[base]; exists {
-		return os.ErrExist
+		return ErrExist
 	}
 
 	parent.children[base] = &node{
@@ -435,7 +437,7 @@ func (fs *FS) getNode(pth string) (*node, error) {
 		next, ok := current.children[part]
 		if !ok {
 			current.mu.RUnlock()
-			return nil, os.ErrNotExist
+			return nil, ErrNotExist
 		}
 
 		current.mu.RUnlock()
@@ -469,7 +471,7 @@ func (fs *FS) mkdirInternal(pth string, perm risoros.FileMode) error {
 	defer parent.mu.Unlock()
 
 	if _, exists := parent.children[base]; exists {
-		return os.ErrExist
+		return ErrExist
 	}
 
 	parent.children[base] = &node{
