@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"os"
 	"path"
 	"strings"
@@ -510,6 +511,18 @@ func (f *natsFile) Write(b []byte) (int, error) {
 	f.content = append(f.content[:f.offset], b...)
 	f.offset += int64(len(b))
 	return len(b), nil
+}
+
+func (f *natsFile) ReadFrom(r io.Reader) (int64, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	info, err := f.fs.store.Put(f.fs.ctx, newObjectMetadata(f.path, typeFile), r)
+	if err != nil {
+		return 0, err
+	}
+
+	return int64(info.Size), nil
 }
 
 // Close syncs any final changes to NATS (if needed)
