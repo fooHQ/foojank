@@ -7,6 +7,8 @@ import (
 	"io"
 
 	"github.com/nats-io/nats.go/jetstream"
+
+	"github.com/foohq/foojank/internal/repository"
 )
 
 type Client struct {
@@ -48,6 +50,20 @@ func (c *Client) List(ctx context.Context) ([]*Repository, error) {
 		})
 	}
 	return result, nil
+}
+
+func (c *Client) Get(ctx context.Context, name string) (*repository.Repository, error) {
+	s, err := c.js.ObjectStore(ctx, name)
+	if err != nil {
+		return nil, &Error{err}
+	}
+
+	r, err := repository.New(ctx, s)
+	if err != nil {
+		return nil, &Error{err}
+	}
+
+	return r, nil
 }
 
 func (c *Client) PutFile(ctx context.Context, repository, filename string, reader io.Reader) error {
