@@ -23,5 +23,6 @@ func NewCommand() *cli.Command {
 			remove.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
+		OnUsageError:    actions.UsageError,
 	}
 }

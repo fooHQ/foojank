@@ -49,8 +49,9 @@ func NewCommand() *cli.Command {
 				Usage: "set TLS CA certificate",
 			},
 		},
-		Action:  action,
-		Aliases: []string{"rm"},
+		Action:       action,
+		Aliases:      []string{"rm"},
+		OnUsageError: actions.UsageError,
 	}
 }
 

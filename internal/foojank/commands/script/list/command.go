@@ -30,8 +30,9 @@ func NewCommand() *cli.Command {
 				Usage: "set path to a data directory",
 			},
 		},
-		Action:  action,
-		Aliases: []string{"ls"},
+		Action:       action,
+		Aliases:      []string{"ls"},
+		OnUsageError: actions.UsageError,
 	}
 }
 

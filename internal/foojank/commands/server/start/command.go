@@ -68,7 +68,8 @@ func NewCommand() *cli.Command {
 				Usage: "set path to a data directory",
 			},
 		},
-		Action: action,
+		Action:       action,
+		OnUsageError: actions.UsageError,
 	}
 }
 
