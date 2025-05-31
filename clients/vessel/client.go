@@ -282,6 +282,9 @@ func (c *Client) Execute(ctx context.Context, s Service, filePath string, args [
 		for loop := true; loop; {
 			select {
 			case msg := <-msgCh:
+				if msg == nil {
+					continue
+				}
 				_, _ = stdout.Write(msg.Data)
 
 			case <-ctx.Done():
