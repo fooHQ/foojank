@@ -364,14 +364,20 @@ type fileInfo struct {
 }
 
 func (fi *fileInfo) Name() string {
+	fi.node.mu.RLock()
+	defer fi.node.mu.RUnlock()
 	return fi.node.name
 }
 
 func (fi *fileInfo) Size() int64 {
+	fi.node.mu.RLock()
+	defer fi.node.mu.RUnlock()
 	return int64(len(fi.node.content))
 }
 
 func (fi *fileInfo) Mode() risoros.FileMode {
+	fi.node.mu.RLock()
+	defer fi.node.mu.RUnlock()
 	mode := fi.node.mode
 	if fi.node.isDir {
 		mode = os.ModeDir | mode
@@ -380,10 +386,14 @@ func (fi *fileInfo) Mode() risoros.FileMode {
 }
 
 func (fi *fileInfo) ModTime() time.Time {
+	fi.node.mu.RLock()
+	defer fi.node.mu.RUnlock()
 	return fi.node.modTime
 }
 
 func (fi *fileInfo) IsDir() bool {
+	fi.node.mu.RLock()
+	defer fi.node.mu.RUnlock()
 	return fi.node.isDir
 }
 
@@ -396,14 +406,20 @@ type dirEntry struct {
 }
 
 func (de *dirEntry) Name() string {
+	de.node.mu.RLock()
+	defer de.node.mu.RUnlock()
 	return de.node.name
 }
 
 func (de *dirEntry) IsDir() bool {
+	de.node.mu.RLock()
+	defer de.node.mu.RUnlock()
 	return de.node.isDir
 }
 
 func (de *dirEntry) Type() risoros.FileMode {
+	de.node.mu.RLock()
+	defer de.node.mu.RUnlock()
 	return de.node.mode
 }
 
