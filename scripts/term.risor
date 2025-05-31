@@ -18,11 +18,16 @@ func read_line(f, prompt) {
 	for {
 	    promptFn()
 	    line := try(func(){
-		    return string(f.read(buf))
+		    b := f.read(buf)
+		    if b != nil {
+		        return string(b)
+		    }
+		    return ""
 	    }, func(err){
 	        if !errors.is(err, os.err_closed) {
 	            print(err)
 	        }
+	        return ""
 	    })
 
 		if !strings.contains(line, '\n') {
