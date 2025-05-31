@@ -41,6 +41,7 @@ func New() *cli.Command {
 			server.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
+		OnUsageError:    actions.UsageError,
 		HideHelpCommand: true,
 	}
 }

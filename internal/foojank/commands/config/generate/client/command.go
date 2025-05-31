@@ -19,10 +19,11 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:      "client",
-		ArgsUsage: "<file>",
-		Usage:     "Generate client configuration from server/client configuration file",
-		Action:    action,
+		Name:         "client",
+		ArgsUsage:    "<file>",
+		Usage:        "Generate client configuration from server/client configuration file",
+		Action:       action,
+		OnUsageError: actions.UsageError,
 	}
 }
 

@@ -17,5 +17,6 @@ func NewCommand() *cli.Command {
 			client.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
+		OnUsageError:    actions.UsageError,
 	}
 }

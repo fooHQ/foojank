@@ -69,8 +69,9 @@ func NewCommand() *cli.Command {
 				Usage: "set path to a data directory",
 			},
 		},
-		Action:  action,
-		Aliases: []string{"exec"},
+		Action:       action,
+		Aliases:      []string{"exec"},
+		OnUsageError: actions.UsageError,
 	}
 }
 
