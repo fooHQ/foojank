@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"strings"
 	"sync"
 
@@ -240,7 +241,7 @@ func (c *Client) DestroyWorker(ctx context.Context, s Service, workerID uint64) 
 	return nil
 }
 
-func (c *Client) Execute(ctx context.Context, s Service, filePath string, args []string, stdin <-chan []byte, stdout chan<- []byte) (int64, error) {
+func (c *Client) Execute(ctx context.Context, s Service, filePath string, args []string, stdin io.ReadCloser, stdout io.WriteCloser) (int64, error) {
 	b, err := proto.NewExecuteRequest(filePath, args)
 	if err != nil {
 		return 0, err
@@ -281,18 +282,12 @@ func (c *Client) Execute(ctx context.Context, s Service, filePath string, args [
 		for loop := true; loop; {
 			select {
 			case msg := <-msgCh:
-				stdout <- msg.Data
+				_, _ = stdout.Write(msg.Data)
 
 			case <-ctx.Done():
 				loop = false
 				continue
 			}
-		}
-
-		// Drain the message channel
-		close(msgCh)
-		for msg := range msgCh {
-			stdout <- msg.Data
 		}
 	}()
 
@@ -301,18 +296,18 @@ func (c *Client) Execute(ctx context.Context, s Service, filePath string, args [
 	go func() {
 		defer wg.Done()
 		for {
-			select {
-			case line := <-stdin:
-				msg := &nats.Msg{
-					Subject: stdinEndpoint.subject,
-					Reply:   nats.NewInbox(),
-					Data:    line,
-				}
-				_ = c.nc.PublishMsg(msg)
-
-			case <-ctx.Done():
+			line := make([]byte, 4092)
+			n, err := stdin.Read(line)
+			if err != nil {
 				return
 			}
+
+			msg := &nats.Msg{
+				Subject: stdinEndpoint.subject,
+				Reply:   nats.NewInbox(),
+				Data:    line[:n],
+			}
+			_ = c.nc.PublishMsg(msg)
 		}
 	}()
 
@@ -325,8 +320,18 @@ func (c *Client) Execute(ctx context.Context, s Service, filePath string, args [
 
 	// From this point we know the worker has already responded to our request therefore we can
 	// drain the channel and proceed to the shutdown.
-	_ = sub.Drain()
 	cancel()
+	_ = sub.Drain()
+	// Drain msgCh and write everything to stdout!
+	close(msgCh)
+	for msg := range msgCh {
+		if msg == nil {
+			break
+		}
+		_, _ = stdout.Write(msg.Data)
+	}
+	_ = stdin.Close()
+	_ = stdout.Close()
 	wg.Wait()
 
 	// Delayed error handling
