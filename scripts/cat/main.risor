@@ -1,10 +1,13 @@
+import os
+
 var app = cli.app({
     name: "cat",
     usage: "Concatenate and print files",
     hide_help_command: true,
     action: func(c) {
         for _, arg := range c.args() {
-            print(cat(arg))
+            b := os.read_file(arg)
+            print(string(b))
         }
     }
 })
