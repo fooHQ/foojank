@@ -141,8 +141,9 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 		_, _ = stdin.Write(line)
 	}
 
+	err = <-errCh
+	_ = stdin.Close()
 	_ = stdout.Close()
 	wg.Wait()
-	err = <-errCh
 	return err
 }
