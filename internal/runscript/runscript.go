@@ -2,11 +2,15 @@ package runscript
 
 import (
 	"archive/zip"
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
+	"sync"
 
+	"github.com/muesli/cancelreader"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank"
@@ -82,10 +86,25 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 		cancel()
 	}
 
+	stdin := engineos.NewPipe()
+	stdout := engineos.NewPipe()
+	r, err := cancelreader.NewReader(os.Stdin)
+	if err != nil {
+		err := fmt.Errorf("cannot create a standard input reader: %w", err)
+		return err
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		_, _ = io.Copy(os.Stdout, stdout)
+	}()
+
 	o := engineos.New(
 		engineos.WithArgs(pkgArgs),
-		engineos.WithStdin(os.Stdin),
-		engineos.WithStdout(os.Stdout),
+		engineos.WithStdin(stdin),
+		engineos.WithStdout(stdout),
 		// Using URIFile with MemFS is intentional.
 		// By default, runscript should not have access to the filesystem.
 		// Work directory is also adjusted to begin at "/", which is the only
@@ -97,19 +116,33 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 
 	zr, err := zip.NewReader(f, info.Size())
 	if err != nil {
+		err := fmt.Errorf("cannot create zip reader: %w", err)
 		return err
 	}
 
-	err = engine.Run(
-		ctx,
-		zr,
-		engine.WithOS(o),
-		engine.WithGlobals(config.Modules()),
-		engine.WithGlobals(config.Builtins()),
-	)
-	if err != nil {
-		return err
+	errCh := make(chan error, 1)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err = engine.Run(
+			ctx,
+			zr,
+			engine.WithOS(o),
+			engine.WithGlobals(config.Modules()),
+			engine.WithGlobals(config.Builtins()),
+		)
+		_ = r.Cancel()
+		errCh <- err
+	}()
+
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		line := append(scanner.Bytes(), '\n')
+		_, _ = stdin.Write(line)
 	}
 
-	return nil
+	_ = stdout.Close()
+	wg.Wait()
+	err = <-errCh
+	return err
 }
