@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"path"
@@ -22,6 +23,7 @@ import (
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/clients/vessel"
 	"github.com/foohq/foojank/internal/config"
+	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
@@ -164,6 +166,13 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 		}
 		defer repo.Close()
 
+		err = repo.Wait(ctx)
+		if err != nil {
+			err := fmt.Errorf("cannot synchronize repository '%s': %w", repoName, err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
 		pkgExecPath := path.Join("/", "_cache", filepath.Base(pkgPath))
 		err = repo.WriteFile(pkgExecPath, b, 0644)
 		if err != nil {
@@ -223,52 +232,43 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 			return err
 		}
 
-		stdinCh := make(chan []byte, 128)
-		stdoutCh := make(chan []byte, 1024)
-		exitCh := make(chan int64, 1)
-
-		var wg sync.WaitGroup
-
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for line := range stdoutCh {
-				_, _ = fmt.Fprint(os.Stdout, string(line))
-			}
-		}()
-
+		stdin := engineos.NewPipe()
+		stdout := engineos.NewPipe()
 		r, err := cancelreader.NewReader(os.Stdin)
 		if err != nil {
-			err := fmt.Errorf("cannot create a standard input reader %w", err)
+			err := fmt.Errorf("cannot create a standard input reader: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
+		var wg sync.WaitGroup
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			code, err := vesselCli.Execute(ctx, worker, pkgExecPath, scriptArgs, stdinCh, stdoutCh)
+			_, _ = io.Copy(os.Stdout, stdout)
+		}()
+
+		exitCh := make(chan int64, 1)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			code, err := vesselCli.Execute(ctx, worker, pkgExecPath, scriptArgs, stdin, stdout)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				err := fmt.Errorf("execute request failed: %w", err)
 				logger.ErrorContext(ctx, err.Error())
 			}
 
-			// Cancel stdin scanner to unblock the main loop.
+			// Cancel stdin scanner to unblock the scanner loop.
 			_ = r.Cancel()
 			exitCh <- code
 		}()
 
 		scanner := bufio.NewScanner(r)
 		for scanner.Scan() {
-			line := scanner.Text() + "\n"
-			select {
-			case stdinCh <- []byte(line):
-			default:
-			}
+			line := append(scanner.Bytes(), '\n')
+			_, _ = stdin.Write(line)
 		}
 
-		cancel()
-		close(stdoutCh)
 		wg.Wait()
 
 		code := <-exitCh
