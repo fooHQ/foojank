@@ -48,10 +48,10 @@ func ToFullPath(u *url.URL) string {
 	}
 
 	if u.Scheme != "" && u.Scheme != "file" {
-		return u.Scheme + "://" + u.Host + u.Path
+		return u.Scheme + "://" + u.Host + path.Join("/", u.Path)
 	}
 
-	return "//" + u.Host + u.Path
+	return "//" + u.Host + path.Join("/", u.Path)
 }
 
 func IsAbsoluteURL(u *url.URL) bool {
