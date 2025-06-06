@@ -1,6 +1,6 @@
 import os
 import strings
-import filepath
+import urlpath
 
 func copy_file(src, dst) {
     src_file := os.open(src)
@@ -18,14 +18,17 @@ func copy_file(src, dst) {
 }
 
 func copy_directory(src, dst) {
-    os.mkdir_all(dst, 0755)
-    filepath.walk_dir(src, func(src_pth, dir_entry, err){
+    src_prefix := ""
+    urlpath.walk_dir(src, func(src_pth, dir_entry, err){
         if err != nil {
             return err
         }
 
-        rel_pth := filepath.rel(filepath.abs(src), filepath.abs(src_pth))
-        dst_pth := filepath.join(dst, rel_pth)
+        if src_prefix == "" {
+            src_prefix = src_pth
+        }
+
+        dst_pth := urlpath.join(dst, urlpath.base(src_prefix), strings.trim_prefix(src_pth, src_prefix))
 
         if dir_entry.is_dir {
             return os.mkdir_all(dst_pth, 0755)
@@ -67,16 +70,15 @@ var app = cli.app({
                     error(sprintf("cp: %q is a directory; use -r to copy recursively", src))
                 }
 
-                target_dir := dst
-                if dst_is_dir {
-                    target_dir = filepath.join(dst, filepath.base(src))
+                if !dst_is_dir {
+                    error(sprintf("cp: %q is not a directory", dst))
                 }
 
-                copy_directory(src, target_dir)
+                copy_directory(src, dst)
             } else {
                 target_pth := dst
                 if dst_is_dir {
-                    target_pth = filepath.join(dst, filepath.base(src))
+                    target_pth = urlpath.join(dst, urlpath.base(src))
                 }
 
                 copy_file(src, target_pth)
