@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -17,6 +18,7 @@ var (
 	ErrNotExist      = os.ErrNotExist
 	ErrBadDescriptor = errors.New("bad descriptor")
 	ErrIsDirectory   = errors.New("is a directory")
+	ErrNotDirectory  = errors.New("is not a directory")
 )
 
 type node struct {
@@ -289,7 +291,7 @@ func (fs *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
 	}
 
 	if !n.isDir {
-		return nil, errors.New("not a directory")
+		return nil, ErrNotDirectory
 	}
 
 	n.mu.RLock()
@@ -304,12 +306,64 @@ func (fs *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
 
 // WalkDir walks the directory tree
 func (fs *FS) WalkDir(root string, fn risoros.WalkDirFunc) error {
-	n, err := fs.getNode(cleanPath(root))
+	root = cleanPath(root)
+	n, err := fs.getNode(root)
 	if err != nil {
 		return err
 	}
 
-	return fs.walkDirInternal(n, root, fn)
+	if !n.isDir {
+		return ErrNotDirectory
+	}
+
+	nodes, err := fs.walkDirInternal(root, n)
+	if err != nil {
+		return err
+	}
+
+	// Push root directory as a node
+	nodes[root] = n
+
+	// Create a list of paths and sort them
+	paths := make([]string, 0, len(nodes))
+	for k := range nodes {
+		paths = append(paths, k)
+	}
+	sort.Strings(paths)
+
+	for _, pth := range paths {
+		err := fn(pth, &dirEntry{node: nodes[pth]}, nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (fs *FS) walkDirInternal(parentName string, n *node) (map[string]*node, error) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	nodes := make(map[string]*node)
+	for _, child := range n.children {
+		childPath := path.Join(parentName, child.name)
+		nodes[childPath] = child
+		if !child.isDir {
+			continue
+		}
+
+		next, err := fs.walkDirInternal(childPath, child)
+		if err != nil {
+			return nil, err
+		}
+
+		for name, child := range next {
+			nodes[name] = child
+		}
+	}
+
+	return nodes, nil
 }
 
 type virtualFile struct {
@@ -516,7 +570,7 @@ func (fs *FS) mkdirAllInternal(pth string, perm risoros.FileMode) error {
 			next.mu.RLock()
 			if !next.isDir {
 				next.mu.RUnlock()
-				return errors.New("path component is not a directory")
+				return ErrNotDirectory
 			}
 			next.mu.RUnlock()
 			current = next
@@ -531,28 +585,6 @@ func (fs *FS) mkdirAllInternal(pth string, perm risoros.FileMode) error {
 			current.children[part] = newNode
 			current.mu.Unlock()
 			current = newNode
-		}
-	}
-	return nil
-}
-
-func (fs *FS) walkDirInternal(n *node, pth string, fn risoros.WalkDirFunc) error {
-	err := fn(pth, &dirEntry{node: n}, nil)
-	if err != nil {
-		return err
-	}
-
-	if !n.isDir {
-		return nil
-	}
-
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	for _, child := range n.children {
-		childPath := path.Join(pth, child.name)
-		if err := fs.walkDirInternal(child, childPath, fn); err != nil {
-			return err
 		}
 	}
 	return nil
