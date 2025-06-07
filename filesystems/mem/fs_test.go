@@ -336,20 +336,29 @@ func TestFS_WalkDir(t *testing.T) {
 	fs, err := memfs.NewFS()
 	require.NoError(t, err)
 
-	err = fs.MkdirAll("a/b", 0755)
+	err = fs.MkdirAll("storage/data", 0755)
 	require.NoError(t, err)
 
-	_, err = fs.Create("a/file.txt")
+	err = fs.WriteFile("storage/data/chunk.txt", []byte("hello world!"), 0600)
+	require.NoError(t, err)
+
+	err = fs.WriteFile("storage/file.txt", []byte("hello world!"), 0600)
 	require.NoError(t, err)
 
 	var paths []string
-	err = fs.WalkDir("a", func(path string, d iofs.DirEntry, err error) error {
+	err = fs.WalkDir("storage", func(path string, d iofs.DirEntry, err error) error {
+		require.NoError(t, err)
+		if d.IsDir() {
+			_, err = fs.ReadDir(path)
+		} else {
+			_, err = fs.ReadFile(path)
+		}
 		require.NoError(t, err)
 		paths = append(paths, path)
 		return nil
 	})
 	require.NoError(t, err)
 
-	expected := []string{"a", "a/b", "a/file.txt"}
+	expected := []string{"/storage", "/storage/data", "/storage/data/chunk.txt", "/storage/file.txt"}
 	require.ElementsMatch(t, expected, paths)
 }
