@@ -378,9 +378,6 @@ func (fs *FS) Rename(oldpath, newpath string) error {
 
 // Stat returns file information (cache only)
 func (fs *FS) Stat(name string) (risoros.FileInfo, error) {
-	fs.mu.Lock()
-	defer fs.mu.Unlock()
-
 	if !fs.isSynced() {
 		return nil, ErrNotSynced
 	}
@@ -411,9 +408,6 @@ func (fs *FS) WriteFile(name string, data []byte, perm risoros.FileMode) error {
 
 // ReadDir reads directory contents from the cache
 func (fs *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
-	fs.mu.Lock()
-	defer fs.mu.Unlock()
-
 	if !fs.isSynced() {
 		return nil, ErrNotSynced
 	}
@@ -424,9 +418,6 @@ func (fs *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
 
 // WalkDir walks the directory tree in the cache
 func (fs *FS) WalkDir(root string, fn risoros.WalkDirFunc) error {
-	fs.mu.Lock()
-	defer fs.mu.Unlock()
-
 	if !fs.isSynced() {
 		return ErrNotSynced
 	}
