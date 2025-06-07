@@ -9,7 +9,7 @@ import (
 	"github.com/risor-io/risor/object"
 	risoros "github.com/risor-io/risor/os"
 
-	"github.com/foohq/foojank/internal/urlpath"
+	"github.com/foohq/urlpath"
 )
 
 func Abs(ctx context.Context, args ...object.Object) object.Object {

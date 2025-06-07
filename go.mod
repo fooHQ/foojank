@@ -4,6 +4,7 @@ go 1.24.1
 
 require (
 	capnproto.org/go/capnp/v3 v3.1.0-alpha.1
+	github.com/foohq/urlpath v0.0.1
 	github.com/lmittmann/tint v1.1.0
 	github.com/muesli/cancelreader v0.2.2
 	github.com/nats-io/jwt/v2 v2.7.4
