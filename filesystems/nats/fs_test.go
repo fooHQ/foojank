@@ -510,23 +510,27 @@ func TestFS_WalkDir(t *testing.T) {
 	err = fs.Wait(ctx)
 	require.NoError(t, err)
 
-	err = fs.WriteFile("/test/a.txt", []byte("a"), 0644)
+	err = fs.WriteFile("test/a.txt", []byte("a"), 0644)
 	require.NoError(t, err)
-	err = fs.WriteFile("/test/sub/b.txt", []byte("b"), 0644)
+	err = fs.WriteFile("test/sub/b.txt", []byte("b"), 0644)
 	require.NoError(t, err)
 
-	paths := make(map[string]bool)
-	err = fs.WalkDir("/test", func(path string, d iofs.DirEntry, err error) error {
+	var paths []string
+	err = fs.WalkDir("test", func(path string, d iofs.DirEntry, err error) error {
 		require.NoError(t, err)
-		paths[path] = true
+		if d.IsDir() {
+			_, err = fs.ReadDir(path)
+		} else {
+			_, err = fs.ReadFile(path)
+		}
+		require.NoError(t, err)
+		paths = append(paths, path)
 		return nil
 	})
 	require.NoError(t, err)
 
 	expected := []string{"/test", "/test/a.txt", "/test/sub", "/test/sub/b.txt"}
-	for _, p := range expected {
-		require.True(t, paths[p])
-	}
+	require.ElementsMatch(t, expected, paths)
 }
 
 func TestFS_Close(t *testing.T) {
