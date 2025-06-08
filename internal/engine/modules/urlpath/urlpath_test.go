@@ -11,7 +11,7 @@ import (
 	"github.com/risor-io/risor/object"
 	"github.com/stretchr/testify/require"
 
-	"github.com/foohq/foojank/modules/urlpath"
+	"github.com/foohq/foojank/internal/engine/modules/urlpath"
 )
 
 func TestAbs(t *testing.T) {

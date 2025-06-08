@@ -32,7 +32,7 @@ func (c *Client) BuildDir() string {
 }
 
 func (c *Client) ModulesDir() string {
-	return filepath.Join(c.baseDir, "modules")
+	return filepath.Join(c.baseDir, "internal/engine/modules")
 }
 
 func (c *Client) ScriptsDir() string {

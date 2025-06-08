@@ -15,7 +15,7 @@ package config
 import (
 	"github.com/risor-io/risor/object"
 {{- range .Modules }}
-	mod{{ . }} "github.com/foohq/foojank/modules/{{ . }}"
+	mod{{ . }} "github.com/foohq/foojank/internal/engine/modules/{{ . }}"
 {{- end }}
 )
 
