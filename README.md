@@ -2,10 +2,10 @@
   <h1>Foojank</h1>
 
   <p>
-    <strong>Foojank</strong> is a cross-platform command & control (C2) framework.
+    <strong>Foojank</strong> is a cross-platform command and control (C2) framework written in Go.
   </p>
 
   <p>
-    <a href="">Installation</a> | <a href="">Documentation</a> | <a href="">Discord</a>
+    <a href="https://foojank.com/docs/install">Installation</a> | <a href="https://foojank.com/docs">Documentation</a> | <a href="https://discord.gg/m7pDay4dSk">Discord</a>
   </p>
 </div>
