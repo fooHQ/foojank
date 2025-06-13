@@ -31,9 +31,11 @@ func copy_directory(src, dst) {
         dst_pth := urlpath.join(dst, urlpath.base(src_prefix), strings.trim_prefix(src_pth, src_prefix))
 
         if dir_entry.is_dir {
+            print("create directory", dst_pth)
             return os.mkdir_all(dst_pth, 0755)
         }
 
+        print("copy file", src_pth, "=>", dst_pth)
         return copy_file(src_pth, dst_pth)
     })
 }

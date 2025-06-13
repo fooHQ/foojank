@@ -1,132 +1,146 @@
-package file
+package os
 
 import (
-	"os"
-	"path/filepath"
+	"errors"
 
 	"github.com/foohq/urlpath"
 	risoros "github.com/risor-io/risor/os"
 )
 
+var (
+	ErrFSNotFound           = errors.New("filesystem not found")
+	ErrCrossingFSBoundaries = errors.New("crossing filesystem boundaries")
+)
+
 var _ risoros.FS = &FS{}
 
-type FS struct{}
+type FS struct {
+	registry map[string]risoros.FS
+}
 
-func NewFS() (*FS, error) {
-	return &FS{}, nil
+func NewFS() *FS {
+	return &FS{
+		registry: make(map[string]risoros.FS),
+	}
 }
 
 func (f *FS) Create(name string) (risoros.File, error) {
-	pth, err := urlpath.Path(name)
+	fs, err := f.lookupFS(name)
 	if err != nil {
 		return nil, err
 	}
-	return os.Create(pth)
+	return fs.Create(name)
 }
 
 func (f *FS) Mkdir(name string, perm risoros.FileMode) error {
-	pth, err := urlpath.Path(name)
+	fs, err := f.lookupFS(name)
 	if err != nil {
 		return err
 	}
-	return os.Mkdir(pth, perm)
+	return fs.Mkdir(name, perm)
 }
 
 func (f *FS) MkdirAll(path string, perm risoros.FileMode) error {
-	pth, err := urlpath.Path(path)
+	fs, err := f.lookupFS(path)
 	if err != nil {
 		return err
 	}
-	return os.MkdirAll(pth, perm)
+	return fs.MkdirAll(path, perm)
 }
 
 func (f *FS) Open(name string) (risoros.File, error) {
-	pth, err := urlpath.Path(name)
+	fs, err := f.lookupFS(name)
 	if err != nil {
 		return nil, err
 	}
-	return os.Open(pth)
+	return fs.Open(name)
 }
 
 func (f *FS) OpenFile(name string, flag int, perm risoros.FileMode) (risoros.File, error) {
-	pth, err := urlpath.Path(name)
+	fs, err := f.lookupFS(name)
 	if err != nil {
 		return nil, err
 	}
-	return os.OpenFile(pth, flag, perm)
+	return fs.OpenFile(name, flag, perm)
 }
 
 func (f *FS) ReadFile(name string) ([]byte, error) {
-	pth, err := urlpath.Path(name)
+	fs, err := f.lookupFS(name)
 	if err != nil {
 		return nil, err
 	}
-	return os.ReadFile(pth)
+	return fs.ReadFile(name)
 }
 
 func (f *FS) Remove(name string) error {
-	pth, err := urlpath.Path(name)
+	fs, err := f.lookupFS(name)
 	if err != nil {
 		return err
 	}
-	return os.Remove(pth)
+	return fs.Remove(name)
 }
 
 func (f *FS) RemoveAll(path string) error {
-	pth, err := urlpath.Path(path)
+	fs, err := f.lookupFS(path)
 	if err != nil {
 		return err
 	}
-	return os.RemoveAll(pth)
+	return fs.RemoveAll(path)
 }
 
 func (f *FS) Rename(oldPath, newPath string) error {
-	oldPth, err := urlpath.Path(oldPath)
+	oldFS, err := f.lookupFS(oldPath)
 	if err != nil {
 		return err
 	}
-	newPth, err := urlpath.Path(newPath)
+	newFS, err := f.lookupFS(newPath)
 	if err != nil {
 		return err
 	}
-	return os.Rename(oldPth, newPth)
+	if oldFS != newFS {
+		return ErrCrossingFSBoundaries
+	}
+	return oldFS.Rename(oldPath, newPath)
 }
 
 func (f *FS) Stat(name string) (risoros.FileInfo, error) {
-	pth, err := urlpath.Path(name)
+	fs, err := f.lookupFS(name)
 	if err != nil {
 		return nil, err
 	}
-	return os.Stat(pth)
+	return fs.Stat(name)
 }
 
 func (f *FS) Symlink(oldName, newName string) error {
-	oldPth, err := urlpath.Path(oldName)
+	oldFS, err := f.lookupFS(oldName)
 	if err != nil {
 		return err
 	}
-	newPth, err := urlpath.Path(newName)
+	newFS, err := f.lookupFS(newName)
 	if err != nil {
 		return err
 	}
-	return os.Symlink(oldPth, newPth)
+	if oldFS != newFS {
+		return ErrCrossingFSBoundaries
+	}
+	return oldFS.Symlink(oldName, newName)
 }
 
 func (f *FS) WriteFile(name string, data []byte, perm risoros.FileMode) error {
-	pth, err := urlpath.Path(name)
+	fs, err := f.lookupFS(name)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(pth, data, perm)
+	return fs.WriteFile(name, data, perm)
 }
 
 func (f *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
-	pth, err := urlpath.Path(name)
+	fs, err := f.lookupFS(name)
 	if err != nil {
 		return nil, err
 	}
 
-	results, err := os.ReadDir(pth)
+	results, err := fs.ReadDir(name)
 	if err != nil {
 		return nil, err
 	}
@@ -142,9 +156,26 @@ func (f *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
 }
 
 func (f *FS) WalkDir(root string, fn risoros.WalkDirFunc) error {
-	pth, err := urlpath.Path(root)
+	fs, err := f.lookupFS(root)
 	if err != nil {
 		return err
 	}
-	return filepath.WalkDir(pth, fn)
+	return fs.WalkDir(root, fn)
+}
+
+func (f *FS) lookupFS(pth string) (risoros.FS, error) {
+	scheme, err := urlpath.Scheme(pth)
+	if err != nil {
+		return nil, err
+	}
+
+	if scheme == "" {
+		scheme = "file"
+	}
+
+	fs, ok := f.registry[scheme]
+	if !ok {
+		return nil, ErrFSNotFound
+	}
+	return fs, nil
 }

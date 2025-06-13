@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/foohq/urlpath"
 	risoros "github.com/risor-io/risor/os"
 )
 
@@ -61,12 +62,20 @@ func (fs *FS) Create(name string) (risoros.File, error) {
 func (fs *FS) Mkdir(name string, perm risoros.FileMode) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
-	return fs.mkdirInternal(cleanPath(name), perm)
+	pth, err := cleanPath(name)
+	if err != nil {
+		return err
+	}
+	return fs.mkdirInternal(pth, perm)
 }
 
 // MkdirAll creates a directory and all necessary parents
 func (fs *FS) MkdirAll(pth string, perm risoros.FileMode) error {
-	return fs.mkdirAllInternal(cleanPath(pth), perm)
+	pth, err := cleanPath(pth)
+	if err != nil {
+		return err
+	}
+	return fs.mkdirAllInternal(pth, perm)
 }
 
 // Open opens a file for reading
@@ -79,7 +88,11 @@ func (fs *FS) OpenFile(name string, flag int, perm risoros.FileMode) (risoros.Fi
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	pth := cleanPath(name)
+	pth, err := cleanPath(name)
+	if err != nil {
+		return nil, err
+	}
+
 	parent, base, err := fs.getParent(pth)
 	if err != nil {
 		return nil, err
@@ -149,7 +162,11 @@ func (fs *FS) Remove(name string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	pth := cleanPath(name)
+	pth, err := cleanPath(name)
+	if err != nil {
+		return err
+	}
+
 	parent, base, err := fs.getParent(pth)
 	if err != nil {
 		return err
@@ -173,7 +190,11 @@ func (fs *FS) RemoveAll(pth string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	cleaned := cleanPath(pth)
+	cleaned, err := cleanPath(pth)
+	if err != nil {
+		return err
+	}
+
 	if cleaned == "/" {
 		fs.root.children = make(map[string]*node)
 		return nil
@@ -199,8 +220,15 @@ func (fs *FS) Rename(oldpath, newpath string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	oldClean := cleanPath(oldpath)
-	newClean := cleanPath(newpath)
+	oldClean, err := cleanPath(oldpath)
+	if err != nil {
+		return err
+	}
+
+	newClean, err := cleanPath(newpath)
+	if err != nil {
+		return err
+	}
 
 	oldParent, oldBase, err := fs.getParent(oldClean)
 	if err != nil {
@@ -237,7 +265,12 @@ func (fs *FS) Rename(oldpath, newpath string) error {
 
 // Stat returns file information
 func (fs *FS) Stat(name string) (risoros.FileInfo, error) {
-	n, err := fs.getNode(cleanPath(name))
+	pth, err := cleanPath(name)
+	if err != nil {
+		return nil, err
+	}
+
+	n, err := fs.getNode(pth)
 	if err != nil {
 		return nil, err
 	}
@@ -249,7 +282,11 @@ func (fs *FS) Symlink(oldname, newname string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	newClean := cleanPath(newname)
+	newClean, err := cleanPath(newname)
+	if err != nil {
+		return err
+	}
+
 	parent, base, err := fs.getParent(newClean)
 	if err != nil {
 		return err
@@ -285,7 +322,12 @@ func (fs *FS) WriteFile(name string, data []byte, perm risoros.FileMode) error {
 
 // ReadDir reads directory contents
 func (fs *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
-	n, err := fs.getNode(cleanPath(name))
+	pth, err := cleanPath(name)
+	if err != nil {
+		return nil, err
+	}
+
+	n, err := fs.getNode(pth)
 	if err != nil {
 		return nil, err
 	}
@@ -306,7 +348,11 @@ func (fs *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
 
 // WalkDir walks the directory tree
 func (fs *FS) WalkDir(root string, fn risoros.WalkDirFunc) error {
-	root = cleanPath(root)
+	root, err := cleanPath(root)
+	if err != nil {
+		return err
+	}
+
 	n, err := fs.getNode(root)
 	if err != nil {
 		return err
@@ -590,6 +636,10 @@ func (fs *FS) mkdirAllInternal(pth string, perm risoros.FileMode) error {
 	return nil
 }
 
-func cleanPath(pth string) string {
-	return path.Clean("/" + pth)
+func cleanPath(pth string) (string, error) {
+	pth, err := urlpath.Path(pth)
+	if err != nil {
+		return "", err
+	}
+	return path.Clean("/" + pth), nil
 }

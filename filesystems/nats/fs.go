@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/foohq/urlpath"
 	"github.com/nats-io/nats.go/jetstream"
 	risoros "github.com/risor-io/risor/os"
 
@@ -80,7 +81,8 @@ func (fs *FS) watchUpdates() {
 			}
 
 			fs.mu.Lock()
-			pth := cleanPath(update.Name)
+			pth := update.Name
+
 			if update.Deleted {
 				_ = fs.cache.RemoveAll(pth)
 			} else if update.Opts != nil && update.Opts.Link != nil {
@@ -91,7 +93,11 @@ func (fs *FS) watchUpdates() {
 					_ = fs.cache.MkdirAll(pth, 0755)
 				} else if isFile(update) {
 					// Create an empty file in cache to mark existence
-					_ = fs.cache.MkdirAll(path.Dir(pth), 0755)
+					dir, err := urlpath.Dir(pth)
+					if err != nil {
+						continue
+					}
+					_ = fs.cache.MkdirAll(dir, 0755)
 					_ = fs.cache.WriteFile(pth, nil, 0644)
 				}
 			}
@@ -117,7 +123,10 @@ func (fs *FS) Mkdir(name string, perm risoros.FileMode) error {
 		return ErrNotSynced
 	}
 
-	pth := cleanPath(name)
+	pth, err := cleanPath(name)
+	if err != nil {
+		return err
+	}
 
 	revert, err := fs.mkdirCache(pth, perm)
 	if err != nil {
@@ -141,7 +150,10 @@ func (fs *FS) MkdirAll(pth string, perm risoros.FileMode) error {
 		return ErrNotSynced
 	}
 
-	pth = cleanPath(pth)
+	pth, err := cleanPath(pth)
+	if err != nil {
+		return err
+	}
 
 	revert, err := fs.mkdirAllCache(pth, perm)
 	if err != nil {
@@ -174,9 +186,13 @@ func (fs *FS) mkdirAllCache(pth string, perm risoros.FileMode) (func(), error) {
 	var parentDir string
 
 	for _, dir := range strings.Split(pth, "/") {
-		dirPth := cleanPath(path.Join(parentDir, dir))
+		dirPth, err := cleanPath(path.Join(parentDir, dir))
+		if err != nil {
+			return nil, err
+		}
+
 		parentDir = dirPth
-		err := fs.cache.Mkdir(dirPth, perm)
+		err = fs.cache.Mkdir(dirPth, perm)
 		if err != nil {
 			if !errors.Is(err, memfs.ErrExist) {
 				return nil, err
@@ -222,10 +238,13 @@ func (fs *FS) OpenFile(name string, flag int, perm risoros.FileMode) (risoros.Fi
 		return nil, ErrNotSynced
 	}
 
-	pth := cleanPath(name)
+	pth, err := cleanPath(name)
+	if err != nil {
+		return nil, err
+	}
 
 	// Check cache for existence
-	_, err := fs.cache.Stat(pth)
+	_, err = fs.cache.Stat(pth)
 	if err != nil && !errors.Is(err, memfs.ErrNotExist) {
 		return nil, err
 	}
@@ -316,8 +335,12 @@ func (fs *FS) Remove(name string) error {
 		return ErrNotSynced
 	}
 
-	pth := cleanPath(name)
-	err := fs.store.Delete(fs.ctx, pth)
+	pth, err := cleanPath(name)
+	if err != nil {
+		return err
+	}
+
+	err = fs.store.Delete(fs.ctx, pth)
 	if err != nil {
 		return err
 	}
@@ -345,7 +368,11 @@ func (fs *FS) RemoveAll(pth string) error {
 		return err
 	}
 
-	pth = cleanPath(pth)
+	pth, err = cleanPath(pth)
+	if err != nil {
+		return err
+	}
+
 	for _, obj := range objects {
 		if strings.HasPrefix(obj.Name, pth) {
 			if err := fs.store.Delete(fs.ctx, obj.Name); err != nil {
@@ -366,14 +393,22 @@ func (fs *FS) Rename(oldpath, newpath string) error {
 		return ErrNotSynced
 	}
 
-	oldpath = cleanPath(oldpath)
-	newpath = cleanPath(newpath)
-	err := fs.store.UpdateMeta(fs.ctx, oldpath, jetstream.ObjectMeta{Name: newpath})
+	oldClean, err := cleanPath(oldpath)
 	if err != nil {
 		return err
 	}
 
-	return fs.cache.Rename(oldpath, newpath)
+	newClean, err := cleanPath(newpath)
+	if err != nil {
+		return err
+	}
+
+	err = fs.store.UpdateMeta(fs.ctx, oldpath, jetstream.ObjectMeta{Name: newpath})
+	if err != nil {
+		return err
+	}
+
+	return fs.cache.Rename(oldClean, newClean)
 }
 
 // Stat returns file information (cache only)
@@ -382,7 +417,12 @@ func (fs *FS) Stat(name string) (risoros.FileInfo, error) {
 		return nil, ErrNotSynced
 	}
 
-	return fs.cache.Stat(cleanPath(name))
+	pth, err := cleanPath(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return fs.cache.Stat(pth)
 }
 
 // Symlink creates a symbolic link
@@ -412,8 +452,12 @@ func (fs *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
 		return nil, ErrNotSynced
 	}
 
-	name = cleanPath(name)
-	return fs.cache.ReadDir(name)
+	pth, err := cleanPath(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return fs.cache.ReadDir(pth)
 }
 
 // WalkDir walks the directory tree in the cache
@@ -422,7 +466,12 @@ func (fs *FS) WalkDir(root string, fn risoros.WalkDirFunc) error {
 		return ErrNotSynced
 	}
 
-	return fs.cache.WalkDir(cleanPath(root), fn)
+	pth, err := cleanPath(root)
+	if err != nil {
+		return err
+	}
+
+	return fs.cache.WalkDir(pth, fn)
 }
 
 // Close shuts down the filesystem
@@ -572,8 +621,12 @@ func (f *fileInfo) Sys() any {
 }
 
 // Helper function to clean paths
-func cleanPath(pth string) string {
-	return path.Clean("/" + pth)
+func cleanPath(pth string) (string, error) {
+	pth, err := urlpath.Path(pth)
+	if err != nil {
+		return "", err
+	}
+	return path.Clean("/" + pth), nil
 }
 
 const (

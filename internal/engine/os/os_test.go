@@ -3,6 +3,7 @@ package os_test
 import (
 	"testing"
 
+	risoros "github.com/risor-io/risor/os"
 	"github.com/stretchr/testify/require"
 
 	engineos "github.com/foohq/foojank/internal/engine/os"
@@ -26,12 +27,13 @@ func TestOS_Args(t *testing.T) {
 
 func TestOS_Create(t *testing.T) {
 	testCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(testCh)
-	fsFile := testutils.NewURIHandler(testCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(testCh),
+		"test": testutils.NewFS(testCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -41,25 +43,25 @@ func TestOS_Create(t *testing.T) {
 		{
 			input: "test://private/",
 			result: testutils.CreateResult{
-				Name: "/",
+				Name: "test://private/",
 			},
 		},
 		{
 			input: "test://private/data/form.txt",
 			result: testutils.CreateResult{
-				Name: "/data/form.txt",
+				Name: "test://private/data/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../form.txt",
 			result: testutils.CreateResult{
-				Name: "/form.txt",
+				Name: "test://private/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../../form.txt",
 			result: testutils.CreateResult{
-				Name: "/form.txt",
+				Name: "test://private/form.txt",
 			},
 		},
 		{
@@ -89,7 +91,7 @@ func TestOS_Create(t *testing.T) {
 		{
 			input: "file:///data/form.txt",
 			result: testutils.CreateResult{
-				Name: "/data/form.txt",
+				Name: "file:///data/form.txt",
 			},
 		},
 		{
@@ -117,12 +119,13 @@ func TestOS_Create(t *testing.T) {
 
 func TestOS_Mkdir(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -132,28 +135,28 @@ func TestOS_Mkdir(t *testing.T) {
 		{
 			input: "test://private/",
 			result: testutils.MkdirResult{
-				Name: "/",
+				Name: "test://private/",
 				Perm: 0777,
 			},
 		},
 		{
 			input: "test://private/data/form",
 			result: testutils.MkdirResult{
-				Name: "/data/form",
+				Name: "test://private/data/form",
 				Perm: 0777,
 			},
 		},
 		{
 			input: "test://private/data/../form",
 			result: testutils.MkdirResult{
-				Name: "/form",
+				Name: "test://private/form",
 				Perm: 0777,
 			},
 		},
 		{
 			input: "test://private/data/../../form",
 			result: testutils.MkdirResult{
-				Name: "/form",
+				Name: "test://private/form",
 				Perm: 0777,
 			},
 		},
@@ -188,7 +191,7 @@ func TestOS_Mkdir(t *testing.T) {
 		{
 			input: "file:///data/form",
 			result: testutils.MkdirResult{
-				Name: "/data/form",
+				Name: "file:///data/form",
 				Perm: 0777,
 			},
 		},
@@ -219,12 +222,13 @@ func TestOS_Mkdir(t *testing.T) {
 
 func TestOS_MkdirAll(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -234,28 +238,28 @@ func TestOS_MkdirAll(t *testing.T) {
 		{
 			input: "test://private/",
 			result: testutils.MkdirAllResult{
-				Path: "/",
+				Path: "test://private/",
 				Perm: 0777,
 			},
 		},
 		{
 			input: "test://private/data/form",
 			result: testutils.MkdirAllResult{
-				Path: "/data/form",
+				Path: "test://private/data/form",
 				Perm: 0777,
 			},
 		},
 		{
 			input: "test://private/data/../form",
 			result: testutils.MkdirAllResult{
-				Path: "/form",
+				Path: "test://private/form",
 				Perm: 0777,
 			},
 		},
 		{
 			input: "test://private/data/../../form",
 			result: testutils.MkdirAllResult{
-				Path: "/form",
+				Path: "test://private/form",
 				Perm: 0777,
 			},
 		},
@@ -290,7 +294,7 @@ func TestOS_MkdirAll(t *testing.T) {
 		{
 			input: "file:///data/form",
 			result: testutils.MkdirAllResult{
-				Path: "/data/form",
+				Path: "file:///data/form",
 				Perm: 0777,
 			},
 		},
@@ -321,12 +325,13 @@ func TestOS_MkdirAll(t *testing.T) {
 
 func TestOS_Open(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -336,25 +341,25 @@ func TestOS_Open(t *testing.T) {
 		{
 			input: "test://private/",
 			result: testutils.OpenResult{
-				Name: "/",
+				Name: "test://private/",
 			},
 		},
 		{
 			input: "test://private/data/form.txt",
 			result: testutils.OpenResult{
-				Name: "/data/form.txt",
+				Name: "test://private/data/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../form.txt",
 			result: testutils.OpenResult{
-				Name: "/form.txt",
+				Name: "test://private/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../../form.txt",
 			result: testutils.OpenResult{
-				Name: "/form.txt",
+				Name: "test://private/form.txt",
 			},
 		},
 		{
@@ -384,7 +389,7 @@ func TestOS_Open(t *testing.T) {
 		{
 			input: "file:///data/form.txt",
 			result: testutils.OpenResult{
-				Name: "/data/form.txt",
+				Name: "file:///data/form.txt",
 			},
 		},
 		{
@@ -412,12 +417,13 @@ func TestOS_Open(t *testing.T) {
 
 func TestOS_OpenFile(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -427,7 +433,7 @@ func TestOS_OpenFile(t *testing.T) {
 		{
 			input: "test://private/",
 			result: testutils.OpenFileResult{
-				Name: "/",
+				Name: "test://private/",
 				Flag: 1313,
 				Perm: 0777,
 			},
@@ -435,7 +441,7 @@ func TestOS_OpenFile(t *testing.T) {
 		{
 			input: "test://private/data/form.txt",
 			result: testutils.OpenFileResult{
-				Name: "/data/form.txt",
+				Name: "test://private/data/form.txt",
 				Flag: 1313,
 				Perm: 0777,
 			},
@@ -443,7 +449,7 @@ func TestOS_OpenFile(t *testing.T) {
 		{
 			input: "test://private/data/../form.txt",
 			result: testutils.OpenFileResult{
-				Name: "/form.txt",
+				Name: "test://private/form.txt",
 				Flag: 1313,
 				Perm: 0777,
 			},
@@ -451,7 +457,7 @@ func TestOS_OpenFile(t *testing.T) {
 		{
 			input: "test://private/data/../../form.txt",
 			result: testutils.OpenFileResult{
-				Name: "/form.txt",
+				Name: "test://private/form.txt",
 				Flag: 1313,
 				Perm: 0777,
 			},
@@ -491,7 +497,7 @@ func TestOS_OpenFile(t *testing.T) {
 		{
 			input: "file:///data/form.txt",
 			result: testutils.OpenFileResult{
-				Name: "/data/form.txt",
+				Name: "file:///data/form.txt",
 				Flag: 1313,
 				Perm: 0777,
 			},
@@ -525,12 +531,13 @@ func TestOS_OpenFile(t *testing.T) {
 
 func TestOS_ReadFile(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -540,25 +547,25 @@ func TestOS_ReadFile(t *testing.T) {
 		{
 			input: "test://private/",
 			result: testutils.ReadFileResult{
-				Name: "/",
+				Name: "test://private/",
 			},
 		},
 		{
 			input: "test://private/data/form.txt",
 			result: testutils.ReadFileResult{
-				Name: "/data/form.txt",
+				Name: "test://private/data/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../form.txt",
 			result: testutils.ReadFileResult{
-				Name: "/form.txt",
+				Name: "test://private/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../../form.txt",
 			result: testutils.ReadFileResult{
-				Name: "/form.txt",
+				Name: "test://private/form.txt",
 			},
 		},
 		{
@@ -588,7 +595,7 @@ func TestOS_ReadFile(t *testing.T) {
 		{
 			input: "file:///data/form.txt",
 			result: testutils.ReadFileResult{
-				Name: "/data/form.txt",
+				Name: "file:///data/form.txt",
 			},
 		},
 		{
@@ -616,12 +623,13 @@ func TestOS_ReadFile(t *testing.T) {
 
 func TestOS_Remove(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -631,25 +639,25 @@ func TestOS_Remove(t *testing.T) {
 		{
 			input: "test://private/",
 			result: testutils.RemoveResult{
-				Name: "/",
+				Name: "test://private/",
 			},
 		},
 		{
 			input: "test://private/data/form.txt",
 			result: testutils.RemoveResult{
-				Name: "/data/form.txt",
+				Name: "test://private/data/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../form.txt",
 			result: testutils.RemoveResult{
-				Name: "/form.txt",
+				Name: "test://private/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../../form.txt",
 			result: testutils.RemoveResult{
-				Name: "/form.txt",
+				Name: "test://private/form.txt",
 			},
 		},
 		{
@@ -679,7 +687,7 @@ func TestOS_Remove(t *testing.T) {
 		{
 			input: "file:///data/form.txt",
 			result: testutils.RemoveResult{
-				Name: "/data/form.txt",
+				Name: "file:///data/form.txt",
 			},
 		},
 		{
@@ -707,12 +715,13 @@ func TestOS_Remove(t *testing.T) {
 
 func TestOS_RemoveAll(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -722,25 +731,25 @@ func TestOS_RemoveAll(t *testing.T) {
 		{
 			input: "test://private/",
 			result: testutils.RemoveAllResult{
-				Path: "/",
+				Path: "test://private/",
 			},
 		},
 		{
 			input: "test://private/data/form.txt",
 			result: testutils.RemoveAllResult{
-				Path: "/data/form.txt",
+				Path: "test://private/data/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../form.txt",
 			result: testutils.RemoveAllResult{
-				Path: "/form.txt",
+				Path: "test://private/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../../form.txt",
 			result: testutils.RemoveAllResult{
-				Path: "/form.txt",
+				Path: "test://private/form.txt",
 			},
 		},
 		{
@@ -770,7 +779,7 @@ func TestOS_RemoveAll(t *testing.T) {
 		{
 			input: "file:///data/form.txt",
 			result: testutils.RemoveAllResult{
-				Path: "/data/form.txt",
+				Path: "file:///data/form.txt",
 			},
 		},
 		{
@@ -798,12 +807,13 @@ func TestOS_RemoveAll(t *testing.T) {
 
 func TestOS_Rename(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -815,8 +825,8 @@ func TestOS_Rename(t *testing.T) {
 			src: "test://private/foo.txt",
 			dst: "test://private/bar.txt",
 			result: testutils.RenameResult{
-				OldPath: "/foo.txt",
-				NewPath: "/bar.txt",
+				OldPath: "test://private/foo.txt",
+				NewPath: "test://private/bar.txt",
 			},
 		},
 		{
@@ -863,12 +873,13 @@ func TestOS_Rename(t *testing.T) {
 }
 
 func TestOS_Rename_ErrCrossingFSBoundaries(t *testing.T) {
-	fsPrivate := testutils.NewURIHandler(nil)
-	fsFile := testutils.NewURIHandler(nil)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(nil),
+		"test": testutils.NewFS(nil),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -893,12 +904,13 @@ func TestOS_Rename_ErrCrossingFSBoundaries(t *testing.T) {
 
 func TestOS_Stat(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -908,25 +920,25 @@ func TestOS_Stat(t *testing.T) {
 		{
 			input: "test://private/",
 			result: testutils.StatResult{
-				Name: "/",
+				Name: "test://private/",
 			},
 		},
 		{
 			input: "test://private/data/form.txt",
 			result: testutils.StatResult{
-				Name: "/data/form.txt",
+				Name: "test://private/data/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../form.txt",
 			result: testutils.StatResult{
-				Name: "/form.txt",
+				Name: "test://private/form.txt",
 			},
 		},
 		{
 			input: "test://private/data/../../form.txt",
 			result: testutils.StatResult{
-				Name: "/form.txt",
+				Name: "test://private/form.txt",
 			},
 		},
 		{
@@ -956,7 +968,7 @@ func TestOS_Stat(t *testing.T) {
 		{
 			input: "file:///data/form.txt",
 			result: testutils.StatResult{
-				Name: "/data/form.txt",
+				Name: "file:///data/form.txt",
 			},
 		},
 		{
@@ -984,12 +996,13 @@ func TestOS_Stat(t *testing.T) {
 
 func TestOS_Symlink(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -1001,8 +1014,8 @@ func TestOS_Symlink(t *testing.T) {
 			src: "test://private/foo.txt",
 			dst: "test://private/bar.txt",
 			result: testutils.SymlinkResult{
-				OldName: "/foo.txt",
-				NewName: "/bar.txt",
+				OldName: "test://private/foo.txt",
+				NewName: "test://private/bar.txt",
 			},
 		},
 		{
@@ -1049,12 +1062,13 @@ func TestOS_Symlink(t *testing.T) {
 }
 
 func TestOS_Symlink_ErrCrossingFSBoundaries(t *testing.T) {
-	fsPrivate := testutils.NewURIHandler(nil)
-	fsFile := testutils.NewURIHandler(nil)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(nil),
+		"test": testutils.NewFS(nil),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -1079,12 +1093,13 @@ func TestOS_Symlink_ErrCrossingFSBoundaries(t *testing.T) {
 
 func TestOS_WriteFile(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -1094,7 +1109,7 @@ func TestOS_WriteFile(t *testing.T) {
 		{
 			input: "test://private/",
 			result: testutils.WriteFileResult{
-				Name: "/",
+				Name: "test://private/",
 				Data: []byte("test"),
 				Perm: 0777,
 			},
@@ -1102,7 +1117,7 @@ func TestOS_WriteFile(t *testing.T) {
 		{
 			input: "test://private/data/form.txt",
 			result: testutils.WriteFileResult{
-				Name: "/data/form.txt",
+				Name: "test://private/data/form.txt",
 				Data: []byte("test"),
 				Perm: 0777,
 			},
@@ -1110,7 +1125,7 @@ func TestOS_WriteFile(t *testing.T) {
 		{
 			input: "test://private/data/../form.txt",
 			result: testutils.WriteFileResult{
-				Name: "/form.txt",
+				Name: "test://private/form.txt",
 				Data: []byte("test"),
 				Perm: 0777,
 			},
@@ -1118,7 +1133,7 @@ func TestOS_WriteFile(t *testing.T) {
 		{
 			input: "test://private/data/../../form.txt",
 			result: testutils.WriteFileResult{
-				Name: "/form.txt",
+				Name: "test://private/form.txt",
 				Data: []byte("test"),
 				Perm: 0777,
 			},
@@ -1158,7 +1173,7 @@ func TestOS_WriteFile(t *testing.T) {
 		{
 			input: "file:///data/form.txt",
 			result: testutils.WriteFileResult{
-				Name: "/data/form.txt",
+				Name: "file:///data/form.txt",
 				Data: []byte("test"),
 				Perm: 0777,
 			},
@@ -1192,12 +1207,13 @@ func TestOS_WriteFile(t *testing.T) {
 
 func TestOS_ReadDir(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -1207,25 +1223,25 @@ func TestOS_ReadDir(t *testing.T) {
 		{
 			input: "test://private/",
 			result: testutils.ReadDirResult{
-				Name: "/",
+				Name: "test://private/",
 			},
 		},
 		{
 			input: "test://private/data/form",
 			result: testutils.ReadDirResult{
-				Name: "/data/form",
+				Name: "test://private/data/form",
 			},
 		},
 		{
 			input: "test://private/data/../form",
 			result: testutils.ReadDirResult{
-				Name: "/form",
+				Name: "test://private/form",
 			},
 		},
 		{
 			input: "test://private/data/../../form",
 			result: testutils.ReadDirResult{
-				Name: "/form",
+				Name: "test://private/form",
 			},
 		},
 		{
@@ -1255,7 +1271,7 @@ func TestOS_ReadDir(t *testing.T) {
 		{
 			input: "file:///data/form.txt",
 			result: testutils.ReadDirResult{
-				Name: "/data/form.txt",
+				Name: "file:///data/form.txt",
 			},
 		},
 		{
@@ -1283,12 +1299,13 @@ func TestOS_ReadDir(t *testing.T) {
 
 func TestOS_WalkDir(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -1298,28 +1315,28 @@ func TestOS_WalkDir(t *testing.T) {
 		{
 			input: "test://private/",
 			result: testutils.WalkDirResult{
-				Root: "/",
+				Root: "test://private/",
 				Fn:   nil,
 			},
 		},
 		{
 			input: "test://private/data/form",
 			result: testutils.WalkDirResult{
-				Root: "/data/form",
+				Root: "test://private/data/form",
 				Fn:   nil,
 			},
 		},
 		{
 			input: "test://private/data/../form",
 			result: testutils.WalkDirResult{
-				Root: "/form",
+				Root: "test://private/form",
 				Fn:   nil,
 			},
 		},
 		{
 			input: "test://private/data/../../form",
 			result: testutils.WalkDirResult{
-				Root: "/form",
+				Root: "test://private/form",
 				Fn:   nil,
 			},
 		},
@@ -1350,7 +1367,7 @@ func TestOS_WalkDir(t *testing.T) {
 		{
 			input: "file:///data/form.txt",
 			result: testutils.WalkDirResult{
-				Root: "/data/form.txt",
+				Root: "file:///data/form.txt",
 			},
 		},
 		{
