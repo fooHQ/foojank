@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 
+	risoros "github.com/risor-io/risor/os"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/foohq/foojank/internal/engine"
@@ -22,7 +23,7 @@ type Arguments struct {
 	StdinCh     <-chan decoder.Message
 	StdoutCh    chan<- []byte
 	Repository  *repository.Repository
-	URIHandlers map[string]engineos.URIHandler
+	Filesystems map[string]risoros.FS
 }
 
 type Service struct {
@@ -102,7 +103,7 @@ loop:
 				engineos.WithStdin(stdin),
 				engineos.WithStdout(stdout),
 				engineos.WithEnvVar("SERVICE_NAME", config.ServiceName),
-				engineos.WithURIHandlers(s.args.URIHandlers),
+				engineos.WithFilesystems(s.args.Filesystems),
 			)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				log.Debug(err.Error())
