@@ -1,11 +1,7 @@
 package testutils
 
 import (
-	"net/url"
-
 	risoros "github.com/risor-io/risor/os"
-
-	"github.com/foohq/foojank/internal/uri"
 )
 
 type FS struct {
@@ -187,24 +183,5 @@ func (fs *FS) WalkDir(root string, fn risoros.WalkDirFunc) error {
 		Root: root,
 		Fn:   fn,
 	}
-	return nil
-}
-
-type URIHandler struct {
-	fs risoros.FS
-}
-
-func NewURIHandler(resultCh chan<- any) *URIHandler {
-	return &URIHandler{
-		fs: NewFS(resultCh),
-	}
-}
-
-func (h *URIHandler) GetFS(u *url.URL) (risoros.FS, string, error) {
-	pth := uri.ToPath(u)
-	return h.fs, pth, nil
-}
-
-func (h *URIHandler) Close() error {
 	return nil
 }
