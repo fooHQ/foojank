@@ -5,9 +5,9 @@ import (
 	"strconv"
 
 	"github.com/nats-io/nats.go"
+	risoros "github.com/risor-io/risor/os"
 	"golang.org/x/sync/errgroup"
 
-	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/repository"
 	"github.com/foohq/foojank/internal/vessel/worker/connector"
 	"github.com/foohq/foojank/internal/vessel/worker/decoder"
@@ -21,7 +21,7 @@ type Arguments struct {
 	Version     string
 	Connection  *nats.Conn
 	Repository  *repository.Repository
-	URIHandlers map[string]engineos.URIHandler
+	Filesystems map[string]risoros.FS
 	EventCh     chan<- Event
 }
 
@@ -90,7 +90,7 @@ func (s *Service) Start(ctx context.Context) error {
 			StdinCh:     decoderStdinCh,
 			StdoutCh:    processorStdoutCh,
 			Repository:  s.args.Repository,
-			URIHandlers: s.args.URIHandlers,
+			Filesystems: s.args.Filesystems,
 		}).Start(groupCtx)
 	})
 	group.Go(func() error {

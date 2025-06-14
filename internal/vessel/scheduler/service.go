@@ -6,8 +6,11 @@ import (
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
+	risoros "github.com/risor-io/risor/os"
 
-	engineos "github.com/foohq/foojank/internal/engine/os"
+	filefs "github.com/foohq/foojank/filesystems/file"
+	memfs "github.com/foohq/foojank/filesystems/mem"
+	natsfs "github.com/foohq/foojank/filesystems/nats"
 	"github.com/foohq/foojank/internal/repository"
 	"github.com/foohq/foojank/internal/vessel/config"
 	"github.com/foohq/foojank/internal/vessel/decoder"
@@ -56,31 +59,29 @@ func (s *Service) Start(ctx context.Context) error {
 	}
 	defer repo.Close()
 
-	memHandler, err := engineos.NewMemURIHandler()
-	if err != nil {
-		log.Debug("cannot create mem handler", "error", err)
-		return err
-	}
-	defer memHandler.Close()
-
-	fileHandler, err := engineos.NewFileURIHandler()
+	fileFS, err := filefs.NewFS()
 	if err != nil {
 		log.Debug("cannot create file handler", "error", err)
 		return err
 	}
-	defer fileHandler.Close()
 
-	natsHandler, err := engineos.NewNatsURIHandler(ctx, store)
+	memFS, err := memfs.NewFS()
+	if err != nil {
+		log.Debug("cannot create mem handler", "error", err)
+		return err
+	}
+
+	natsFS, err := natsfs.NewFS(ctx, store)
 	if err != nil {
 		log.Debug("cannot create nats handler", "error", err)
 		return err
 	}
-	defer natsHandler.Close()
+	defer natsFS.Close()
 
-	uriHandlers := map[string]engineos.URIHandler{
-		engineos.URIMem:  memHandler,
-		engineos.URIFile: fileHandler,
-		engineos.URINats: natsHandler,
+	filesystems := map[string]risoros.FS{
+		"file": fileFS,
+		"mem":  memFS,
+		"nats": natsFS,
 	}
 
 loop:
@@ -93,7 +94,7 @@ loop:
 				workerID++
 				wCtx, cancel := context.WithCancel(ctx)
 				workers[workerID] = state{
-					w:      s.createWorker(wCtx, workerID, repo, uriHandlers, eventCh),
+					w:      s.createWorker(wCtx, workerID, repo, filesystems, eventCh),
 					cancel: cancel,
 				}
 
@@ -168,7 +169,7 @@ func (s *Service) createWorker(
 	ctx context.Context,
 	workerID uint64,
 	repo *repository.Repository,
-	uriHandlers map[string]engineos.URIHandler,
+	filesystems map[string]risoros.FS,
 	eventCh chan<- worker.Event,
 ) *worker.Service {
 	log.Debug("creating a new worker", "id", workerID)
@@ -178,7 +179,7 @@ func (s *Service) createWorker(
 		Version:     config.ServiceVersion,
 		Connection:  s.args.Connection,
 		Repository:  repo,
-		URIHandlers: uriHandlers,
+		Filesystems: filesystems,
 		EventCh:     eventCh,
 	})
 
