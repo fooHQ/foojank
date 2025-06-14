@@ -3,6 +3,7 @@ package os_test
 import (
 	"testing"
 
+	risoros "github.com/risor-io/risor/os"
 	"github.com/stretchr/testify/require"
 
 	engineos "github.com/foohq/foojank/internal/engine/os"
@@ -26,12 +27,13 @@ func TestOS_Args(t *testing.T) {
 
 func TestOS_Create(t *testing.T) {
 	testCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(testCh)
-	fsFile := testutils.NewURIHandler(testCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(testCh),
+		"test": testutils.NewFS(testCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -117,12 +119,13 @@ func TestOS_Create(t *testing.T) {
 
 func TestOS_Mkdir(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -219,12 +222,13 @@ func TestOS_Mkdir(t *testing.T) {
 
 func TestOS_MkdirAll(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -321,12 +325,13 @@ func TestOS_MkdirAll(t *testing.T) {
 
 func TestOS_Open(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -412,12 +417,13 @@ func TestOS_Open(t *testing.T) {
 
 func TestOS_OpenFile(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -525,12 +531,13 @@ func TestOS_OpenFile(t *testing.T) {
 
 func TestOS_ReadFile(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -616,12 +623,13 @@ func TestOS_ReadFile(t *testing.T) {
 
 func TestOS_Remove(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -707,12 +715,13 @@ func TestOS_Remove(t *testing.T) {
 
 func TestOS_RemoveAll(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -798,12 +807,13 @@ func TestOS_RemoveAll(t *testing.T) {
 
 func TestOS_Rename(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -863,12 +873,13 @@ func TestOS_Rename(t *testing.T) {
 }
 
 func TestOS_Rename_ErrCrossingFSBoundaries(t *testing.T) {
-	fsPrivate := testutils.NewURIHandler(nil)
-	fsFile := testutils.NewURIHandler(nil)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(nil),
+		"test": testutils.NewFS(nil),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -893,12 +904,13 @@ func TestOS_Rename_ErrCrossingFSBoundaries(t *testing.T) {
 
 func TestOS_Stat(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -984,12 +996,13 @@ func TestOS_Stat(t *testing.T) {
 
 func TestOS_Symlink(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -1049,12 +1062,13 @@ func TestOS_Symlink(t *testing.T) {
 }
 
 func TestOS_Symlink_ErrCrossingFSBoundaries(t *testing.T) {
-	fsPrivate := testutils.NewURIHandler(nil)
-	fsFile := testutils.NewURIHandler(nil)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(nil),
+		"test": testutils.NewFS(nil),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -1079,12 +1093,13 @@ func TestOS_Symlink_ErrCrossingFSBoundaries(t *testing.T) {
 
 func TestOS_WriteFile(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -1192,12 +1207,13 @@ func TestOS_WriteFile(t *testing.T) {
 
 func TestOS_ReadDir(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
@@ -1283,12 +1299,13 @@ func TestOS_ReadDir(t *testing.T) {
 
 func TestOS_WalkDir(t *testing.T) {
 	resultCh := make(chan any, 1)
-	fsPrivate := testutils.NewURIHandler(resultCh)
-	fsFile := testutils.NewURIHandler(resultCh)
+	fss := map[string]risoros.FS{
+		"file": testutils.NewFS(resultCh),
+		"test": testutils.NewFS(resultCh),
+	}
 	o := engineos.New(
 		engineos.WithWorkDir("/foojank"),
-		engineos.WithURIHandler("file", fsFile),
-		engineos.WithURIHandler("test", fsPrivate),
+		engineos.WithFilesystems(fss),
 	)
 
 	tests := []struct {
