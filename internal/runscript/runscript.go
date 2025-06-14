@@ -11,9 +11,11 @@ import (
 	"sync"
 
 	"github.com/muesli/cancelreader"
+	risoros "github.com/risor-io/risor/os"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank"
+	memfs "github.com/foohq/foojank/filesystems/mem"
 	"github.com/foohq/foojank/internal/engine"
 	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/runscript/actions"
@@ -72,12 +74,15 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 		return err
 	}
 
-	memHandler, err := engineos.NewMemURIHandler()
+	memFS, err := memfs.NewFS()
 	if err != nil {
 		err := fmt.Errorf("cannot create mem handler: %w", err)
 		return err
 	}
-	defer memHandler.Close()
+
+	filesystems := map[string]risoros.FS{
+		"file": memFS,
+	}
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -110,7 +115,7 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 		// Work directory is also adjusted to begin at "/", which is the only
 		// directory which exists in an empty MemFS.
 		engineos.WithWorkDir("/"),
-		engineos.WithURIHandler(engineos.URIFile, memHandler),
+		engineos.WithFilesystems(filesystems),
 		engineos.WithExitHandler(exitHandler),
 	)
 
