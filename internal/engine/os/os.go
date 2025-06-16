@@ -223,6 +223,15 @@ func (o *OS) Chdir(dir string) error {
 		return errors.New("chdir " + pth + ": file is not a directory")
 	}
 
+	scheme, err := urlpath.Scheme(pth)
+	if err != nil {
+		return err
+	}
+
+	if scheme == "file" {
+		pth = strings.TrimPrefix(pth, "file://")
+	}
+
 	o.wd = pth
 	return nil
 }
