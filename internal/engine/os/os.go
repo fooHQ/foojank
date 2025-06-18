@@ -314,28 +314,23 @@ func (o *OS) UserHomeDir() (string, error) {
 }
 
 func (o *OS) CurrentUser() (risoros.User, error) {
-	// TODO implement me
-	return nil, errors.New("not implemented")
+	return risoros.Current()
 }
 
 func (o *OS) LookupUser(name string) (risoros.User, error) {
-	// TODO implement me
-	return nil, errors.New("not implemented")
+	return risoros.LookupUser(name)
 }
 
 func (o *OS) LookupUid(uid string) (risoros.User, error) {
-	// TODO implement me
-	return nil, errors.New("not implemented")
+	return risoros.LookupUid(uid)
 }
 
 func (o *OS) LookupGroup(name string) (risoros.Group, error) {
-	// TODO implement me
-	return nil, errors.New("not implemented")
+	return risoros.LookupGroup(name)
 }
 
 func (o *OS) LookupGid(gid string) (risoros.Group, error) {
-	// TODO implement me
-	return nil, errors.New("not implemented")
+	return risoros.LookupGid(gid)
 }
 
 func New(opts ...Option) *OS {
