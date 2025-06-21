@@ -10,7 +10,6 @@ import (
 
 type Repository struct {
 	*natsfs.FS
-	store       jetstream.ObjectStore
 	name        string
 	description string
 	size        uint64
@@ -29,7 +28,6 @@ func New(ctx context.Context, store jetstream.ObjectStore) (*Repository, error) 
 
 	return &Repository{
 		FS:          fs,
-		store:       store,
 		name:        status.Bucket(),
 		description: status.Description(),
 		size:        status.Size(),
