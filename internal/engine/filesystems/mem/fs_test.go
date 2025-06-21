@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	memfs "github.com/foohq/foojank/filesystems/mem"
+	memfs "github.com/foohq/foojank/internal/engine/filesystems/mem"
 )
 
 func TestFS_Create(t *testing.T) {

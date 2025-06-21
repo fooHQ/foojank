@@ -14,7 +14,7 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/stretchr/testify/require"
 
-	natsfs "github.com/foohq/foojank/filesystems/nats"
+	natsfs "github.com/foohq/foojank/internal/engine/filesystems/nats"
 	"github.com/foohq/foojank/internal/testutils"
 )
 
