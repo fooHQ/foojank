@@ -2,6 +2,7 @@ package os
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/foohq/urlpath"
 	risoros "github.com/risor-io/risor/os"
@@ -33,7 +34,11 @@ func (f *FS) Create(name string) (risoros.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	return fs.Create(pth)
+	file, err := fs.Create(pth)
+	if err != nil {
+		return nil, fmt.Errorf("open %s: %w", name, err)
+	}
+	return file, nil
 }
 
 func (f *FS) Mkdir(name string, perm risoros.FileMode) error {
@@ -45,7 +50,11 @@ func (f *FS) Mkdir(name string, perm risoros.FileMode) error {
 	if err != nil {
 		return err
 	}
-	return fs.Mkdir(pth, perm)
+	err = fs.Mkdir(pth, perm)
+	if err != nil {
+		return fmt.Errorf("mkdir %s: %w", name, err)
+	}
+	return nil
 }
 
 func (f *FS) MkdirAll(path string, perm risoros.FileMode) error {
@@ -57,7 +66,11 @@ func (f *FS) MkdirAll(path string, perm risoros.FileMode) error {
 	if err != nil {
 		return err
 	}
-	return fs.MkdirAll(pth, perm)
+	err = fs.MkdirAll(pth, perm)
+	if err != nil {
+		return fmt.Errorf("mkdir %s: %w", path, err)
+	}
+	return nil
 }
 
 func (f *FS) Open(name string) (risoros.File, error) {
@@ -69,7 +82,11 @@ func (f *FS) Open(name string) (risoros.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	return fs.Open(pth)
+	file, err := fs.Open(pth)
+	if err != nil {
+		return nil, fmt.Errorf("open %s: %w", name, err)
+	}
+	return file, nil
 }
 
 func (f *FS) OpenFile(name string, flag int, perm risoros.FileMode) (risoros.File, error) {
@@ -81,7 +98,11 @@ func (f *FS) OpenFile(name string, flag int, perm risoros.FileMode) (risoros.Fil
 	if err != nil {
 		return nil, err
 	}
-	return fs.OpenFile(pth, flag, perm)
+	file, err := fs.OpenFile(pth, flag, perm)
+	if err != nil {
+		return nil, fmt.Errorf("open %s: %w", name, err)
+	}
+	return file, nil
 }
 
 func (f *FS) ReadFile(name string) ([]byte, error) {
@@ -93,7 +114,11 @@ func (f *FS) ReadFile(name string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return fs.ReadFile(pth)
+	b, err := fs.ReadFile(pth)
+	if err != nil {
+		return nil, fmt.Errorf("open %s: %v", name, err)
+	}
+	return b, nil
 }
 
 func (f *FS) Remove(name string) error {
@@ -105,7 +130,11 @@ func (f *FS) Remove(name string) error {
 	if err != nil {
 		return err
 	}
-	return fs.Remove(pth)
+	err = fs.Remove(pth)
+	if err != nil {
+		return fmt.Errorf("remove %s: %w", name, err)
+	}
+	return nil
 }
 
 func (f *FS) RemoveAll(path string) error {
@@ -117,7 +146,11 @@ func (f *FS) RemoveAll(path string) error {
 	if err != nil {
 		return err
 	}
-	return fs.RemoveAll(pth)
+	err = fs.RemoveAll(pth)
+	if err != nil {
+		return fmt.Errorf("remove %s: %w", path, err)
+	}
+	return nil
 }
 
 func (f *FS) Rename(oldPath, newPath string) error {
@@ -140,7 +173,11 @@ func (f *FS) Rename(oldPath, newPath string) error {
 	if err != nil {
 		return err
 	}
-	return oldFS.Rename(oldPth, newPth)
+	err = oldFS.Rename(oldPth, newPth)
+	if err != nil {
+		return fmt.Errorf("rename %s %s: %w", oldPath, newPath, err)
+	}
+	return nil
 }
 
 func (f *FS) Stat(name string) (risoros.FileInfo, error) {
@@ -152,7 +189,11 @@ func (f *FS) Stat(name string) (risoros.FileInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return fs.Stat(pth)
+	info, err := fs.Stat(pth)
+	if err != nil {
+		return nil, fmt.Errorf("stat %s: %w", name, err)
+	}
+	return info, nil
 }
 
 func (f *FS) Symlink(oldName, newName string) error {
@@ -175,7 +216,11 @@ func (f *FS) Symlink(oldName, newName string) error {
 	if err != nil {
 		return err
 	}
-	return oldFS.Symlink(oldPth, newPth)
+	err = oldFS.Symlink(oldPth, newPth)
+	if err != nil {
+		return fmt.Errorf("symlink %s %s: %w", oldPth, newPth, err)
+	}
+	return nil
 }
 
 func (f *FS) WriteFile(name string, data []byte, perm risoros.FileMode) error {
@@ -187,7 +232,11 @@ func (f *FS) WriteFile(name string, data []byte, perm risoros.FileMode) error {
 	if err != nil {
 		return err
 	}
-	return fs.WriteFile(pth, data, perm)
+	err = fs.WriteFile(pth, data, perm)
+	if err != nil {
+		return fmt.Errorf("open %s: %w", name, err)
+	}
+	return nil
 }
 
 func (f *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
@@ -203,7 +252,7 @@ func (f *FS) ReadDir(name string) ([]risoros.DirEntry, error) {
 
 	results, err := fs.ReadDir(pth)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("open %s: %w", name, err)
 	}
 
 	entries := make([]risoros.DirEntry, 0, len(results))
