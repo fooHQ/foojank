@@ -138,8 +138,7 @@ func startAction(logger *slog.Logger, conf *config.Config, resolver server.Accou
 		}
 
 		opts := &server.Options{
-			Host: "localhost",
-			Port: 4222,
+			DontListen: true,
 			Websocket: server.WebsocketOpts{
 				Host: *conf.Server.Host,
 				Port: int(*conf.Server.Port),
