@@ -14,7 +14,7 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	risoros "github.com/risor-io/risor/os"
 
-	memfs "github.com/foohq/foojank/filesystems/mem"
+	memfs "github.com/foohq/foojank/internal/engine/filesystems/mem"
 )
 
 var (

@@ -8,9 +8,9 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	risoros "github.com/risor-io/risor/os"
 
-	filefs "github.com/foohq/foojank/filesystems/file"
-	memfs "github.com/foohq/foojank/filesystems/mem"
-	natsfs "github.com/foohq/foojank/filesystems/nats"
+	filefs "github.com/foohq/foojank/internal/engine/filesystems/file"
+	memfs "github.com/foohq/foojank/internal/engine/filesystems/mem"
+	natsfs "github.com/foohq/foojank/internal/engine/filesystems/nats"
 	"github.com/foohq/foojank/internal/repository"
 	"github.com/foohq/foojank/internal/vessel/config"
 	"github.com/foohq/foojank/internal/vessel/decoder"

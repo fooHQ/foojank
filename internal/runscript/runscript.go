@@ -15,8 +15,8 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank"
-	memfs "github.com/foohq/foojank/filesystems/mem"
 	"github.com/foohq/foojank/internal/engine"
+	memfs "github.com/foohq/foojank/internal/engine/filesystems/mem"
 	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/runscript/actions"
 	"github.com/foohq/foojank/internal/runscript/config"
