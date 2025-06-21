@@ -1,10 +1,8 @@
 package repository
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"io"
 
 	"github.com/nats-io/nats.go/jetstream"
 
@@ -40,14 +38,20 @@ func (c *Client) Delete(ctx context.Context, repository string) error {
 	return nil
 }
 
-func (c *Client) List(ctx context.Context) ([]*Repository, error) {
-	var result []*Repository
-	for r := range c.js.ObjectStores(ctx).Status() {
-		result = append(result, &Repository{
-			Name:        r.Bucket(),
-			Description: r.Description(),
-			Size:        r.Size(),
-		})
+func (c *Client) List(ctx context.Context) ([]*repository.Repository, error) {
+	var result []*repository.Repository
+	for name := range c.js.ObjectStoreNames(ctx).Name() {
+		store, err := c.js.ObjectStore(ctx, name)
+		if err != nil {
+			return nil, &Error{err}
+		}
+
+		repo, err := repository.New(ctx, store)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, repo)
 	}
 	return result, nil
 }
@@ -64,80 +68,6 @@ func (c *Client) Get(ctx context.Context, name string) (*repository.Repository, 
 	}
 
 	return r, nil
-}
-
-func (c *Client) GetFile(ctx context.Context, repository, filename string) (*File, error) {
-	s, err := c.js.ObjectStore(ctx, repository)
-	if err != nil {
-		return nil, &Error{err}
-	}
-
-	res, err := s.Get(ctx, filename)
-	if err != nil {
-		return nil, &Error{err}
-	}
-	defer res.Close()
-
-	b, err := io.ReadAll(res)
-	if err != nil {
-		return nil, err
-	}
-
-	info, err := res.Info()
-	if err != nil {
-		return nil, err
-	}
-
-	return &File{
-		b:        bytes.NewReader(b),
-		Name:     info.Name,
-		Size:     info.Size,
-		Modified: info.ModTime,
-	}, nil
-}
-
-func (c *Client) DeleteFile(ctx context.Context, repository, filename string) error {
-	s, err := c.js.ObjectStore(ctx, repository)
-	if err != nil {
-		return &Error{err}
-	}
-
-	err = s.Delete(ctx, filename)
-	if err != nil {
-		return &Error{err}
-	}
-
-	return nil
-}
-
-func (c *Client) ListFiles(ctx context.Context, repository string) ([]*File, error) {
-	s, err := c.js.ObjectStore(ctx, repository)
-	if err != nil {
-		return nil, &Error{err}
-	}
-
-	files, err := s.List(ctx)
-	if err != nil {
-		if errors.Is(err, jetstream.ErrNoObjectsFound) {
-			return nil, nil
-		}
-		return nil, &Error{err}
-	}
-
-	var result []*File
-	for i := range files {
-		if files[i].Deleted {
-			continue
-		}
-
-		result = append(result, &File{
-			Name:     files[i].Name,
-			Size:     files[i].Size,
-			Modified: files[i].ModTime,
-		})
-	}
-
-	return result, nil
 }
 
 type Error struct {
