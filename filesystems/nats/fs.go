@@ -126,7 +126,7 @@ func (fs *FS) Mkdir(name string, perm risoros.FileMode) error {
 
 	if _, err := fs.store.Put(fs.ctx, newObjectMetadata(pth, typeDir), strings.NewReader("")); err != nil {
 		revert()
-		return err
+		return &Error{err}
 	}
 
 	return nil
@@ -150,7 +150,7 @@ func (fs *FS) MkdirAll(pth string, perm risoros.FileMode) error {
 
 	if _, err := fs.store.Put(fs.ctx, newObjectMetadata(pth, typeDir), strings.NewReader("")); err != nil {
 		revert()
-		return err
+		return &Error{err}
 	}
 
 	return nil
@@ -251,7 +251,7 @@ func (fs *FS) OpenFile(name string, flag int, perm risoros.FileMode) (risoros.Fi
 		if _, err := fs.store.Put(fs.ctx, newObjectMetadata(pth, typeFile), strings.NewReader("")); err != nil {
 			revertFile()
 			revertDirs()
-			return nil, err
+			return nil, &Error{err}
 		}
 	}
 
@@ -271,7 +271,7 @@ func (fs *FS) OpenFile(name string, flag int, perm risoros.FileMode) (risoros.Fi
 		o, err = fs.store.Get(fs.ctx, pth)
 		if err != nil {
 			if !errors.Is(err, jetstream.ErrObjectNotFound) || !info.IsDir() {
-				return nil, err
+				return nil, &Error{err}
 			}
 		}
 	}
@@ -319,12 +319,11 @@ func (fs *FS) Remove(name string) error {
 	pth := cleanPath(name)
 	err := fs.store.Delete(fs.ctx, pth)
 	if err != nil {
-		return err
+		return &Error{err}
 	}
 
 	err = fs.cache.Remove(pth)
 	if err != nil {
-		println("not in cache")
 		return err
 	}
 
@@ -342,14 +341,14 @@ func (fs *FS) RemoveAll(pth string) error {
 
 	objects, err := fs.store.List(fs.ctx)
 	if err != nil && !errors.Is(err, jetstream.ErrNoObjectsFound) {
-		return err
+		return &Error{err}
 	}
 
 	pth = cleanPath(pth)
 	for _, obj := range objects {
 		if strings.HasPrefix(obj.Name, pth) {
 			if err := fs.store.Delete(fs.ctx, obj.Name); err != nil {
-				return err
+				return &Error{err}
 			}
 		}
 	}
@@ -370,7 +369,7 @@ func (fs *FS) Rename(oldpath, newpath string) error {
 	newpath = cleanPath(newpath)
 	err := fs.store.UpdateMeta(fs.ctx, oldpath, jetstream.ObjectMeta{Name: newpath})
 	if err != nil {
-		return err
+		return &Error{err}
 	}
 
 	return fs.cache.Rename(oldpath, newpath)
@@ -510,7 +509,7 @@ func (f *natsFile) ReadFrom(r io.Reader) (int64, error) {
 
 	info, err := f.fs.store.Put(f.fs.ctx, newObjectMetadata(f.path, typeFile), r)
 	if err != nil {
-		return 0, err
+		return 0, &Error{err}
 	}
 
 	return int64(info.Size), nil
@@ -531,7 +530,7 @@ func (f *natsFile) Close() error {
 	if len(f.content) > 0 {
 		_, err := f.fs.store.Put(f.fs.ctx, newObjectMetadata(f.path, typeFile), bytes.NewReader(f.content))
 		if err != nil {
-			return err
+			return &Error{err}
 		}
 	}
 
@@ -602,4 +601,22 @@ func isFile(info *jetstream.ObjectInfo) bool {
 func isDir(info *jetstream.ObjectInfo) bool {
 	v, ok := info.Metadata[metadataKeyType]
 	return ok && v == typeDir
+}
+
+type Error struct {
+	err error
+}
+
+func (e *Error) Error() string {
+	switch {
+	case errors.Is(e.err, jetstream.ErrBucketExists):
+		return "repository already exists"
+	case errors.Is(e.err, jetstream.ErrBucketNotFound):
+		return "repository not found"
+	case errors.Is(e.err, jetstream.ErrObjectNotFound):
+		return "file not found"
+	case errors.Is(e.err, jetstream.ErrInvalidStoreName):
+		return "invalid repository name"
+	}
+	return e.err.Error()
 }
