@@ -110,7 +110,14 @@ func removeAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc
 				continue
 			}
 
-			err = client.DeleteFile(ctx, filePath.Repository, filePath.FilePath)
+			repo, err := client.Get(ctx, filePath.Repository)
+			if err != nil {
+				err := fmt.Errorf("cannot open repository '%s': %w", filePath.Repository, err)
+				logger.ErrorContext(ctx, err.Error())
+				return err
+			}
+
+			err = repo.Remove(filePath.FilePath)
 			if err != nil {
 				err := fmt.Errorf("cannot delete file '%s' from a repository '%s': %w", filePath.FilePath, filePath.Repository, err)
 				logger.ErrorContext(ctx, err.Error())
