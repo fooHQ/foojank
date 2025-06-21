@@ -452,6 +452,11 @@ func (fs *FS) isSynced() bool {
 	}
 }
 
+var (
+	_ io.ReaderFrom = &natsFile{}
+	_ io.WriterTo   = &natsFile{}
+)
+
 // natsFile wraps a memfs.FS file to sync writes back to NATS
 type natsFile struct {
 	risoros.File
@@ -513,6 +518,38 @@ func (f *natsFile) ReadFrom(r io.Reader) (int64, error) {
 	}
 
 	return int64(info.Size), nil
+}
+
+func (f *natsFile) WriteTo(w io.Writer) (n int64, err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.obj == nil {
+		return 0, ErrInvalid
+	}
+
+	var total int
+	b := make([]byte, 2048)
+	for {
+		n, err := f.obj.Read(b)
+		if err != nil && !errors.Is(err, io.EOF) {
+			return 0, err
+		}
+
+		// Is EOF?
+		if n == 0 {
+			break
+		}
+
+		total += n
+
+		_, err = w.Write(b[:n])
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	return int64(total), nil
 }
 
 // Close syncs any final changes to NATS (if needed)
