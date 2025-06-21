@@ -66,22 +66,6 @@ func (c *Client) Get(ctx context.Context, name string) (*repository.Repository, 
 	return r, nil
 }
 
-func (c *Client) PutFile(ctx context.Context, repository, filename string, reader io.Reader) error {
-	s, err := c.js.ObjectStore(ctx, repository)
-	if err != nil {
-		return &Error{err}
-	}
-
-	_, err = s.Put(ctx, jetstream.ObjectMeta{
-		Name: filename,
-	}, reader)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (c *Client) GetFile(ctx context.Context, repository, filename string) (*File, error) {
 	s, err := c.js.ObjectStore(ctx, repository)
 	if err != nil {
