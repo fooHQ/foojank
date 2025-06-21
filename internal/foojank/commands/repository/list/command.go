@@ -196,28 +196,28 @@ func listAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 
 func formatBytes(size uint64) string {
 	const (
-		_  = iota
-		KB = 1 << (10 * iota) // 1 << 10 = 1024
-		MB
-		GB
-		TB
+		_      = iota
+		unitKB = 1 << (10 * iota) // 1 << 10 = 1024
+		unitMB
+		unitGB
+		unitTB
 	)
 
 	var unit string
 	var value float64
 
 	switch {
-	case size >= TB:
-		value = float64(size) / TB
+	case size >= unitTB:
+		value = float64(size) / unitTB
 		unit = "TB"
-	case size >= GB:
-		value = float64(size) / GB
+	case size >= unitGB:
+		value = float64(size) / unitGB
 		unit = "GB"
-	case size >= MB:
-		value = float64(size) / MB
+	case size >= unitMB:
+		value = float64(size) / unitMB
 		unit = "MB"
-	case size >= KB:
-		value = float64(size) / KB
+	case size >= unitKB:
+		value = float64(size) / unitKB
 		unit = "kB"
 	default:
 		value = float64(size)

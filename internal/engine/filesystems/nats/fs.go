@@ -385,7 +385,7 @@ func (fs *FS) Stat(name string) (risoros.FileInfo, error) {
 }
 
 // Symlink creates a symbolic link
-func (fs *FS) Symlink(oldname, newname string) error {
+func (fs *FS) Symlink(_, _ string) error {
 	return ErrSymlinksNotSupported
 }
 

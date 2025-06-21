@@ -73,7 +73,13 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	logger := log.New(*conf.LogLevel, *conf.NoColor)
 
-	nc, err := server.New(logger, conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey, *conf.Client.TLSCACertificate)
+	nc, err := server.New(
+		logger,
+		conf.Client.Server,
+		*conf.Client.UserJWT,
+		*conf.Client.UserKey,
+		*conf.Client.TLSCACertificate,
+	)
 	if err != nil {
 		err := fmt.Errorf("cannot connect to the server: %w", err)
 		logger.ErrorContext(ctx, err.Error())

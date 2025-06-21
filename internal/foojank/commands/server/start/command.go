@@ -92,7 +92,7 @@ func action(ctx context.Context, c *cli.Command) error {
 }
 
 func startAction(logger *slog.Logger, conf *config.Config, resolver server.AccountResolver) cli.ActionFunc {
-	return func(ctx context.Context, c *cli.Command) error {
+	return func(ctx context.Context, _ *cli.Command) error {
 		preloadOperators, err := decodeOperatorClaims(*conf.Server.OperatorJWT)
 		if err != nil {
 			err := fmt.Errorf("invalid configuration: %w", err)
