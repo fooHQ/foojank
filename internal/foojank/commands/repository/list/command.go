@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/urfave/cli/v3"
@@ -114,7 +115,14 @@ func listAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 
 		if c.Args().Len() > 0 {
 			for _, r := range c.Args().Slice() {
-				files, err := client.ListFiles(ctx, r)
+				repo, err := client.Get(ctx, r)
+				if err != nil {
+					err := fmt.Errorf("cannot list contents of repository '%s': %w", r, err)
+					logger.ErrorContext(ctx, err.Error())
+					return err
+				}
+
+				files, err := repo.ReadDir("/")
 				if err != nil {
 					err := fmt.Errorf("cannot list contents of repository '%s': %w", r, err)
 					logger.ErrorContext(ctx, err.Error())
@@ -127,9 +135,16 @@ func listAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 					"modified",
 				})
 				for _, file := range files {
-					name := file.Name
-					size := formatBytes(file.Size)
-					modified := file.Modified.String()
+					name := file.Name()
+					info, err := file.Info()
+					if err != nil {
+						err := fmt.Errorf("cannot get information about file '%s': %w", name, err)
+						logger.ErrorContext(ctx, err.Error())
+						return err
+					}
+
+					size := formatBytes(uint64(info.Size()))
+					modified := formatTime(info.ModTime())
 					table.AddRow([]string{
 						name,
 						size,
@@ -158,9 +173,9 @@ func listAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 			"description",
 		})
 		for _, repo := range repos {
-			name := repo.Name
-			size := formatBytes(repo.Size)
-			description := repo.Description
+			name := repo.Name()
+			size := formatBytes(repo.Size())
+			description := repo.Description()
 			table.AddRow([]string{
 				name,
 				size,
@@ -210,6 +225,10 @@ func formatBytes(size uint64) string {
 	}
 
 	return fmt.Sprintf("%.2f %s", value, unit)
+}
+
+func formatTime(t time.Time) string {
+	return t.Format("2006-01-02 15:04:05")
 }
 
 func validateConfiguration(conf *config.Config) error {
