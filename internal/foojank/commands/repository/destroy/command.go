@@ -103,7 +103,14 @@ func destroyAction(logger *slog.Logger, client *repository.Client) cli.ActionFun
 		name := c.Args().Get(0)
 		force := c.Bool(FlagForce)
 
-		files, err := client.ListFiles(ctx, name)
+		repo, err := client.Get(ctx, name)
+		if err != nil {
+			err := fmt.Errorf("cannot destroy repository '%s': %w", name, err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		files, err := repo.ReadDir("/")
 		if err != nil {
 			err := fmt.Errorf("cannot destroy repository '%s': %w", name, err)
 			logger.ErrorContext(ctx, err.Error())
