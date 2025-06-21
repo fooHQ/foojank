@@ -236,7 +236,7 @@ func (o *OS) Chdir(dir string) error {
 	return nil
 }
 
-func (o *OS) Getwd() (dir string, err error) {
+func (o *OS) Getwd() (string, error) {
 	return o.wd, nil
 }
 
