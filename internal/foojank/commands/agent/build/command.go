@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/foohq/urlpath"
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nats-io/nuid"
@@ -179,6 +180,19 @@ func buildAction(logger *slog.Logger, conf *config.Config, codebaseCli *codebase
 			err := errors.New("cannot build an agent: no server configured")
 			logger.ErrorContext(ctx, err.Error())
 			return err
+		}
+
+		for i := range servers {
+			scheme, err := urlpath.Scheme(servers[i])
+			if err != nil {
+				err := fmt.Errorf("cannot build an agent: %w", err)
+				logger.ErrorContext(ctx, err.Error())
+				return err
+			}
+
+			if scheme == "" {
+				servers[i] = fmt.Sprintf("wss://%s", servers[i])
+			}
 		}
 
 		modules, err := codebaseCli.ListModules()
