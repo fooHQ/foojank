@@ -1,3 +1,5 @@
+//go:build !module_time_stub
+
 package time
 
 import (

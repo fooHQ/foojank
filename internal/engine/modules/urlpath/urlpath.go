@@ -1,3 +1,5 @@
+//go:build !module_urlpath_stub
+
 package urlpath
 
 import (

@@ -1,3 +1,5 @@
+//go:build !module_strings_stub
+
 package strings
 
 import (

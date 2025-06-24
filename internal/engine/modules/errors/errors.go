@@ -1,3 +1,5 @@
+//go:build !module_errors_stub
+
 package errors
 
 import (

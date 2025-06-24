@@ -1,3 +1,5 @@
+//go:build !module_os_stub
+
 package os
 
 import (

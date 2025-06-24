@@ -1,14 +1,13 @@
-//go:build !module_base64_stub
+//go:build module_strings_stub
 
-package base64
+package strings
 
 import (
-	modbase64 "github.com/risor-io/risor/modules/base64"
 	"github.com/risor-io/risor/object"
 )
 
 func Module() *object.Module {
-	return modbase64.Module()
+	return nil
 }
 
 func Builtins() map[string]object.Object {

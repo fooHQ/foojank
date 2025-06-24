@@ -1,3 +1,5 @@
+//go:build !module_exec_stub
+
 package exec
 
 import (

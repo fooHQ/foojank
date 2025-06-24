@@ -1,3 +1,5 @@
+//go:build !module_math_stub
+
 package math
 
 import (

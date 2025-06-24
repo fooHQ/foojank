@@ -1,3 +1,5 @@
+//go:build !module_fmt_stub
+
 package fmt
 
 import (

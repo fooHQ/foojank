@@ -1,3 +1,5 @@
+//go:build !module_regexp_stub
+
 package regexp
 
 import (

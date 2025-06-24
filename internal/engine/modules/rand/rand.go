@@ -1,3 +1,5 @@
+//go:build !module_rand_stub
+
 package rand
 
 import (

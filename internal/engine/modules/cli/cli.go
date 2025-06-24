@@ -1,3 +1,5 @@
+//go:build !module_cli_stub
+
 package cli
 
 import (

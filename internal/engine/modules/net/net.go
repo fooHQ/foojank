@@ -1,3 +1,5 @@
+//go:build !module_net_stub
+
 package net
 
 import (
