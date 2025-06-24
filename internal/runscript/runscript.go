@@ -17,9 +17,9 @@ import (
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/internal/engine"
 	memfs "github.com/foohq/foojank/internal/engine/filesystems/mem"
+	"github.com/foohq/foojank/internal/engine/modules"
 	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/runscript/actions"
-	"github.com/foohq/foojank/internal/runscript/config"
 )
 
 func New() *cli.Command {
@@ -133,8 +133,7 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 			ctx,
 			zr,
 			engine.WithOS(o),
-			engine.WithGlobals(config.Modules()),
-			engine.WithGlobals(config.Builtins()),
+			engine.WithGlobals(modules.Globals()),
 		)
 		_ = r.Cancel()
 		errCh <- err
