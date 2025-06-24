@@ -172,6 +172,14 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 				logger.ErrorContext(ctx, err.Error())
 				return err
 			}
+			defer repo.Close()
+
+			err = repo.Wait(ctx)
+			if err != nil {
+				err := fmt.Errorf("cannot synchronize repository '%s': %w", dstPath.Repository, err)
+				logger.ErrorContext(ctx, err.Error())
+				return err
+			}
 
 			dstFile, err := repo.Create(filename)
 			if err != nil {
