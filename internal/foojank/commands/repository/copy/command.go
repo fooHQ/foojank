@@ -145,6 +145,13 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 			return err
 		}
 
+		var destPath string
+		if dstPath.IsDir() {
+			destPath = filepath.Join("/", dstPath.FilePath, srcPath.Base())
+		} else {
+			destPath = filepath.Join("/", dstPath.FilePath)
+		}
+
 		// Copy local file to a remote repository
 		if srcPath.IsLocal() {
 			srcFile, err := os.Open(srcPath.FilePath)
@@ -157,22 +164,15 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 				_ = srcFile.Close()
 			}()
 
-			var filename string
-			if dstPath.IsDir() {
-				filename = filepath.Join("/", dstPath.FilePath, srcPath.Base())
-			} else {
-				filename = filepath.Join("/", dstPath.FilePath)
-			}
-
-			logger.Debug("put local file to a repository", "src", srcPath, "repository", dstPath.Repository, "dst", filename)
-
 			repo, err := client.Get(ctx, dstPath.Repository)
 			if err != nil {
 				err := fmt.Errorf("cannot open repository '%s': %w", dstPath.Repository, err)
 				logger.ErrorContext(ctx, err.Error())
 				return err
 			}
-			defer repo.Close()
+			defer func() {
+				_ = repo.Close()
+			}()
 
 			err = repo.Wait(ctx)
 			if err != nil {
@@ -181,9 +181,9 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 				return err
 			}
 
-			dstFile, err := repo.Create(filename)
+			dstFile, err := repo.Create(destPath)
 			if err != nil {
-				err := fmt.Errorf("cannot open file '%s' in repository '%s': %w", filename, dstPath.Repository, err)
+				err := fmt.Errorf("cannot create file '%s' in repository '%s': %w", destPath, dstPath.Repository, err)
 				logger.ErrorContext(ctx, err.Error())
 				return err
 			}
@@ -201,10 +201,50 @@ func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 			return nil
 		}
 
-		// TODO
 		// Copy file from a remote repository to a local directory
-		//if !srcPath.IsLocal() {
-		//}
+		if !srcPath.IsLocal() {
+			repo, err := client.Get(ctx, srcPath.Repository)
+			if err != nil {
+				err := fmt.Errorf("cannot open repository '%s': %w", srcPath.Repository, err)
+				logger.ErrorContext(ctx, err.Error())
+				return err
+			}
+			defer repo.Close()
+
+			err = repo.Wait(ctx)
+			if err != nil {
+				err := fmt.Errorf("cannot synchronize repository '%s': %w", srcPath.Repository, err)
+				logger.ErrorContext(ctx, err.Error())
+				return err
+			}
+
+			srcFile, err := repo.Open(srcPath.FilePath)
+			if err != nil {
+				err := fmt.Errorf("cannot open file '%s' in repository '%s': %w", srcPath.FilePath, srcPath.Repository, err)
+				logger.ErrorContext(ctx, err.Error())
+				return err
+			}
+			defer func() {
+				_ = srcFile.Close()
+			}()
+
+			dstFile, err := os.Create(destPath)
+			if err != nil {
+				err := fmt.Errorf("cannot create local file '%s': %w", destPath, err)
+				logger.ErrorContext(ctx, err.Error())
+				return err
+			}
+			defer func() {
+				_ = dstFile.Close()
+			}()
+
+			_, err = io.Copy(dstFile, srcFile)
+			if err != nil {
+				err := fmt.Errorf("cannot copy file '%s' in repository '%s': %w", srcPath.FilePath, srcPath.Repository, err)
+				logger.ErrorContext(ctx, err.Error())
+				return err
+			}
+		}
 
 		return nil
 	}
