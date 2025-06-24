@@ -13,6 +13,7 @@ import (
 
 	"github.com/foohq/foojank/clients/codebase"
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/engine/modules"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
@@ -79,7 +80,7 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 			}
 		}
 
-		disabledModules := c.StringSlice(FlagWithoutModule)
+		disabledMods := c.StringSlice(FlagWithoutModule)
 
 		pkgPath, err := client.BuildScript(scriptName)
 		if err != nil {
@@ -89,18 +90,7 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 		}
 		defer os.Remove(pkgPath)
 
-		modules, err := client.ListModules()
-		if err != nil {
-			err := fmt.Errorf("cannot get a list of modules: %w", err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		modules = configureModules(modules, disabledModules)
-
-		runscriptConf := templateData{
-			Modules: modules,
-		}
+		runscriptConf := templateData{}
 		confOutput, err := RenderTemplate(templateString, runscriptConf)
 		if err != nil {
 			err := fmt.Errorf("cannot generate runscript configuration: %w", err)
@@ -115,7 +105,15 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 			return err
 		}
 
-		binPath, result, err := client.BuildRunscript(ctx)
+		mods, err := client.ListModules()
+		if err != nil {
+			err := fmt.Errorf("cannot get a list of modules: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		buildTags := configureBuildTags(mods, disabledMods)
+		binPath, result, err := client.BuildRunscript(ctx, buildTags)
 		if err != nil {
 			err := fmt.Errorf("cannot build runscript: %w\n%s", err, result)
 			logger.ErrorContext(ctx, err.Error())
@@ -161,18 +159,19 @@ func execRunscript(ctx context.Context, binPath, pkgPath string, args []string) 
 	return cmd.Run()
 }
 
-func configureModules(enabled, disabled []string) []string {
-	var result []string
-	for _, e := range enabled {
-		found := false
-		for _, d := range disabled {
-			if e == d {
-				found = true
-			}
-		}
-		if !found {
-			result = append(result, e)
+func configureBuildTags(enabledMods, disabledMods []string) []string {
+	disabled := make(map[string]struct{}, len(disabledMods))
+	for _, disabledMod := range disabledMods {
+		disabled[disabledMod] = struct{}{}
+	}
+
+	result := make([]string, 0, len(disabled))
+	for _, e := range enabledMods {
+		_, isDisabled := disabled[e]
+		if isDisabled {
+			result = append(result, modules.StubBuildTag(e))
 		}
 	}
+
 	return result
 }
