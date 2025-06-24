@@ -22,6 +22,7 @@ import (
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/engine/modules"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
@@ -149,7 +150,7 @@ func buildAction(logger *slog.Logger, conf *config.Config, codebaseCli *codebase
 		targetArch := c.String(FlagArch)
 		devBuild := c.Bool(FlagDev)
 		agentServer := c.StringSlice(FlagWithServer)
-		disabledModules := c.StringSlice(FlagWithoutModule)
+		disabledMods := c.StringSlice(FlagWithoutModule)
 
 		agentName := nuid.Next()
 		if outputName == "" {
@@ -195,15 +196,6 @@ func buildAction(logger *slog.Logger, conf *config.Config, codebaseCli *codebase
 			}
 		}
 
-		modules, err := codebaseCli.ListModules()
-		if err != nil {
-			err := fmt.Errorf("cannot build an agent: cannot get a list of modules: %w", err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		modules = configureModules(modules, disabledModules)
-
 		accountClaims, err := jwt.DecodeAccountClaims(*conf.Client.AccountJWT)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: cannot decode account JWT: %w", err)
@@ -230,7 +222,6 @@ func buildAction(logger *slog.Logger, conf *config.Config, codebaseCli *codebase
 				Name:    agentName,
 				Version: foojank.Version(),
 			},
-			Modules: configureModules(modules, disabledModules),
 		}
 		confOutput, err := RenderTemplate(templateString, agentConf)
 		if err != nil {
@@ -246,7 +237,15 @@ func buildAction(logger *slog.Logger, conf *config.Config, codebaseCli *codebase
 			return err
 		}
 
-		binPath, output, err := codebaseCli.BuildAgent(ctx, targetOs, targetArch, !devBuild)
+		mods, err := codebaseCli.ListModules()
+		if err != nil {
+			err := fmt.Errorf("cannot build an agent: cannot get a list of modules: %w", err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
+
+		buildTags := configureBuildTags(mods, disabledMods)
+		binPath, output, err := codebaseCli.BuildAgent(ctx, targetOs, targetArch, !devBuild, buildTags)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: %w\n%s", err, output)
 			logger.ErrorContext(ctx, err.Error())
@@ -320,18 +319,19 @@ func validateConfiguration(conf *config.Config) error {
 	return nil
 }
 
-func configureModules(enabled, disabled []string) []string {
-	var result []string
-	for _, e := range enabled {
-		found := false
-		for _, d := range disabled {
-			if e == d {
-				found = true
-			}
-		}
-		if !found {
-			result = append(result, e)
+func configureBuildTags(enabledMods, disabledMods []string) []string {
+	disabled := make(map[string]struct{}, len(disabledMods))
+	for _, disabledMod := range disabledMods {
+		disabled[disabledMod] = struct{}{}
+	}
+
+	result := make([]string, 0, len(disabled))
+	for _, e := range enabledMods {
+		_, isDisabled := disabled[e]
+		if isDisabled {
+			result = append(result, modules.StubBuildTag(e))
 		}
 	}
+
 	return result
 }
