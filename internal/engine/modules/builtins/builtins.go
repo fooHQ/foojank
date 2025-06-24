@@ -1,3 +1,5 @@
+//go:build !module_builtins_stub
+
 package builtins
 
 import (

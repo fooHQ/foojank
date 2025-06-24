@@ -1,3 +1,5 @@
+//go:build !module_http_stub
+
 package http
 
 import (

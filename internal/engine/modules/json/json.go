@@ -1,3 +1,5 @@
+//go:build !module_json_stub
+
 package json
 
 import (

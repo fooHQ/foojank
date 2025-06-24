@@ -1,3 +1,5 @@
+//go:build !module_filepath_stub
+
 package filepath
 
 import (

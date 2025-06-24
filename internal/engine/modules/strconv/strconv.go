@@ -1,3 +1,5 @@
+//go:build !module_strconv_stub
+
 package strconv
 
 import (

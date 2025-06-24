@@ -1,3 +1,5 @@
+//go:build !module_shlex_stub
+
 package shlex
 
 import (

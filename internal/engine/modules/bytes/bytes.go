@@ -1,3 +1,5 @@
+//go:build !module_bytes_stub
+
 package bytes
 
 import (
