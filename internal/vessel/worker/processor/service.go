@@ -10,6 +10,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/foohq/foojank/internal/engine"
+	"github.com/foohq/foojank/internal/engine/modules"
 	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/repository"
 	"github.com/foohq/foojank/internal/vessel/config"
@@ -153,8 +154,7 @@ func engineCompileAndRunPackage(ctx context.Context, b []byte, opts ...engineos.
 		ctx,
 		zr,
 		engine.WithOS(engineos.New(opts...)),
-		engine.WithGlobals(config.Modules()),
-		engine.WithGlobals(config.Builtins()),
+		engine.WithGlobals(modules.Globals()),
 	)
 	if err != nil {
 		return err
