@@ -9,3 +9,8 @@
     <a href="https://foojank.com/docs/install">Installation</a> | <a href="https://foojank.com/docs">Documentation</a> | <a href="https://discord.gg/m7pDay4dSk">Discord</a>
   </p>
 </div>
+
+> [!IMPORTANT]
+> This is alpha software. Expect things to break. APIs are not stable before version 1.0.0.
+> The main branch *should* always compile. However, prefer tagged releases for all user experiments.
+> Feedback is welcome!
