@@ -109,6 +109,14 @@ func destroyAction(logger *slog.Logger, client *repository.Client) cli.ActionFun
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
+		defer repo.Close()
+
+		err = repo.Wait(ctx)
+		if err != nil {
+			err := fmt.Errorf("cannot synchronize repository '%s': %w", name, err)
+			logger.ErrorContext(ctx, err.Error())
+			return err
+		}
 
 		files, err := repo.ReadDir("/")
 		if err != nil {

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/nats-io/nats.go/jetstream"
+	risoros "github.com/risor-io/risor/os"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/clients/repository"
@@ -115,14 +116,7 @@ func listAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 
 		if c.Args().Len() > 0 {
 			for _, r := range c.Args().Slice() {
-				repo, err := client.Get(ctx, r)
-				if err != nil {
-					err := fmt.Errorf("cannot list contents of repository '%s': %w", r, err)
-					logger.ErrorContext(ctx, err.Error())
-					return err
-				}
-
-				files, err := repo.ReadDir("/")
+				files, err := listDirectory(ctx, client, r, "/")
 				if err != nil {
 					err := fmt.Errorf("cannot list contents of repository '%s': %w", r, err)
 					logger.ErrorContext(ctx, err.Error())
@@ -192,6 +186,26 @@ func listAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
 
 		return nil
 	}
+}
+
+func listDirectory(ctx context.Context, client *repository.Client, name, dir string) ([]risoros.DirEntry, error) {
+	repo, err := client.Get(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	defer repo.Close()
+
+	err = repo.Wait(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	files, err := repo.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	return files, nil
 }
 
 func formatBytes(size uint64) string {
