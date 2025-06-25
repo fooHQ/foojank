@@ -112,6 +112,14 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 			return err
 		}
 
+		for _, mod := range disabledMods {
+			if !moduleExists(mods, mod) {
+				err := fmt.Errorf("module '%s' does not exist", mod)
+				logger.ErrorContext(ctx, err.Error())
+				return err
+			}
+		}
+
 		buildTags := configureBuildTags(mods, disabledMods)
 		binPath, result, err := client.BuildRunscript(ctx, buildTags)
 		if err != nil {
@@ -157,6 +165,15 @@ func execRunscript(ctx context.Context, binPath, pkgPath string, args []string) 
 		return cmd.Process.Signal(os.Interrupt)
 	}
 	return cmd.Run()
+}
+
+func moduleExists(mods []string, name string) bool {
+	for _, m := range mods {
+		if m == name {
+			return true
+		}
+	}
+	return false
 }
 
 func configureBuildTags(enabledMods, disabledMods []string) []string {
