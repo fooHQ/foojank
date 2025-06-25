@@ -12,7 +12,8 @@ build_agent_dev() {
         export CGO_ENABLED=1
     fi
 
-    go build -tags dev -o "$OUTPUT" $WITH_RACE ./cmd/vessel
+    TAGS="dev $TAGS"
+    go build -tags "$TAGS" -o "$OUTPUT" $WITH_RACE ./cmd/vessel
 }
 
 build_agent_prod() {
@@ -28,7 +29,7 @@ build_agent_prod() {
 
     # TODO: enable garble
     #garble -tiny build -tags prod -o "$OUTPUT" -ldflags="$WITH_LDFLAGS" ./cmd/vessel
-    go build -tags prod -o "$OUTPUT" -ldflags="$WITH_LDFLAGS" ./cmd/vessel
+    go build -tags "$TAGS" -o "$OUTPUT" -ldflags="$WITH_LDFLAGS" ./cmd/vessel
 }
 
 build_foojank_dev() {
