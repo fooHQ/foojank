@@ -48,7 +48,7 @@ func (c *Client) RunscriptConfigFile() string {
 	return filepath.Join(c.baseDir, "internal", "runscript", "config", "config.go")
 }
 
-func (c *Client) BuildAgent(ctx context.Context, os, arch string, production bool) (string, string, error) {
+func (c *Client) BuildAgent(ctx context.Context, os, arch string, production bool, tags []string) (string, string, error) {
 	err := c.baseDirExists()
 	if err != nil {
 		return "", "", err
@@ -66,6 +66,7 @@ func (c *Client) BuildAgent(ctx context.Context, os, arch string, production boo
 		"GOOS":   os,
 		"GOARCH": arch,
 		"OUTPUT": output,
+		"TAGS":   strings.Join(tags, " "),
 	})
 	if err != nil {
 		return "", result, err
