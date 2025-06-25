@@ -91,3 +91,8 @@ func Globals() map[string]any {
 	}
 	return result
 }
+
+// StubBuildTag returns stub build tag for a module name. The function does not check existence of the module.
+func StubBuildTag(name string) string {
+	return "module_" + name + "_stub"
+}
