@@ -54,7 +54,8 @@ build_runscript() {
         return 1
     fi
 
-    go build -tags dev -o "$OUTPUT" ./cmd/runscript
+    TAGS="dev $TAGS"
+    go build -tags "$TAGS" -o "$OUTPUT" ./cmd/runscript
 }
 
 generate_proto() {
