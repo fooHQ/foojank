@@ -244,6 +244,14 @@ func buildAction(logger *slog.Logger, conf *config.Config, codebaseCli *codebase
 			return err
 		}
 
+		for _, mod := range disabledMods {
+			if !moduleExists(mods, mod) {
+				err := fmt.Errorf("cannot build an agent: module '%s' does not exist", mod)
+				logger.ErrorContext(ctx, err.Error())
+				return err
+			}
+		}
+
 		buildTags := configureBuildTags(mods, disabledMods)
 		binPath, output, err := codebaseCli.BuildAgent(ctx, targetOs, targetArch, !devBuild, buildTags)
 		if err != nil {
@@ -317,6 +325,15 @@ func validateConfiguration(conf *config.Config) error {
 	}
 
 	return nil
+}
+
+func moduleExists(mods []string, name string) bool {
+	for _, m := range mods {
+		if m == name {
+			return true
+		}
+	}
+	return false
 }
 
 func configureBuildTags(enabledMods, disabledMods []string) []string {
