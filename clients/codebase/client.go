@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/nats-io/nuid"
 
@@ -85,7 +86,7 @@ func (c *Client) WriteAgentConfig(b []byte) error {
 	return nil
 }
 
-func (c *Client) BuildRunscript(ctx context.Context) (string, string, error) {
+func (c *Client) BuildRunscript(ctx context.Context, tags []string) (string, string, error) {
 	err := c.baseDirExists()
 	if err != nil {
 		return "", "", err
@@ -94,6 +95,7 @@ func (c *Client) BuildRunscript(ctx context.Context) (string, string, error) {
 	output := filepath.Join(c.BuildDir(), fmt.Sprintf("runscript-%s", nuid.Next()))
 	result, err := c.devboxRun(ctx, "build-runscript", map[string]string{
 		"OUTPUT": output,
+		"TAGS":   strings.Join(tags, " "),
 	})
 	if err != nil {
 		return "", result, err
