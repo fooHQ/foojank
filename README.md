@@ -11,6 +11,10 @@
 </div>
 
 > [!IMPORTANT]
-> This is alpha software. Expect things to break. APIs are not stable before version 1.0.0.
-> The main branch *should* always compile. However, prefer tagged releases for all user experiments.
+> This is alpha software - expect things to break.
+> 
+> APIs are not considered stable until release version 1.0.0.
+> 
+> The main branch *should always* compile... but use tagged releases for all user experiments.
+> 
 > Feedback is welcome!
