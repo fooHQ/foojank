@@ -11,7 +11,7 @@ import (
 
 	"github.com/nats-io/nuid"
 
-	"github.com/foohq/foojank/fzz"
+	"github.com/foohq/foojank/internal/engine/packager"
 )
 
 var (
@@ -147,7 +147,7 @@ func (c *Client) BuildScript(name string) (string, error) {
 	}
 
 	outputName := filepath.Join(c.BuildDir(), nuid.Next())
-	err = fzz.Build(scriptSrc, outputName)
+	err = packager.Build(scriptSrc, outputName)
 	if err != nil {
 		return "", err
 	}

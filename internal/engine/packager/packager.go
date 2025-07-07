@@ -1,4 +1,4 @@
-package fzz
+package packager
 
 import (
 	"archive/zip"
