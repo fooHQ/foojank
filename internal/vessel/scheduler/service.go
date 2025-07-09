@@ -8,15 +8,15 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	risoros "github.com/risor-io/risor/os"
 
-	filefs "github.com/foohq/foojank/internal/engine/filesystems/file"
-	memfs "github.com/foohq/foojank/internal/engine/filesystems/mem"
-	natsfs "github.com/foohq/foojank/internal/engine/filesystems/nats"
 	"github.com/foohq/foojank/internal/repository"
 	"github.com/foohq/foojank/internal/vessel/config"
 	"github.com/foohq/foojank/internal/vessel/decoder"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
 	"github.com/foohq/foojank/internal/vessel/log"
 	"github.com/foohq/foojank/internal/vessel/worker"
+	filefs "github.com/foohq/ren/filesystems/file"
+	memfs "github.com/foohq/ren/filesystems/mem"
+	natsfs "github.com/foohq/ren/filesystems/nats"
 )
 
 type Arguments struct {

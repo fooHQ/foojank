@@ -23,11 +23,11 @@ import (
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/clients/vessel"
 	"github.com/foohq/foojank/internal/config"
-	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
+	renos "github.com/foohq/ren/os"
 )
 
 const (
@@ -232,8 +232,8 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 			return err
 		}
 
-		stdin := engineos.NewPipe()
-		stdout := engineos.NewPipe()
+		stdin := renos.NewPipe()
+		stdout := renos.NewPipe()
 		r, err := cancelreader.NewReader(os.Stdin)
 		if err != nil {
 			err := fmt.Errorf("cannot create a standard input reader: %w", err)

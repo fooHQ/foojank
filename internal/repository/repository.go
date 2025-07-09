@@ -5,7 +5,7 @@ import (
 
 	"github.com/nats-io/nats.go/jetstream"
 
-	natsfs "github.com/foohq/foojank/internal/engine/filesystems/nats"
+	natsfs "github.com/foohq/ren/filesystems/nats"
 )
 
 type Repository struct {

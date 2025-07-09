@@ -4,20 +4,18 @@ go 1.24.1
 
 require (
 	capnproto.org/go/capnp/v3 v3.1.0-alpha.1
+	github.com/foohq/ren v0.0.0-20250709053121-28292a79a822
 	github.com/foohq/urlpath v0.1.0
 	github.com/lmittmann/tint v1.1.2
 	github.com/muesli/cancelreader v0.2.2
 	github.com/nats-io/jwt/v2 v2.7.4
-	github.com/nats-io/nats-server/v2 v2.11.4
+	github.com/nats-io/nats-server/v2 v2.11.6
 	github.com/nats-io/nats.go v1.43.0
 	github.com/nats-io/nkeys v0.4.11
 	github.com/nats-io/nuid v1.0.1
 	github.com/olekukonko/tablewriter v1.0.7
-	github.com/otiai10/copy v1.14.1
 	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/risor-io/risor v1.8.1
-	github.com/risor-io/risor/modules/cli v1.8.1
-	github.com/risor-io/risor/modules/shlex v1.8.1
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v3 v3.3.3
 	golang.org/x/sync v0.15.0
@@ -38,8 +36,11 @@ require (
 	github.com/minio/highwayhash v1.0.3 // indirect
 	github.com/olekukonko/errors v1.1.0 // indirect
 	github.com/olekukonko/ll v0.0.9 // indirect
+	github.com/otiai10/copy v1.14.1 // indirect
 	github.com/otiai10/mint v1.6.3 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
+	github.com/risor-io/risor/modules/cli v1.8.1 // indirect
+	github.com/risor-io/risor/modules/shlex v1.8.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/u-root/u-root v0.14.0 // indirect

@@ -14,11 +14,12 @@ import (
 	risoros "github.com/risor-io/risor/os"
 	"github.com/urfave/cli/v3"
 
+	"github.com/foohq/ren"
+	memfs "github.com/foohq/ren/filesystems/mem"
+	"github.com/foohq/ren/modules"
+	renos "github.com/foohq/ren/os"
+
 	"github.com/foohq/foojank"
-	"github.com/foohq/foojank/internal/engine"
-	memfs "github.com/foohq/foojank/internal/engine/filesystems/mem"
-	"github.com/foohq/foojank/internal/engine/modules"
-	engineos "github.com/foohq/foojank/internal/engine/os"
 	"github.com/foohq/foojank/internal/runscript/actions"
 )
 
@@ -91,8 +92,8 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 		cancel()
 	}
 
-	stdin := engineos.NewPipe()
-	stdout := engineos.NewPipe()
+	stdin := renos.NewPipe()
+	stdout := renos.NewPipe()
 	r, err := cancelreader.NewReader(os.Stdin)
 	if err != nil {
 		err := fmt.Errorf("cannot create a standard input reader: %w", err)
@@ -106,17 +107,17 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 		_, _ = io.Copy(os.Stdout, stdout)
 	}()
 
-	o := engineos.New(
-		engineos.WithArgs(pkgArgs),
-		engineos.WithStdin(stdin),
-		engineos.WithStdout(stdout),
+	o := renos.New(
+		renos.WithArgs(pkgArgs),
+		renos.WithStdin(stdin),
+		renos.WithStdout(stdout),
 		// Using URIFile with MemFS is intentional.
 		// By default, runscript should not have access to the filesystem.
 		// Work directory is also adjusted to begin at "/", which is the only
 		// directory which exists in an empty MemFS.
-		engineos.WithWorkDir("/"),
-		engineos.WithFilesystems(filesystems),
-		engineos.WithExitHandler(exitHandler),
+		renos.WithWorkDir("/"),
+		renos.WithFilesystems(filesystems),
+		renos.WithExitHandler(exitHandler),
 	)
 
 	zr, err := zip.NewReader(f, info.Size())
@@ -129,11 +130,11 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err = engine.Run(
+		err = ren.Run(
 			ctx,
 			zr,
-			engine.WithOS(o),
-			engine.WithGlobals(modules.Globals()),
+			ren.WithOS(o),
+			ren.WithGlobals(modules.Globals()),
 		)
 		_ = r.Cancel()
 		errCh <- err
