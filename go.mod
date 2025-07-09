@@ -21,8 +21,6 @@ require (
 	golang.org/x/sync v0.15.0
 )
 
-replace github.com/risor-io/risor => github.com/dnbsd/risor v0.0.0-20250621150513-845711f9fe48
-
 require (
 	github.com/colega/zeropool v0.0.0-20230505084239-6fb4a4f75381 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
