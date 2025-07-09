@@ -12,6 +12,8 @@ github.com/dnbsd/risor v0.0.0-20250621150513-845711f9fe48 h1:JR5YQnG4VFizGHCWiDD
 github.com/dnbsd/risor v0.0.0-20250621150513-845711f9fe48/go.mod h1:OuP9WH8h3dzvK7NDfBTA+k095dyTaQxWi/qPTCx3W0g=
 github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=
 github.com/fatih/color v1.18.0/go.mod h1:4FelSpRwEGDpQ12mAdzqdOukCy4u8WUtOY6lkT/6HfU=
+github.com/foohq/ren v0.0.0-20250709053121-28292a79a822 h1:mSTwhCwNOKGPHSEW2R41yZnswudcT7P0w6M+IpO0n7w=
+github.com/foohq/ren v0.0.0-20250709053121-28292a79a822/go.mod h1:z0KAwttXXEqa7GFBtrHA047drgspKI1oz0g9lswnhdw=
 github.com/foohq/urlpath v0.1.0 h1:xdqJ2SnLx30ibPl1khWkUDjtab5yE156y3csEEQrBfE=
 github.com/foohq/urlpath v0.1.0/go.mod h1:OVGPQbQNK7Zx7MTFFw5Mb/tiWjRJ8C6H86z5WqXAlGQ=
 github.com/google/go-tpm v0.9.5 h1:ocUmnDebX54dnW+MQWGQRbdaAcJELsa6PqZhJ48KwVU=
@@ -36,8 +38,8 @@ github.com/muesli/cancelreader v0.2.2 h1:3I4Kt4BQjOR54NavqnDogx/MIoWBFa0StPA8ELU
 github.com/muesli/cancelreader v0.2.2/go.mod h1:3XuTXfFS2VjM+HTLZY9Ak0l6eUKfijIfMUZ4EgX0QYo=
 github.com/nats-io/jwt/v2 v2.7.4 h1:jXFuDDxs/GQjGDZGhNgH4tXzSUK6WQi2rsj4xmsNOtI=
 github.com/nats-io/jwt/v2 v2.7.4/go.mod h1:me11pOkwObtcBNR8AiMrUbtVOUGkqYjMQZ6jnSdVUIA=
-github.com/nats-io/nats-server/v2 v2.11.4 h1:oQhvy6He6ER926sGqIKBKuYHH4BGnUQCNb0Y5Qa+M54=
-github.com/nats-io/nats-server/v2 v2.11.4/go.mod h1:jFnKKwbNeq6IfLHq+OMnl7vrFRihQ/MkhRbiWfjLdjU=
+github.com/nats-io/nats-server/v2 v2.11.6 h1:4VXRjbTUFKEB+7UoaKL3F5Y83xC7MxPoIONOnGgpkHw=
+github.com/nats-io/nats-server/v2 v2.11.6/go.mod h1:2xoztlcb4lDL5Blh1/BiukkKELXvKQ5Vy29FPVRBUYs=
 github.com/nats-io/nats.go v1.43.0 h1:uRFZ2FEoRvP64+UUhaTokyS18XBCR/xM2vQZKO4i8ug=
 github.com/nats-io/nats.go v1.43.0/go.mod h1:iRWIPokVIFbVijxuMQq4y9ttaBTMe0SFdlZfMDd+33g=
 github.com/nats-io/nkeys v0.4.11 h1:q44qGV008kYd9W1b1nEBkNzvnWxtRSQ7A8BoqRrcfa0=

@@ -9,9 +9,10 @@ import (
 	risoros "github.com/risor-io/risor/os"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/foohq/foojank/internal/engine"
-	"github.com/foohq/foojank/internal/engine/modules"
-	engineos "github.com/foohq/foojank/internal/engine/os"
+	"github.com/foohq/ren"
+	"github.com/foohq/ren/modules"
+	renos "github.com/foohq/ren/os"
+
 	"github.com/foohq/foojank/internal/repository"
 	"github.com/foohq/foojank/internal/vessel/config"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
@@ -39,7 +40,7 @@ func New(args Arguments) *Service {
 
 func (s *Service) Start(ctx context.Context) error {
 	group, _ := errgroup.WithContext(ctx)
-	stdout := engineos.NewPipe()
+	stdout := renos.NewPipe()
 	group.Go(func() error {
 		log.Debug("started reading from stdout")
 		defer log.Debug("stopped reading from stdout")
@@ -59,7 +60,7 @@ func (s *Service) Start(ctx context.Context) error {
 		return nil
 	})
 
-	stdin := engineos.NewPipe()
+	stdin := renos.NewPipe()
 	group.Go(func() error {
 		log.Debug("started reading from stdin")
 		defer log.Debug("stopped reading from stdin")
@@ -100,11 +101,11 @@ loop:
 			err = engineCompileAndRunPackage(
 				ctx,
 				b,
-				engineos.WithArgs(v.Args),
-				engineos.WithStdin(stdin),
-				engineos.WithStdout(stdout),
-				engineos.WithEnvVar("SERVICE_NAME", config.ServiceName),
-				engineos.WithFilesystems(s.args.Filesystems),
+				renos.WithArgs(v.Args),
+				renos.WithStdin(stdin),
+				renos.WithStdout(stdout),
+				renos.WithEnvVar("SERVICE_NAME", config.ServiceName),
+				renos.WithFilesystems(s.args.Filesystems),
 			)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				log.Debug(err.Error())
@@ -133,7 +134,7 @@ loop:
 	return ctx.Err()
 }
 
-func engineCompileAndRunPackage(ctx context.Context, b []byte, opts ...engineos.Option) error {
+func engineCompileAndRunPackage(ctx context.Context, b []byte, opts ...renos.Option) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -146,15 +147,15 @@ func engineCompileAndRunPackage(ctx context.Context, b []byte, opts ...engineos.
 		log.Debug("on exit", "code", code)
 		cancel()
 	}
-	opts = append(opts, engineos.WithExitHandler(exitHandler))
+	opts = append(opts, renos.WithExitHandler(exitHandler))
 
 	log.Debug("before run")
 
-	err = engine.Run(
+	err = ren.Run(
 		ctx,
 		zr,
-		engine.WithOS(engineos.New(opts...)),
-		engine.WithGlobals(modules.Globals()),
+		ren.WithOS(renos.New(opts...)),
+		ren.WithGlobals(modules.Globals()),
 	)
 	if err != nil {
 		return err

@@ -13,10 +13,10 @@ import (
 
 	"github.com/foohq/foojank/clients/codebase"
 	"github.com/foohq/foojank/internal/config"
-	"github.com/foohq/foojank/internal/engine/modules"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
+	"github.com/foohq/ren/modules"
 )
 
 const (

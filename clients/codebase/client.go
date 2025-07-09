@@ -11,7 +11,7 @@ import (
 
 	"github.com/nats-io/nuid"
 
-	"github.com/foohq/foojank/internal/engine/packager"
+	"github.com/foohq/ren/packager"
 )
 
 var (
