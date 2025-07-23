@@ -178,29 +178,6 @@ func (c *Client) ListScripts() ([]string, error) {
 	return result, nil
 }
 
-func (c *Client) ListModules() ([]string, error) {
-	err := c.baseDirExists()
-	if err != nil {
-		return nil, err
-	}
-
-	files, err := os.ReadDir(c.ModulesDir())
-	if err != nil {
-		return nil, err
-	}
-
-	var result []string
-	for _, file := range files {
-		if !file.IsDir() {
-			continue
-		}
-
-		result = append(result, file.Name())
-	}
-
-	return result, nil
-}
-
 func (c *Client) devboxRun(ctx context.Context, script string, env map[string]string) (string, error) {
 	environ := os.Environ()
 	for name, value := range env {
