@@ -1,11 +1,11 @@
 package processor
 
 import (
-	"archive/zip"
-	"bytes"
 	"context"
 	"errors"
+	"maps"
 
+	"github.com/foohq/ren/builtins"
 	risoros "github.com/risor-io/risor/os"
 	"golang.org/x/sync/errgroup"
 
@@ -138,24 +138,25 @@ func engineCompileAndRunPackage(ctx context.Context, b []byte, opts ...renos.Opt
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	zr, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
-	if err != nil {
-		return err
-	}
-
 	exitHandler := func(code int) {
 		log.Debug("on exit", "code", code)
 		cancel()
 	}
 	opts = append(opts, renos.WithExitHandler(exitHandler))
 
+	ros := renos.New(opts...)
+
+	globals := make(map[string]any)
+	maps.Copy(globals, modules.Globals())
+	maps.Copy(globals, builtins.Globals())
+
 	log.Debug("before run")
 
-	err = ren.Run(
+	err := ren.RunBytes(
 		ctx,
-		zr,
-		ren.WithOS(renos.New(opts...)),
-		ren.WithGlobals(modules.Globals()),
+		b,
+		ros,
+		ren.WithGlobals(globals),
 	)
 	if err != nil {
 		return err
