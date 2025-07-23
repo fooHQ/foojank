@@ -1,15 +1,16 @@
 package runscript
 
 import (
-	"archive/zip"
 	"bufio"
 	"context"
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"sync"
 
+	"github.com/foohq/ren/builtins"
 	"github.com/muesli/cancelreader"
 	risoros "github.com/risor-io/risor/os"
 	"github.com/urfave/cli/v3"
@@ -107,7 +108,7 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 		_, _ = io.Copy(os.Stdout, stdout)
 	}()
 
-	o := renos.New(
+	ros := renos.New(
 		renos.WithArgs(pkgArgs),
 		renos.WithStdin(stdin),
 		renos.WithStdout(stdout),
@@ -120,11 +121,9 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 		renos.WithExitHandler(exitHandler),
 	)
 
-	zr, err := zip.NewReader(f, info.Size())
-	if err != nil {
-		err := fmt.Errorf("cannot create zip reader: %w", err)
-		return err
-	}
+	globals := make(map[string]any)
+	maps.Copy(globals, modules.Globals())
+	maps.Copy(globals, builtins.Globals())
 
 	errCh := make(chan error, 1)
 	wg.Add(1)
@@ -132,9 +131,10 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 		defer wg.Done()
 		err = ren.Run(
 			ctx,
-			zr,
-			ren.WithOS(o),
-			ren.WithGlobals(modules.Globals()),
+			f,
+			info.Size(),
+			ros,
+			ren.WithGlobals(globals),
 		)
 		_ = r.Cancel()
 		errCh <- err
