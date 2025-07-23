@@ -16,6 +16,8 @@ import (
 	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
 
+	"github.com/foohq/ren/modules"
+
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/clients/codebase"
 	"github.com/foohq/foojank/clients/repository"
@@ -25,7 +27,6 @@ import (
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
-	"github.com/foohq/ren/modules"
 )
 
 const (
@@ -237,22 +238,13 @@ func buildAction(logger *slog.Logger, conf *config.Config, codebaseCli *codebase
 			return err
 		}
 
-		mods, err := codebaseCli.ListModules()
+		buildTags, err := configureBuildTags(modules.Modules(), disabledMods)
 		if err != nil {
-			err := fmt.Errorf("cannot build an agent: cannot get a list of modules: %w", err)
+			err := fmt.Errorf("cannot configure modules: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		for _, mod := range disabledMods {
-			if !moduleExists(mods, mod) {
-				err := fmt.Errorf("cannot build an agent: module '%s' does not exist", mod)
-				logger.ErrorContext(ctx, err.Error())
-				return err
-			}
-		}
-
-		buildTags := configureBuildTags(mods, disabledMods)
 		binPath, output, err := codebaseCli.BuildAgent(ctx, targetOs, targetArch, !devBuild, buildTags)
 		if err != nil {
 			err := fmt.Errorf("cannot build an agent: %w\n%s", err, output)
@@ -336,19 +328,21 @@ func moduleExists(mods []string, name string) bool {
 	return false
 }
 
-func configureBuildTags(enabledMods, disabledMods []string) []string {
-	disabled := make(map[string]struct{}, len(disabledMods))
-	for _, disabledMod := range disabledMods {
-		disabled[disabledMod] = struct{}{}
-	}
-
-	result := make([]string, 0, len(disabled))
-	for _, e := range enabledMods {
-		_, isDisabled := disabled[e]
-		if isDisabled {
-			result = append(result, modules.StubBuildTag(e))
+func configureBuildTags(mods, disabledMods []string) ([]string, error) {
+	// Verify that disabled modules exist, otherwise throw an error.
+	for _, m := range disabledMods {
+		if !moduleExists(mods, m) {
+			err := fmt.Errorf("module '%s' does not exist", m)
+			return nil, err
 		}
 	}
 
-	return result
+	var buildTags []string
+	for _, m := range mods {
+		if moduleExists(disabledMods, m) {
+			continue
+		}
+		buildTags = append(buildTags, modules.BuildTag(m))
+	}
+	return buildTags, nil
 }

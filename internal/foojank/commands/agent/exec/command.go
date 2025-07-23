@@ -18,6 +18,8 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/urfave/cli/v3"
 
+	renos "github.com/foohq/ren/os"
+
 	"github.com/foohq/foojank/clients/codebase"
 	"github.com/foohq/foojank/clients/repository"
 	"github.com/foohq/foojank/clients/server"
@@ -27,7 +29,6 @@ import (
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
 	"github.com/foohq/foojank/internal/vessel/errcodes"
-	renos "github.com/foohq/ren/os"
 )
 
 const (
@@ -144,7 +145,7 @@ func execAction(logger *slog.Logger, vesselCli *vessel.Client, codebaseCli *code
 
 		pkgPath, err := codebaseCli.BuildScript(scriptName)
 		if err != nil {
-			err := fmt.Errorf("cannot build script '%s': %w", scriptName, err)
+			err := fmt.Errorf("cannot build script: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}

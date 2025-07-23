@@ -11,12 +11,13 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/foohq/ren/modules"
+
 	"github.com/foohq/foojank/clients/codebase"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
-	"github.com/foohq/ren/modules"
 )
 
 const (
@@ -105,22 +106,13 @@ func execAction(logger *slog.Logger, client *codebase.Client) cli.ActionFunc {
 			return err
 		}
 
-		mods, err := client.ListModules()
+		buildTags, err := configureBuildTags(modules.Modules(), disabledMods)
 		if err != nil {
-			err := fmt.Errorf("cannot get a list of modules: %w", err)
+			err := fmt.Errorf("cannot configure modules: %w", err)
 			logger.ErrorContext(ctx, err.Error())
 			return err
 		}
 
-		for _, mod := range disabledMods {
-			if !moduleExists(mods, mod) {
-				err := fmt.Errorf("module '%s' does not exist", mod)
-				logger.ErrorContext(ctx, err.Error())
-				return err
-			}
-		}
-
-		buildTags := configureBuildTags(mods, disabledMods)
 		binPath, result, err := client.BuildRunscript(ctx, buildTags)
 		if err != nil {
 			err := fmt.Errorf("cannot build runscript: %w\n%s", err, result)
@@ -176,19 +168,21 @@ func moduleExists(mods []string, name string) bool {
 	return false
 }
 
-func configureBuildTags(enabledMods, disabledMods []string) []string {
-	disabled := make(map[string]struct{}, len(disabledMods))
-	for _, disabledMod := range disabledMods {
-		disabled[disabledMod] = struct{}{}
-	}
-
-	result := make([]string, 0, len(disabled))
-	for _, e := range enabledMods {
-		_, isDisabled := disabled[e]
-		if isDisabled {
-			result = append(result, modules.StubBuildTag(e))
+func configureBuildTags(mods, disabledMods []string) ([]string, error) {
+	// Verify that disabled modules exist, otherwise throw an error.
+	for _, m := range disabledMods {
+		if !moduleExists(mods, m) {
+			err := fmt.Errorf("module '%s' does not exist", m)
+			return nil, err
 		}
 	}
 
-	return result
+	var buildTags []string
+	for _, m := range mods {
+		if moduleExists(disabledMods, m) {
+			continue
+		}
+		buildTags = append(buildTags, modules.BuildTag(m))
+	}
+	return buildTags, nil
 }
