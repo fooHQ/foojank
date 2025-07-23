@@ -4,7 +4,9 @@ go 1.24.1
 
 require (
 	capnproto.org/go/capnp/v3 v3.1.0-alpha.1
-	github.com/foohq/ren v0.0.0-20250709053121-28292a79a822
+	github.com/foohq/ren v0.0.2
+	github.com/foohq/ren-memfs v0.0.0-20250715161330-d886928c2dee
+	github.com/foohq/ren-natsfs v0.0.0-20250715161259-1f76eedb0ef2
 	github.com/foohq/urlpath v0.1.0
 	github.com/lmittmann/tint v1.1.2
 	github.com/muesli/cancelreader v0.2.2
@@ -17,7 +19,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/risor-io/risor v1.8.1
 	github.com/stretchr/testify v1.10.0
-	github.com/urfave/cli/v3 v3.3.3
+	github.com/urfave/cli/v3 v3.3.8
 	golang.org/x/sync v0.15.0
 )
 
@@ -34,8 +36,6 @@ require (
 	github.com/minio/highwayhash v1.0.3 // indirect
 	github.com/olekukonko/errors v1.1.0 // indirect
 	github.com/olekukonko/ll v0.0.9 // indirect
-	github.com/otiai10/copy v1.14.1 // indirect
-	github.com/otiai10/mint v1.6.3 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/risor-io/risor/modules/cli v1.8.1 // indirect
 	github.com/risor-io/risor/modules/shlex v1.8.1 // indirect
