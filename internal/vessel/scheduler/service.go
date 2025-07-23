@@ -14,9 +14,9 @@ import (
 	"github.com/foohq/foojank/internal/vessel/errcodes"
 	"github.com/foohq/foojank/internal/vessel/log"
 	"github.com/foohq/foojank/internal/vessel/worker"
-	filefs "github.com/foohq/ren/filesystems/file"
-	memfs "github.com/foohq/ren/filesystems/mem"
-	natsfs "github.com/foohq/ren/filesystems/nats"
+	memfs "github.com/foohq/ren-memfs"
+	natsfs "github.com/foohq/ren-natsfs"
+	localfs "github.com/foohq/ren/filesystems/local"
 )
 
 type Arguments struct {
@@ -59,7 +59,7 @@ func (s *Service) Start(ctx context.Context) error {
 	}
 	defer repo.Close()
 
-	fileFS, err := filefs.NewFS()
+	fileFS, err := localfs.NewFS()
 	if err != nil {
 		log.Debug("cannot create file handler", "error", err)
 		return err
