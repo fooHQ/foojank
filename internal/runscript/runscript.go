@@ -15,7 +15,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/ren"
-	memfs "github.com/foohq/ren/filesystems/mem"
+	memfs "github.com/foohq/ren-memfs"
 	"github.com/foohq/ren/modules"
 	renos "github.com/foohq/ren/os"
 
