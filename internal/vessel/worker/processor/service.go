@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"maps"
+	"time"
 
 	"github.com/foohq/ren/builtins"
 	risoros "github.com/risor-io/risor/os"
@@ -89,7 +90,7 @@ loop:
 
 			log.Debug("before load package", "path", v.FilePath)
 
-			b, err := s.args.Repository.ReadFile(v.FilePath)
+			b, err := s.readRepositoryFile(v.FilePath)
 			if err != nil {
 				log.Debug(err.Error())
 				_ = msg.ReplyError(errcodes.ErrRepositoryGetFile, err.Error(), "")
@@ -132,6 +133,22 @@ loop:
 	_ = group.Wait()
 	log.Debug("all goroutines finished")
 	return ctx.Err()
+}
+
+func (s *Service) readRepositoryFile(name string) ([]byte, error) {
+	const retry = 3
+	var b []byte
+	var err error
+	for i := 0; i < retry+1; i++ {
+		b, err = s.args.Repository.ReadFile(name)
+		// If there was no error break out from the loop and continue.
+		// Otherwise, make another attempt to read the file.
+		if err == nil {
+			break
+		}
+		time.Sleep(400 * time.Millisecond)
+	}
+	return b, err
 }
 
 func engineCompileAndRunPackage(ctx context.Context, b []byte, opts ...renos.Option) error {
