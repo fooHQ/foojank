@@ -76,6 +76,22 @@ func NewNatsServerAndConnection(t *testing.T) (*server.Server, *nats.Conn) {
 	return s, nc
 }
 
+func NewJetStreamConnection(t *testing.T) (*server.Server, jetstream.JetStream) {
+	s := NewNatsServer()
+	nc, err := nats.Connect(s.ClientURL())
+	require.NoError(t, err)
+
+	js, err := jetstream.New(nc)
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		nc.Close()
+		s.Shutdown()
+	})
+
+	return s, js
+}
+
 func NewNatsObjectStore(t *testing.T, nc *nats.Conn) jetstream.ObjectStore {
 	js, err := jetstream.New(nc)
 	require.NoError(t, err)
