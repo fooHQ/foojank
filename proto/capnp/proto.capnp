@@ -35,6 +35,32 @@ struct ExecuteResponse {
     code @0 :Int64;
 }
 
+struct CreateJobRequest {
+    command @0 :Text;
+    args @1 :List(Text);
+    env @2 :List(Text);
+}
+
+struct CreateJobResponse {
+   jobID @0 :Text;
+   stdinSubject @1 :Text;
+   stdoutSubject @2 :Text;
+   error @3 :Text;
+}
+
+struct CancelJobRequest {
+    jobID @0 :Text;
+}
+
+struct CancelJobResponse {
+    error @0 :Text;
+}
+
+struct UpdateJob {
+    jobID @0 :Text;
+    exitStatus @1 :Int64;
+}
+
 struct DummyRequest {}
 
 struct Message {
@@ -43,12 +69,17 @@ struct Message {
         destroyWorker @1 :DestroyWorkerRequest;
         getWorker @2 :GetWorkerRequest;
         execute @3 :ExecuteRequest;
-        dummyRequest @4 :DummyRequest;
+        createJob @4 :CreateJobRequest;
+        cancelJob @5 :CancelJobRequest;
+        dummyRequest @6 :DummyRequest;
     }
     response :union {
-        createWorker @5 :CreateWorkerResponse;
-        destroyWorker @6 :DestroyWorkerResponse;
-        getWorker @7 :GetWorkerResponse;
-        execute @8 :ExecuteResponse;
+        createWorker @7 :CreateWorkerResponse;
+        destroyWorker @8 :DestroyWorkerResponse;
+        getWorker @9 :GetWorkerResponse;
+        execute @10 :ExecuteResponse;
+        createJob @11 :CreateJobResponse;
+        cancelJob @12 :CancelJobResponse;
+        updateJob @13 :UpdateJob;
     }
 }
