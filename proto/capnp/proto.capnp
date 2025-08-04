@@ -3,52 +3,45 @@ using Go = import "/go.capnp";
 $Go.package("capnp");
 $Go.import("github.com/foohq/foojank/proto/capnp");
 
-struct CreateWorkerRequest {
-    # Add configurable subjects: stdin, rpc
+struct StartWorkerRequest {
+    file @0 :Text;
+    args @1 :List(Text);
+    env @2 :List(Text);
 }
 
-struct CreateWorkerResponse {
-    id @0 :UInt64;
+struct StartWorkerResponse {
+    error @0 :Text;
 }
 
-struct GetWorkerRequest {
-    id @0 :UInt64;
+struct StopWorkerRequest {}
+
+struct StopWorkerResponse {
+    error @0 :Text;
 }
 
-struct GetWorkerResponse {
-    serviceName @0 :Text;
-    serviceId @1 :Text;
+struct UpdateWorkerStatus {
+    status @0 :Int64;
 }
 
-struct DestroyWorkerRequest {
-    id @0 :UInt64;
+struct UpdateWorkerStdio {
+    data @0 :Data;
 }
 
-struct DestroyWorkerResponse {}
-
-struct ExecuteRequest {
-    args @0 :List(Text);
-    filePath @1 :Text;
+struct UpdateClientInfo {
+    username @0 :Text;
+    hostname @1 :Text;
+    system @2 :Text;
+    address @3 :Text;
 }
-
-struct ExecuteResponse {
-    code @0 :Int64;
-}
-
-struct DummyRequest {}
 
 struct Message {
-    action :union {
-        createWorker @0 :CreateWorkerRequest;
-        destroyWorker @1 :DestroyWorkerRequest;
-        getWorker @2 :GetWorkerRequest;
-        execute @3 :ExecuteRequest;
-        dummyRequest @4 :DummyRequest;
-    }
-    response :union {
-        createWorker @5 :CreateWorkerResponse;
-        destroyWorker @6 :DestroyWorkerResponse;
-        getWorker @7 :GetWorkerResponse;
-        execute @8 :ExecuteResponse;
+    content :union {
+        startWorkerRequest @0 :StartWorkerRequest;
+        startWorkerResponse @1 :StartWorkerResponse;
+        stopWorkerRequest @2 :StopWorkerRequest;
+        stopWorkerResponse @3 :StopWorkerResponse;
+        updateWorkerStatus @4 :UpdateWorkerStatus;
+        updateWorkerStdio @5 :UpdateWorkerStdio;
+        updateClientInfo @6 :UpdateClientInfo;
     }
 }
