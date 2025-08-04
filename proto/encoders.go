@@ -6,6 +6,209 @@ import (
 	"github.com/foohq/foojank/proto/capnp"
 )
 
+func Marshal(data any) ([]byte, error) {
+	switch v := data.(type) {
+	case CreateJobRequest:
+		return marshalCreateJobRequest(v)
+	case CreateJobResponse:
+		return marshalCreateJobResponse(v)
+	case CancelJobRequest:
+		return marshalCancelJobRequest(v)
+	case CancelJobResponse:
+		return marshalCancelJobResponse(v)
+	case UpdateJob:
+		return marshalUpdateJob(v)
+	case UpdateStdioLine:
+		return marshalUpdateStdioLine(v)
+	}
+	return nil, ErrUnknownMessage
+}
+
+func marshalCreateJobRequest(data CreateJobRequest) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgCreateJob, err := capnp.NewCreateJobRequest(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetCommand(data.Command)
+	if err != nil {
+		return nil, err
+	}
+
+	argsList, err := newTextList(msg.Segment(), data.Args)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetArgs(argsList)
+	if err != nil {
+		return nil, err
+	}
+
+	envList, err := newTextList(msg.Segment(), data.Env)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetEnv(envList)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msg.Content().SetCreateJobRequest(msgCreateJob)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
+func marshalCreateJobResponse(data CreateJobResponse) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgCreateJob, err := capnp.NewCreateJobResponse(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetJobID(data.JobID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetStdinSubject(data.StdinSubject)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetStdoutSubject(data.StdoutSubject)
+	if err != nil {
+		return nil, err
+	}
+
+	if data.Error != nil {
+		err = msgCreateJob.SetError(data.Error.Error())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = msg.Content().SetCreateJobResponse(msgCreateJob)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
+func marshalCancelJobRequest(data CancelJobRequest) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgCancelJob, err := capnp.NewCancelJobRequest(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCancelJob.SetJobID(data.JobID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msg.Content().SetCancelJobRequest(msgCancelJob)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
+func marshalCancelJobResponse(data CancelJobResponse) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgCancelJob, err := capnp.NewCancelJobResponse(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	if data.Error != nil {
+		err = msgCancelJob.SetError(data.Error.Error())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = msg.Content().SetCancelJobResponse(msgCancelJob)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
+func marshalUpdateJob(data UpdateJob) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgUpdateJob, err := capnp.NewUpdateJob(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgUpdateJob.SetJobID(data.JobID)
+	if err != nil {
+		return nil, err
+	}
+
+	msgUpdateJob.SetExitStatus(data.ExitStatus)
+
+	err = msg.Content().SetUpdateJob(msgUpdateJob)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
+func marshalUpdateStdioLine(data UpdateStdioLine) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgUpdateStdioLine, err := capnp.NewUpdateStdioLine(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgUpdateStdioLine.SetText(data.Text)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msg.Content().SetUpdateStdioLine(msgUpdateStdioLine)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
 func NewCreateWorkerRequest() ([]byte, error) {
 	msg, err := newMessage()
 	if err != nil {
@@ -203,6 +406,168 @@ func NewDummyRequest() ([]byte, error) {
 	}
 
 	err = msg.Action().SetDummyRequest(msgDummy)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
+func NewCreateJobRequest(command string, args, env []string) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgCreateJob, err := capnp.NewCreateJobRequest(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetCommand(command)
+	if err != nil {
+		return nil, err
+	}
+
+	argsList, err := newTextList(msg.Segment(), args)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetArgs(argsList)
+	if err != nil {
+		return nil, err
+	}
+
+	envList, err := newTextList(msg.Segment(), env)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetEnv(envList)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msg.Action().SetCreateJob(msgCreateJob)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
+func NewCreateJobResponse(jobID, stdinSubject, stdoutSubject string, respErr error) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgCreateJob, err := capnp.NewCreateJobResponse(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetJobID(jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetStdinSubject(stdinSubject)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetStdoutSubject(stdoutSubject)
+	if err != nil {
+		return nil, err
+	}
+
+	if respErr != nil {
+		err = msgCreateJob.SetError(respErr.Error())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = msg.Response().SetCreateJob(msgCreateJob)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
+func NewCancelJobRequest(jobID string) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgCancelJob, err := capnp.NewCancelJobRequest(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCancelJob.SetJobID(jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msg.Action().SetCancelJob(msgCancelJob)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
+func NewCancelJobResponse(respErr error) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgCancelJob, err := capnp.NewCancelJobResponse(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	if respErr != nil {
+		err = msgCancelJob.SetError(respErr.Error())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = msg.Response().SetCancelJob(msgCancelJob)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
+func NewUpdateJob(jobID string, exitStatus int64) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgUpdateJob, err := capnp.NewUpdateJob(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: should be just "ID" not "JobID"
+	err = msgUpdateJob.SetJobID(jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	msgUpdateJob.SetExitStatus(exitStatus)
+
+	err = msg.Response().SetUpdateJob(msgUpdateJob)
 	if err != nil {
 		return nil, err
 	}
