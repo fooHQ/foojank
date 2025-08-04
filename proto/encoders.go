@@ -6,18 +6,63 @@ import (
 	"github.com/foohq/foojank/proto/capnp"
 )
 
-func NewCreateWorkerRequest() ([]byte, error) {
+func Marshal(data any) ([]byte, error) {
+	switch v := data.(type) {
+	case StartWorkerRequest:
+		return marshalStartWorkerRequest(v)
+	case StartWorkerResponse:
+		return marshalStartWorkerResponse(v)
+	case StopWorkerRequest:
+		return marshalStopWorkerRequest(v)
+	case StopWorkerResponse:
+		return marshalStopWorkerResponse(v)
+	case UpdateWorkerStatus:
+		return marshalUpdateWorkerStatus(v)
+	case UpdateWorkerStdio:
+		return marshalUpdateWorkerStdio(v)
+	case UpdateClientInfo:
+		return marshalUpdateClientInfo(v)
+	}
+	return nil, ErrUnknownMessage
+}
+
+func marshalStartWorkerRequest(data StartWorkerRequest) ([]byte, error) {
 	msg, err := newMessage()
 	if err != nil {
 		return nil, err
 	}
 
-	msgCreateWorker, err := capnp.NewCreateWorkerRequest(msg.Segment())
+	m, err := capnp.NewStartWorkerRequest(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
 
-	err = msg.Action().SetCreateWorker(msgCreateWorker)
+	err = m.SetFile(data.File)
+	if err != nil {
+		return nil, err
+	}
+
+	argsList, err := newTextList(msg.Segment(), data.Args)
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.SetArgs(argsList)
+	if err != nil {
+		return nil, err
+	}
+
+	envList, err := newTextList(msg.Segment(), data.Env)
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.SetEnv(envList)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msg.Content().SetStartWorkerRequest(m)
 	if err != nil {
 		return nil, err
 	}
@@ -25,20 +70,25 @@ func NewCreateWorkerRequest() ([]byte, error) {
 	return msg.Message().Marshal()
 }
 
-func NewCreateWorkerResponse(id uint64) ([]byte, error) {
+func marshalStartWorkerResponse(data StartWorkerResponse) ([]byte, error) {
 	msg, err := newMessage()
 	if err != nil {
 		return nil, err
 	}
 
-	msgCreateWorker, err := capnp.NewCreateWorkerResponse(msg.Segment())
+	m, err := capnp.NewStartWorkerResponse(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
 
-	msgCreateWorker.SetId(id)
+	if data.Error != nil {
+		err = m.SetError(data.Error.Error())
+		if err != nil {
+			return nil, err
+		}
+	}
 
-	err = msg.Response().SetCreateWorker(msgCreateWorker)
+	err = msg.Content().SetStartWorkerResponse(m)
 	if err != nil {
 		return nil, err
 	}
@@ -46,20 +96,18 @@ func NewCreateWorkerResponse(id uint64) ([]byte, error) {
 	return msg.Message().Marshal()
 }
 
-func NewDestroyWorkerRequest(id uint64) ([]byte, error) {
+func marshalStopWorkerRequest(_ StopWorkerRequest) ([]byte, error) {
 	msg, err := newMessage()
 	if err != nil {
 		return nil, err
 	}
 
-	msgDestroyWorker, err := capnp.NewDestroyWorkerRequest(msg.Segment())
+	m, err := capnp.NewStopWorkerRequest(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
 
-	msgDestroyWorker.SetId(id)
-
-	err = msg.Action().SetDestroyWorker(msgDestroyWorker)
+	err = msg.Content().SetStopWorkerRequest(m)
 	if err != nil {
 		return nil, err
 	}
@@ -67,18 +115,25 @@ func NewDestroyWorkerRequest(id uint64) ([]byte, error) {
 	return msg.Message().Marshal()
 }
 
-func NewDestroyWorkerResponse() ([]byte, error) {
+func marshalStopWorkerResponse(data StopWorkerResponse) ([]byte, error) {
 	msg, err := newMessage()
 	if err != nil {
 		return nil, err
 	}
 
-	msgDestroyWorker, err := capnp.NewDestroyWorkerResponse(msg.Segment())
+	m, err := capnp.NewStopWorkerResponse(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
 
-	err = msg.Response().SetDestroyWorker(msgDestroyWorker)
+	if data.Error != nil {
+		err = m.SetError(data.Error.Error())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = msg.Content().SetStopWorkerResponse(m)
 	if err != nil {
 		return nil, err
 	}
@@ -86,20 +141,20 @@ func NewDestroyWorkerResponse() ([]byte, error) {
 	return msg.Message().Marshal()
 }
 
-func NewGetWorkerRequest(id uint64) ([]byte, error) {
+func marshalUpdateWorkerStatus(data UpdateWorkerStatus) ([]byte, error) {
 	msg, err := newMessage()
 	if err != nil {
 		return nil, err
 	}
 
-	msgGetWorker, err := capnp.NewGetWorkerRequest(msg.Segment())
+	m, err := capnp.NewUpdateWorkerStatus(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
 
-	msgGetWorker.SetId(id)
+	m.SetStatus(data.Status)
 
-	err = msg.Action().SetGetWorker(msgGetWorker)
+	err = msg.Content().SetUpdateWorkerStatus(m)
 	if err != nil {
 		return nil, err
 	}
@@ -107,28 +162,23 @@ func NewGetWorkerRequest(id uint64) ([]byte, error) {
 	return msg.Message().Marshal()
 }
 
-func NewGetWorkerResponse(serviceName, serviceID string) ([]byte, error) {
+func marshalUpdateWorkerStdio(data UpdateWorkerStdio) ([]byte, error) {
 	msg, err := newMessage()
 	if err != nil {
 		return nil, err
 	}
 
-	msgGetWorker, err := capnp.NewGetWorkerResponse(msg.Segment())
+	m, err := capnp.NewUpdateWorkerStdio(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
 
-	err = msgGetWorker.SetServiceName(serviceName)
+	err = m.SetData(data.Data)
 	if err != nil {
 		return nil, err
 	}
 
-	err = msgGetWorker.SetServiceId(serviceID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = msg.Response().SetGetWorker(msgGetWorker)
+	err = msg.Content().SetUpdateWorkerStdio(m)
 	if err != nil {
 		return nil, err
 	}
@@ -136,73 +186,38 @@ func NewGetWorkerResponse(serviceName, serviceID string) ([]byte, error) {
 	return msg.Message().Marshal()
 }
 
-func NewExecuteRequest(filePath string, args []string) ([]byte, error) {
+func marshalUpdateClientInfo(data UpdateClientInfo) ([]byte, error) {
 	msg, err := newMessage()
 	if err != nil {
 		return nil, err
 	}
 
-	msgExecute, err := capnp.NewExecuteRequest(msg.Segment())
+	m, err := capnp.NewUpdateClientInfo(msg.Segment())
 	if err != nil {
 		return nil, err
 	}
 
-	argsList, err := newTextList(msg.Segment(), args)
+	err = m.SetUsername(data.Username)
 	if err != nil {
 		return nil, err
 	}
 
-	err = msgExecute.SetArgs(argsList)
+	err = m.SetHostname(data.Hostname)
 	if err != nil {
 		return nil, err
 	}
 
-	err = msgExecute.SetFilePath(filePath)
+	err = m.SetSystem(data.System)
 	if err != nil {
 		return nil, err
 	}
 
-	err = msg.Action().SetExecute(msgExecute)
+	err = m.SetAddress(data.Address)
 	if err != nil {
 		return nil, err
 	}
 
-	return msg.Message().Marshal()
-}
-
-func NewExecuteResponse(code int64) ([]byte, error) {
-	msg, err := newMessage()
-	if err != nil {
-		return nil, err
-	}
-
-	msgExecute, err := capnp.NewExecuteResponse(msg.Segment())
-	if err != nil {
-		return nil, err
-	}
-
-	msgExecute.SetCode(code)
-
-	err = msg.Response().SetExecute(msgExecute)
-	if err != nil {
-		return nil, err
-	}
-
-	return msg.Message().Marshal()
-}
-
-func NewDummyRequest() ([]byte, error) {
-	msg, err := newMessage()
-	if err != nil {
-		return nil, err
-	}
-
-	msgDummy, err := capnp.NewDummyRequest(msg.Segment())
-	if err != nil {
-		return nil, err
-	}
-
-	err = msg.Action().SetDummyRequest(msgDummy)
+	err = msg.Content().SetUpdateClientInfo(m)
 	if err != nil {
 		return nil, err
 	}

@@ -9,61 +9,221 @@ import (
 )
 
 var (
-	ErrUnknownAction   = errors.New("unknown action")
-	ErrUnknownResponse = errors.New("unknown response")
+	ErrUnknownMessage = errors.New("unknown message")
 )
 
-func ParseAction(b []byte) (any, error) {
+func Unmarshal(b []byte) (any, error) {
 	message, err := parseMessage(b)
 	if err != nil {
 		return nil, err
 	}
 
-	action := message.Action()
+	content := message.Content()
 	switch {
-	case action.HasCreateWorker():
-		return parseCreateWorkerRequest(message)
+	case content.HasStartWorkerRequest():
+		return unmarshalStartWorkerRequest(message)
 
-	case action.HasDestroyWorker():
-		return parseDestroyWorkerRequest(message)
+	case content.HasStartWorkerResponse():
+		return unmarshalStartWorkerResponse(message)
 
-	case action.HasGetWorker():
-		return parseGetWorkerRequest(message)
+	case content.HasStopWorkerRequest():
+		return unmarshalStopWorkerRequest(message)
 
-	case action.HasExecute():
-		return parseExecuteRequest(message)
+	case content.HasStopWorkerResponse():
+		return unmarshalStopWorkerResponse(message)
 
-	case action.HasDummyRequest():
-		return parseDummyRequest(message)
+	case content.HasUpdateWorkerStatus():
+		return unmarshalUpdateWorkerStatus(message)
 
-	default:
-		return nil, ErrUnknownAction
+	case content.HasUpdateWorkerStdio():
+		return unmarshalUpdateWorkerStdio(message)
+
+	case content.HasUpdateClientInfo():
+		return unmarshalUpdateClientInfo(message)
 	}
+
+	return nil, ErrUnknownMessage
 }
 
-func ParseResponse(b []byte) (any, error) {
-	message, err := parseMessage(b)
+type StartWorkerRequest struct {
+	File string
+	Args []string
+	Env  []string
+}
+
+func unmarshalStartWorkerRequest(message capnp.Message) (StartWorkerRequest, error) {
+	v, err := message.Content().StartWorkerRequest()
 	if err != nil {
-		return nil, err
+		return StartWorkerRequest{}, err
 	}
 
-	response := message.Response()
-	switch {
-	case response.HasCreateWorker():
-		return parseCreateWorkerResponse(message)
-
-	case response.HasDestroyWorker():
-		return parseDestroyWorkerResponse(message)
-
-	case response.HasGetWorker():
-		return parseGetWorkerResponse(message)
-
-	case response.HasExecute():
-		return parseExecuteResponse(message)
-
-	default:
-		return nil, ErrUnknownResponse
+	file, err := v.File()
+	if err != nil {
+		return StartWorkerRequest{}, err
 	}
+
+	vArgs, err := v.Args()
+	if err != nil {
+		return StartWorkerRequest{}, err
+	}
+
+	args, err := textListToStringSlice(vArgs)
+	if err != nil {
+		return StartWorkerRequest{}, err
+	}
+
+	vEnv, err := v.Env()
+	if err != nil {
+		return StartWorkerRequest{}, err
+	}
+
+	env, err := textListToStringSlice(vEnv)
+	if err != nil {
+		return StartWorkerRequest{}, err
+	}
+
+	return StartWorkerRequest{
+		File: file,
+		Args: args,
+		Env:  env,
+	}, nil
+}
+
+type StartWorkerResponse struct {
+	Error error
+}
+
+func unmarshalStartWorkerResponse(message capnp.Message) (StartWorkerResponse, error) {
+	v, err := message.Content().StartWorkerResponse()
+	if err != nil {
+		return StartWorkerResponse{}, err
+	}
+
+	errMsg, err := v.Error()
+	if err != nil {
+		return StartWorkerResponse{}, err
+	}
+
+	var respErr error
+	if errMsg != "" {
+		respErr = errors.New(errMsg)
+	}
+
+	return StartWorkerResponse{
+		Error: respErr,
+	}, nil
+}
+
+type StopWorkerRequest struct{}
+
+func unmarshalStopWorkerRequest(message capnp.Message) (StopWorkerRequest, error) {
+	_, err := message.Content().StopWorkerRequest()
+	if err != nil {
+		return StopWorkerRequest{}, err
+	}
+
+	return StopWorkerRequest{}, nil
+}
+
+type StopWorkerResponse struct {
+	Error error
+}
+
+func unmarshalStopWorkerResponse(message capnp.Message) (StopWorkerResponse, error) {
+	v, err := message.Content().StopWorkerResponse()
+	if err != nil {
+		return StopWorkerResponse{}, err
+	}
+
+	errMsg, err := v.Error()
+	if err != nil {
+		return StopWorkerResponse{}, err
+	}
+
+	var respErr error
+	if errMsg != "" {
+		respErr = errors.New(errMsg)
+	}
+
+	return StopWorkerResponse{
+		Error: respErr,
+	}, nil
+}
+
+type UpdateWorkerStatus struct {
+	Status int64
+}
+
+func unmarshalUpdateWorkerStatus(message capnp.Message) (UpdateWorkerStatus, error) {
+	v, err := message.Content().UpdateWorkerStatus()
+	if err != nil {
+		return UpdateWorkerStatus{}, err
+	}
+
+	return UpdateWorkerStatus{
+		Status: v.Status(),
+	}, nil
+}
+
+type UpdateWorkerStdio struct {
+	Data []byte
+}
+
+func unmarshalUpdateWorkerStdio(message capnp.Message) (UpdateWorkerStdio, error) {
+	v, err := message.Content().UpdateWorkerStdio()
+	if err != nil {
+		return UpdateWorkerStdio{}, err
+	}
+
+	data, err := v.Data()
+	if err != nil {
+		return UpdateWorkerStdio{}, err
+	}
+
+	return UpdateWorkerStdio{
+		Data: data,
+	}, nil
+}
+
+type UpdateClientInfo struct {
+	Username string
+	Hostname string
+	System   string
+	Address  string
+}
+
+func unmarshalUpdateClientInfo(message capnp.Message) (UpdateClientInfo, error) {
+	v, err := message.Content().UpdateClientInfo()
+	if err != nil {
+		return UpdateClientInfo{}, err
+	}
+
+	username, err := v.Username()
+	if err != nil {
+		return UpdateClientInfo{}, err
+	}
+
+	hostname, err := v.Hostname()
+	if err != nil {
+		return UpdateClientInfo{}, err
+	}
+
+	system, err := v.System()
+	if err != nil {
+		return UpdateClientInfo{}, err
+	}
+
+	address, err := v.Address()
+	if err != nil {
+		return UpdateClientInfo{}, err
+	}
+
+	return UpdateClientInfo{
+		Username: username,
+		Hostname: hostname,
+		System:   system,
+		Address:  address,
+	}, nil
 }
 
 func parseMessage(b []byte) (capnp.Message, error) {
@@ -80,154 +240,10 @@ func parseMessage(b []byte) (capnp.Message, error) {
 	return message, nil
 }
 
-type CreateWorkerRequest struct{}
-
-func parseCreateWorkerRequest(message capnp.Message) (CreateWorkerRequest, error) {
-	_, err := message.Action().CreateWorker()
-	if err != nil {
-		return CreateWorkerRequest{}, err
-	}
-
-	return CreateWorkerRequest{}, nil
-}
-
-type CreateWorkerResponse struct {
-	ID uint64
-}
-
-func parseCreateWorkerResponse(message capnp.Message) (CreateWorkerResponse, error) {
-	v, err := message.Response().CreateWorker()
-	if err != nil {
-		return CreateWorkerResponse{}, err
-	}
-
-	return CreateWorkerResponse{
-		ID: v.Id(),
-	}, nil
-}
-
-type DestroyWorkerRequest struct {
-	ID uint64
-}
-
-func parseDestroyWorkerRequest(message capnp.Message) (DestroyWorkerRequest, error) {
-	v, err := message.Action().DestroyWorker()
-	if err != nil {
-		return DestroyWorkerRequest{}, err
-	}
-
-	return DestroyWorkerRequest{
-		ID: v.Id(),
-	}, nil
-}
-
-type DestroyWorkerResponse struct{}
-
-func parseDestroyWorkerResponse(message capnp.Message) (DestroyWorkerResponse, error) {
-	_, err := message.Response().DestroyWorker()
-	if err != nil {
-		return DestroyWorkerResponse{}, err
-	}
-
-	return DestroyWorkerResponse{}, nil
-}
-
-type GetWorkerRequest struct {
-	ID uint64
-}
-
-func parseGetWorkerRequest(message capnp.Message) (GetWorkerRequest, error) {
-	v, err := message.Action().GetWorker()
-	if err != nil {
-		return GetWorkerRequest{}, err
-	}
-
-	return GetWorkerRequest{
-		ID: v.Id(),
-	}, nil
-}
-
-type GetWorkerResponse struct {
-	ServiceName string
-	ServiceID   string
-}
-
-func parseGetWorkerResponse(message capnp.Message) (GetWorkerResponse, error) {
-	v, err := message.Response().GetWorker()
-	if err != nil {
-		return GetWorkerResponse{}, err
-	}
-
-	serviceName, err := v.ServiceName()
-	if err != nil {
-		return GetWorkerResponse{}, err
-	}
-
-	serviceID, err := v.ServiceId()
-	if err != nil {
-		return GetWorkerResponse{}, err
-	}
-
-	return GetWorkerResponse{
-		ServiceName: serviceName,
-		ServiceID:   serviceID,
-	}, nil
-}
-
-type ExecuteRequest struct {
-	Args     []string
-	FilePath string
-}
-
-func parseExecuteRequest(message capnp.Message) (ExecuteRequest, error) {
-	v, err := message.Action().Execute()
-	if err != nil {
-		return ExecuteRequest{}, err
-	}
-
-	vArgs, err := v.Args()
-	if err != nil {
-		return ExecuteRequest{}, err
-	}
-
-	args, err := textListToStringSlice(vArgs)
-	if err != nil {
-		return ExecuteRequest{}, err
-	}
-
-	filePath, err := v.FilePath()
-	if err != nil {
-		return ExecuteRequest{}, err
-	}
-
-	return ExecuteRequest{
-		Args:     args,
-		FilePath: filePath,
-	}, nil
-}
-
-type ExecuteResponse struct {
-	Code int64
-}
-
-func parseExecuteResponse(message capnp.Message) (ExecuteResponse, error) {
-	v, err := message.Response().Execute()
-	if err != nil {
-		return ExecuteResponse{}, err
-	}
-
-	return ExecuteResponse{
-		Code: v.Code(),
-	}, nil
-}
-
-type DummyRequest struct{}
-
-func parseDummyRequest(_ capnp.Message) (DummyRequest, error) {
-	return DummyRequest{}, nil
-}
-
 func textListToStringSlice(list capnplib.TextList) ([]string, error) {
+	if list.Len() == 0 {
+		return nil, nil
+	}
 	result := make([]string, 0, list.Len())
 	for i := 0; i < list.Len(); i++ {
 		v, err := list.At(i)
