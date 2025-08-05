@@ -1,6 +1,8 @@
 package decoder
 
 import (
+	"context"
+
 	"github.com/foohq/foojank/internal/vessel/consumer"
 )
 
@@ -11,6 +13,10 @@ type Message struct {
 
 func (m Message) Ack() error {
 	return m.msg.Ack()
+}
+
+func (m Message) Reply(ctx context.Context, data any) error {
+	return m.msg.Reply(ctx, data)
 }
 
 func (m Message) Data() any {
