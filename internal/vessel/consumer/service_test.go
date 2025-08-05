@@ -15,15 +15,16 @@ import (
 )
 
 func TestService(t *testing.T) {
-	streamName := "TEST-STREAM"
+	streamName := fmt.Sprintf("TEST-STREAM-%s", rand.Text())
 	consumerName := fmt.Sprintf("TEST-CONSUMER-%s", rand.Text())
-	srv, js := testutils.NewJetStreamConnection(t)
+	subjectName := fmt.Sprintf("TEST.COMMANDS-%s", rand.Text())
+	_, js := testutils.NewJetStreamConnection(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	_, err := js.CreateStream(ctx, jetstream.StreamConfig{
 		Name:     streamName,
-		Subjects: []string{"TEST.COMMANDS"},
+		Subjects: []string{subjectName},
 	})
 	require.NoError(t, err)
 
@@ -41,10 +42,10 @@ func TestService(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		err = consumer.New(consumer.Arguments{
-			Servers:  []string{srv.ClientURL()},
-			Stream:   "TEST-STREAM",
-			Consumer: consumerName,
-			OutputCh: outputCh,
+			Connection: js,
+			Stream:     streamName,
+			Consumer:   consumerName,
+			OutputCh:   outputCh,
 		}).Start(ctx)
 		require.NoError(t, err)
 	}()
@@ -55,7 +56,7 @@ func TestService(t *testing.T) {
 	}
 
 	for _, msg := range messages {
-		_, err = js.Publish(ctx, "TEST.COMMANDS", []byte(msg))
+		_, err = js.Publish(ctx, subjectName, []byte(msg))
 		require.NoError(t, err)
 	}
 
