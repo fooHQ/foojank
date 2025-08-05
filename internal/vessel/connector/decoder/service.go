@@ -27,27 +27,17 @@ func (s *Service) Start(ctx context.Context) error {
 	for {
 		select {
 		case msg := <-s.args.InputCh:
-			parsed, err := proto.ParseAction(msg.Data())
+			decoded, err := proto.Unmarshal(msg.Data())
 			if err != nil {
 				log.Debug("cannot decode message", "error", err)
-				continue
-			}
-
-			var data any
-			switch v := parsed.(type) {
-			case proto.CreateJobRequest:
-				data = v
-			case proto.CancelJobRequest:
-				data = v
-			default:
-				log.Debug("cannot decode message: unknown message", "message", parsed)
+				_ = msg.Ack()
 				continue
 			}
 
 			select {
 			case s.args.OutputCh <- Message{
 				msg:  msg,
-				data: data,
+				data: decoded,
 			}:
 			case <-ctx.Done():
 				return nil
