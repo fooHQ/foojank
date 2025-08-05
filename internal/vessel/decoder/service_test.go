@@ -34,7 +34,7 @@ func TestService(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		inputCh <- consumer.NewMessage(testutils.NewMsg("test-subject", b))
+		inputCh <- consumer.NewMessage(testutils.NewMsg("test-subject", b), nil)
 		outMsg := <-outputCh
 		require.IsType(t, proto.CreateJobRequest{}, outMsg.Data())
 	}
@@ -43,7 +43,7 @@ func TestService(t *testing.T) {
 		b, err := proto.NewCancelJobRequest("job-32")
 		require.NoError(t, err)
 
-		inputCh <- consumer.NewMessage(testutils.NewMsg("test-subject", b))
+		inputCh <- consumer.NewMessage(testutils.NewMsg("test-subject", b), nil)
 		outMsg := <-outputCh
 		require.IsType(t, proto.CancelJobRequest{}, outMsg.Data())
 	}
