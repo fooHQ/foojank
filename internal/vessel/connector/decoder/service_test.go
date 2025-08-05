@@ -26,25 +26,36 @@ func TestService(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	{
-		b, err := proto.NewCreateJobRequest(
-			"execute",
-			[]string{"arg1", "arg2"},
-			[]string{"TEST", "hello"},
-		)
-		require.NoError(t, err)
-
-		inputCh <- consumer.NewMessage(testutils.NewMsg("test-subject", b), nil)
-		outMsg := <-outputCh
-		require.IsType(t, proto.CreateJobRequest{}, outMsg.Data())
+	tests := []struct {
+		name  string
+		input any
+	}{
+		{
+			name: "CreateJobRequest",
+			input: proto.CreateJobRequest{
+				Command: "test-cmd",
+				Args:    []string{"arg1", "arg2"},
+				Env:     []string{"VAR1", "val1", "VAR2", "val2"},
+			},
+		},
+		{
+			name: "CancelJobRequest",
+			input: proto.CancelJobRequest{
+				JobID: "job-123",
+			},
+		},
 	}
 
-	{
-		b, err := proto.NewCancelJobRequest("job-32")
-		require.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			marshaled, err := proto.Marshal(tt.input)
+			require.NoError(t, err)
 
-		inputCh <- consumer.NewMessage(testutils.NewMsg("test-subject", b), nil)
-		outMsg := <-outputCh
-		require.IsType(t, proto.CancelJobRequest{}, outMsg.Data())
+			inMsg := testutils.NewMsg("test-subject", marshaled)
+			inputCh <- consumer.NewMessage(inMsg, nil)
+			outMsg := <-outputCh
+			require.IsType(t, tt.input, outMsg.Data())
+			require.Equal(t, tt.input, outMsg.Data())
+		})
 	}
 }
