@@ -128,3 +128,224 @@ func TestParseDummyRequest(t *testing.T) {
 		require.Error(t, err)
 	})
 }
+
+func TestMarshalUnmarshal(t *testing.T) {
+	testError := errors.New("test error")
+
+	tests := []struct {
+		name        string
+		input       any
+		want        any
+		wantMarshal bool
+		wantErr     error
+	}{
+		{
+			name: "CreateJobRequest",
+			input: proto.CreateJobRequest{
+				Command: "test-cmd",
+				Args:    []string{"arg1", "arg2"},
+				Env:     []string{"VAR1", "val1", "VAR2", "val2"},
+			},
+			want: proto.CreateJobRequest{
+				Command: "test-cmd",
+				Args:    []string{"arg1", "arg2"},
+				Env:     []string{"VAR1", "val1", "VAR2", "val2"},
+			},
+			wantMarshal: true,
+		},
+		{
+			name: "CreateJobRequest with special characters",
+			input: proto.CreateJobRequest{
+				Command: "test",
+				Args:    []string{"arg with spaces", "arg\nwith\nnewlines", "arg\twith\ttabs"},
+				Env:     []string{"VAR1", "value with spaces", "VAR2", "value\nwith\nnewlines"},
+			},
+			want: proto.CreateJobRequest{
+				Command: "test",
+				Args:    []string{"arg with spaces", "arg\nwith\nnewlines", "arg\twith\ttabs"},
+				Env:     []string{"VAR1", "value with spaces", "VAR2", "value\nwith\nnewlines"},
+			},
+			wantMarshal: true,
+		},
+		{
+			name: "CreateJobRequest with empty strings",
+			input: proto.CreateJobRequest{
+				Command: "test",
+				Args:    []string{"", "non-empty", ""},
+				Env:     []string{"VAR1", "", "VAR2", ""},
+			},
+			want: proto.CreateJobRequest{
+				Command: "test",
+				Args:    []string{"", "non-empty", ""},
+				Env:     []string{"VAR1", "", "VAR2", ""},
+			},
+			wantMarshal: true,
+		},
+		{
+			name: "CreateJobRequest Unicode characters",
+			input: proto.CreateJobRequest{
+				Command: "测试",
+				Args:    []string{"参数1", "パラメータ2", "매개변수3"},
+				Env:     []string{"变量1", "值1", "変数2", "値2"},
+			},
+			want: proto.CreateJobRequest{
+				Command: "测试",
+				Args:    []string{"参数1", "パラメータ2", "매개변수3"},
+				Env:     []string{"变量1", "值1", "変数2", "値2"},
+			},
+			wantMarshal: true,
+		},
+		{
+			name: "CreateJobRequest with nil slices",
+			input: proto.CreateJobRequest{
+				Command: "test",
+				Args:    nil,
+				Env:     nil,
+			},
+			want: proto.CreateJobRequest{
+				Command: "test",
+				Args:    nil,
+				Env:     nil,
+			},
+			wantMarshal: true,
+		},
+		{
+			name: "CreateJobResponse with nil error",
+			input: proto.CreateJobResponse{
+				JobID:         "job-123",
+				StdinSubject:  "stdin",
+				StdoutSubject: "stdout",
+				Error:         nil,
+			},
+			want: proto.CreateJobResponse{
+				JobID:         "job-123",
+				StdinSubject:  "stdin",
+				StdoutSubject: "stdout",
+				Error:         nil,
+			},
+			wantMarshal: true,
+		},
+		{
+			name: "CancelJobResponse with nil error",
+			input: proto.CancelJobResponse{
+				Error: nil,
+			},
+			want: proto.CancelJobResponse{
+				Error: nil,
+			},
+			wantMarshal: true,
+		},
+		{
+			name: "CreateJobResponse without error",
+			input: proto.CreateJobResponse{
+				JobID:         "job-123",
+				StdinSubject:  "stdin.123",
+				StdoutSubject: "stdout.123",
+			},
+			want: proto.CreateJobResponse{
+				JobID:         "job-123",
+				StdinSubject:  "stdin.123",
+				StdoutSubject: "stdout.123",
+			},
+			wantMarshal: true,
+		},
+		{
+			name: "CreateJobResponse with error",
+			input: proto.CreateJobResponse{
+				JobID:         "job-123",
+				StdinSubject:  "stdin.123",
+				StdoutSubject: "stdout.123",
+				Error:         testError,
+			},
+			want: proto.CreateJobResponse{
+				JobID:         "job-123",
+				StdinSubject:  "stdin.123",
+				StdoutSubject: "stdout.123",
+				Error:         testError,
+			},
+			wantMarshal: true,
+		},
+		{
+			name: "CancelJobRequest",
+			input: proto.CancelJobRequest{
+				JobID: "job-123",
+			},
+			want: proto.CancelJobRequest{
+				JobID: "job-123",
+			},
+			wantMarshal: true,
+		},
+		{
+			name:        "CancelJobResponse without error",
+			input:       proto.CancelJobResponse{},
+			want:        proto.CancelJobResponse{},
+			wantMarshal: true,
+		},
+		{
+			name: "CancelJobResponse with error",
+			input: proto.CancelJobResponse{
+				Error: testError,
+			},
+			want: proto.CancelJobResponse{
+				Error: testError,
+			},
+			wantMarshal: true,
+		},
+		{
+			name: "UpdateJob",
+			input: proto.UpdateJob{
+				JobID:      "job-123",
+				ExitStatus: 42,
+			},
+			want: proto.UpdateJob{
+				JobID:      "job-123",
+				ExitStatus: 42,
+			},
+			wantMarshal: true,
+		},
+		{
+			name:    "Unsupported type",
+			input:   struct{}{},
+			wantErr: proto.ErrUnknownMessage,
+		},
+		{
+			name:    "Nil input",
+			input:   nil,
+			wantErr: proto.ErrUnknownMessage,
+		},
+		{
+			name:    "Empty input",
+			input:   []byte{},
+			wantErr: proto.ErrUnknownMessage,
+		},
+		{
+			name:    "Invalid data",
+			input:   []byte("invalid"),
+			wantErr: proto.ErrUnknownMessage,
+		},
+		{
+			name:    "Invalid data",
+			input:   []byte{0, 0, 0, 0, 0, 0, 0, 0},
+			wantErr: proto.ErrUnknownMessage,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Test Marshal
+			marshaled, err := proto.Marshal(tt.input)
+			if !tt.wantMarshal {
+				require.Error(t, err)
+				require.Equal(t, tt.wantErr, err)
+				return
+			}
+			require.NoError(t, err)
+			require.NotEmpty(t, marshaled)
+
+			// Test Unmarshal
+			unmarshaled, err := proto.Unmarshal(marshaled)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, unmarshaled)
+		})
+	}
+}
