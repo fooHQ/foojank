@@ -14,6 +14,7 @@ type Arguments struct {
 	Connection jetstream.JetStream
 	Stream     string
 	Consumer   string
+	ReplyCh    chan<- any
 	OutputCh   chan<- Message
 }
 
@@ -44,7 +45,7 @@ func (s *Service) Start(ctx context.Context) error {
 	wg.Add(1)
 	go func() {
 		wg.Done()
-		forwardMessages(ctx, msgs, s.args.OutputCh)
+		forwardMessages(ctx, msgs, s.args.ReplyCh, s.args.OutputCh)
 	}()
 
 	<-ctx.Done()
@@ -54,7 +55,7 @@ func (s *Service) Start(ctx context.Context) error {
 	return nil
 }
 
-func forwardMessages(ctx context.Context, msgs jetstream.MessagesContext, outputCh chan<- Message) {
+func forwardMessages(ctx context.Context, msgs jetstream.MessagesContext, replyCh chan<- any, outputCh chan<- Message) {
 	for {
 		msg, err := msgs.Next()
 		if err != nil {
@@ -64,8 +65,12 @@ func forwardMessages(ctx context.Context, msgs jetstream.MessagesContext, output
 			continue
 		}
 
+		outMsg := Message{
+			msg:     msg,
+			replyCh: replyCh,
+		}
 		select {
-		case outputCh <- NewMessage(msg):
+		case outputCh <- outMsg:
 		case <-ctx.Done():
 			return
 		}
