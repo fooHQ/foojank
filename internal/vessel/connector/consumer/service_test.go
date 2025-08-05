@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/foohq/foojank/internal/testutils"
-	"github.com/foohq/foojank/internal/vessel/consumer"
+	"github.com/foohq/foojank/internal/vessel/connector/consumer"
 )
 
 func TestService(t *testing.T) {

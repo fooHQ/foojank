@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/foohq/foojank/internal/testutils"
-	"github.com/foohq/foojank/internal/vessel/consumer"
-	"github.com/foohq/foojank/internal/vessel/decoder"
+	"github.com/foohq/foojank/internal/vessel/connector/consumer"
+	"github.com/foohq/foojank/internal/vessel/connector/decoder"
 	"github.com/foohq/foojank/proto"
 )
 

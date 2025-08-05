@@ -3,7 +3,7 @@ package decoder
 import (
 	"context"
 
-	"github.com/foohq/foojank/internal/vessel/consumer"
+	"github.com/foohq/foojank/internal/vessel/connector/consumer"
 	"github.com/foohq/foojank/internal/vessel/log"
 	"github.com/foohq/foojank/proto"
 )

@@ -11,11 +11,11 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/foohq/foojank/internal/vessel/consumer"
-	"github.com/foohq/foojank/internal/vessel/decoder"
-	"github.com/foohq/foojank/internal/vessel/encoder"
+	"github.com/foohq/foojank/internal/vessel/connector/consumer"
+	"github.com/foohq/foojank/internal/vessel/connector/decoder"
+	"github.com/foohq/foojank/internal/vessel/connector/encoder"
+	"github.com/foohq/foojank/internal/vessel/connector/publisher"
 	"github.com/foohq/foojank/internal/vessel/log"
-	"github.com/foohq/foojank/internal/vessel/publisher"
 )
 
 type Arguments struct {

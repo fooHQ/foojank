@@ -1,7 +1,7 @@
 package connector
 
 import (
-	"github.com/foohq/foojank/internal/vessel/decoder"
+	"github.com/foohq/foojank/internal/vessel/connector/decoder"
 )
 
 type Message = decoder.Message
