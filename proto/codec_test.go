@@ -33,7 +33,7 @@ func TestParseCreateJobRequest(t *testing.T) {
 
 func TestParseCreateJobResponse(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		data, err := proto.NewCreateJobResponse("job-123", "stdin-subject", "stdout-subject", "some error")
+		data, err := proto.NewCreateJobResponse("job-123", "stdin-subject", "stdout-subject", errors.New("some error"))
 		require.NoError(t, err)
 
 		result, err := proto.ParseResponse(data)
@@ -74,7 +74,7 @@ func TestParseCancelJobRequest(t *testing.T) {
 
 func TestParseCancelJobResponse(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		data, err := proto.NewCancelJobResponse("some error")
+		data, err := proto.NewCancelJobResponse(errors.New("some error"))
 		require.NoError(t, err)
 
 		result, err := proto.ParseResponse(data)

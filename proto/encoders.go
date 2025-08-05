@@ -254,7 +254,7 @@ func NewCreateJobRequest(command string, args, env []string) ([]byte, error) {
 	return msg.Message().Marshal()
 }
 
-func NewCreateJobResponse(jobID, stdinSubject, stdoutSubject string, errMsg string) ([]byte, error) {
+func NewCreateJobResponse(jobID, stdinSubject, stdoutSubject string, respErr error) ([]byte, error) {
 	msg, err := newMessage()
 	if err != nil {
 		return nil, err
@@ -280,9 +280,11 @@ func NewCreateJobResponse(jobID, stdinSubject, stdoutSubject string, errMsg stri
 		return nil, err
 	}
 
-	err = msgCreateJob.SetError(errMsg)
-	if err != nil {
-		return nil, err
+	if respErr != nil {
+		err = msgCreateJob.SetError(respErr.Error())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = msg.Response().SetCreateJob(msgCreateJob)
@@ -317,7 +319,7 @@ func NewCancelJobRequest(jobID string) ([]byte, error) {
 	return msg.Message().Marshal()
 }
 
-func NewCancelJobResponse(errMsg string) ([]byte, error) {
+func NewCancelJobResponse(respErr error) ([]byte, error) {
 	msg, err := newMessage()
 	if err != nil {
 		return nil, err
@@ -328,9 +330,11 @@ func NewCancelJobResponse(errMsg string) ([]byte, error) {
 		return nil, err
 	}
 
-	err = msgCancelJob.SetError(errMsg)
-	if err != nil {
-		return nil, err
+	if respErr != nil {
+		err = msgCancelJob.SetError(respErr.Error())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = msg.Response().SetCancelJob(msgCancelJob)
