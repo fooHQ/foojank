@@ -64,22 +64,29 @@ struct UpdateJob {
 struct DummyRequest {}
 
 struct Message {
+    content :union {
+        createJobRequest @0 :CreateJobRequest;
+        cancelJobRequest @1 :CancelJobRequest;
+        createJobResponse @2 :CreateJobResponse;
+        cancelJobResponse @3 :CancelJobResponse;
+        updateJob @4 :UpdateJob;
+    }
     action :union {
-        createWorker @0 :CreateWorkerRequest;
-        destroyWorker @1 :DestroyWorkerRequest;
-        getWorker @2 :GetWorkerRequest;
-        execute @3 :ExecuteRequest;
-        createJob @4 :CreateJobRequest;
-        cancelJob @5 :CancelJobRequest;
-        dummyRequest @6 :DummyRequest;
+        createWorker @5 :CreateWorkerRequest;
+        destroyWorker @6 :DestroyWorkerRequest;
+        getWorker @7 :GetWorkerRequest;
+        execute @8 :ExecuteRequest;
+        createJob @9 :CreateJobRequest;
+        cancelJob @10 :CancelJobRequest;
+        dummyRequest @11 :DummyRequest;
     }
     response :union {
-        createWorker @7 :CreateWorkerResponse;
-        destroyWorker @8 :DestroyWorkerResponse;
-        getWorker @9 :GetWorkerResponse;
-        execute @10 :ExecuteResponse;
-        createJob @11 :CreateJobResponse;
-        cancelJob @12 :CancelJobResponse;
-        updateJob @13 :UpdateJob;
+        createWorker @12 :CreateWorkerResponse;
+        destroyWorker @13 :DestroyWorkerResponse;
+        getWorker @14 :GetWorkerResponse;
+        execute @15 :ExecuteResponse;
+        createJob @16 :CreateJobResponse;
+        cancelJob @17 :CancelJobResponse;
+        updateJob @18 :UpdateJob;
     }
 }

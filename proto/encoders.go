@@ -6,6 +6,183 @@ import (
 	"github.com/foohq/foojank/proto/capnp"
 )
 
+func Marshal(data any) ([]byte, error) {
+	switch v := data.(type) {
+	case CreateJobRequest:
+		return marshalCreateJobRequest(v)
+	case CreateJobResponse:
+		return marshalCreateJobResponse(v)
+	case CancelJobRequest:
+		return marshalCancelJobRequest(v)
+	case CancelJobResponse:
+		return marshalCancelJobResponse(v)
+	case UpdateJob:
+		return marshalUpdateJob(v)
+	}
+	return nil, ErrUnknownMessage
+}
+
+func marshalCreateJobRequest(data CreateJobRequest) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgCreateJob, err := capnp.NewCreateJobRequest(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetCommand(data.Command)
+	if err != nil {
+		return nil, err
+	}
+
+	argsList, err := newTextList(msg.Segment(), data.Args)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetArgs(argsList)
+	if err != nil {
+		return nil, err
+	}
+
+	envList, err := newTextList(msg.Segment(), data.Env)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetEnv(envList)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msg.Content().SetCreateJobRequest(msgCreateJob)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
+func marshalCreateJobResponse(data CreateJobResponse) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgCreateJob, err := capnp.NewCreateJobResponse(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetJobID(data.JobID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetStdinSubject(data.StdinSubject)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCreateJob.SetStdoutSubject(data.StdoutSubject)
+	if err != nil {
+		return nil, err
+	}
+
+	if data.Error != nil {
+		err = msgCreateJob.SetError(data.Error.Error())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = msg.Content().SetCreateJobResponse(msgCreateJob)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
+func marshalCancelJobRequest(data CancelJobRequest) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgCancelJob, err := capnp.NewCancelJobRequest(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgCancelJob.SetJobID(data.JobID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msg.Content().SetCancelJobRequest(msgCancelJob)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
+func marshalCancelJobResponse(data CancelJobResponse) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgCancelJob, err := capnp.NewCancelJobResponse(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	if data.Error != nil {
+		err = msgCancelJob.SetError(data.Error.Error())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = msg.Content().SetCancelJobResponse(msgCancelJob)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
+func marshalUpdateJob(data UpdateJob) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgUpdateJob, err := capnp.NewUpdateJob(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgUpdateJob.SetJobID(data.JobID)
+	if err != nil {
+		return nil, err
+	}
+
+	msgUpdateJob.SetExitStatus(data.ExitStatus)
+
+	err = msg.Content().SetUpdateJob(msgUpdateJob)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
 func NewCreateWorkerRequest() ([]byte, error) {
 	msg, err := newMessage()
 	if err != nil {

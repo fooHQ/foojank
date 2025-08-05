@@ -11,7 +11,166 @@ import (
 var (
 	ErrUnknownAction   = errors.New("unknown action")
 	ErrUnknownResponse = errors.New("unknown response")
+	ErrUnknownMessage  = errors.New("unknown message")
 )
+
+func Unmarshal(b []byte) (any, error) {
+	message, err := parseMessage(b)
+	if err != nil {
+		return nil, err
+	}
+
+	content := message.Content()
+	switch {
+	case content.HasCreateJobRequest():
+		return unmarshalCreateJobRequest(message)
+
+	case content.HasCreateJobResponse():
+		return unmarshalCreateJobResponse(message)
+
+	case content.HasCancelJobRequest():
+		return unmarshalCancelJobRequest(message)
+
+	case content.HasCancelJobResponse():
+		return unmarshalCancelJobResponse(message)
+
+	case content.HasUpdateJob():
+		return unmarshalUpdateJob(message)
+	}
+
+	return nil, ErrUnknownMessage
+}
+
+func unmarshalCreateJobRequest(message capnp.Message) (CreateJobRequest, error) {
+	v, err := message.Content().CreateJobRequest()
+	if err != nil {
+		return CreateJobRequest{}, err
+	}
+
+	command, err := v.Command()
+	if err != nil {
+		return CreateJobRequest{}, err
+	}
+
+	vArgs, err := v.Args()
+	if err != nil {
+		return CreateJobRequest{}, err
+	}
+
+	args, err := textListToStringSlice(vArgs)
+	if err != nil {
+		return CreateJobRequest{}, err
+	}
+
+	vEnv, err := v.Env()
+	if err != nil {
+		return CreateJobRequest{}, err
+	}
+
+	env, err := textListToStringSlice(vEnv)
+	if err != nil {
+		return CreateJobRequest{}, err
+	}
+
+	return CreateJobRequest{
+		Command: command,
+		Args:    args,
+		Env:     env,
+	}, nil
+}
+
+func unmarshalCreateJobResponse(message capnp.Message) (CreateJobResponse, error) {
+	v, err := message.Content().CreateJobResponse()
+	if err != nil {
+		return CreateJobResponse{}, err
+	}
+
+	jobID, err := v.JobID()
+	if err != nil {
+		return CreateJobResponse{}, err
+	}
+
+	stdinSubject, err := v.StdinSubject()
+	if err != nil {
+		return CreateJobResponse{}, err
+	}
+
+	stdoutSubject, err := v.StdoutSubject()
+	if err != nil {
+		return CreateJobResponse{}, err
+	}
+
+	errMsg, err := v.Error()
+	if err != nil {
+		return CreateJobResponse{}, err
+	}
+
+	var respErr error
+	if errMsg != "" {
+		respErr = errors.New(errMsg)
+	}
+
+	return CreateJobResponse{
+		JobID:         jobID,
+		StdinSubject:  stdinSubject,
+		StdoutSubject: stdoutSubject,
+		Error:         respErr,
+	}, nil
+}
+
+func unmarshalCancelJobRequest(message capnp.Message) (CancelJobRequest, error) {
+	v, err := message.Content().CancelJobRequest()
+	if err != nil {
+		return CancelJobRequest{}, err
+	}
+
+	jobID, err := v.JobID()
+	if err != nil {
+		return CancelJobRequest{}, err
+	}
+
+	return CancelJobRequest{
+		JobID: jobID,
+	}, nil
+}
+
+func unmarshalCancelJobResponse(message capnp.Message) (CancelJobResponse, error) {
+	v, err := message.Content().CancelJobResponse()
+	if err != nil {
+		return CancelJobResponse{}, err
+	}
+
+	errMsg, err := v.Error()
+	if err != nil {
+		return CancelJobResponse{}, err
+	}
+
+	var respErr error
+	if errMsg != "" {
+		respErr = errors.New(errMsg)
+	}
+
+	return CancelJobResponse{
+		Error: respErr,
+	}, nil
+}
+
+func unmarshalUpdateJob(message capnp.Message) (UpdateJob, error) {
+	v, err := message.Content().UpdateJob()
+	if err != nil {
+		return UpdateJob{}, err
+	}
+
+	jobID, err := v.JobID()
+	if err != nil {
+		return UpdateJob{}, err
+	}
+
+	return UpdateJob{
+		JobID:      jobID,
+		ExitStatus: v.ExitStatus(),
+	}, nil
+}
 
 func ParseAction(b []byte) (any, error) {
 	message, err := parseMessage(b)
@@ -390,6 +549,9 @@ func parseUpdateJob(message capnp.Message) (UpdateJob, error) {
 }
 
 func textListToStringSlice(list capnplib.TextList) ([]string, error) {
+	if list.Len() == 0 {
+		return nil, nil
+	}
 	result := make([]string, 0, list.Len())
 	for i := 0; i < list.Len(); i++ {
 		v, err := list.At(i)

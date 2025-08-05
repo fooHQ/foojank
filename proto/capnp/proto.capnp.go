@@ -1217,8 +1217,37 @@ func (f DummyRequest_Future) Struct() (DummyRequest, error) {
 }
 
 type Message capnp.Struct
+type Message_content Message
 type Message_action Message
 type Message_response Message
+type Message_content_Which uint16
+
+const (
+	Message_content_Which_createJobRequest  Message_content_Which = 0
+	Message_content_Which_cancelJobRequest  Message_content_Which = 1
+	Message_content_Which_createJobResponse Message_content_Which = 2
+	Message_content_Which_cancelJobResponse Message_content_Which = 3
+	Message_content_Which_updateJob         Message_content_Which = 4
+)
+
+func (w Message_content_Which) String() string {
+	const s = "createJobRequestcancelJobRequestcreateJobResponsecancelJobResponseupdateJob"
+	switch w {
+	case Message_content_Which_createJobRequest:
+		return s[0:16]
+	case Message_content_Which_cancelJobRequest:
+		return s[16:32]
+	case Message_content_Which_createJobResponse:
+		return s[32:49]
+	case Message_content_Which_cancelJobResponse:
+		return s[49:66]
+	case Message_content_Which_updateJob:
+		return s[66:75]
+
+	}
+	return "Message_content_Which(" + strconv.FormatUint(uint64(w), 10) + ")"
+}
+
 type Message_action_Which uint16
 
 const (
@@ -1291,12 +1320,12 @@ func (w Message_response_Which) String() string {
 const Message_TypeID = 0xd270ea7f372f79cd
 
 func NewMessage(s *capnp.Segment) (Message, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 2})
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 3})
 	return Message(st), err
 }
 
 func NewRootMessage(s *capnp.Segment) (Message, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 2})
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 3})
 	return Message(st), err
 }
 
@@ -1332,10 +1361,186 @@ func (s Message) Message() *capnp.Message {
 func (s Message) Segment() *capnp.Segment {
 	return capnp.Struct(s).Segment()
 }
+func (s Message) Content() Message_content { return Message_content(s) }
+
+func (s Message_content) Which() Message_content_Which {
+	return Message_content_Which(capnp.Struct(s).Uint16(0))
+}
+func (s Message_content) IsValid() bool {
+	return capnp.Struct(s).IsValid()
+}
+
+func (s Message_content) Message() *capnp.Message {
+	return capnp.Struct(s).Message()
+}
+
+func (s Message_content) Segment() *capnp.Segment {
+	return capnp.Struct(s).Segment()
+}
+func (s Message_content) CreateJobRequest() (CreateJobRequest, error) {
+	if capnp.Struct(s).Uint16(0) != 0 {
+		panic("Which() != createJobRequest")
+	}
+	p, err := capnp.Struct(s).Ptr(0)
+	return CreateJobRequest(p.Struct()), err
+}
+
+func (s Message_content) HasCreateJobRequest() bool {
+	if capnp.Struct(s).Uint16(0) != 0 {
+		return false
+	}
+	return capnp.Struct(s).HasPtr(0)
+}
+
+func (s Message_content) SetCreateJobRequest(v CreateJobRequest) error {
+	capnp.Struct(s).SetUint16(0, 0)
+	return capnp.Struct(s).SetPtr(0, capnp.Struct(v).ToPtr())
+}
+
+// NewCreateJobRequest sets the createJobRequest field to a newly
+// allocated CreateJobRequest struct, preferring placement in s's segment.
+func (s Message_content) NewCreateJobRequest() (CreateJobRequest, error) {
+	capnp.Struct(s).SetUint16(0, 0)
+	ss, err := NewCreateJobRequest(capnp.Struct(s).Segment())
+	if err != nil {
+		return CreateJobRequest{}, err
+	}
+	err = capnp.Struct(s).SetPtr(0, capnp.Struct(ss).ToPtr())
+	return ss, err
+}
+
+func (s Message_content) CancelJobRequest() (CancelJobRequest, error) {
+	if capnp.Struct(s).Uint16(0) != 1 {
+		panic("Which() != cancelJobRequest")
+	}
+	p, err := capnp.Struct(s).Ptr(0)
+	return CancelJobRequest(p.Struct()), err
+}
+
+func (s Message_content) HasCancelJobRequest() bool {
+	if capnp.Struct(s).Uint16(0) != 1 {
+		return false
+	}
+	return capnp.Struct(s).HasPtr(0)
+}
+
+func (s Message_content) SetCancelJobRequest(v CancelJobRequest) error {
+	capnp.Struct(s).SetUint16(0, 1)
+	return capnp.Struct(s).SetPtr(0, capnp.Struct(v).ToPtr())
+}
+
+// NewCancelJobRequest sets the cancelJobRequest field to a newly
+// allocated CancelJobRequest struct, preferring placement in s's segment.
+func (s Message_content) NewCancelJobRequest() (CancelJobRequest, error) {
+	capnp.Struct(s).SetUint16(0, 1)
+	ss, err := NewCancelJobRequest(capnp.Struct(s).Segment())
+	if err != nil {
+		return CancelJobRequest{}, err
+	}
+	err = capnp.Struct(s).SetPtr(0, capnp.Struct(ss).ToPtr())
+	return ss, err
+}
+
+func (s Message_content) CreateJobResponse() (CreateJobResponse, error) {
+	if capnp.Struct(s).Uint16(0) != 2 {
+		panic("Which() != createJobResponse")
+	}
+	p, err := capnp.Struct(s).Ptr(0)
+	return CreateJobResponse(p.Struct()), err
+}
+
+func (s Message_content) HasCreateJobResponse() bool {
+	if capnp.Struct(s).Uint16(0) != 2 {
+		return false
+	}
+	return capnp.Struct(s).HasPtr(0)
+}
+
+func (s Message_content) SetCreateJobResponse(v CreateJobResponse) error {
+	capnp.Struct(s).SetUint16(0, 2)
+	return capnp.Struct(s).SetPtr(0, capnp.Struct(v).ToPtr())
+}
+
+// NewCreateJobResponse sets the createJobResponse field to a newly
+// allocated CreateJobResponse struct, preferring placement in s's segment.
+func (s Message_content) NewCreateJobResponse() (CreateJobResponse, error) {
+	capnp.Struct(s).SetUint16(0, 2)
+	ss, err := NewCreateJobResponse(capnp.Struct(s).Segment())
+	if err != nil {
+		return CreateJobResponse{}, err
+	}
+	err = capnp.Struct(s).SetPtr(0, capnp.Struct(ss).ToPtr())
+	return ss, err
+}
+
+func (s Message_content) CancelJobResponse() (CancelJobResponse, error) {
+	if capnp.Struct(s).Uint16(0) != 3 {
+		panic("Which() != cancelJobResponse")
+	}
+	p, err := capnp.Struct(s).Ptr(0)
+	return CancelJobResponse(p.Struct()), err
+}
+
+func (s Message_content) HasCancelJobResponse() bool {
+	if capnp.Struct(s).Uint16(0) != 3 {
+		return false
+	}
+	return capnp.Struct(s).HasPtr(0)
+}
+
+func (s Message_content) SetCancelJobResponse(v CancelJobResponse) error {
+	capnp.Struct(s).SetUint16(0, 3)
+	return capnp.Struct(s).SetPtr(0, capnp.Struct(v).ToPtr())
+}
+
+// NewCancelJobResponse sets the cancelJobResponse field to a newly
+// allocated CancelJobResponse struct, preferring placement in s's segment.
+func (s Message_content) NewCancelJobResponse() (CancelJobResponse, error) {
+	capnp.Struct(s).SetUint16(0, 3)
+	ss, err := NewCancelJobResponse(capnp.Struct(s).Segment())
+	if err != nil {
+		return CancelJobResponse{}, err
+	}
+	err = capnp.Struct(s).SetPtr(0, capnp.Struct(ss).ToPtr())
+	return ss, err
+}
+
+func (s Message_content) UpdateJob() (UpdateJob, error) {
+	if capnp.Struct(s).Uint16(0) != 4 {
+		panic("Which() != updateJob")
+	}
+	p, err := capnp.Struct(s).Ptr(0)
+	return UpdateJob(p.Struct()), err
+}
+
+func (s Message_content) HasUpdateJob() bool {
+	if capnp.Struct(s).Uint16(0) != 4 {
+		return false
+	}
+	return capnp.Struct(s).HasPtr(0)
+}
+
+func (s Message_content) SetUpdateJob(v UpdateJob) error {
+	capnp.Struct(s).SetUint16(0, 4)
+	return capnp.Struct(s).SetPtr(0, capnp.Struct(v).ToPtr())
+}
+
+// NewUpdateJob sets the updateJob field to a newly
+// allocated UpdateJob struct, preferring placement in s's segment.
+func (s Message_content) NewUpdateJob() (UpdateJob, error) {
+	capnp.Struct(s).SetUint16(0, 4)
+	ss, err := NewUpdateJob(capnp.Struct(s).Segment())
+	if err != nil {
+		return UpdateJob{}, err
+	}
+	err = capnp.Struct(s).SetPtr(0, capnp.Struct(ss).ToPtr())
+	return ss, err
+}
+
 func (s Message) Action() Message_action { return Message_action(s) }
 
 func (s Message_action) Which() Message_action_Which {
-	return Message_action_Which(capnp.Struct(s).Uint16(0))
+	return Message_action_Which(capnp.Struct(s).Uint16(2))
 }
 func (s Message_action) IsValid() bool {
 	return capnp.Struct(s).IsValid()
@@ -1349,233 +1554,233 @@ func (s Message_action) Segment() *capnp.Segment {
 	return capnp.Struct(s).Segment()
 }
 func (s Message_action) CreateWorker() (CreateWorkerRequest, error) {
-	if capnp.Struct(s).Uint16(0) != 0 {
+	if capnp.Struct(s).Uint16(2) != 0 {
 		panic("Which() != createWorker")
 	}
-	p, err := capnp.Struct(s).Ptr(0)
+	p, err := capnp.Struct(s).Ptr(1)
 	return CreateWorkerRequest(p.Struct()), err
 }
 
 func (s Message_action) HasCreateWorker() bool {
-	if capnp.Struct(s).Uint16(0) != 0 {
+	if capnp.Struct(s).Uint16(2) != 0 {
 		return false
 	}
-	return capnp.Struct(s).HasPtr(0)
+	return capnp.Struct(s).HasPtr(1)
 }
 
 func (s Message_action) SetCreateWorker(v CreateWorkerRequest) error {
-	capnp.Struct(s).SetUint16(0, 0)
-	return capnp.Struct(s).SetPtr(0, capnp.Struct(v).ToPtr())
+	capnp.Struct(s).SetUint16(2, 0)
+	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
 }
 
 // NewCreateWorker sets the createWorker field to a newly
 // allocated CreateWorkerRequest struct, preferring placement in s's segment.
 func (s Message_action) NewCreateWorker() (CreateWorkerRequest, error) {
-	capnp.Struct(s).SetUint16(0, 0)
+	capnp.Struct(s).SetUint16(2, 0)
 	ss, err := NewCreateWorkerRequest(capnp.Struct(s).Segment())
 	if err != nil {
 		return CreateWorkerRequest{}, err
 	}
-	err = capnp.Struct(s).SetPtr(0, capnp.Struct(ss).ToPtr())
+	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
 	return ss, err
 }
 
 func (s Message_action) DestroyWorker() (DestroyWorkerRequest, error) {
-	if capnp.Struct(s).Uint16(0) != 1 {
+	if capnp.Struct(s).Uint16(2) != 1 {
 		panic("Which() != destroyWorker")
 	}
-	p, err := capnp.Struct(s).Ptr(0)
+	p, err := capnp.Struct(s).Ptr(1)
 	return DestroyWorkerRequest(p.Struct()), err
 }
 
 func (s Message_action) HasDestroyWorker() bool {
-	if capnp.Struct(s).Uint16(0) != 1 {
+	if capnp.Struct(s).Uint16(2) != 1 {
 		return false
 	}
-	return capnp.Struct(s).HasPtr(0)
+	return capnp.Struct(s).HasPtr(1)
 }
 
 func (s Message_action) SetDestroyWorker(v DestroyWorkerRequest) error {
-	capnp.Struct(s).SetUint16(0, 1)
-	return capnp.Struct(s).SetPtr(0, capnp.Struct(v).ToPtr())
+	capnp.Struct(s).SetUint16(2, 1)
+	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
 }
 
 // NewDestroyWorker sets the destroyWorker field to a newly
 // allocated DestroyWorkerRequest struct, preferring placement in s's segment.
 func (s Message_action) NewDestroyWorker() (DestroyWorkerRequest, error) {
-	capnp.Struct(s).SetUint16(0, 1)
+	capnp.Struct(s).SetUint16(2, 1)
 	ss, err := NewDestroyWorkerRequest(capnp.Struct(s).Segment())
 	if err != nil {
 		return DestroyWorkerRequest{}, err
 	}
-	err = capnp.Struct(s).SetPtr(0, capnp.Struct(ss).ToPtr())
+	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
 	return ss, err
 }
 
 func (s Message_action) GetWorker() (GetWorkerRequest, error) {
-	if capnp.Struct(s).Uint16(0) != 2 {
+	if capnp.Struct(s).Uint16(2) != 2 {
 		panic("Which() != getWorker")
 	}
-	p, err := capnp.Struct(s).Ptr(0)
+	p, err := capnp.Struct(s).Ptr(1)
 	return GetWorkerRequest(p.Struct()), err
 }
 
 func (s Message_action) HasGetWorker() bool {
-	if capnp.Struct(s).Uint16(0) != 2 {
+	if capnp.Struct(s).Uint16(2) != 2 {
 		return false
 	}
-	return capnp.Struct(s).HasPtr(0)
+	return capnp.Struct(s).HasPtr(1)
 }
 
 func (s Message_action) SetGetWorker(v GetWorkerRequest) error {
-	capnp.Struct(s).SetUint16(0, 2)
-	return capnp.Struct(s).SetPtr(0, capnp.Struct(v).ToPtr())
+	capnp.Struct(s).SetUint16(2, 2)
+	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
 }
 
 // NewGetWorker sets the getWorker field to a newly
 // allocated GetWorkerRequest struct, preferring placement in s's segment.
 func (s Message_action) NewGetWorker() (GetWorkerRequest, error) {
-	capnp.Struct(s).SetUint16(0, 2)
+	capnp.Struct(s).SetUint16(2, 2)
 	ss, err := NewGetWorkerRequest(capnp.Struct(s).Segment())
 	if err != nil {
 		return GetWorkerRequest{}, err
 	}
-	err = capnp.Struct(s).SetPtr(0, capnp.Struct(ss).ToPtr())
+	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
 	return ss, err
 }
 
 func (s Message_action) Execute() (ExecuteRequest, error) {
-	if capnp.Struct(s).Uint16(0) != 3 {
+	if capnp.Struct(s).Uint16(2) != 3 {
 		panic("Which() != execute")
 	}
-	p, err := capnp.Struct(s).Ptr(0)
+	p, err := capnp.Struct(s).Ptr(1)
 	return ExecuteRequest(p.Struct()), err
 }
 
 func (s Message_action) HasExecute() bool {
-	if capnp.Struct(s).Uint16(0) != 3 {
+	if capnp.Struct(s).Uint16(2) != 3 {
 		return false
 	}
-	return capnp.Struct(s).HasPtr(0)
+	return capnp.Struct(s).HasPtr(1)
 }
 
 func (s Message_action) SetExecute(v ExecuteRequest) error {
-	capnp.Struct(s).SetUint16(0, 3)
-	return capnp.Struct(s).SetPtr(0, capnp.Struct(v).ToPtr())
+	capnp.Struct(s).SetUint16(2, 3)
+	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
 }
 
 // NewExecute sets the execute field to a newly
 // allocated ExecuteRequest struct, preferring placement in s's segment.
 func (s Message_action) NewExecute() (ExecuteRequest, error) {
-	capnp.Struct(s).SetUint16(0, 3)
+	capnp.Struct(s).SetUint16(2, 3)
 	ss, err := NewExecuteRequest(capnp.Struct(s).Segment())
 	if err != nil {
 		return ExecuteRequest{}, err
 	}
-	err = capnp.Struct(s).SetPtr(0, capnp.Struct(ss).ToPtr())
+	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
 	return ss, err
 }
 
 func (s Message_action) CreateJob() (CreateJobRequest, error) {
-	if capnp.Struct(s).Uint16(0) != 4 {
+	if capnp.Struct(s).Uint16(2) != 4 {
 		panic("Which() != createJob")
 	}
-	p, err := capnp.Struct(s).Ptr(0)
+	p, err := capnp.Struct(s).Ptr(1)
 	return CreateJobRequest(p.Struct()), err
 }
 
 func (s Message_action) HasCreateJob() bool {
-	if capnp.Struct(s).Uint16(0) != 4 {
+	if capnp.Struct(s).Uint16(2) != 4 {
 		return false
 	}
-	return capnp.Struct(s).HasPtr(0)
+	return capnp.Struct(s).HasPtr(1)
 }
 
 func (s Message_action) SetCreateJob(v CreateJobRequest) error {
-	capnp.Struct(s).SetUint16(0, 4)
-	return capnp.Struct(s).SetPtr(0, capnp.Struct(v).ToPtr())
+	capnp.Struct(s).SetUint16(2, 4)
+	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
 }
 
 // NewCreateJob sets the createJob field to a newly
 // allocated CreateJobRequest struct, preferring placement in s's segment.
 func (s Message_action) NewCreateJob() (CreateJobRequest, error) {
-	capnp.Struct(s).SetUint16(0, 4)
+	capnp.Struct(s).SetUint16(2, 4)
 	ss, err := NewCreateJobRequest(capnp.Struct(s).Segment())
 	if err != nil {
 		return CreateJobRequest{}, err
 	}
-	err = capnp.Struct(s).SetPtr(0, capnp.Struct(ss).ToPtr())
+	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
 	return ss, err
 }
 
 func (s Message_action) CancelJob() (CancelJobRequest, error) {
-	if capnp.Struct(s).Uint16(0) != 5 {
+	if capnp.Struct(s).Uint16(2) != 5 {
 		panic("Which() != cancelJob")
 	}
-	p, err := capnp.Struct(s).Ptr(0)
+	p, err := capnp.Struct(s).Ptr(1)
 	return CancelJobRequest(p.Struct()), err
 }
 
 func (s Message_action) HasCancelJob() bool {
-	if capnp.Struct(s).Uint16(0) != 5 {
+	if capnp.Struct(s).Uint16(2) != 5 {
 		return false
 	}
-	return capnp.Struct(s).HasPtr(0)
+	return capnp.Struct(s).HasPtr(1)
 }
 
 func (s Message_action) SetCancelJob(v CancelJobRequest) error {
-	capnp.Struct(s).SetUint16(0, 5)
-	return capnp.Struct(s).SetPtr(0, capnp.Struct(v).ToPtr())
+	capnp.Struct(s).SetUint16(2, 5)
+	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
 }
 
 // NewCancelJob sets the cancelJob field to a newly
 // allocated CancelJobRequest struct, preferring placement in s's segment.
 func (s Message_action) NewCancelJob() (CancelJobRequest, error) {
-	capnp.Struct(s).SetUint16(0, 5)
+	capnp.Struct(s).SetUint16(2, 5)
 	ss, err := NewCancelJobRequest(capnp.Struct(s).Segment())
 	if err != nil {
 		return CancelJobRequest{}, err
 	}
-	err = capnp.Struct(s).SetPtr(0, capnp.Struct(ss).ToPtr())
+	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
 	return ss, err
 }
 
 func (s Message_action) DummyRequest() (DummyRequest, error) {
-	if capnp.Struct(s).Uint16(0) != 6 {
+	if capnp.Struct(s).Uint16(2) != 6 {
 		panic("Which() != dummyRequest")
 	}
-	p, err := capnp.Struct(s).Ptr(0)
+	p, err := capnp.Struct(s).Ptr(1)
 	return DummyRequest(p.Struct()), err
 }
 
 func (s Message_action) HasDummyRequest() bool {
-	if capnp.Struct(s).Uint16(0) != 6 {
+	if capnp.Struct(s).Uint16(2) != 6 {
 		return false
 	}
-	return capnp.Struct(s).HasPtr(0)
+	return capnp.Struct(s).HasPtr(1)
 }
 
 func (s Message_action) SetDummyRequest(v DummyRequest) error {
-	capnp.Struct(s).SetUint16(0, 6)
-	return capnp.Struct(s).SetPtr(0, capnp.Struct(v).ToPtr())
+	capnp.Struct(s).SetUint16(2, 6)
+	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
 }
 
 // NewDummyRequest sets the dummyRequest field to a newly
 // allocated DummyRequest struct, preferring placement in s's segment.
 func (s Message_action) NewDummyRequest() (DummyRequest, error) {
-	capnp.Struct(s).SetUint16(0, 6)
+	capnp.Struct(s).SetUint16(2, 6)
 	ss, err := NewDummyRequest(capnp.Struct(s).Segment())
 	if err != nil {
 		return DummyRequest{}, err
 	}
-	err = capnp.Struct(s).SetPtr(0, capnp.Struct(ss).ToPtr())
+	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
 	return ss, err
 }
 
 func (s Message) Response() Message_response { return Message_response(s) }
 
 func (s Message_response) Which() Message_response_Which {
-	return Message_response_Which(capnp.Struct(s).Uint16(2))
+	return Message_response_Which(capnp.Struct(s).Uint16(4))
 }
 func (s Message_response) IsValid() bool {
 	return capnp.Struct(s).IsValid()
@@ -1589,226 +1794,226 @@ func (s Message_response) Segment() *capnp.Segment {
 	return capnp.Struct(s).Segment()
 }
 func (s Message_response) CreateWorker() (CreateWorkerResponse, error) {
-	if capnp.Struct(s).Uint16(2) != 0 {
+	if capnp.Struct(s).Uint16(4) != 0 {
 		panic("Which() != createWorker")
 	}
-	p, err := capnp.Struct(s).Ptr(1)
+	p, err := capnp.Struct(s).Ptr(2)
 	return CreateWorkerResponse(p.Struct()), err
 }
 
 func (s Message_response) HasCreateWorker() bool {
-	if capnp.Struct(s).Uint16(2) != 0 {
+	if capnp.Struct(s).Uint16(4) != 0 {
 		return false
 	}
-	return capnp.Struct(s).HasPtr(1)
+	return capnp.Struct(s).HasPtr(2)
 }
 
 func (s Message_response) SetCreateWorker(v CreateWorkerResponse) error {
-	capnp.Struct(s).SetUint16(2, 0)
-	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
+	capnp.Struct(s).SetUint16(4, 0)
+	return capnp.Struct(s).SetPtr(2, capnp.Struct(v).ToPtr())
 }
 
 // NewCreateWorker sets the createWorker field to a newly
 // allocated CreateWorkerResponse struct, preferring placement in s's segment.
 func (s Message_response) NewCreateWorker() (CreateWorkerResponse, error) {
-	capnp.Struct(s).SetUint16(2, 0)
+	capnp.Struct(s).SetUint16(4, 0)
 	ss, err := NewCreateWorkerResponse(capnp.Struct(s).Segment())
 	if err != nil {
 		return CreateWorkerResponse{}, err
 	}
-	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
+	err = capnp.Struct(s).SetPtr(2, capnp.Struct(ss).ToPtr())
 	return ss, err
 }
 
 func (s Message_response) DestroyWorker() (DestroyWorkerResponse, error) {
-	if capnp.Struct(s).Uint16(2) != 1 {
+	if capnp.Struct(s).Uint16(4) != 1 {
 		panic("Which() != destroyWorker")
 	}
-	p, err := capnp.Struct(s).Ptr(1)
+	p, err := capnp.Struct(s).Ptr(2)
 	return DestroyWorkerResponse(p.Struct()), err
 }
 
 func (s Message_response) HasDestroyWorker() bool {
-	if capnp.Struct(s).Uint16(2) != 1 {
+	if capnp.Struct(s).Uint16(4) != 1 {
 		return false
 	}
-	return capnp.Struct(s).HasPtr(1)
+	return capnp.Struct(s).HasPtr(2)
 }
 
 func (s Message_response) SetDestroyWorker(v DestroyWorkerResponse) error {
-	capnp.Struct(s).SetUint16(2, 1)
-	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
+	capnp.Struct(s).SetUint16(4, 1)
+	return capnp.Struct(s).SetPtr(2, capnp.Struct(v).ToPtr())
 }
 
 // NewDestroyWorker sets the destroyWorker field to a newly
 // allocated DestroyWorkerResponse struct, preferring placement in s's segment.
 func (s Message_response) NewDestroyWorker() (DestroyWorkerResponse, error) {
-	capnp.Struct(s).SetUint16(2, 1)
+	capnp.Struct(s).SetUint16(4, 1)
 	ss, err := NewDestroyWorkerResponse(capnp.Struct(s).Segment())
 	if err != nil {
 		return DestroyWorkerResponse{}, err
 	}
-	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
+	err = capnp.Struct(s).SetPtr(2, capnp.Struct(ss).ToPtr())
 	return ss, err
 }
 
 func (s Message_response) GetWorker() (GetWorkerResponse, error) {
-	if capnp.Struct(s).Uint16(2) != 2 {
+	if capnp.Struct(s).Uint16(4) != 2 {
 		panic("Which() != getWorker")
 	}
-	p, err := capnp.Struct(s).Ptr(1)
+	p, err := capnp.Struct(s).Ptr(2)
 	return GetWorkerResponse(p.Struct()), err
 }
 
 func (s Message_response) HasGetWorker() bool {
-	if capnp.Struct(s).Uint16(2) != 2 {
+	if capnp.Struct(s).Uint16(4) != 2 {
 		return false
 	}
-	return capnp.Struct(s).HasPtr(1)
+	return capnp.Struct(s).HasPtr(2)
 }
 
 func (s Message_response) SetGetWorker(v GetWorkerResponse) error {
-	capnp.Struct(s).SetUint16(2, 2)
-	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
+	capnp.Struct(s).SetUint16(4, 2)
+	return capnp.Struct(s).SetPtr(2, capnp.Struct(v).ToPtr())
 }
 
 // NewGetWorker sets the getWorker field to a newly
 // allocated GetWorkerResponse struct, preferring placement in s's segment.
 func (s Message_response) NewGetWorker() (GetWorkerResponse, error) {
-	capnp.Struct(s).SetUint16(2, 2)
+	capnp.Struct(s).SetUint16(4, 2)
 	ss, err := NewGetWorkerResponse(capnp.Struct(s).Segment())
 	if err != nil {
 		return GetWorkerResponse{}, err
 	}
-	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
+	err = capnp.Struct(s).SetPtr(2, capnp.Struct(ss).ToPtr())
 	return ss, err
 }
 
 func (s Message_response) Execute() (ExecuteResponse, error) {
-	if capnp.Struct(s).Uint16(2) != 3 {
+	if capnp.Struct(s).Uint16(4) != 3 {
 		panic("Which() != execute")
 	}
-	p, err := capnp.Struct(s).Ptr(1)
+	p, err := capnp.Struct(s).Ptr(2)
 	return ExecuteResponse(p.Struct()), err
 }
 
 func (s Message_response) HasExecute() bool {
-	if capnp.Struct(s).Uint16(2) != 3 {
+	if capnp.Struct(s).Uint16(4) != 3 {
 		return false
 	}
-	return capnp.Struct(s).HasPtr(1)
+	return capnp.Struct(s).HasPtr(2)
 }
 
 func (s Message_response) SetExecute(v ExecuteResponse) error {
-	capnp.Struct(s).SetUint16(2, 3)
-	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
+	capnp.Struct(s).SetUint16(4, 3)
+	return capnp.Struct(s).SetPtr(2, capnp.Struct(v).ToPtr())
 }
 
 // NewExecute sets the execute field to a newly
 // allocated ExecuteResponse struct, preferring placement in s's segment.
 func (s Message_response) NewExecute() (ExecuteResponse, error) {
-	capnp.Struct(s).SetUint16(2, 3)
+	capnp.Struct(s).SetUint16(4, 3)
 	ss, err := NewExecuteResponse(capnp.Struct(s).Segment())
 	if err != nil {
 		return ExecuteResponse{}, err
 	}
-	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
+	err = capnp.Struct(s).SetPtr(2, capnp.Struct(ss).ToPtr())
 	return ss, err
 }
 
 func (s Message_response) CreateJob() (CreateJobResponse, error) {
-	if capnp.Struct(s).Uint16(2) != 4 {
+	if capnp.Struct(s).Uint16(4) != 4 {
 		panic("Which() != createJob")
 	}
-	p, err := capnp.Struct(s).Ptr(1)
+	p, err := capnp.Struct(s).Ptr(2)
 	return CreateJobResponse(p.Struct()), err
 }
 
 func (s Message_response) HasCreateJob() bool {
-	if capnp.Struct(s).Uint16(2) != 4 {
+	if capnp.Struct(s).Uint16(4) != 4 {
 		return false
 	}
-	return capnp.Struct(s).HasPtr(1)
+	return capnp.Struct(s).HasPtr(2)
 }
 
 func (s Message_response) SetCreateJob(v CreateJobResponse) error {
-	capnp.Struct(s).SetUint16(2, 4)
-	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
+	capnp.Struct(s).SetUint16(4, 4)
+	return capnp.Struct(s).SetPtr(2, capnp.Struct(v).ToPtr())
 }
 
 // NewCreateJob sets the createJob field to a newly
 // allocated CreateJobResponse struct, preferring placement in s's segment.
 func (s Message_response) NewCreateJob() (CreateJobResponse, error) {
-	capnp.Struct(s).SetUint16(2, 4)
+	capnp.Struct(s).SetUint16(4, 4)
 	ss, err := NewCreateJobResponse(capnp.Struct(s).Segment())
 	if err != nil {
 		return CreateJobResponse{}, err
 	}
-	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
+	err = capnp.Struct(s).SetPtr(2, capnp.Struct(ss).ToPtr())
 	return ss, err
 }
 
 func (s Message_response) CancelJob() (CancelJobResponse, error) {
-	if capnp.Struct(s).Uint16(2) != 5 {
+	if capnp.Struct(s).Uint16(4) != 5 {
 		panic("Which() != cancelJob")
 	}
-	p, err := capnp.Struct(s).Ptr(1)
+	p, err := capnp.Struct(s).Ptr(2)
 	return CancelJobResponse(p.Struct()), err
 }
 
 func (s Message_response) HasCancelJob() bool {
-	if capnp.Struct(s).Uint16(2) != 5 {
+	if capnp.Struct(s).Uint16(4) != 5 {
 		return false
 	}
-	return capnp.Struct(s).HasPtr(1)
+	return capnp.Struct(s).HasPtr(2)
 }
 
 func (s Message_response) SetCancelJob(v CancelJobResponse) error {
-	capnp.Struct(s).SetUint16(2, 5)
-	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
+	capnp.Struct(s).SetUint16(4, 5)
+	return capnp.Struct(s).SetPtr(2, capnp.Struct(v).ToPtr())
 }
 
 // NewCancelJob sets the cancelJob field to a newly
 // allocated CancelJobResponse struct, preferring placement in s's segment.
 func (s Message_response) NewCancelJob() (CancelJobResponse, error) {
-	capnp.Struct(s).SetUint16(2, 5)
+	capnp.Struct(s).SetUint16(4, 5)
 	ss, err := NewCancelJobResponse(capnp.Struct(s).Segment())
 	if err != nil {
 		return CancelJobResponse{}, err
 	}
-	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
+	err = capnp.Struct(s).SetPtr(2, capnp.Struct(ss).ToPtr())
 	return ss, err
 }
 
 func (s Message_response) UpdateJob() (UpdateJob, error) {
-	if capnp.Struct(s).Uint16(2) != 6 {
+	if capnp.Struct(s).Uint16(4) != 6 {
 		panic("Which() != updateJob")
 	}
-	p, err := capnp.Struct(s).Ptr(1)
+	p, err := capnp.Struct(s).Ptr(2)
 	return UpdateJob(p.Struct()), err
 }
 
 func (s Message_response) HasUpdateJob() bool {
-	if capnp.Struct(s).Uint16(2) != 6 {
+	if capnp.Struct(s).Uint16(4) != 6 {
 		return false
 	}
-	return capnp.Struct(s).HasPtr(1)
+	return capnp.Struct(s).HasPtr(2)
 }
 
 func (s Message_response) SetUpdateJob(v UpdateJob) error {
-	capnp.Struct(s).SetUint16(2, 6)
-	return capnp.Struct(s).SetPtr(1, capnp.Struct(v).ToPtr())
+	capnp.Struct(s).SetUint16(4, 6)
+	return capnp.Struct(s).SetPtr(2, capnp.Struct(v).ToPtr())
 }
 
 // NewUpdateJob sets the updateJob field to a newly
 // allocated UpdateJob struct, preferring placement in s's segment.
 func (s Message_response) NewUpdateJob() (UpdateJob, error) {
-	capnp.Struct(s).SetUint16(2, 6)
+	capnp.Struct(s).SetUint16(4, 6)
 	ss, err := NewUpdateJob(capnp.Struct(s).Segment())
 	if err != nil {
 		return UpdateJob{}, err
 	}
-	err = capnp.Struct(s).SetPtr(1, capnp.Struct(ss).ToPtr())
+	err = capnp.Struct(s).SetPtr(2, capnp.Struct(ss).ToPtr())
 	return ss, err
 }
 
@@ -1817,7 +2022,7 @@ type Message_List = capnp.StructList[Message]
 
 // NewMessage creates a new list of Message.
 func NewMessage_List(s *capnp.Segment, sz int32) (Message_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 2}, sz)
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 3}, sz)
 	return capnp.StructList[Message](l), err
 }
 
@@ -1827,6 +2032,30 @@ type Message_Future struct{ *capnp.Future }
 func (f Message_Future) Struct() (Message, error) {
 	p, err := f.Future.Ptr()
 	return Message(p.Struct()), err
+}
+func (p Message_Future) Content() Message_content_Future { return Message_content_Future{p.Future} }
+
+// Message_content_Future is a wrapper for a Message_content promised by a client call.
+type Message_content_Future struct{ *capnp.Future }
+
+func (f Message_content_Future) Struct() (Message_content, error) {
+	p, err := f.Future.Ptr()
+	return Message_content(p.Struct()), err
+}
+func (p Message_content_Future) CreateJobRequest() CreateJobRequest_Future {
+	return CreateJobRequest_Future{Future: p.Future.Field(0, nil)}
+}
+func (p Message_content_Future) CancelJobRequest() CancelJobRequest_Future {
+	return CancelJobRequest_Future{Future: p.Future.Field(0, nil)}
+}
+func (p Message_content_Future) CreateJobResponse() CreateJobResponse_Future {
+	return CreateJobResponse_Future{Future: p.Future.Field(0, nil)}
+}
+func (p Message_content_Future) CancelJobResponse() CancelJobResponse_Future {
+	return CancelJobResponse_Future{Future: p.Future.Field(0, nil)}
+}
+func (p Message_content_Future) UpdateJob() UpdateJob_Future {
+	return UpdateJob_Future{Future: p.Future.Field(0, nil)}
 }
 func (p Message_Future) Action() Message_action_Future { return Message_action_Future{p.Future} }
 
@@ -1838,25 +2067,25 @@ func (f Message_action_Future) Struct() (Message_action, error) {
 	return Message_action(p.Struct()), err
 }
 func (p Message_action_Future) CreateWorker() CreateWorkerRequest_Future {
-	return CreateWorkerRequest_Future{Future: p.Future.Field(0, nil)}
+	return CreateWorkerRequest_Future{Future: p.Future.Field(1, nil)}
 }
 func (p Message_action_Future) DestroyWorker() DestroyWorkerRequest_Future {
-	return DestroyWorkerRequest_Future{Future: p.Future.Field(0, nil)}
+	return DestroyWorkerRequest_Future{Future: p.Future.Field(1, nil)}
 }
 func (p Message_action_Future) GetWorker() GetWorkerRequest_Future {
-	return GetWorkerRequest_Future{Future: p.Future.Field(0, nil)}
+	return GetWorkerRequest_Future{Future: p.Future.Field(1, nil)}
 }
 func (p Message_action_Future) Execute() ExecuteRequest_Future {
-	return ExecuteRequest_Future{Future: p.Future.Field(0, nil)}
+	return ExecuteRequest_Future{Future: p.Future.Field(1, nil)}
 }
 func (p Message_action_Future) CreateJob() CreateJobRequest_Future {
-	return CreateJobRequest_Future{Future: p.Future.Field(0, nil)}
+	return CreateJobRequest_Future{Future: p.Future.Field(1, nil)}
 }
 func (p Message_action_Future) CancelJob() CancelJobRequest_Future {
-	return CancelJobRequest_Future{Future: p.Future.Field(0, nil)}
+	return CancelJobRequest_Future{Future: p.Future.Field(1, nil)}
 }
 func (p Message_action_Future) DummyRequest() DummyRequest_Future {
-	return DummyRequest_Future{Future: p.Future.Field(0, nil)}
+	return DummyRequest_Future{Future: p.Future.Field(1, nil)}
 }
 func (p Message_Future) Response() Message_response_Future { return Message_response_Future{p.Future} }
 
@@ -1868,116 +2097,126 @@ func (f Message_response_Future) Struct() (Message_response, error) {
 	return Message_response(p.Struct()), err
 }
 func (p Message_response_Future) CreateWorker() CreateWorkerResponse_Future {
-	return CreateWorkerResponse_Future{Future: p.Future.Field(1, nil)}
+	return CreateWorkerResponse_Future{Future: p.Future.Field(2, nil)}
 }
 func (p Message_response_Future) DestroyWorker() DestroyWorkerResponse_Future {
-	return DestroyWorkerResponse_Future{Future: p.Future.Field(1, nil)}
+	return DestroyWorkerResponse_Future{Future: p.Future.Field(2, nil)}
 }
 func (p Message_response_Future) GetWorker() GetWorkerResponse_Future {
-	return GetWorkerResponse_Future{Future: p.Future.Field(1, nil)}
+	return GetWorkerResponse_Future{Future: p.Future.Field(2, nil)}
 }
 func (p Message_response_Future) Execute() ExecuteResponse_Future {
-	return ExecuteResponse_Future{Future: p.Future.Field(1, nil)}
+	return ExecuteResponse_Future{Future: p.Future.Field(2, nil)}
 }
 func (p Message_response_Future) CreateJob() CreateJobResponse_Future {
-	return CreateJobResponse_Future{Future: p.Future.Field(1, nil)}
+	return CreateJobResponse_Future{Future: p.Future.Field(2, nil)}
 }
 func (p Message_response_Future) CancelJob() CancelJobResponse_Future {
-	return CancelJobResponse_Future{Future: p.Future.Field(1, nil)}
+	return CancelJobResponse_Future{Future: p.Future.Field(2, nil)}
 }
 func (p Message_response_Future) UpdateJob() UpdateJob_Future {
-	return UpdateJob_Future{Future: p.Future.Field(1, nil)}
+	return UpdateJob_Future{Future: p.Future.Field(2, nil)}
 }
 
-const schema_dcccaa5d36aa8b70 = "x\xda\xa4V]l\x14\xd5\x17?\xe7\xde\xd9\xdd\xee\xd2" +
-	"e;\xcc>\xc0\xff\xcf\xa6\x86`\x02\x04(P?H" +
-	"\x03)b\x89\xb6Q\xd3\xbbH\x00C\x0d\xfbq\x85\xad" +
-	"\xdd\x9d\xe9\xcc,\x96DDH\x10\x891\x06#\x09h" +
-	"0\"\xc1D0\x81\x1a\xf0\x09\x12b@!\x16\x04\xc4" +
-	"\xa8\x09&\x10\x15\"H\x8c\x0f>\x14(c\xee\xec\xec" +
-	"\xect:\xa55\xbe\xed\x9e\xf9\xdd\xf3\xf5\xbb\xe7w\xee" +
-	"\xbc\xedt\x894?\xde\x1a\x01\xc2\x9e\x0f\x85\xad\x85\xfb" +
-	"\xaf\xfe\xff\xf5[\xdf\xbf\x0f\xf2d\xb4\xb4\xb7\x0e>\xd6" +
-	"up\xe0\x0a\x840\x02\xd0\xbc\x8d\xa6Q\xd9C#\x00" +
-	"\xca.\xda\x0ah}\xb2\xa1\x7f`\xe9\x8a\xd7>\xf4\x81" +
-	"\x05\xa2\xf9\x18\xed@\xe5\xac\x0d>M\x0f\x03Z\xb1]" +
-	"\xd3\xfe\xfan\xf7\xa0\x0f,\x09\xec&)\x8b\xcaN)" +
-	"\x02\xd4\xfal\xf6\x81k\xe1_\xf6}\x04l2\xfaa" +
-	"E\xa9\x1b\x95-\xe2\xa7\xb2I\x12\xf1Wm\xd9z\xea" +
-	"\xcd\xbf\xb7\x1f\x0ep\xb9W\xd2Q\xe9\xb7]\xf6|\xf1" +
-	"\xde\x91O?\xb8t\xc4\x97%\x11\xb0\xb7\xa5\x16T\xf6" +
-	"\xda.\xf7H\xaf\x00Z\xf2\xc1\x95S>n\xe2G\x81" +
-	"=\x84h\x9d\xdb\xd8\xf4\xf8\xe6\x9b\xda%XA\"v" +
-	"\x0b\xa2\xa1\x16\x04l\x96C\xef \xa050e\xff\xf4" +
-	"\xf3\xdf\x1e\xfe*\x08\x8c\xd8\xdc\x1f\xee\x10\xe0\x13a\x1b" +
-	"\xbc\xf0\xf3\x9b\xc7\x17\x1f:\x7f\xd6\x97\x86\x9dmW]" +
-	"\x1a\x95\xde:\x91F\xb1\xee\x06\xa0\xb5\xe3\xcb\xb9/\xde" +
-	"\x98\xf0\xf3\xf9\xa0\x9c\xdb\xa3iT\xba\xa2\x02\xbc:*" +
-	"rv\x03\x0f\xefY\x05}\"JP9k\xa3O\xdb" +
-	"\xe8\xdd3\xd6h\xb7\xefL\xfa\xc1\x8f\xb6\xeb\xbb\x1d\x9d" +
-	"\x84\xca\x90\x8d\x1e\xac\xf8\xae?\x19\x7f\xf8\x09~=\x88" +
-	"\x8f\xd5\xb1nT\x8a1\x01.\xc4\x04\x1f\x97\xbf\xc9\xbd" +
-	"\x91\x90\xb7^\x0f\xe0cGl\x16*{b\x82\x8f\x9d" +
-	"\x03\xd7\xfbn\x0dM\xfc=\xc8e9\xb6\x14\x95m\xb6" +
-	"\xcb-\xb6\xcb\xd8\x99\x9dk\x1f\xa5\x97\xff\x0c\x02\xef\x8b" +
-	"u\xa0r\xcc\x06\xf7\xdb\xe0\xe9\xef~} \xa5\x1e\x1a" +
-	"\x0c\xba\xbc\x17\x05\xf87\x1b|-\xd6\x0as,MW" +
-	"M\xb5)\x97\x91\xb4\x92\xd6d\xff\x99\x9b\xcbh%\xad" +
-	"\xe5\xc9L)\xc7{:\xd4l\x9a\x1b\x9aZ2\x90w" +
-	"\"2\x89J\x00\x12\x02\xc8\xf1\x05\x00\xac\x8e\"K\x12" +
-	"l\xe4\xba\xae\xeaX\x0f\x04\xeb\x01\x1f\xe0S\xe7\x19\x93" +
-	"\xdb>{\xcb\xdc0\x01\x84\xcfz\xd7\xe7\xb2\xa5\x00l" +
-	"\x09E\xf6\x0cA\x191\x89\xc2\xd8>\x0b\x80\xb5Qd" +
-	"k\x09\xca\x84$\x91\x00\xc8]\xd3\x00\xd8*\x8a\xcc$" +
-	"\xb89\xa7\x16\x8b\x99R\xbe\x1a?\x91\xd1\xd7\x198\x11" +
-	"\xb0\x93\xa2m\x9b\x08\x18\xe1\xa5\x0d>\xd3Xi\xaeT" +
-	"\xf5\x97\xb9.2\x8dp\xc3\xec\xc4q\x1f0\xb4\x84Z" +
-	"2\xfc\xed\xfa_\xad]\xb4\x90\xc7(\x10\x8c>(\x89" +
-	"6n\x98\xba\xba\xd1u\xda\xa89N\xdd#\xd4\x7fd" +
-	"Y\x1f\xcf\x95M\x9en\xadtW$P\xe7&0S" +
-	"\xb4q:E\xb6\xc4\xd3\xdb\xc5\x1d\x00l\x11E\xf64" +
-	"\x09l\x9b\xf5R\xa1\x87wf\xcc\xf5\x000\x82\xde\x11" +
-	"\xf1\x9f\xe5\x86\x91Y\xc7\xe7\xb6frfA-\xb1\xa9" +
-	"T\xaa\xb7,;\xfa\xb1n\x00v\x94\";I0\x8e" +
-	"\xf7\xadJ\xf8\x13:\x00;N\x91\x9d!\x18'CV" +
-	"\x85\xdb\xd3i\x00v\x8a\"\xbb@0N\xefYI\xa4" +
-	"\x00\xf29q7\xcePd\x97\x09\xc6\xa5\xbbV\x12%" +
-	"\x00\xf9\xa2\xc0^\xa0\xc8\xae\x10\x8c\x87\xeeXI\x0c\x01" +
-	"\xc8?\x09\xeb\x8f\x14\xd9\xaf\x04\xe3\xe1A+\x89a\x00" +
-	"\xf9\x9a\xc8\xe1*E\xf6\x07A+\xe7P\x06\x09\xd1_" +
-	"l\xa8\x093 6\x00Zy\xa7\xff\xd0\xa8:\x08W" +
-	"\x04\x1c\xc4:n\xda\xec\x00\xda\xe7\xab#Z\xf9\xba\x99" +
-	"W\xc8\xc0\x86\x9a\xf2:\xe7r\xce\x14\x00f\xb1\xa1\xb6" +
-	"=\xaa_\x9d\xb9\xab|ug\xb9\x9aU\xb9X\xdc\x98" +
-	"\xe6\xbd\x90\x10\x0ccCMl\x1c\xc0\xa8\xf7\xa9J\x8e" +
-	"^\x19g\x0e \xf8\x99jY\x98\x14\xca0\x8c\xa1\x14" +
-	"\xde\x17\xe6:\x1fE)2$\xccQ\x1fG)zO" +
-	"\x98c>\x92R\xd2]a\x9e\xe0c)\x15\xba#\xcc" +
-	"\xf5>\x9aR\xe1Aa\x8e\x0b\x9e\xd2\x0f\xe2\xc9]\x8d" +
-	"\xa3\xf2\xe4\xee\xc3@\x9e\xdc\x9d2\x82'W\x91\x03y" +
-	"r\x17W O\xee\x83\xc1\xf9Z\xd6\xf2\x9e\xb3\xee\xb2" +
-	"\x19\x8b$\x8f@zD\xb7\xc1\x1d\xe2\x8c\x10\xdd5\x14" +
-	"\xd9z\xcf\x10s\xc1\\\x9e\"\xd3<\x02Y\x14\xbc\xf5" +
-	"Pd}\x04eJ+3T\x16\xc75\x8a\xecU\x82" +
-	"\x8d\xddj\xb6\xbd\xcd\x1dj\xc3\xcc\x17J\xcb\xcbYH" +
-	"t\xf3\x9c\xe95\xabesy\x19\x1a\xb3^\xfbx\x05" +
-	"\xff)\xa7\xf5\xfa\xb0z<\xa2\x94\x05`3(\xb2G" +
-	"<\xf5\xcc\x17\xfc\xcf\xa3\xc8\x16\x11\xb4\x0c\xaeo(\xe4" +
-	"\xf8s\x10\xc9\x14y-\xad\x8a\xb5\x1d0?nY\x02" +
-	"74z\x1e8\xf2\xcc\x16 \x88\xe8y\xc6\xc8r\x07" +
-	"\x10G\xc3\xac\xda\xb8\xc0\xe8\x11V8lc\xd6W\xde" +
-	"\x02Gs\xe7\x89\x10\x95\xea\xe6\xbc\x00\xc0fSd\x0b" +
-	"Gp\xc0\xfb\x0a\xe6r3c\x02-\x1b\x18\x02\x82\xa1" +
-	"\x7f\xb1 z\x13U\xcd\x1f\xff\xd2\x19QH\x9b#/" +
-	"U_\xa3G\xaf\xee\x9aj{|\x81g\xd5\x02'r" +
-	"j\x9e\x8f]\x8e\xe7\xaax\xde\x06\xffa\x81z\x1e0" +
-	"\xc1\x0e\xbd\x0f\x98aD\xfc\x13\x00\x00\xff\xff\xd8\xacf" +
-	"\xae"
+const schema_dcccaa5d36aa8b70 = "x\xda\xa4VklT\xd7\x11\x9e\xef\x9c}\xd8\xde]" +
+	"\xef^v+A\xcb\xca-\x02\x09,\x8c\x01\xf7A-" +
+	"\x90\xa9k\xd4b\xb5\x95\xcfR\xcbPA\xc5>Na" +
+	"]\xef\xc3\xbbw\xa9\x91\xda\x1a\xa8\xfa\xa0\xa5\xaa@E" +
+	"\xb1\x12%\x82\x00\x91\x02D@D\xa2\xfc\x00\x89D\x90" +
+	"\x10\xc58\x84\x80\x12$\"\xe1$\x02\x01\x89\"\xa4\xf0" +
+	"\x83\x87\xb9\xd1\xd9\xbd\xfb\xf0\xfa\xda&\xc9\xcf;\xe7\xbb" +
+	"3s\xe6\x9b\xf9\xe6,\xfe\x92\xaf\xb4-\xf1<\xe5$" +
+	"&\xd6\xda\x1d\xc6\xc8\xbe\x8f\x1bC\xbf\xdd\xfc7\x12\xdf" +
+	"\x07\x8c\x0b[\x9b\x7f2x;}\x89\xba\xb9\x13N\xb0" +
+	"\x96\x13\xbc\x13\x84\x96\xd3\xfc\x7f \x18\xcb\x0e\\\xff\xde" +
+	"\xb6;W\x9e&m&\x8c\xf4\x7f\x0e\xffx\xc3\xe1\xe1" +
+	"kd\x87\x93\xa8e\x83=\x04\x7f\xbf\xddI\xe4O\xd8" +
+	"\xdb\x08\xc6\x0b[N\x0c\xb7w\xff\xf5\xb9*0W\xe0" +
+	"\xff\xda;\xe1\xdf\x9f\x07?k?F0\xea\xf6\xce\xb9" +
+	"\xfb\xfe\xd0\xfd*\xb0Ma\xbb\x1d\x11\xf8\xe3\x0e'q" +
+	"\xe3\xe8\xc2C\xa3\x8eO\xf6\xef#1\x13\xd5\xb0U\x8e" +
+	"^\xf8\xd79\x94\xcbn\x87\x8a\xbfv\xfb\x8e\xb3\xff\xba" +
+	"\xf7\xcfc\x16.s\x8e\x0c\xfc;\xf3.\xfb^\xfd\xff" +
+	"\xf1\x17\x9f\xb9t\xbc*K\xa6`\xd2\xd1\x0a\x7f.\xef" +
+	"\xb2\xdf\xf1'\x82\xa1\x1d\xee\x99\xf5|\xb3<iQ," +
+	";Q\xcb\xa8\xa3]\x15\xeb\x96\xa3A\x15kx\xd6\x81" +
+	"\xb9#\xef\x1e{\xd3\xb2\xb2h\x09\xd6\xb4*\xf0\xbc\x9a" +
+	"Be_\xbe}j\xc5\x91\x91\xb7\xab\xd2\xc8g{\xae" +
+	"6\x04\xff\xd5Z\x95\xc6\x95\xda\x9b\x04c\xe7\x1b\x8b~" +
+	"\x7f\xd3\xf5\xd1\x88U\xce'\xeaB\xf0\x9f\xabS\xe0\xd7" +
+	"\xebT\xce\xa5\xc0\xe3kV\xe0a\x9e\x8b\xc1\xbf\xc4\xa5" +
+	"\xd0M.\xc5\xc3\xd0\xfc\xf5\xe9\xcf\x1f\xcc\xf8\xa0\x1a\x9d" +
+	"\xa78\xe7\x9a\x01\xff\xdf\xf3\xe8\xed\xae\xbco\xf7\x19\xcf" +
+	"\xbc\x9f\xc9\x1bV|\x8c\xbaz\xe1\xbf\x97\x07\xdfu)" +
+	">.\xbf\x13\xfd\x87W\xdbq\xc3\x82\x0f\xcd\xdd\x08\xff" +
+	"\x0f\xdc\x8a\x8f\xdd\xc37\x06\xee\x8c\xd5\xdf\xb2r9\xe6" +
+	"j\x87\xdf\xe3V.k\xdd\xcae\xdd\xf9\xdd\x1b\x7f\xc4" +
+	"/\x7fa\x05^\xe0\xee\x84\x7fE\x1e\xfc\xd3<x\xee" +
+	"\x9e\xb7\x0e\x05SG\xee[5\xef:\x05N\xe4\xc1q" +
+	"w\x1b5\x19\xe9LJO5G\xc3\xb6t2\xdd\x9c" +
+	"\xffX\x14\x0d\xa7\x93\xe9\xd6_\xcbl6\xbcI.\xca" +
+	"\xc8l:\x95\xccJ\"1\x9b\xdbf\x1b\x06\x0b\xc0M" +
+	"\xa4\xbd\xd2K$Nr\x883\x0cA<Vf\x0f\x91" +
+	"v:C$Nq\x88\xf3\x0cA6\xa6\xcc\xf5D\xda" +
+	"\xb9\x10\x918\xcb!.2\x04\xf9#e\xf6\x12i\x17" +
+	"\xda\x89\xc4y\x0eq\x99!h{\xa8\xcc>\"\xed=" +
+	"\x85\xbe\xc8!\xae1\x04\xed\x0f\x94Y#\xd2\xae*\xf3" +
+	"\x87\x1c\xe2S\x86\xa0\xe3\xbe2\xcf \xd2F\x95\xf9:" +
+	"\x87\xf8\x8c\xc1\x88fdX\x97=)\xf2f\xfe(3" +
+	"\xf0\x95G\x89\x00\x1f\xc1\x88\xc9\xac\x9eIm\xed\xa1\x86" +
+	"\x94\x89(\xcd\x8f\x89\xd8$\xf5\x1euFP\xa7\xa5\x1e" +
+	",\x9c\x0e\xca\x01\x19\xcd\xe9\x12\xbe2\x83\xe6\x7f\x85\xd0" +
+	"\x9d)B\x04\xber\xa3\x17O\xc3\xc9\xa8\xec+\x9d\x16" +
+	"\x05\xc6<\xcd\xa5c\x15\xff\x96\x9a\xd3<\x9d\x94\xa4\x9f" +
+	"\x9bN#\xa1\x02K\x90]\x80\xb0q\x1b\x91\x0dD\x9a" +
+	"g)\x91\xa8\xe1\x10\x01\x86\x06\x99\xc9\xa42p\x13\x83" +
+	"{J\x9f\xe65\"!\xd9\x9f\x93Y\x9dH\xf9t\x97" +
+	"|\xaeR\x9c\xad\xe4\x10\xbfb\xd0\x80\x00\x94qu#" +
+	"\x91\xe8\xe0\x10\x1b\x194\xc6\x02`D\xda\x869Db" +
+	"-\x87\xd0\x19\x06\xa3\xa9D\"\x9c\x8c\x15\xe3{\xc3\x99" +
+	"MY\xd4\x13\xba8\xf2\xb6z\x82S&\xb7T\x99\xa6" +
+	"K3OTFe\xea\x94Y\xbd\x0bO\xfcC6\xed" +
+	"U]]U\xae\xef\x96\xcb\xc5\xe31\xd4\x12C\xedT" +
+	"It\x98\xcdTt\xda\x906\x9d\x96~\xe1\xd5\xbf\xac" +
+	"*\xf4O\xa8\xadP]\x95@M)\x81\x05\xaa\x8cs" +
+	"9\xc4\xca\x8a\xda\xae\xe8$\x12\xcb9\xc4/\x99e\xd9" +
+	"\x8c?\xc4\xfbdWX\xdfLD\xd3\xd3[\x9c\xebh" +
+	"*\xa9\xcb\xa4N\"\xc0mn\xc3\xc8\x87\xff\xcb\xbf\x89" +
+	"\xc46\x0e\xb1\x8b\xc1\x83\xc7F!\xfeNe\xdd\xc5!" +
+	"\x86\x18<l\xcc(\x90\xbbw\x0f\x91\x18\xe2\x10\x07\x19" +
+	"<\xfc\x91\x11\x00'\xd2\xf6+\xebA\x0eq\x9c\xc1c" +
+	"{h\x04`#\xd2^R\x13z\x94C\xbc\xc6\xcac" +
+	"\x82r\x83\xc1W^\xa2U\xe32\x1eU\x92\xb6\xaa\x91" +
+	"Cy\x00\xa6\x18\xbd*\xd47\x1aA>Y=\xdb\xc2" +
+	"Q=\x9eJ\x9a\"\x89\x80Z\x94\x13D\x12\x018," +
+	"D\x12\x01%\xce\x13D\x12\x01\xd4X\x88$\x02\xa8\xb5" +
+	"\x10I\x04Pg!\x92\x08\xc0\xa5D\xb2w*\x91," +
+	"\xbdJ&\x15\xc9\xd2\x06\xb4\x14\xc9\xd2~\x9a \x92\xa5" +
+	"g\x87\xa5HN\xc6z\xe1\xb4\x9a\xedX.\x91\xd8\x1a" +
+	"\x92\xfd\xe4U\x0d\x01_y\xd3N\xab\x93eM\xab\xd0" +
+	"I_i\xee\xc2J'\xd7s\x88\xcd\x15s'U\xc9" +
+	"b\x1c\"]\xa1i\x09E]\x1f\x87\x18`\xd08/" +
+	"t}N\xfd\x9e\xe6\x10\x7ffh\xe8MEVw\x94" +
+	"\xe60\xab\xc7\xe2\xc95\xb9\x08y{eT\xaf4\xa7" +
+	"r\xfa\x9a\x1c5D*\xedO\xaa\xd1\xbf0\xab\x9f\x19" +
+	"w\x9f\x0a\x1d\x89\x10\x89\xf9\x1c\xe2\x87\x15\xf7Y\xa2:" +
+	"c1\x87X\xce`defK<*\x7fC\xcep" +
+	"B\x96\xd3*XW\x13b\x13\x92\x98\xac\xf3\xcb\xeb\x01" +
+	"\x15\x0fG\xb5&\x18\x80\x8a\xe7\xa1\xd6\xd4J\x0c\x0c(" +
+	"\xbf\xc5\xb5\xeft\x12\x1b4\xa5\xc8\x9c \xa3\xfc\xe2\xa0" +
+	"\xc9\x83w\x9b\xd3\x8aH\xd5\xcd\x97\x9a\x0a\xbaXE/" +
+	"\\\xbc\xe9wDb!\x87X6\x81\x1e9\x10\xd7\xd7" +
+	"\xe8a\x9dx.\x0b;1\xd8\xbf\x86\xdc\xf7{\x8b\x0a" +
+	"\xfe\xe4+d\xc2E:\xcc\xa6.\xfa\x9a<zqs" +
+	"\x14\xcbS\x15\xb8\xb1\x1c\xd8\x1bM\xc5\xe4\xf4\xd7\xa9\xe8" +
+	"\xa2\x8aM\xff-\xd6a\xc5s\xc4\xdaa\xe5sd\x1c" +
+	"\x11_\x05\x00\x00\xff\xff;E\xe4L"
 
 func RegisterSchema(reg *schemas.Registry) {
 	reg.Register(&schemas.Schema{
 		String: schema_dcccaa5d36aa8b70,
 		Nodes: []uint64{
+			0x836854522ae2a0ce,
 			0x9ad5eb801be0a338,
 			0x9e7e5542ccb176a6,
 			0x9ef998d3f122950a,
