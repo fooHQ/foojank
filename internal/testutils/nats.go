@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"testing"
+	"time"
 
 	"github.com/nats-io/nats-server/v2/server"
 	natsserver "github.com/nats-io/nats-server/v2/test"
@@ -15,6 +16,8 @@ import (
 )
 
 var _ micro.Request = &Request{}
+
+// TODO: request can be deleted!
 
 type Request struct {
 	FSubject      string
@@ -52,6 +55,69 @@ func (r Request) Subject() string {
 
 func (r Request) Reply() string {
 	return r.FReplySubject
+}
+
+var _ jetstream.Msg = Msg{}
+
+type Msg struct {
+	subject string
+	data    []byte
+}
+
+func NewMsg(subject string, data []byte) Msg {
+	return Msg{
+		subject: subject,
+		data:    data,
+	}
+}
+
+func (m Msg) Metadata() (*jetstream.MsgMetadata, error) {
+	meta := jetstream.MsgMetadata{}
+	return &meta, nil
+}
+
+func (m Msg) Data() []byte {
+	return m.data
+}
+
+func (m Msg) Headers() nats.Header {
+	return nats.Header{}
+}
+
+func (m Msg) Subject() string {
+	return m.subject
+}
+
+func (m Msg) Reply() string {
+	return ""
+}
+
+func (m Msg) Ack() error {
+	return nil
+}
+
+func (m Msg) DoubleAck(ctx context.Context) error {
+	return nil
+}
+
+func (m Msg) Nak() error {
+	return nil
+}
+
+func (m Msg) NakWithDelay(delay time.Duration) error {
+	return nil
+}
+
+func (m Msg) InProgress() error {
+	return nil
+}
+
+func (m Msg) Term() error {
+	return nil
+}
+
+func (m Msg) TermWithReason(reason string) error {
+	return nil
 }
 
 func NewNatsServer() *server.Server {
