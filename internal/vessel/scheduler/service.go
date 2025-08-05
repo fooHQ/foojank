@@ -5,7 +5,7 @@ import (
 
 	"github.com/nats-io/nats.go"
 
-	"github.com/foohq/foojank/internal/vessel/decoder"
+	"github.com/foohq/foojank/internal/vessel/connector/decoder"
 )
 
 type Arguments struct {

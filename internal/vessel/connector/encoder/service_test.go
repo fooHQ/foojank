@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/foohq/foojank/internal/vessel/encoder"
+	"github.com/foohq/foojank/internal/vessel/connector/encoder"
 	"github.com/foohq/foojank/proto"
 )
 
