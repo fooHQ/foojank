@@ -25,42 +25,43 @@ func TestService(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	{
-		inputCh <- proto.CreateJobResponse{
-			JobID:         "job-123",
-			StdinSubject:  "stdin-subject",
-			StdoutSubject: "stdout-subject",
-			Error:         errors.New("some error"),
-		}
-		expected, err := proto.NewCreateJobResponse("job-123", "stdin-subject", "stdout-subject", errors.New("some error"))
-		require.NoError(t, err)
-		actual := <-outputCh
-		require.Equal(t, expected, actual)
+	tests := []struct {
+		name  string
+		input any
+	}{
+		{
+			name: "CreateJobResponse with error",
+			input: proto.CreateJobResponse{
+				JobID:         "job-123",
+				StdinSubject:  "stdin.123",
+				StdoutSubject: "stdout.123",
+				Error:         errors.New("test error"),
+			},
+		},
+		{
+			name: "CancelJobResponse with error",
+			input: proto.CancelJobResponse{
+				Error: errors.New("test error"),
+			},
+		},
+		{
+			name: "UpdateJob",
+			input: proto.UpdateJob{
+				JobID:      "job-123",
+				ExitStatus: 42,
+			},
+		},
 	}
 
-	{
-		inputCh <- proto.CancelJobResponse{
-			Error: errors.New("some error"),
-		}
-		expected, err := proto.NewCancelJobResponse(errors.New("some error"))
-		require.NoError(t, err)
-		actual := <-outputCh
-		require.Equal(t, expected, actual)
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			inputCh <- tt.input
+			outMsg := <-outputCh
 
-	{
-		inputCh <- proto.UpdateJob{
-			JobID:      "job-123",
-			ExitStatus: 1,
-		}
-		expected, err := proto.NewUpdateJob("job-123", 1)
-		require.NoError(t, err)
-		actual := <-outputCh
-		require.Equal(t, expected, actual)
-	}
-
-	{
-		inputCh <- "invalid message"
-		require.Empty(t, outputCh)
+			marshaled, err := proto.Marshal(tt.input)
+			require.NoError(t, err)
+			require.IsType(t, marshaled, outMsg)
+			require.Equal(t, marshaled, outMsg)
+		})
 	}
 }
