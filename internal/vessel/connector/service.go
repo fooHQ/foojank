@@ -3,18 +3,20 @@ package connector
 import (
 	"context"
 
-	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nats.go/micro"
+	"github.com/nats-io/nats.go/jetstream"
+	"golang.org/x/sync/errgroup"
 
-	"github.com/foohq/foojank/internal/vessel/log"
+	"github.com/foohq/foojank/internal/vessel/connector/consumer"
+	"github.com/foohq/foojank/internal/vessel/connector/decoder"
+	"github.com/foohq/foojank/internal/vessel/connector/encoder"
+	"github.com/foohq/foojank/internal/vessel/connector/publisher"
 )
 
 type Arguments struct {
-	Name       string
-	Version    string
-	Metadata   map[string]string
-	RPCSubject string
-	Connection *nats.Conn
+	Connection jetstream.JetStream
+	Stream     string
+	Consumer   string
+	Subject    string
 	OutputCh   chan<- Message
 }
 
@@ -29,38 +31,39 @@ func New(args Arguments) *Service {
 }
 
 func (s *Service) Start(ctx context.Context) error {
-	ms, err := micro.AddService(s.args.Connection, micro.Config{
-		Name:     s.args.Name,
-		Version:  s.args.Version,
-		Metadata: s.args.Metadata,
+	consumerOutCh := make(chan consumer.Message)
+	encoderInCh := make(chan any)
+	encoderOutCh := make(chan []byte)
+
+	group, groupCtx := errgroup.WithContext(ctx)
+	group.Go(func() error {
+		return consumer.New(consumer.Arguments{
+			Connection: s.args.Connection,
+			Stream:     s.args.Stream,
+			Consumer:   s.args.Consumer,
+			ReplyCh:    encoderInCh,
+			OutputCh:   consumerOutCh,
+		}).Start(groupCtx)
 	})
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err := ms.Stop()
-		if err != nil {
-			log.Debug(err.Error())
-			return
-		}
-	}()
+	group.Go(func() error {
+		return decoder.New(decoder.Arguments{
+			InputCh:  consumerOutCh,
+			OutputCh: s.args.OutputCh,
+		}).Start(groupCtx)
+	})
+	group.Go(func() error {
+		return encoder.New(encoder.Arguments{
+			InputCh:  encoderInCh,
+			OutputCh: encoderOutCh,
+		}).Start(groupCtx)
+	})
+	group.Go(func() error {
+		return publisher.New(publisher.Arguments{
+			Connection: s.args.Connection,
+			Subject:    s.args.Subject,
+			InputCh:    encoderOutCh,
+		}).Start(groupCtx)
+	})
 
-	err = ms.AddEndpoint("rpc", micro.ContextHandler(ctx, s.handler), micro.WithEndpointSubject(s.args.RPCSubject))
-	if err != nil {
-		return err
-	}
-
-	<-ctx.Done()
-	return nil
-}
-
-func (s *Service) handler(ctx context.Context, req micro.Request) {
-	msg := Message{
-		req: req,
-	}
-	select {
-	case s.args.OutputCh <- msg:
-	case <-ctx.Done():
-		return
-	}
+	return group.Wait()
 }
