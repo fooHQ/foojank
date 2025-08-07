@@ -61,6 +61,10 @@ struct UpdateJob {
     exitStatus @1 :Int64;
 }
 
+struct UpdateStdioLine {
+    text @0 :Text;
+}
+
 struct DummyRequest {}
 
 struct Message {
@@ -70,23 +74,24 @@ struct Message {
         createJobResponse @2 :CreateJobResponse;
         cancelJobResponse @3 :CancelJobResponse;
         updateJob @4 :UpdateJob;
+        updateStdioLine @5 :UpdateStdioLine;
     }
     action :union {
-        createWorker @5 :CreateWorkerRequest;
-        destroyWorker @6 :DestroyWorkerRequest;
-        getWorker @7 :GetWorkerRequest;
-        execute @8 :ExecuteRequest;
-        createJob @9 :CreateJobRequest;
-        cancelJob @10 :CancelJobRequest;
-        dummyRequest @11 :DummyRequest;
+        createWorker @6 :CreateWorkerRequest;
+        destroyWorker @7 :DestroyWorkerRequest;
+        getWorker @8 :GetWorkerRequest;
+        execute @9 :ExecuteRequest;
+        createJob @10 :CreateJobRequest;
+        cancelJob @11 :CancelJobRequest;
+        dummyRequest @12 :DummyRequest;
     }
     response :union {
-        createWorker @12 :CreateWorkerResponse;
-        destroyWorker @13 :DestroyWorkerResponse;
-        getWorker @14 :GetWorkerResponse;
-        execute @15 :ExecuteResponse;
-        createJob @16 :CreateJobResponse;
-        cancelJob @17 :CancelJobResponse;
-        updateJob @18 :UpdateJob;
+        createWorker @13 :CreateWorkerResponse;
+        destroyWorker @14 :DestroyWorkerResponse;
+        getWorker @15 :GetWorkerResponse;
+        execute @16 :ExecuteResponse;
+        createJob @17 :CreateJobResponse;
+        cancelJob @18 :CancelJobResponse;
+        updateJob @19 :UpdateJob;
     }
 }

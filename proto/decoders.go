@@ -36,6 +36,9 @@ func Unmarshal(b []byte) (any, error) {
 
 	case content.HasUpdateJob():
 		return unmarshalUpdateJob(message)
+
+	case content.HasUpdateStdioLine():
+		return unmarshalUpdateStdioLine(message)
 	}
 
 	return nil, ErrUnknownMessage
@@ -169,6 +172,22 @@ func unmarshalUpdateJob(message capnp.Message) (UpdateJob, error) {
 	return UpdateJob{
 		JobID:      jobID,
 		ExitStatus: v.ExitStatus(),
+	}, nil
+}
+
+func unmarshalUpdateStdioLine(message capnp.Message) (UpdateStdioLine, error) {
+	v, err := message.Content().UpdateStdioLine()
+	if err != nil {
+		return UpdateStdioLine{}, err
+	}
+
+	text, err := v.Text()
+	if err != nil {
+		return UpdateStdioLine{}, err
+	}
+
+	return UpdateStdioLine{
+		Text: text,
 	}, nil
 }
 
@@ -546,6 +565,10 @@ func parseUpdateJob(message capnp.Message) (UpdateJob, error) {
 		JobID:      jobID,
 		ExitStatus: v.ExitStatus(),
 	}, nil
+}
+
+type UpdateStdioLine struct {
+	Text string
 }
 
 func textListToStringSlice(list capnplib.TextList) ([]string, error) {

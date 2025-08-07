@@ -304,6 +304,16 @@ func TestMarshalUnmarshal(t *testing.T) {
 			wantMarshal: true,
 		},
 		{
+			name: "UpdateStdioLine",
+			input: proto.UpdateStdioLine{
+				Text: "text",
+			},
+			want: proto.UpdateStdioLine{
+				Text: "text",
+			},
+			wantMarshal: true,
+		},
+		{
 			name:    "Unsupported type",
 			input:   struct{}{},
 			wantErr: proto.ErrUnknownMessage,
