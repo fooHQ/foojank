@@ -18,6 +18,8 @@ func Marshal(data any) ([]byte, error) {
 		return marshalCancelJobResponse(v)
 	case UpdateJob:
 		return marshalUpdateJob(v)
+	case UpdateStdioLine:
+		return marshalUpdateStdioLine(v)
 	}
 	return nil, ErrUnknownMessage
 }
@@ -176,6 +178,30 @@ func marshalUpdateJob(data UpdateJob) ([]byte, error) {
 	msgUpdateJob.SetExitStatus(data.ExitStatus)
 
 	err = msg.Content().SetUpdateJob(msgUpdateJob)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Message().Marshal()
+}
+
+func marshalUpdateStdioLine(data UpdateStdioLine) ([]byte, error) {
+	msg, err := newMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgUpdateStdioLine, err := capnp.NewUpdateStdioLine(msg.Segment())
+	if err != nil {
+		return nil, err
+	}
+
+	err = msgUpdateStdioLine.SetText(data.Text)
+	if err != nil {
+		return nil, err
+	}
+
+	err = msg.Content().SetUpdateStdioLine(msgUpdateStdioLine)
 	if err != nil {
 		return nil, err
 	}
