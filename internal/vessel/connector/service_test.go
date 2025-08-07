@@ -27,7 +27,7 @@ func TestService(t *testing.T) {
 	streamName := fmt.Sprintf("TEST-STREAM-%s", rand.Text())
 	consumerName := fmt.Sprintf("TEST-CONSUMER-%s", rand.Text())
 	subjectName := fmt.Sprintf("TEST.COMMANDS-%s", rand.Text())
-	srv, js := testutils.NewJetStreamConnection(t)
+	_, js := testutils.NewJetStreamConnection(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -80,11 +80,11 @@ func TestService(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		err := connector.New(connector.Arguments{
-			Servers:  []string{srv.ClientURL()},
-			Stream:   streamName,
-			Consumer: consumerName,
-			Subject:  subjectName,
-			OutputCh: outputCh,
+			Connection: js,
+			Stream:     streamName,
+			Consumer:   consumerName,
+			Subject:    subjectName,
+			OutputCh:   outputCh,
 		}).Start(ctx)
 		assert.NoError(t, err)
 	}()
