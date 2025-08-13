@@ -32,6 +32,7 @@ func TestService(t *testing.T) {
 		Durable:       consumerName,
 		DeliverPolicy: jetstream.DeliverLastPolicy,
 		AckPolicy:     jetstream.AckExplicitPolicy,
+		MaxAckPending: 1,
 	})
 	require.NoError(t, err)
 
@@ -45,6 +46,7 @@ func TestService(t *testing.T) {
 			Connection: js,
 			Stream:     streamName,
 			Consumer:   consumerName,
+			Durable:    true,
 			OutputCh:   outputCh,
 		}).Start(ctx)
 		require.NoError(t, err)
@@ -62,6 +64,33 @@ func TestService(t *testing.T) {
 
 	for _, expected := range messages {
 		msg := <-outputCh
+		require.NoError(t, msg.Ack())
+		require.Equal(t, expected, string(msg.Data()))
+	}
+
+	cancel()
+	wg.Wait()
+
+	ctx, cancel = context.WithCancel(context.Background())
+	defer cancel()
+
+	// Create an ephemeral consumer and reread all the published messages
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err = consumer.New(consumer.Arguments{
+			Connection: js,
+			Stream:     streamName,
+			Consumer:   consumerName + "-temp",
+			Durable:    false,
+			OutputCh:   outputCh,
+		}).Start(ctx)
+		require.NoError(t, err)
+	}()
+
+	for _, expected := range messages {
+		msg := <-outputCh
+		require.NoError(t, msg.Ack())
 		require.Equal(t, expected, string(msg.Data()))
 	}
 

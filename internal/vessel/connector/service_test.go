@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/nats-io/nats.go/jetstream"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/foohq/foojank/internal/testutils"
@@ -74,19 +73,20 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	outputCh := make(chan connector.Message, len(requests))
+	outputCh := make(chan connector.Message)
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		err := connector.New(connector.Arguments{
-			Connection: js,
-			Stream:     streamName,
-			Consumer:   consumerName,
-			Subject:    subjectName,
-			OutputCh:   outputCh,
+			Connection:   js,
+			Stream:       streamName,
+			Consumer:     consumerName,
+			Durable:      true,
+			ReplySubject: subjectName,
+			OutputCh:     outputCh,
 		}).Start(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}()
 
 	for i, req := range requests {
@@ -104,19 +104,18 @@ func TestService(t *testing.T) {
 	c, err := js.OrderedConsumer(ctx, streamName, jetstream.OrderedConsumerConfig{})
 	require.NoError(t, err)
 
-	batch, err := c.FetchNoWait(len(requests) + len(replies))
-	require.NoError(t, err)
-
 	messages := append(requests, replies...)
-	var i int
-	for msg := range batch.Messages() {
-		if msg == nil {
-			break
-		}
+	for i := 0; i < len(messages); i++ {
+		msg, err := c.Next()
+		require.NoError(t, err)
+
+		err = msg.Ack()
+		require.NoError(t, err)
+
 		actual, err := proto.Unmarshal(msg.Data())
 		require.NoError(t, err)
+
 		require.Equal(t, messages[i], actual)
-		i++
 	}
 
 	cancel()

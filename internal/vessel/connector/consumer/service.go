@@ -11,11 +11,13 @@ import (
 )
 
 type Arguments struct {
-	Connection jetstream.JetStream
-	Stream     string
-	Consumer   string
-	ReplyCh    chan<- any
-	OutputCh   chan<- Message
+	Connection     jetstream.JetStream
+	Stream         string
+	Consumer       string
+	Durable        bool
+	FilterSubjects []string
+	ReplyCh        chan<- any
+	OutputCh       chan<- Message
 }
 
 type Service struct {
@@ -29,7 +31,19 @@ func New(args Arguments) *Service {
 }
 
 func (s *Service) Start(ctx context.Context) error {
-	consumer, err := s.args.Connection.Consumer(ctx, s.args.Stream, s.args.Consumer)
+	var consumer jetstream.Consumer
+	var err error
+	if s.args.Durable {
+		consumer, err = s.args.Connection.Consumer(ctx, s.args.Stream, s.args.Consumer)
+	} else {
+		consumer, err = s.args.Connection.CreateConsumer(ctx, s.args.Stream, jetstream.ConsumerConfig{
+			Name:           s.args.Consumer,
+			DeliverPolicy:  jetstream.DeliverAllPolicy,
+			AckPolicy:      jetstream.AckExplicitPolicy,
+			MaxAckPending:  1,
+			FilterSubjects: s.args.FilterSubjects,
+		})
+	}
 	if err != nil {
 		log.Debug("cannot initialize consumer", "error", err)
 		return err

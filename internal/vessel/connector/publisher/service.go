@@ -10,8 +10,7 @@ import (
 
 type Arguments struct {
 	Connection jetstream.JetStream
-	Subject    string
-	InputCh    <-chan []byte
+	InputCh    <-chan Message
 }
 
 type Service struct {
@@ -27,8 +26,8 @@ func New(args Arguments) *Service {
 func (s *Service) Start(ctx context.Context) error {
 	for {
 		select {
-		case b := <-s.args.InputCh:
-			_, err := s.args.Connection.Publish(ctx, s.args.Subject, b)
+		case msg := <-s.args.InputCh:
+			_, err := s.args.Connection.Publish(ctx, msg.subject, msg.data)
 			if err != nil {
 				log.Debug("cannot publish to stdout subject", "error", err)
 				continue
