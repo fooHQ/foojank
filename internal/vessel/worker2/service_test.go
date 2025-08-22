@@ -38,6 +38,8 @@ func TestService(t *testing.T) {
 	workerCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	eventCh := make(chan any, 2)
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
@@ -55,7 +57,7 @@ func TestService(t *testing.T) {
 			Filesystems: map[string]risoros.FS{
 				"file": fs,
 			},
-			EventCh: nil,
+			EventCh: eventCh,
 		}).Start(workerCtx)
 		require.NoError(t, err)
 	}()
@@ -81,6 +83,7 @@ func TestService(t *testing.T) {
 
 		v, err := proto.Unmarshal(msg.Data())
 		require.NoError(t, err)
+		require.IsType(t, proto.UpdateStdioLine{}, v)
 
 		fields := strings.Fields(v.(proto.UpdateStdioLine).Text)
 		require.Equal(t, []string{"args", "arg1", "arg2"}, fields)
@@ -95,6 +98,7 @@ func TestService(t *testing.T) {
 
 		v, err := proto.Unmarshal(msg.Data())
 		require.NoError(t, err)
+		require.IsType(t, proto.UpdateStdioLine{}, v)
 
 		fields := strings.Fields(v.(proto.UpdateStdioLine).Text)
 		require.Contains(t, fields, "TEST1=hello")
@@ -123,6 +127,7 @@ func TestService(t *testing.T) {
 
 				v, err := proto.Unmarshal(msg.Data())
 				require.NoError(t, err)
+				require.IsType(t, proto.UpdateStdioLine{}, v)
 
 				out := v.(proto.UpdateStdioLine).Text
 				require.Equal(t, in, out)
@@ -132,5 +137,20 @@ func TestService(t *testing.T) {
 
 	cancel()
 	wg.Wait()
-	// TODO: check eventCh!!!
+
+	require.Len(t, eventCh, 2)
+	require.Equal(t, worker.EventWorkerStarted{ID: workerID}, <-eventCh)
+	require.Equal(t, worker.EventWorkerStopped{ID: workerID}, <-eventCh)
+
+	t.Run("check job status", func(t *testing.T) {
+		msg, err := msgs.Next()
+		require.NoError(t, err)
+
+		err = msg.Ack()
+		require.NoError(t, err)
+
+		v, err := proto.Unmarshal(msg.Data())
+		require.NoError(t, err)
+		require.IsType(t, proto.UpdateJob{}, v)
+	})
 }

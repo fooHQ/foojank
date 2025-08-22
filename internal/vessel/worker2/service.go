@@ -33,7 +33,7 @@ type Arguments struct {
 	Env           []string
 	Connection    jetstream.JetStream
 	Filesystems   map[string]risoros.FS
-	EventCh       chan<- struct{}
+	EventCh       chan<- any
 }
 
 type Service struct {
@@ -47,6 +47,18 @@ func New(args Arguments) *Service {
 }
 
 func (s *Service) Start(ctx context.Context) error {
+	defer func() {
+		r := recover()
+		if r != nil {
+			log.Debug("worker panicked", "error", r)
+			// Send a stop event to the dispatcher.
+			// SEND MUST NOT CHECK CONTEXT STATE LEST IT WILL CAUSE A DEADLOCK.
+		}
+		s.args.EventCh <- EventWorkerStopped{
+			ID: s.args.ID,
+		}
+	}()
+
 	stdin := ren.NewPipe()
 	stdout := ren.NewPipe()
 
@@ -82,6 +94,13 @@ func (s *Service) Start(ctx context.Context) error {
 			Subject:    s.args.StdoutSubject,
 		}).Start(groupCtx)
 	})
+
+	select {
+	case s.args.EventCh <- EventWorkerStarted{
+		ID: s.args.ID,
+	}:
+	case <-groupCtx.Done():
+	}
 
 	<-groupCtx.Done()
 	_ = stdin.Close()
@@ -231,3 +250,12 @@ func reloadContextWithTimeout(ctx context.Context, timeout time.Duration) (conte
 	}
 	return newCtx, cancel
 }
+
+type (
+	EventWorkerStarted struct {
+		ID string
+	}
+	EventWorkerStopped struct {
+		ID string
+	}
+)
