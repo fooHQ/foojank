@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 
@@ -48,10 +49,9 @@ func TestService(t *testing.T) {
 			StdoutSubject: stdoutName,
 			UpdateSubject: updateName,
 			Entrypoint:    "./testdata/test.zip",
-			// TODO: script should print args and env vars
-			Args:       []string{"arg1", "arg2"},
-			Env:        []string{"TEST1", "hello", "TEST2", "world", "TEST3"},
-			Connection: js,
+			Args:          []string{"arg1", "arg2"},
+			Env:           []string{"TEST1", "hello", "TEST2", "world", "TEST3"},
+			Connection:    js,
 			Filesystems: map[string]risoros.FS{
 				"file": fs,
 			},
@@ -59,23 +59,6 @@ func TestService(t *testing.T) {
 		}).Start(workerCtx)
 		require.NoError(t, err)
 	}()
-
-	var messages [][]byte
-	for i := 0; i < 10; i++ {
-		b, err := proto.Marshal(proto.UpdateStdioLine{
-			Text: fmt.Sprintf("input %d", i+1),
-		})
-		require.NoError(t, err)
-		messages = append(messages, b)
-	}
-
-	for _, msg := range messages {
-		_, err = js.Publish(context.Background(), stdinName, msg)
-		require.NoError(t, err)
-	}
-
-	// Cancel context after sending all messages to trigger worker shutdown
-	cancel()
 
 	c, err := js.CreateConsumer(context.Background(), streamName, jetstream.ConsumerConfig{
 		Name:          workerID + "-check",
@@ -89,9 +72,7 @@ func TestService(t *testing.T) {
 	require.NoError(t, err)
 	defer msgs.Stop()
 
-	var output string
-	// TODO: fix loop count
-	for i := 0; i < len(messages)*3; i++ {
+	t.Run("check args", func(t *testing.T) {
 		msg, err := msgs.Next()
 		require.NoError(t, err)
 
@@ -101,15 +82,55 @@ func TestService(t *testing.T) {
 		v, err := proto.Unmarshal(msg.Data())
 		require.NoError(t, err)
 
-		output += v.(proto.UpdateStdioLine).Text
-		println(output)
-	}
+		fields := strings.Fields(v.(proto.UpdateStdioLine).Text)
+		require.Equal(t, []string{"args", "arg1", "arg2"}, fields)
+	})
 
-	println("FINAL OUTPUT:")
-	println("=============")
-	println(output)
-	println("=============")
-	// TODO: check output
+	t.Run("check env", func(t *testing.T) {
+		msg, err := msgs.Next()
+		require.NoError(t, err)
 
+		err = msg.Ack()
+		require.NoError(t, err)
+
+		v, err := proto.Unmarshal(msg.Data())
+		require.NoError(t, err)
+
+		fields := strings.Fields(v.(proto.UpdateStdioLine).Text)
+		require.Contains(t, fields, "TEST1=hello")
+		require.Contains(t, fields, "TEST2=world")
+		require.Contains(t, fields, "TEST3=")
+	})
+
+	t.Run("check messages", func(t *testing.T) {
+		for i := 0; i < 10; i++ {
+			in := fmt.Sprintf("input %d", i+1)
+			b, err := proto.Marshal(proto.UpdateStdioLine{
+				Text: in,
+			})
+			require.NoError(t, err)
+
+			_, err = js.Publish(context.Background(), stdinName, b)
+			require.NoError(t, err)
+
+			// The same message is received twice - once for stdin, once for stdout.
+			for y := 0; y < 2; y++ {
+				msg, err := msgs.Next()
+				require.NoError(t, err)
+
+				err = msg.Ack()
+				require.NoError(t, err)
+
+				v, err := proto.Unmarshal(msg.Data())
+				require.NoError(t, err)
+
+				out := v.(proto.UpdateStdioLine).Text
+				require.Equal(t, in, out)
+			}
+		}
+	})
+
+	cancel()
 	wg.Wait()
+	// TODO: check eventCh!!!
 }
