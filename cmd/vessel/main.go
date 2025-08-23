@@ -2,90 +2,196 @@ package main
 
 import (
 	"context"
+	"crypto/x509"
+	"encoding/base64"
 	"os"
 	"os/signal"
-	"os/user"
-	"runtime"
-	"strings"
 	"time"
 
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 
-	"github.com/foohq/foojank/internal/sstls"
 	"github.com/foohq/foojank/internal/vessel"
-	"github.com/foohq/foojank/internal/vessel/config"
 	"github.com/foohq/foojank/internal/vessel/log"
+	"github.com/foohq/foojank/internal/vessel/subjects"
+)
+
+var (
+	ID                           = ""
+	Server                       = ""
+	UserJWT                      = ""
+	UserKey                      = ""
+	CACertificate                = ""
+	Stream                       = ""
+	Consumer                     = ""
+	InboxPrefix                  = ""
+	ObjectStoreName              = ""
+	SubjectApiWorkerStartT       = ""
+	SubjectApiWorkerStopT        = ""
+	SubjectApiWorkerWriteStdinT  = ""
+	SubjectApiWorkerWriteStdoutT = ""
+	SubjectApiWorkerStatusT      = ""
+	SubjectApiConnInfoT          = ""
+	SubjectApiReplyT             = ""
 )
 
 func main() {
+	log.Debug("Vessel started")
+	defer log.Debug("Vessel stopped")
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	log.Debug("started")
-	defer log.Debug("stopped")
-
-	usr, err := user.Current()
+	conn, err := connect(ctx, Server, UserJWT, UserKey, CACertificate)
 	if err != nil {
-		log.Debug("cannot get computer's username", "error", err)
+		log.Debug("Cannot connect to the server", "server", Server, "error", err)
+		return
 	}
 
-	hostname, err := os.Hostname()
+	stream, err := getStream(ctx, conn, Stream)
 	if err != nil {
-		log.Debug("cannot get computer's hostname", "error", err)
+		log.Debug("Cannot obtain stream", "error", err)
+		return
 	}
 
-	servers := strings.Join(config.Servers, ",")
-	nc, err := nats.Connect(
-		servers,
-		nats.UserJWTAndSeed(config.UserJWT, config.UserKeySeed),
-		nats.CustomInboxPrefix("_INBOX_"+config.ServiceName),
+	consumer, err := getConsumer(ctx, conn, Stream, Consumer)
+	if err != nil {
+		log.Debug("Cannot obtain durable consumer", "error", err)
+		return
+	}
+
+	store, err := getObjectStore(ctx, conn, ObjectStoreName)
+	if err != nil {
+		log.Debug("Cannot obtain object store", "error", err)
+		return
+	}
+
+	err = vessel.New(vessel.Arguments{
+		ID:          ID,
+		Connection:  conn,
+		Stream:      stream,
+		Consumer:    consumer,
+		ObjectStore: store,
+		Templates: map[int]string{
+			subjects.StartWorker:       SubjectApiWorkerStartT,
+			subjects.StopWorker:        SubjectApiWorkerStopT,
+			subjects.WorkerWriteStdin:  SubjectApiWorkerWriteStdinT,
+			subjects.WorkerWriteStdout: SubjectApiWorkerWriteStdoutT,
+			subjects.WorkerStatus:      SubjectApiWorkerStatusT,
+			subjects.ConnInfo:          SubjectApiConnInfoT,
+			subjects.Reply:             SubjectApiReplyT,
+		},
+	}).Start(ctx)
+	if err != nil {
+		log.Debug("Cannot start the agent", "error", err)
+		return
+	}
+}
+
+func connect(
+	ctx context.Context,
+	server string,
+	userJWT,
+	userKey,
+	caCertificate string,
+) (jetstream.JetStream, error) {
+	opts := []nats.Option{
+		nats.CustomInboxPrefix(InboxPrefix),
 		nats.RetryOnFailedConnect(true),
 		nats.MaxReconnects(-1),
-		nats.ClientTLSConfig(nil, sstls.DecodeCertificateHandler(config.TLSCACertificate)),
-		nats.ConnectHandler(func(_ *nats.Conn) {
-			log.Debug("connected to the server")
-		}),
-		nats.ReconnectHandler(func(_ *nats.Conn) {
-			log.Debug("reconnected to the server")
-		}),
-		nats.DisconnectErrHandler(func(_ *nats.Conn, err error) {
-			log.Debug("disconnected from the server", "error", err.Error())
-		}),
-		nats.ErrorHandler(func(_ *nats.Conn, _ *nats.Subscription, err error) {
-			log.Debug("server error", "error", err.Error())
-		}),
-	)
+		nats.ConnectHandler(connected),
+		nats.ReconnectHandler(connected),
+		nats.DisconnectErrHandler(disconnected),
+		nats.ErrorHandler(failed),
+		// TODO: set custom dialer
+	}
+
+	if userJWT != "" && userKey != "" {
+		opts = append(opts, nats.UserJWTAndSeed(userJWT, userKey))
+	}
+
+	if caCertificate != "" {
+		opts = append(opts, nats.ClientTLSConfig(nil, decodeCertificateHandler(caCertificate)))
+	}
+
+	nc, err := nats.Connect(server, opts...)
 	if err != nil {
-		log.Debug("cannot connect to the server", "error", err)
-		return
+		return nil, err
 	}
 
 	for !nc.IsConnected() {
 		select {
 		case <-time.After(3 * time.Second):
 		case <-ctx.Done():
-			return
+			return nil, ctx.Err()
 		}
 	}
 
-	ip, err := nc.GetClientIP()
+	jetStream, err := jetstream.New(nc)
 	if err != nil {
-		log.Debug("cannot determine computer's IP address", "error", err)
+		return nil, err
 	}
 
-	err = vessel.New(vessel.Arguments{
-		Name:    config.ServiceName,
-		Version: config.ServiceVersion,
-		Metadata: map[string]string{
-			"os":         runtime.GOOS,
-			"user":       usr.Username,
-			"hostname":   hostname,
-			"ip_address": ip.String(),
-		},
-		Connection: nc,
-	}).Start(ctx)
-	if err != nil {
-		log.Debug("cannot start the agent", "error", err)
-		return
+	return jetStream, nil
+}
+
+func decodeCertificateHandler(s string) func() (*x509.CertPool, error) {
+	return func() (*x509.CertPool, error) {
+		b, err := base64.StdEncoding.DecodeString(s)
+		if err != nil {
+			return nil, err
+		}
+
+		cert, err := x509.ParseCertificate(b)
+		if err != nil {
+			return nil, err
+		}
+
+		pool := x509.NewCertPool()
+		pool.AddCert(cert)
+		return pool, nil
 	}
+}
+
+func getStream(ctx context.Context, conn jetstream.JetStream, stream string) (jetstream.Stream, error) {
+	s, err := conn.Stream(ctx, stream)
+	if err != nil {
+		return nil, err
+	}
+
+	// IMPORTANT: Info is called so that StreamInfo is cached and retrievable with CachedInfo().
+	_, err = s.Info(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s, nil
+}
+
+func getObjectStore(ctx context.Context, conn jetstream.JetStream, store string) (jetstream.ObjectStore, error) {
+	return conn.ObjectStore(ctx, store)
+}
+
+func getConsumer(ctx context.Context, conn jetstream.JetStream, stream, consumer string) (jetstream.Consumer, error) {
+	c, err := conn.Consumer(ctx, stream, consumer)
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+func connected(_ *nats.Conn) {
+	log.Debug("Connected to the server")
+}
+
+func disconnected(_ *nats.Conn, err error) {
+	if err != nil {
+		log.Debug("Disconnected from the server", "error", err)
+	} else {
+		log.Debug("Disconnected from the server")
+	}
+}
+
+func failed(_ *nats.Conn, _ *nats.Subscription, err error) {
+	log.Debug("Connection error", "error", err)
 }
