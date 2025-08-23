@@ -1,25 +1,22 @@
 package connector
 
-import "github.com/nats-io/nats.go/micro"
+import (
+	"context"
+)
 
 type Message struct {
-	req micro.Request
+	msg  consumerMessage
+	data any
 }
 
-func NewMessage(req micro.Request) Message {
-	return Message{
-		req: req,
-	}
+func (m Message) Ack() error {
+	return m.msg.Ack()
 }
 
-func (m Message) Data() []byte {
-	return m.req.Data()
+func (m Message) Reply(ctx context.Context, data any) error {
+	return m.msg.Reply(ctx, data)
 }
 
-func (m Message) Reply(data []byte) error {
-	return m.req.Respond(data)
-}
-
-func (m Message) ReplyError(code string, description string, data []byte) error {
-	return m.req.Error(code, description, data)
+func (m Message) Data() any {
+	return m.data
 }
