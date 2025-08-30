@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 build_agent_dev() {
     if [ -z "$OUTPUT" ]; then
