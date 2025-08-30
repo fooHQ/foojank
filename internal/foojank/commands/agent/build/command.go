@@ -4,24 +4,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
+	petname "github.com/dustinkirkland/golang-petname"
+	"github.com/foohq/ren/modules"
 	"github.com/foohq/urlpath"
 	"github.com/nats-io/jwt/v2"
-	"github.com/nats-io/nats.go/jetstream"
-	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
 
-	"github.com/foohq/ren/modules"
-
-	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/clients/codebase"
-	"github.com/foohq/foojank/clients/repository"
 	"github.com/foohq/foojank/clients/server"
+	"github.com/foohq/foojank/clients/vessel"
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
@@ -123,156 +119,208 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	logger := log.New(*conf.LogLevel, *conf.NoColor)
-
-	nc, err := server.New(logger, conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey, *conf.Client.TLSCACertificate)
+	srv, err := server.New(conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey, *conf.Client.TLSCACertificate)
 	if err != nil {
-		err := fmt.Errorf("cannot connect to the server: %w", err)
-		logger.ErrorContext(ctx, err.Error())
-		return err
-	}
-
-	js, err := jetstream.New(nc)
-	if err != nil {
-		err := fmt.Errorf("cannot create a JetStream context: %w", err)
-		logger.ErrorContext(ctx, err.Error())
+		log.Error(ctx, "Cannot connect to the server: %v", err)
 		return err
 	}
 
 	codebaseCli := codebase.New(*conf.DataDir)
-	repositoryCli := repository.New(js)
-	return buildAction(logger, conf, codebaseCli, repositoryCli)(ctx, c)
-}
 
-func buildAction(logger *slog.Logger, conf *config.Config, codebaseCli *codebase.Client, repositoryCli *repository.Client) cli.ActionFunc {
-	return func(ctx context.Context, c *cli.Command) error {
-		outputName := c.String(FlagOutput)
-		targetOs := c.String(FlagOs)
-		targetArch := c.String(FlagArch)
-		devBuild := c.Bool(FlagDev)
-		agentServer := c.StringSlice(FlagWithServer)
-		disabledMods := c.StringSlice(FlagWithoutModule)
+	agentID := petname.Generate(2, "-")
+	outputName := c.String(FlagOutput)
+	targetOS := c.String(FlagOs)
+	targetArch := c.String(FlagArch)
+	isDevBuild := c.Bool(FlagDev)
+	agentServer := c.StringSlice(FlagWithServer)
+	disabledModules := c.StringSlice(FlagWithoutModule)
 
-		agentName := nuid.Next()
-		if outputName == "" {
-			wd, err := os.Getwd()
-			if err != nil {
-				err := fmt.Errorf("cannot build an agent: cannot determine current working directory")
-				logger.ErrorContext(ctx, err.Error())
-				return err
-			}
-
-			outputName = filepath.Join(wd, agentName)
+	if outputName == "" {
+		wd, err := os.Getwd()
+		if err != nil {
+			log.Error(ctx, "Cannot get current working directory")
+			return err
 		}
 
-		if targetOs == "" {
-			targetOs = runtime.GOOS
-		}
-
-		if targetArch == "" {
-			targetArch = runtime.GOARCH
-		}
-
-		if targetOs == "windows" && !strings.HasSuffix(outputName, ".exe") {
+		outputName = filepath.Join(wd, agentID)
+		if targetOS == "windows" && !strings.HasSuffix(outputName, ".exe") {
 			outputName += ".exe"
 		}
-
-		servers := agentServer
-		if len(servers) == 0 {
-			err := errors.New("cannot build an agent: no server configured")
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		for i := range servers {
-			scheme, err := urlpath.Scheme(servers[i])
-			if err != nil {
-				err := fmt.Errorf("cannot build an agent: %w", err)
-				logger.ErrorContext(ctx, err.Error())
-				return err
-			}
-
-			if scheme == "" {
-				servers[i] = fmt.Sprintf("wss://%s", servers[i])
-			}
-		}
-
-		accountClaims, err := jwt.DecodeAccountClaims(*conf.Client.AccountJWT)
-		if err != nil {
-			err := fmt.Errorf("cannot build an agent: cannot decode account JWT: %w", err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		accountPubKey := accountClaims.Subject
-		user, err := auth.NewUserAgent(agentName, accountPubKey, []byte(*conf.Client.AccountKey))
-		if err != nil {
-			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %w", err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		agentConf := templateData{
-			Servers:          servers,
-			TLSCACertificate: *conf.Client.TLSCACertificate,
-			User: templateDataUser{
-				JWT:     user.JWT,
-				KeySeed: user.Key,
-			},
-			Service: templateDataService{
-				Name:    agentName,
-				Version: foojank.Version(),
-			},
-		}
-		confOutput, err := RenderTemplate(templateString, agentConf)
-		if err != nil {
-			err := fmt.Errorf("cannot build an agent: cannot generate agent configuration: %w", err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		err = codebaseCli.WriteAgentConfig(confOutput)
-		if err != nil {
-			err := fmt.Errorf("cannot build an agent: cannot write agent configuration to a file: %w", err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		buildTags, err := configureBuildTags(modules.Modules(), disabledMods)
-		if err != nil {
-			err := fmt.Errorf("cannot configure modules: %w", err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		binPath, output, err := codebaseCli.BuildAgent(ctx, targetOs, targetArch, !devBuild, buildTags)
-		if err != nil {
-			err := fmt.Errorf("cannot build an agent: %w\n%s", err, output)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		repoName := agentName
-		repoDescription := fmt.Sprintf("Agent %s (%s/%s)", repoName, targetOs, targetArch)
-		err = repositoryCli.Create(ctx, repoName, repoDescription)
-		if err != nil {
-			_ = os.Remove(binPath)
-			err := fmt.Errorf("cannot create repository '%s': %w", repoName, err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		err = os.Rename(binPath, outputName)
-		if err != nil {
-			err := fmt.Errorf("cannot build an agent: cannot rename the executable file: %w", err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		_, _ = fmt.Fprintln(os.Stdout, filepath.Base(outputName))
-
-		return nil
 	}
+
+	if targetOS == "" {
+		targetOS = runtime.GOOS
+	}
+
+	if targetArch == "" {
+		targetArch = runtime.GOARCH
+	}
+
+	buildMode := "production"
+	if isDevBuild {
+		buildMode = "development"
+	}
+
+	servers := agentServer
+	if len(servers) == 0 {
+		log.Error(ctx, "No server configured. Use --%s flag to specify one", FlagWithServer)
+		return err
+	}
+
+	for i := range servers {
+		scheme, err := urlpath.Scheme(servers[i])
+		if err != nil {
+			return err
+		}
+
+		if scheme == "" {
+			servers[i] = fmt.Sprintf("wss://%s", servers[i])
+		}
+	}
+
+	streamName := vessel.StreamName(agentID)
+
+	log.Debug(ctx, "Create a stream")
+
+	_, err = srv.CreateStream(ctx, streamName, []string{
+		fmt.Sprintf(vessel.SubjectApiWorkerStartT, agentID, "*"),
+		fmt.Sprintf(vessel.SubjectApiWorkerStopT, agentID, "*"),
+		fmt.Sprintf(vessel.SubjectApiWorkerWriteStdinT, agentID, "*"),
+		fmt.Sprintf(vessel.SubjectApiWorkerWriteStdoutT, agentID, "*"),
+		fmt.Sprintf(vessel.SubjectApiWorkerStatusT, agentID, "*"),
+		fmt.Sprintf(vessel.SubjectApiReplyT, agentID, "*"),
+		fmt.Sprintf(vessel.SubjectApiConnInfoT, agentID),
+	})
+	if err != nil {
+		log.Error(ctx, "Cannot create stream: %v", err)
+		return err
+	}
+
+	consumerName := agentID
+
+	log.Debug(ctx, "Create a message consumer")
+
+	_, err = srv.CreateDurableConsumer(ctx, streamName, consumerName, []string{
+		fmt.Sprintf(vessel.SubjectApiWorkerStartT, agentID, "*"),
+		fmt.Sprintf(vessel.SubjectApiWorkerStopT, agentID, "*"),
+		fmt.Sprintf(vessel.SubjectApiWorkerWriteStdinT, agentID, "*"),
+	})
+	if err != nil {
+		log.Error(ctx, "Cannot create consumer: %v", err)
+		return err
+	}
+
+	storeName := agentID
+	storeDescription := fmt.Sprintf("Agent %s (%s/%s)", agentID, targetOS, targetArch)
+
+	log.Info(ctx, "Create a store")
+
+	err = srv.CreateObjectStore(ctx, storeName, storeDescription)
+	if err != nil {
+		log.Error(ctx, "Cannot create a store: %v", err)
+		return err
+	}
+
+	usr, err := createUser(*conf.Client.AccountJWT, *conf.Client.AccountKey, agentID)
+	if err != nil {
+		log.Error(ctx, "Cannot create a user: %v", err)
+		return err
+	}
+
+	log.Info(ctx, "Build an executable file %q [%s/%s] [%s]", outputName, targetOS, targetArch, buildMode)
+
+	err = buildExecutable(
+		ctx,
+		codebaseCli,
+		targetOS,
+		targetArch,
+		outputName,
+		isDevBuild,
+		disabledModules,
+		codebase.BuildAgentConfig{
+			ID:                           agentID,
+			Server:                       strings.Join(servers, ","),
+			UserJWT:                      usr.JWT,
+			UserKey:                      usr.Key,
+			CACertificate:                *conf.Client.TLSCACertificate,
+			Stream:                       streamName,
+			Consumer:                     consumerName,
+			InboxPrefix:                  vessel.InboxName(agentID),
+			ObjectStoreName:              agentID,
+			SubjectApiWorkerStartT:       vessel.SubjectApiWorkerStartT,
+			SubjectApiWorkerStopT:        vessel.SubjectApiWorkerStopT,
+			SubjectApiWorkerWriteStdinT:  vessel.SubjectApiWorkerWriteStdinT,
+			SubjectApiWorkerWriteStdoutT: vessel.SubjectApiWorkerWriteStdoutT,
+			SubjectApiWorkerStatusT:      vessel.SubjectApiWorkerStatusT,
+			SubjectApiConnInfoT:          vessel.SubjectApiConnInfoT,
+			SubjectApiReplyT:             vessel.SubjectApiReplyT,
+		},
+	)
+	if err != nil {
+		log.Error(ctx, "Cannot build executable: %v", err)
+		return err
+	}
+
+	log.Info(ctx, "Agent %q has been built!", agentID)
+
+	return nil
+}
+
+func createUser(
+	accountJWT,
+	accountKey,
+	agentID string,
+) (*auth.User, error) {
+	accountClaims, err := jwt.DecodeAccountClaims(accountJWT)
+	if err != nil {
+		return nil, fmt.Errorf("cannot decode account JWT: %w", err)
+	}
+
+	accountPubKey := accountClaims.Subject
+	user, err := auth.NewUserAgent(agentID, accountPubKey, []byte(accountKey))
+	if err != nil {
+		return nil, fmt.Errorf("cannot generate agent configuration: %w", err)
+	}
+
+	return user, nil
+}
+
+func buildExecutable(
+	ctx context.Context,
+	cli *codebase.Client,
+	targetOS,
+	targetArch,
+	outputName string,
+	isDevBuild bool,
+	disabledModules []string,
+	conf codebase.BuildAgentConfig,
+) error {
+	buildTags, err := configureBuildTags(modules.Modules(), disabledModules)
+	if err != nil {
+		return fmt.Errorf("cannot configure modules: %w", err)
+	}
+
+	binPath, output, err := cli.BuildAgent(ctx, codebase.BuildAgentOptions{
+		OS:         targetOS,
+		Arch:       targetArch,
+		Production: !isDevBuild,
+		Tags:       buildTags,
+		Config:     conf,
+	})
+	if err != nil {
+		return fmt.Errorf("%s", output)
+	}
+
+	err = os.Rename(binPath, outputName)
+	if err != nil {
+		_ = os.Remove(binPath)
+		return fmt.Errorf("cannot rename the executable file: %w", err)
+	}
+
+	// TODO: should be debug!
+	log.Info(ctx, "Go flags: %s", conf.ToFlags())
+
+	return nil
 }
 
 func validateConfiguration(conf *config.Config) error {
@@ -340,9 +388,8 @@ func configureBuildTags(mods, disabledMods []string) ([]string, error) {
 	var buildTags []string
 	for _, m := range mods {
 		if moduleExists(disabledMods, m) {
-			continue
+			buildTags = append(buildTags, modules.StubBuildTag(m))
 		}
-		buildTags = append(buildTags, modules.BuildTag(m))
 	}
 	return buildTags, nil
 }
