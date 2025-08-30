@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 
-build_agent_dev() {
-    if [ -z "$OUTPUT" ]; then
-        echo "OUTPUT variable not defined"
-        return 1
-    fi
+set -euo pipefail
 
     WITH_RACE=""
     if [ "$GOOS" != "windows" ]; then
