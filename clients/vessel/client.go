@@ -7,20 +7,25 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nats-io/nats.go/micro"
 
+	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/proto"
 )
 
 type Client struct {
-	nc *nats.Conn
+	nc  *nats.Conn          // TODO: remove
+	js  jetstream.JetStream // TODO: remove
+	srv *server.Client
 }
 
-func New(nc *nats.Conn) *Client {
+func New(srv *server.Client) *Client {
 	return &Client{
-		nc: nc,
+		srv: srv,
 	}
 }
 
@@ -77,49 +82,100 @@ func (e *Error) Error() string {
 	return e.Message + " " + "(" + e.Code + ")"
 }
 
-func (c *Client) Discover(ctx context.Context, serviceName string, outputCh chan<- Service) error {
-	subject, err := micro.ControlSubject(micro.PingVerb, serviceName, "")
+type DiscoverResult struct {
+	ID       string
+	Username string
+	Hostname string
+	System   string
+	Address  string
+	LastSeen time.Time
+}
+
+func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
+	streams, err := c.srv.ListStreams(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	inbox := nats.NewInbox()
-	msgCh := make(chan *nats.Msg, 1024)
-	sub, err := c.nc.ChanSubscribe(inbox, msgCh)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = sub.Drain()
-	}()
-
-	reqMsg := &nats.Msg{
-		Subject: subject,
-		Reply:   inbox,
-	}
-	err = c.nc.PublishMsg(reqMsg)
-	if err != nil {
-		return err
-	}
-
-	for {
-		select {
-		case msg := <-msgCh:
-			res, err := c.parseInfo(msg.Data)
-			if err != nil {
-				continue
-			}
-
-			select {
-			case outputCh <- res:
-			case <-ctx.Done():
-				return nil
-			}
-
-		case <-ctx.Done():
-			return nil
+	var results []DiscoverResult
+	for _, stream := range streams {
+		if !strings.HasPrefix(stream, server.StreamPrefix) {
+			continue
 		}
+
+		consumer, err := c.srv.CreateConsumer(ctx, stream)
+		if err != nil {
+			return nil, err
+		}
+
+		var info DiscoverResult
+		for {
+			// TODO: increase the batch size
+			batch, err := consumer.FetchNoWait(1)
+			if err != nil {
+				return nil, err
+			}
+
+			var cnt int
+			for msg := range batch.Messages() {
+				if msg == nil {
+					break
+				}
+				cnt++
+
+				err := msg.Ack()
+				if err != nil {
+					return nil, err
+				}
+
+				meta, err := msg.Metadata()
+				if err != nil {
+					continue
+				}
+
+				data, err := proto.Unmarshal(msg.Data())
+				if err != nil {
+					continue
+				}
+
+				v, ok := data.(proto.UpdateClientInfo)
+				if !ok {
+					continue
+				}
+
+				info = DiscoverResult{
+					ID:       strings.TrimPrefix(stream, server.StreamPrefix),
+					Username: v.Username,
+					Hostname: v.Hostname,
+					System:   v.System,
+					Address:  v.Address,
+					LastSeen: meta.Timestamp,
+				}
+			}
+
+			err = batch.Error()
+			if err != nil {
+				return nil, err
+			}
+
+			if cnt == 0 {
+				break
+			}
+		}
+
+		result := DiscoverResult{
+			ID:       strings.TrimPrefix(stream, server.StreamPrefix),
+			Username: info.Username,
+			Hostname: info.Hostname,
+			System:   info.System,
+			Address:  info.Address,
+			LastSeen: info.LastSeen,
+		}
+
+		results = append(results, result)
 	}
+
+	return results, nil
 }
 
 func (c *Client) GetInfo(ctx context.Context, id ID) (Service, error) {
