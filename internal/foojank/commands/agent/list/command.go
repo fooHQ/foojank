@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
+	"io"
 	"os"
-	"sync"
+	"sort"
 	"time"
 
 	"github.com/urfave/cli/v3"
@@ -23,9 +23,6 @@ import (
 )
 
 const (
-	// TODO: rename to filter-name
-	FlagServiceName      = "service-name"
-	FlagTimeout          = "timeout"
 	FlagFormat           = "format"
 	FlagServer           = flags.Server
 	FlagUserJWT          = flags.UserJWT
@@ -36,17 +33,8 @@ const (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "list",
-		Usage: "List active agents",
+		Usage: "List agents",
 		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  FlagServiceName,
-				Usage: "filter by service name",
-			},
-			&cli.DurationFlag{
-				Name:  FlagTimeout,
-				Usage: "set wait timeout",
-				Value: 2 * time.Second,
-			},
 			&cli.StringFlag{
 				Name:  FlagFormat,
 				Usage: "set output format",
@@ -88,99 +76,103 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	logger := log.New(*conf.LogLevel, *conf.NoColor)
-
-	nc, err := server.New(logger, conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey, *conf.Client.TLSCACertificate)
+	srv, err := server.New(conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey, *conf.Client.TLSCACertificate)
 	if err != nil {
-		err := fmt.Errorf("cannot connect to the server: %w", err)
-		logger.ErrorContext(ctx, err.Error())
+		log.Error(ctx, "Cannot connect to the server: %v", err)
 		return err
 	}
 
-	client := vessel.New(nc)
-	return listAction(logger, client)(ctx, c)
+	client := vessel.New(srv)
+
+	format := c.String(FlagFormat)
+
+	results, err := client.Discover(ctx)
+	if err != nil {
+		log.Error(ctx, "Cannot get a list of agents: %v", err)
+		return err
+	}
+
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].LastSeen.Before(results[j].LastSeen)
+	})
+
+	err = formatOutput(os.Stdout, format, results)
+	if err != nil {
+		log.Error(ctx, "Cannot write formatted output: %v", err)
+		return err
+	}
+
+	return nil
 }
 
-func listAction(logger *slog.Logger, client *vessel.Client) cli.ActionFunc {
-	return func(ctx context.Context, c *cli.Command) error {
-		serviceName := c.String(FlagServiceName)
-		timeout := c.Duration(FlagTimeout)
-		format := c.String(FlagFormat)
-
-		outputCh := make(chan vessel.Service)
-
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
-			table := formatter.NewTable([]string{
-				"id",
-				"user",
-				"hostname",
-				"system",
-				"ip_address",
-			})
-			for service := range outputCh {
-				logger.Debug("found a service", "service", service)
-
-				id := service.ID.String()
-				ip, ipOk := service.Metadata["ip_address"]
-				user, userOk := service.Metadata["user"]
-				hostname, hostnameOk := service.Metadata["hostname"]
-				osName, osNameOk := service.Metadata["os"]
-
-				// This condition filters out workers and incompatible services.
-				// Detection should work even if worker was not able to determine
-				// a value, in such case the value will be an empty string.
-				if !ipOk || !userOk || !hostnameOk || !osNameOk {
-					continue
-				}
-
-				table.AddRow([]string{
-					id,
-					user,
-					hostname,
-					osName,
-					ip,
-				})
-			}
-
-			var f formatter.Formatter
-			switch format {
-			case "json":
-				f = jsonformatter.New()
-			case "table":
-				f = tableformatter.New()
-			default:
-				f = tableformatter.New()
-				err := fmt.Errorf("unknown output format '%s', using the default format instead", format)
-				logger.Warn(err.Error())
-			}
-
-			err := f.Write(os.Stdout, table)
-			if err != nil {
-				err := fmt.Errorf("cannot write formatted output: %w", err)
-				logger.ErrorContext(ctx, err.Error())
-				return
-			}
-		}()
-
-		ctx, cancel := context.WithTimeout(ctx, timeout)
-		defer cancel()
-
-		err := client.Discover(ctx, serviceName, outputCh)
-		if err != nil {
-			err := fmt.Errorf("discovery request failed: %w", err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		close(outputCh)
-		wg.Wait()
-
-		return nil
+func formatOutput(w io.Writer, format string, data []vessel.DiscoverResult) error {
+	table := formatter.NewTable([]string{
+		"agent_id",
+		"userhost",
+		"system",
+		"address",
+		"updated",
+	})
+	for _, service := range data {
+		table.AddRow([]string{
+			service.ID,
+			fmt.Sprintf("%s@%s", service.Username, service.Hostname),
+			service.System,
+			service.Address,
+			formatTime(service.LastSeen),
+		})
 	}
+
+	var f formatter.Formatter
+	switch format {
+	case "json":
+		f = jsonformatter.New()
+	case "table":
+		f = tableformatter.New()
+	default:
+		f = tableformatter.New()
+	}
+
+	err := f.Write(w, table)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func formatTime(t time.Time) string {
+	if t.IsZero() {
+		return "never"
+	}
+
+	now := time.Now()
+	diff := now.Sub(t)
+
+	// Handle future dates
+	if diff < 0 {
+		diff = -diff
+		if diff < 24*time.Hour {
+			if diff < time.Hour {
+				return fmt.Sprintf("in %d minutes", int(diff.Minutes()))
+			}
+			return fmt.Sprintf("in %d hours", int(diff.Hours()))
+		}
+		return fmt.Sprintf("in %d days", int(diff.Hours()/24))
+	}
+
+	// Handle past dates
+	if diff < 24*time.Hour {
+		if diff < 2*time.Minute {
+			return "now"
+		}
+		if diff < time.Hour {
+			return fmt.Sprintf("%d minutes ago", int(diff.Minutes()))
+		}
+		return fmt.Sprintf("%d hours ago", int(diff.Hours()))
+	}
+
+	return fmt.Sprintf("%d days ago", int(diff.Hours()/24))
 }
 
 func validateConfiguration(conf *config.Config) error {
