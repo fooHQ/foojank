@@ -5,6 +5,8 @@ import (
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
+
+	"github.com/foohq/foojank/clients/vessel"
 )
 
 type User struct {
@@ -69,36 +71,27 @@ func NewUserAgent(name, accountPubKey string, accountSigningKey []byte) (*User, 
 	claims.Sub = jwt.Permission{
 		Allow: []string{
 			fmt.Sprintf("_INBOX_%s.>", name),
-			"$SRV.PING",
-			fmt.Sprintf("$SRV.PING.%s", name),
-			fmt.Sprintf("$SRV.PING.%s.*", name),
-			"$SRV.INFO",
-			fmt.Sprintf("$SRV.INFO.%s", name),
-			fmt.Sprintf("$SRV.INFO.%s.*", name),
-			"$SRV.STATS",
-			fmt.Sprintf("$SRV.STATS.%s", name),
-			fmt.Sprintf("$SRV.STATS.%s.*", name),
-			fmt.Sprintf("%s.RPC", name),
-			fmt.Sprintf("%s.*.DATA", name),
-			fmt.Sprintf("%s.*.STDIN", name),
 		},
 	}
 	claims.Pub = jwt.Permission{
 		Allow: []string{
-			fmt.Sprintf("$JS.API.STREAM.INFO.OBJ_%s", name),
-			fmt.Sprintf("$JS.API.DIRECT.GET.OBJ_%s.$O.%s.M.*", name, name),
-			fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.*.$O.%s.C.*", name, name),
-			fmt.Sprintf("$JS.API.CONSUMER.DELETE.OBJ_%s.*", name),
-			fmt.Sprintf("%s.*.STDOUT", name),
-			"_INBOX.>",
+			fmt.Sprintf(vessel.SubjectApiWorkerWriteStdoutT, name, "*"),
+			fmt.Sprintf(vessel.SubjectApiWorkerStatusT, name, "*"),
+			fmt.Sprintf(vessel.SubjectApiReplyT, name, "*"),
+			fmt.Sprintf(vessel.SubjectApiConnInfoT, name),
 
-			// Allow modification of object in ObjectStore
+			fmt.Sprintf("$JS.ACK.FJ_%s.>", name),
+			fmt.Sprintf("$JS.API.STREAM.INFO.FJ_%s", name),
+			fmt.Sprintf("$JS.API.STREAM.INFO.OBJ_%s", name),
+			fmt.Sprintf("$JS.API.STREAM.PURGE.OBJ_%s", name),
+			fmt.Sprintf("$JS.API.CONSUMER.INFO.FJ_%s.*", name),
+			fmt.Sprintf("$JS.API.CONSUMER.MSG.NEXT.FJ_%s.*", name),
+			fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.*.$O.%s.M.*", name, name),
+			fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.>", name),
+			fmt.Sprintf("$JS.API.CONSUMER.DELETE.OBJ_%s.*", name),
+			fmt.Sprintf("$JS.API.DIRECT.GET.OBJ_%s.>", name),
 			fmt.Sprintf("$O.%s.M.*", name),
 			fmt.Sprintf("$O.%s.C.*", name),
-			fmt.Sprintf("$JS.API.STREAM.PURGE.OBJ_%s", name),
-
-			// Allow listing contents of a bucket
-			fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.*.$O.%s.M.*", name, name),
 		},
 	}
 	claimsEnc, err := claims.Encode(accountSignKeyPair)
