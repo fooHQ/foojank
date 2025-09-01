@@ -4,15 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
+	"io"
 	"os"
+	"strings"
 	"time"
 
-	"github.com/nats-io/nats.go/jetstream"
-	risoros "github.com/risor-io/risor/os"
 	"github.com/urfave/cli/v3"
 
-	"github.com/foohq/foojank/clients/repository"
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
@@ -20,6 +18,7 @@ import (
 	"github.com/foohq/foojank/internal/foojank/formatter"
 	jsonformatter "github.com/foohq/foojank/internal/foojank/formatter/json"
 	tableformatter "github.com/foohq/foojank/internal/foojank/formatter/table"
+	"github.com/foohq/foojank/internal/foojank/path"
 	"github.com/foohq/foojank/internal/log"
 )
 
@@ -34,7 +33,7 @@ const (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "list",
-		ArgsUsage: "[repository]",
+		ArgsUsage: "[repository:<file> ...]",
 		Usage:     "List repositories or their contents",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -78,134 +77,159 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	logger := log.New(*conf.LogLevel, *conf.NoColor)
-
-	nc, err := server.New(logger, conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey, *conf.Client.TLSCACertificate)
+	srv, err := server.New(conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey, *conf.Client.TLSCACertificate)
 	if err != nil {
-		err := fmt.Errorf("cannot connect to the server: %w", err)
-		logger.ErrorContext(ctx, err.Error())
+		log.Error(ctx, "Cannot connect to the server: %v", err)
 		return err
 	}
 
-	js, err := jetstream.New(nc)
-	if err != nil {
-		err := fmt.Errorf("cannot create a JetStream context: %w", err)
-		logger.ErrorContext(ctx, err.Error())
-		return err
-	}
+	format := c.String(FlagFormat)
 
-	client := repository.New(js)
-	return listAction(logger, client)(ctx, c)
-}
-
-func listAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
-	return func(ctx context.Context, c *cli.Command) error {
-		format := c.String(FlagFormat)
-
-		var f formatter.Formatter
-		switch format {
-		case "json":
-			f = jsonformatter.New()
-		case "table":
-			f = tableformatter.New()
-		default:
-			f = tableformatter.New()
-			err := fmt.Errorf("unknown output format '%s', using the default format instead", format)
-			logger.Warn(err.Error())
-		}
-
-		if c.Args().Len() > 0 {
-			for _, r := range c.Args().Slice() {
-				files, err := listDirectory(ctx, client, r, "/")
-				if err != nil {
-					err := fmt.Errorf("cannot list contents of repository '%s': %w", r, err)
-					logger.ErrorContext(ctx, err.Error())
-					return err
-				}
-
-				table := formatter.NewTable([]string{
-					"name",
-					"size",
-					"modified",
-				})
-				for _, file := range files {
-					name := file.Name()
-					info, err := file.Info()
-					if err != nil {
-						err := fmt.Errorf("cannot get information about file '%s': %w", name, err)
-						logger.ErrorContext(ctx, err.Error())
-						return err
-					}
-
-					size := formatBytes(uint64(info.Size()))
-					modified := formatTime(info.ModTime())
-					table.AddRow([]string{
-						name,
-						size,
-						modified,
-					})
-				}
-
-				err = f.Write(os.Stdout, table)
-				if err != nil {
-					err := fmt.Errorf("cannot write formatted output: %w", err)
-					logger.ErrorContext(ctx, err.Error())
-					return err
-				}
-			}
-			return nil
-		}
-
-		repos, err := client.List(ctx)
+	if c.NArg() == 0 {
+		err := listRepositories(ctx, srv, format)
 		if err != nil {
+			log.Error(ctx, "Cannot get a list of repositories: %v", err)
 			return err
 		}
-
-		table := formatter.NewTable([]string{
-			"name",
-			"size",
-			"description",
-		})
-		for _, repo := range repos {
-			name := repo.Name()
-			size := formatBytes(repo.Size())
-			description := repo.Description()
-			table.AddRow([]string{
-				name,
-				size,
-				description,
-			})
-		}
-
-		err = f.Write(os.Stdout, table)
-		if err != nil {
-			err := fmt.Errorf("cannot write formatted output: %w", err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
 		return nil
 	}
+
+	for _, pth := range c.Args().Slice() {
+		result, err := parsePath(pth)
+		if err != nil {
+			log.Error(ctx, "Cannot parse path %q: %v", pth, err)
+			return err
+		}
+
+		err = listRepository(ctx, srv, format, result.Repository, result.FilePath)
+		if err != nil {
+			log.Error(ctx, "Cannot list repository %q: %v", result.Repository, err)
+			return err
+		}
+	}
+
+	return nil
 }
 
-func listDirectory(ctx context.Context, client *repository.Client, name, dir string) ([]risoros.DirEntry, error) {
-	repo, err := client.Get(ctx, name)
+func listRepositories(ctx context.Context, srv *server.Client, format string) error {
+	stores, err := srv.ListObjectStores(ctx)
 	if err != nil {
-		return nil, err
-	}
-	defer repo.Close()
-
-	err = repo.Wait(ctx)
-	if err != nil {
-		return nil, err
+		return err
 	}
 
-	files, err := repo.ReadDir(dir)
-	if err != nil {
-		return nil, err
+	table := formatter.NewTable([]string{
+		"name",
+		"size",
+		"description",
+	})
+	for _, repo := range stores {
+		name := repo.Name()
+		size := formatBytes(repo.Size())
+		description := repo.Description()
+		table.AddRow([]string{
+			name,
+			size,
+			description,
+		})
 	}
 
-	return files, nil
+	return formatOutput(os.Stdout, format, table)
+}
+
+func listRepository(ctx context.Context, srv *server.Client, format, repository, pth string) error {
+	store, err := srv.GetObjectStore(ctx, repository)
+	if err != nil {
+		return err
+	}
+
+	err = store.Wait(ctx)
+	if err != nil {
+		return fmt.Errorf("synchronization failed: %w", err)
+	}
+
+	info, err := store.Stat(pth)
+	if err != nil {
+		return err
+	}
+
+	if !info.IsDir() {
+		table := formatter.NewTable([]string{
+			"type",
+			"name",
+			"size",
+			"modified",
+		})
+		table.AddRow([]string{
+			formatTypeIndicator(info.IsDir()),
+			info.Mode().String(),
+			info.Name(),
+			formatBytes(uint64(info.Size())),
+			formatTime(info.ModTime()),
+		})
+		return formatOutput(os.Stdout, format, table)
+	}
+
+	files, err := store.ReadDir(pth)
+	if err != nil {
+		return err
+	}
+
+	table := formatter.NewTable([]string{
+		"type",
+		"name",
+		"size",
+		"modified",
+	})
+	for _, file := range files {
+		info, err := file.Info()
+		if err != nil {
+			return err
+		}
+
+		table.AddRow([]string{
+			formatTypeIndicator(info.IsDir()),
+			info.Name(),
+			formatBytes(uint64(info.Size())),
+			formatTime(info.ModTime()),
+		})
+	}
+
+	err = formatOutput(os.Stdout, format, table)
+	if err != nil {
+		log.Error(ctx, "Cannot write formatted output: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func formatOutput(w io.Writer, format string, table *formatter.Table) error {
+	var f formatter.Formatter
+	switch format {
+	case "json":
+		f = jsonformatter.New()
+	case "table":
+		f = tableformatter.New()
+	default:
+		f = tableformatter.New()
+	}
+
+	err := f.Write(w, table)
+	if err != nil {
+		return fmt.Errorf("cannot write formatted output: %w", err)
+	}
+
+	return nil
+}
+
+func parsePath(pth string) (path.Path, error) {
+	if !strings.Contains(pth, ":") {
+		return path.Path{
+			Repository: pth,
+			FilePath:   "/",
+		}, nil
+	}
+	return path.Parse(pth)
 }
 
 func formatBytes(size uint64) string {
@@ -243,6 +267,13 @@ func formatBytes(size uint64) string {
 
 func formatTime(t time.Time) string {
 	return t.Format("2006-01-02 15:04:05")
+}
+
+func formatTypeIndicator(isDir bool) string {
+	if isDir {
+		return "DIR"
+	}
+	return "FILE"
 }
 
 func validateConfiguration(conf *config.Config) error {
