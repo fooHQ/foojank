@@ -5,7 +5,6 @@ import (
 
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/commands/agent/build"
-	"github.com/foohq/foojank/internal/foojank/commands/agent/exec"
 	"github.com/foohq/foojank/internal/foojank/commands/agent/list"
 )
 
@@ -16,7 +15,6 @@ func NewCommand() *cli.Command {
 		Commands: []*cli.Command{
 			build.NewCommand(),
 			list.NewCommand(),
-			exec.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		OnUsageError:    actions.UsageError,
