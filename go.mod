@@ -4,6 +4,7 @@ go 1.24.1
 
 require (
 	capnproto.org/go/capnp/v3 v3.1.0-alpha.1
+	github.com/dustinkirkland/golang-petname v0.0.0-20240428194347-eebcea082ee0
 	github.com/foohq/ren v0.1.0
 	github.com/foohq/ren-memfs v0.0.0-20250715161330-d886928c2dee
 	github.com/foohq/ren-natsfs v0.0.0-20250715161259-1f76eedb0ef2
