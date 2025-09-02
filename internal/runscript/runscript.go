@@ -6,19 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"maps"
 	"os"
 	"sync"
 
-	"github.com/foohq/ren/builtins"
 	"github.com/muesli/cancelreader"
 	risoros "github.com/risor-io/risor/os"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/ren"
 	memfs "github.com/foohq/ren-memfs"
-	"github.com/foohq/ren/modules"
-	renos "github.com/foohq/ren/os"
 
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/internal/runscript/actions"
@@ -93,8 +89,8 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 		cancel()
 	}
 
-	stdin := renos.NewPipe()
-	stdout := renos.NewPipe()
+	stdin := ren.NewPipe()
+	stdout := ren.NewPipe()
 	r, err := cancelreader.NewReader(os.Stdin)
 	if err != nil {
 		err := fmt.Errorf("cannot create a standard input reader: %w", err)
@@ -108,23 +104,6 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 		_, _ = io.Copy(os.Stdout, stdout)
 	}()
 
-	ros := renos.New(
-		renos.WithArgs(pkgArgs),
-		renos.WithStdin(stdin),
-		renos.WithStdout(stdout),
-		// Using URIFile with MemFS is intentional.
-		// By default, runscript should not have access to the filesystem.
-		// Work directory is also adjusted to begin at "/", which is the only
-		// directory which exists in an empty MemFS.
-		renos.WithWorkDir("/"),
-		renos.WithFilesystems(filesystems),
-		renos.WithExitHandler(exitHandler),
-	)
-
-	globals := make(map[string]any)
-	maps.Copy(globals, modules.Globals())
-	maps.Copy(globals, builtins.Globals())
-
 	errCh := make(chan error, 1)
 	wg.Add(1)
 	go func() {
@@ -133,8 +112,16 @@ func engineCompileAndRunPackage(ctx context.Context, pkgPath string, pkgArgs []s
 			ctx,
 			f,
 			info.Size(),
-			ros,
-			ren.WithGlobals(globals),
+			ren.WithArgs(pkgArgs),
+			ren.WithStdin(stdin),
+			ren.WithStdout(stdout),
+			// Using URIFile with MemFS is intentional.
+			// By default, runscript should not have access to the filesystem.
+			// Work directory is also adjusted to begin at "/", which is the only
+			// directory which exists in an empty MemFS.
+			ren.WithWorkDir("/"),
+			ren.WithFilesystems(filesystems),
+			ren.WithExitHandler(exitHandler),
 		)
 		_ = r.Cancel()
 		errCh <- err
