@@ -1,5 +1,6 @@
 package exec
 
+/*
 import (
 	"context"
 	"errors"
@@ -186,3 +187,4 @@ func configureBuildTags(mods, disabledMods []string) ([]string, error) {
 	}
 	return buildTags, nil
 }
+*/
