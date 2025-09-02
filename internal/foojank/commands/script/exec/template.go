@@ -1,5 +1,6 @@
 package exec
 
+/*
 import (
 	"bytes"
 	"text/template"
@@ -25,3 +26,4 @@ func RenderTemplate(tstr string, data any) ([]byte, error) {
 
 	return buf.Bytes(), nil
 }
+*/
