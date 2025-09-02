@@ -1,5 +1,6 @@
 package remove
 
+/*
 import (
 	"context"
 	"errors"
@@ -173,3 +174,4 @@ func validateConfiguration(conf *config.Config) error {
 
 	return nil
 }
+*/
