@@ -2,24 +2,30 @@ package vessel
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"io"
+	"fmt"
+	"maps"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nats.go/jetstream"
-	"github.com/nats-io/nats.go/micro"
 
 	"github.com/foohq/foojank/clients/server"
+	"github.com/foohq/foojank/internal/router"
 	"github.com/foohq/foojank/proto"
 )
 
+const (
+	SubjectApiPrefix             = "FJ.API"
+	SubjectApiWorkerStartT       = SubjectApiPrefix + "." + "WORKER.START.%s.%s"
+	SubjectApiWorkerStopT        = SubjectApiPrefix + "." + "WORKER.STOP.%s.%s"
+	SubjectApiWorkerWriteStdinT  = SubjectApiPrefix + "." + "WORKER.WRITE.STDIN.%s.%s"
+	SubjectApiWorkerWriteStdoutT = SubjectApiPrefix + "." + "WORKER.WRITE.STDOUT.%s.%s"
+	SubjectApiWorkerStatusT      = SubjectApiPrefix + "." + "WORKER.STATUS.%s.%s"
+	SubjectApiConnInfoT          = SubjectApiPrefix + "." + "CONNECTION.INFO.%s"
+	SubjectApiReplyT             = SubjectApiPrefix + "." + "REPLY.%s.%s"
+)
+
 type Client struct {
-	nc  *nats.Conn          // TODO: remove
-	js  jetstream.JetStream // TODO: remove
 	srv *server.Client
 }
 
@@ -29,65 +35,13 @@ func New(srv *server.Client) *Client {
 	}
 }
 
-type ID struct {
-	serviceName string
-	serviceID   string
-}
-
-func (i ID) ServiceName() string {
-	return i.serviceName
-}
-
-func (i ID) String() string {
-	return i.serviceName + "." + i.serviceID
-}
-
-func (i ID) infoSubject() string {
-	subject, _ := micro.ControlSubject(micro.InfoVerb, i.serviceName, i.serviceID)
-	return subject
-}
-
-func NewID(serviceName, id string) ID {
-	return ID{
-		serviceName: serviceName,
-		serviceID:   id,
-	}
-}
-
-func ParseID(s string) (ID, error) {
-	tokens := strings.SplitN(s, ".", 2)
-	if len(tokens) != 2 {
-		return ID{}, errors.New("malformed ID")
-	}
-	return NewID(tokens[0], tokens[1]), nil
-}
-
-type Endpoint struct {
-	name    string
-	subject string
-}
-
-type Service struct {
-	ID        ID
-	Metadata  map[string]string
-	Endpoints map[string]Endpoint
-}
-
-type Error struct {
-	Code    string
-	Message string
-}
-
-func (e *Error) Error() string {
-	return e.Message + " " + "(" + e.Code + ")"
-}
-
 type DiscoverResult struct {
 	ID       string
 	Username string
 	Hostname string
 	System   string
 	Address  string
+	Created  time.Time
 	LastSeen time.Time
 }
 
@@ -99,7 +53,7 @@ func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
 
 	var results []DiscoverResult
 	for _, stream := range streams {
-		if !strings.HasPrefix(stream, server.StreamPrefix) {
+		if !strings.HasPrefix(stream, StreamPrefix) {
 			continue
 		}
 
@@ -144,7 +98,7 @@ func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
 				}
 
 				info = DiscoverResult{
-					ID:       strings.TrimPrefix(stream, server.StreamPrefix),
+					ID:       strings.TrimPrefix(stream, StreamPrefix),
 					Username: v.Username,
 					Hostname: v.Hostname,
 					System:   v.System,
@@ -164,7 +118,7 @@ func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
 		}
 
 		result := DiscoverResult{
-			ID:       strings.TrimPrefix(stream, server.StreamPrefix),
+			ID:       strings.TrimPrefix(stream, StreamPrefix),
 			Username: info.Username,
 			Hostname: info.Hostname,
 			System:   info.System,
@@ -178,284 +132,296 @@ func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
 	return results, nil
 }
 
-func (c *Client) GetInfo(ctx context.Context, id ID) (Service, error) {
-	subject := id.infoSubject()
-	msg := &nats.Msg{
-		Subject: subject,
-		Reply:   nats.NewInbox(),
-	}
-	resp, err := c.request(ctx, msg)
-	if err != nil {
-		return Service{}, err
-	}
-
-	return c.parseInfo(resp.Data)
-}
-
-func (c *Client) CreateWorker(ctx context.Context, s Service) (uint64, error) {
-	b, err := proto.NewCreateWorkerRequest()
-	if err != nil {
-		return 0, err
-	}
-
-	rpcEndpoint, ok := s.Endpoints["rpc"]
-	if !ok {
-		return 0, errors.New("rpc endpoint not found")
-	}
-
-	msg := &nats.Msg{
-		Subject: rpcEndpoint.subject,
-		Reply:   nats.NewInbox(),
-		Data:    b,
-	}
-	resp, err := c.request(ctx, msg)
-	if err != nil {
-		return 0, err
-	}
-
-	parsed, err := proto.ParseResponse(resp.Data)
-	if err != nil {
-		return 0, err
-	}
-
-	v, ok := parsed.(proto.CreateWorkerResponse)
-	if !ok {
-		return 0, errors.New("invalid response type")
-	}
-
-	return v.ID, nil
-}
-
-func (c *Client) GetWorker(ctx context.Context, s Service, workerID uint64) (ID, error) {
-	b, err := proto.NewGetWorkerRequest(workerID)
-	if err != nil {
-		return ID{}, err
-	}
-
-	rpcEndpoint, ok := s.Endpoints["rpc"]
-	if !ok {
-		return ID{}, errors.New("rpc endpoint not found")
-	}
-
-	msg := &nats.Msg{
-		Subject: rpcEndpoint.subject,
-		Reply:   nats.NewInbox(),
-		Data:    b,
-	}
-	resp, err := c.request(ctx, msg)
-	if err != nil {
-		return ID{}, err
-	}
-
-	parsed, err := proto.ParseResponse(resp.Data)
-	if err != nil {
-		return ID{}, err
-	}
-
-	v, ok := parsed.(proto.GetWorkerResponse)
-	if !ok {
-		return ID{}, errors.New("invalid response type")
-	}
-
-	return ID{
-		serviceName: v.ServiceName,
-		serviceID:   v.ServiceID,
-	}, nil
-}
-
-func (c *Client) DestroyWorker(ctx context.Context, s Service, workerID uint64) error {
-	b, err := proto.NewDestroyWorkerRequest(workerID)
+func (c *Client) StartWorker(ctx context.Context, agentID, workerID, file string, args, env []string) error {
+	b, err := proto.Marshal(proto.StartWorkerRequest{
+		File: file,
+		Args: args,
+		Env:  env,
+	})
 	if err != nil {
 		return err
 	}
 
-	rpcEndpoint, ok := s.Endpoints["rpc"]
-	if !ok {
-		return errors.New("rpc endpoint not found")
-	}
-
-	msg := &nats.Msg{
-		Subject: rpcEndpoint.subject,
-		Reply:   nats.NewInbox(),
+	err = c.srv.Publish(ctx, &nats.Msg{
+		Subject: fmt.Sprintf(SubjectApiWorkerStartT, agentID, workerID),
 		Data:    b,
-	}
-	resp, err := c.request(ctx, msg)
+	})
 	if err != nil {
 		return err
-	}
-
-	parsed, err := proto.ParseResponse(resp.Data)
-	if err != nil {
-		return err
-	}
-
-	_, ok = parsed.(proto.DestroyWorkerResponse)
-	if !ok {
-		return errors.New("invalid response type")
 	}
 
 	return nil
 }
 
-func (c *Client) Execute(ctx context.Context, s Service, filePath string, args []string, stdin io.ReadCloser, stdout io.WriteCloser) (int64, error) {
-	b, err := proto.NewExecuteRequest(filePath, args)
+func (c *Client) StopWorker(ctx context.Context, agentID, workerID string) error {
+	b, err := proto.Marshal(proto.StopWorkerRequest{})
 	if err != nil {
-		return 0, err
+		return err
 	}
 
-	dataEndpoint, ok := s.Endpoints["data"]
-	if !ok {
-		return 0, errors.New("data endpoint not found")
-	}
-
-	stdinEndpoint, ok := s.Endpoints["stdin"]
-	if !ok {
-		return 0, errors.New("stdin endpoint not found")
-	}
-
-	stdoutSubject, ok := s.Metadata["stdout"]
-	if !ok {
-		return 0, errors.New("stdout subject not found")
-	}
-
-	msgCh := make(chan *nats.Msg, 1024)
-	sub, err := c.nc.ChanSubscribe(stdoutSubject, msgCh)
+	err = c.srv.Publish(ctx, &nats.Msg{
+		Subject: fmt.Sprintf(SubjectApiWorkerStopT, agentID, workerID),
+		Data:    b,
+	})
 	if err != nil {
-		return 0, err
+		return err
 	}
-	defer func() {
-		_ = sub.Drain()
-	}()
 
-	var wg sync.WaitGroup
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	return nil
+}
 
-	// Start stdout messages passthrough
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for loop := true; loop; {
-			select {
-			case msg := <-msgCh:
-				if msg == nil {
-					continue
+func (c *Client) WriteWorkerStdin(ctx context.Context, agentID, workerID string) error {
+	b, err := proto.Marshal(proto.UpdateWorkerStdio{})
+	if err != nil {
+		return err
+	}
+
+	err = c.srv.Publish(ctx, &nats.Msg{
+		Subject: fmt.Sprintf(SubjectApiWorkerWriteStdinT, agentID, workerID),
+		Data:    b,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]*Job, error) {
+	stream := StreamName(agentID)
+	consumer, err := c.srv.CreateConsumer(ctx, stream)
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := make(map[string]*Job)
+	jobsMsgID := make(map[string]*Job)
+
+	api := router.Handlers{
+		"FJ.API.WORKER.START.<agent>.<worker>": func(ctx context.Context, params router.Params, data any) any {
+			workerID, ok := params["worker"]
+			if !ok {
+				return nil
+			}
+
+			v, ok := data.(proto.StartWorkerRequest)
+			if !ok {
+				return nil
+			}
+
+			return &Job{
+				id:      workerID,
+				agentID: agentID,
+				info: JobInfo{
+					File:   v.File,
+					Args:   strings.Join(v.Args, " "),
+					Status: JobStatusPending,
+				},
+			}
+		},
+		"FJ.API.WORKER.STOP.<agent>.<worker>": func(ctx context.Context, params router.Params, data any) any {
+			workerID, ok := params["worker"]
+			if !ok {
+				return nil
+			}
+
+			job, ok := jobs[workerID]
+			if !ok {
+				return nil
+			}
+
+			_, ok = data.(proto.StopWorkerRequest)
+			if !ok {
+				return nil
+			}
+
+			job.info.Status = JobStatusCancelling
+
+			return job
+		},
+		"FJ.API.WORKER.STATUS.<agent>.<worker>": func(ctx context.Context, params router.Params, data any) any {
+			workerID, ok := params["worker"]
+			if !ok {
+				return nil
+			}
+
+			job, ok := jobs[workerID]
+			if !ok {
+				return nil
+			}
+
+			v, ok := data.(proto.UpdateWorkerStatus)
+			if !ok {
+				return nil
+			}
+
+			if v.Status == 0 {
+				job.info.Status = JobStatusFinished
+			} else {
+				job.info.Status = JobStatusFailed
+			}
+
+			return job
+		},
+		"FJ.API.REPLY.<agent>.<message>": func(ctx context.Context, params router.Params, data any) any {
+			msgID, ok := params["message"]
+			if !ok {
+				return nil
+			}
+
+			job, ok := jobsMsgID[msgID]
+			if !ok {
+				return nil
+			}
+
+			switch v := data.(type) {
+			case proto.StartWorkerResponse:
+				if v.Error != nil {
+					job.info.Error = v.Error
+					job.info.Status = JobStatusFailed
+				} else {
+					job.info.Status = JobStatusRunning
 				}
-				_, _ = stdout.Write(msg.Data)
+				return job
 
-			case <-ctx.Done():
-				loop = false
+			case proto.StopWorkerResponse:
+				if v.Error != nil {
+					job.info.Error = v.Error
+					job.info.Status = JobStatusFailed
+				} else {
+					job.info.Status = JobStatusCancelled
+				}
+				return job
+			}
+
+			return nil
+		},
+	}
+
+	for {
+		// TODO: increase the batch size
+		batch, err := consumer.FetchNoWait(1)
+		if err != nil {
+			return nil, err
+		}
+
+		var cnt int
+		for msg := range batch.Messages() {
+			if msg == nil {
+				break
+			}
+			cnt++
+
+			err := msg.Ack()
+			if err != nil {
+				return nil, err
+			}
+
+			handler, params, ok := api.Match(msg.Subject())
+			if !ok {
 				continue
 			}
-		}
-	}()
 
-	// Start stdin messages passthrough
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for {
-			line := make([]byte, 4092)
-			n, err := stdin.Read(line)
+			data, err := proto.Unmarshal(msg.Data())
 			if err != nil {
-				return
+				continue
 			}
 
-			msg := &nats.Msg{
-				Subject: stdinEndpoint.subject,
-				Reply:   nats.NewInbox(),
-				Data:    line[:n],
+			res := handler(ctx, params, data)
+			if res == nil {
+				continue
 			}
-			_ = c.nc.PublishMsg(msg)
+
+			job := res.(*Job)
+			jobs[job.id] = job
+
+			msgID := msg.Headers().Get(nats.MsgIdHdr)
+			if msgID == "" {
+				continue
+			}
+
+			jobsMsgID[msgID] = job
 		}
-	}()
 
-	msg := &nats.Msg{
-		Subject: dataEndpoint.subject,
-		Reply:   nats.NewInbox(),
-		Data:    b,
-	}
-	resp, respErr := c.request(ctx, msg)
+		err = batch.Error()
+		if err != nil {
+			return nil, err
+		}
 
-	// From this point we know the worker has already responded to our request therefore we can
-	// drain the channel and proceed to the shutdown.
-	cancel()
-	_ = sub.Drain()
-	// Drain msgCh and write everything to stdout!
-	close(msgCh)
-	for msg := range msgCh {
-		if msg == nil {
+		if cnt == 0 {
 			break
 		}
-		_, _ = stdout.Write(msg.Data)
-	}
-	_ = stdin.Close()
-	_ = stdout.Close()
-	wg.Wait()
-
-	// Delayed error handling
-	if respErr != nil {
-		return 0, respErr
 	}
 
-	parsed, err := proto.ParseResponse(resp.Data)
-	if err != nil {
-		return 0, err
-	}
-
-	v, ok := parsed.(proto.ExecuteResponse)
-	if !ok {
-		return 0, err
-	}
-
-	return v.Code, nil
+	return jobs, nil
 }
 
-func (c *Client) request(ctx context.Context, msg *nats.Msg) (*nats.Msg, error) {
-	resp, err := c.nc.RequestMsgWithContext(ctx, msg)
+func (c *Client) ListAllJobs(ctx context.Context) (map[string]*Job, error) {
+	streams, err := c.srv.ListStreams(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	code := resp.Header.Get(micro.ErrorCodeHeader)
-	errMsg := resp.Header.Get(micro.ErrorHeader)
-	if code != "" || errMsg != "" {
-		err := &Error{
-			Code:    code,
-			Message: errMsg,
+	result := make(map[string]*Job)
+	for _, stream := range streams {
+		if !strings.HasPrefix(stream, StreamPrefix) {
+			continue
 		}
-		return nil, err
+
+		agentID := strings.TrimPrefix(stream, StreamPrefix)
+		jobs, err := c.ListJobs(ctx, agentID)
+		if err != nil {
+			return nil, err
+		}
+
+		maps.Copy(result, jobs)
 	}
 
-	return resp, nil
+	return result, nil
 }
 
-func (c *Client) parseInfo(b []byte) (Service, error) {
-	var data micro.Info
-	err := json.Unmarshal(b, &data)
-	if err != nil {
-		return Service{}, err
-	}
+type Job struct {
+	id      string
+	agentID string
+	info    JobInfo
+}
 
-	metadata := make(map[string]string, len(data.Metadata))
-	for k, v := range data.Metadata {
-		metadata[k] = v
-	}
+func (j *Job) ID() string {
+	return j.id
+}
 
-	endpoints := make(map[string]Endpoint, len(data.Endpoints))
-	for _, endpoint := range data.Endpoints {
-		endpoints[endpoint.Name] = Endpoint{
-			name:    endpoint.Name,
-			subject: endpoint.Subject,
-		}
-	}
+func (j *Job) AgentID() string {
+	return j.agentID
+}
 
-	return Service{
-		ID: ID{
-			serviceName: data.Name,
-			serviceID:   data.ID,
-		},
-		Metadata:  metadata,
-		Endpoints: endpoints,
-	}, nil
+func (j *Job) Info() JobInfo {
+	return j.info
+}
+
+const (
+	JobStatusPending    = "Pending"
+	JobStatusRunning    = "Running"
+	JobStatusCancelling = "Cancelling"
+	JobStatusCancelled  = "Cancelled"
+	JobStatusFinished   = "Finished"
+	JobStatusFailed     = "Failed"
+)
+
+type JobInfo struct {
+	File   string
+	Args   string
+	Status string
+	Error  error
+}
+
+const StreamPrefix = "FJ_"
+
+func StreamName(name string) string {
+	return StreamPrefix + name
+}
+
+const InboxPrefix = "_INBOX_"
+
+func InboxName(name string) string {
+	return InboxPrefix + name
 }
