@@ -36,16 +36,6 @@ build_foojank_prod() {
     go build -tags prod -o "$OUTPUT" ./cmd/foojank
 }
 
-build_runscript() {
-    if [ -z "$OUTPUT" ]; then
-        echo "OUTPUT variable not defined"
-        return 1
-    fi
-
-    TAGS="dev $TAGS"
-    go build -tags "$TAGS" -o "$OUTPUT" ./cmd/runscript
-}
-
 generate_proto() {
     if [ ! -d "./build/go-capnp" ]; then
         git clone -b v3.0.1-alpha.2 --depth 1 https://github.com/capnproto/go-capnp ./build/go-capnp
