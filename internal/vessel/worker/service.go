@@ -139,7 +139,7 @@ func run(ctx context.Context, entrypoint string, args, env []string, stdin, stdo
 		return exitFailure, errors.New("filesystem not found")
 	}
 
-	b, err := readRepositoryFile(targetFS, u.Path)
+	b, err := readStorageFile(targetFS, u.Path)
 	if err != nil {
 		return exitFailure, errors.New("cannot read package '" + u.Path + "': " + err.Error())
 	}
@@ -192,7 +192,7 @@ func run(ctx context.Context, entrypoint string, args, env []string, stdin, stdo
 	return status, nil
 }
 
-func readRepositoryFile(fs risoros.FS, path string) ([]byte, error) {
+func readStorageFile(fs risoros.FS, path string) ([]byte, error) {
 	const maxRetries = 3
 	var b []byte
 	var err error
