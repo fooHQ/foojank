@@ -139,12 +139,12 @@ func listRepositories(ctx context.Context, srv *server.Client, format string) er
 func listRepository(ctx context.Context, srv *server.Client, format, repository, pth string) error {
 	store, err := srv.GetObjectStore(ctx, repository)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot open repository: %w", err)
 	}
 
 	err = store.Wait(ctx)
 	if err != nil {
-		return fmt.Errorf("synchronization failed: %w", err)
+		return fmt.Errorf("cannot synchronize repository: %w", err)
 	}
 
 	info, err := store.Stat(pth)
