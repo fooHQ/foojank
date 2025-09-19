@@ -15,6 +15,8 @@ import (
 	"github.com/foohq/foojank/internal/vessel/message"
 )
 
+var errDone = errors.New("done")
+
 type Arguments struct {
 	ID          string
 	File        string
@@ -56,20 +58,32 @@ func (s *Service) Start(ctx context.Context) error {
 		return stdoutReader(groupCtx, s.args.ID, stdout, s.args.EventCh)
 	})
 
-	code, err := run(groupCtx, s.args.File, s.args.Args, s.args.Env, stdin, stdout, s.args.Filesystems)
+	group.Go(func() error {
+		code, err := run(groupCtx, s.args.File, s.args.Args, s.args.Env, stdin, stdout, s.args.Filesystems)
+		if err != nil {
+			log.Debug("Run failed", "error", err)
+		}
 
-	// IMPORTANT: Send must not check context state lest the message will be lost.
-	s.sendEvent(context.Background(), EventWorkerStopped{
-		WorkerID: s.args.ID,
-		Status:   code,
-		Error:    err,
+		// IMPORTANT: Send must not check context state lest the message will be lost.
+		s.sendEvent(context.Background(), EventWorkerStopped{
+			WorkerID: s.args.ID,
+			Status:   code,
+			Error:    err,
+		})
+		// The error will trigger group shutdown which will lead to worker shutdown.
+		return errDone
 	})
 
 	<-groupCtx.Done()
 	_ = stdin.Close()
 	_ = stdout.Close()
 
-	return group.Wait()
+	err := group.Wait()
+	if err != nil && !errors.Is(err, errDone) {
+		return err
+	}
+
+	return nil
 }
 
 func stdinWriter(ctx context.Context, inputCh <-chan []byte, outputFile risoros.File) error {
