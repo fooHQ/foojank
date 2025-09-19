@@ -11,7 +11,7 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:  "repository",
+		Name:  "storage",
 		Usage: "Manage repositories",
 		Commands: []*cli.Command{
 			list.NewCommand(),

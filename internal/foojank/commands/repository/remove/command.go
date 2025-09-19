@@ -26,8 +26,8 @@ const (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "remove",
-		ArgsUsage: "<repository>:<file>...",
-		Usage:     "Remove file from a repository",
+		ArgsUsage: "<storage>:<file>...",
+		Usage:     "Remove file from a storage",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
 				Name:  FlagServer,
@@ -84,13 +84,13 @@ func action(ctx context.Context, c *cli.Command) error {
 		}
 
 		if filePath.IsLocal() {
-			log.Error(ctx, "Path %q is a local path. Files can only be removed from a repository.", filePath)
+			log.Error(ctx, "Path %q is a local path. Files can only be removed from a storage.", filePath)
 			continue
 		}
 
-		err = removeFile(ctx, srv, filePath.Repository, filePath.FilePath)
+		err = removeFile(ctx, srv, filePath.Storage, filePath.FilePath)
 		if err != nil {
-			log.Error(ctx, "Cannot delete file %q from a repository %q: %v.", filePath.FilePath, filePath.Repository, err)
+			log.Error(ctx, "Cannot delete file %q from a storage %q: %v.", filePath.FilePath, filePath.Storage, err)
 			continue
 		}
 	}
@@ -102,7 +102,7 @@ func action(ctx context.Context, c *cli.Command) error {
 func removeFile(ctx context.Context, srv *server.Client, name, file string) error {
 	repo, err := srv.GetObjectStore(ctx, name)
 	if err != nil {
-		return fmt.Errorf("cannot open repository: %w", err)
+		return fmt.Errorf("cannot open storage: %w", err)
 	}
 	defer func() {
 		_ = repo.Close()
@@ -110,7 +110,7 @@ func removeFile(ctx context.Context, srv *server.Client, name, file string) erro
 
 	err = repo.Wait(ctx)
 	if err != nil {
-		return fmt.Errorf("cannot synchronize repository: %w", err)
+		return fmt.Errorf("cannot synchronize storage: %w", err)
 	}
 
 	info, err := repo.Stat(file)
