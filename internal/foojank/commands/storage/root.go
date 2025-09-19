@@ -1,12 +1,12 @@
-package repository
+package storage
 
 import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/foojank/actions"
-	"github.com/foohq/foojank/internal/foojank/commands/repository/copy"
-	"github.com/foohq/foojank/internal/foojank/commands/repository/list"
-	"github.com/foohq/foojank/internal/foojank/commands/repository/remove"
+	"github.com/foohq/foojank/internal/foojank/commands/storage/copy"
+	"github.com/foohq/foojank/internal/foojank/commands/storage/list"
+	"github.com/foohq/foojank/internal/foojank/commands/storage/remove"
 )
 
 func NewCommand() *cli.Command {
