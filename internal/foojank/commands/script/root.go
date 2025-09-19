@@ -13,7 +13,6 @@ func NewCommand() *cli.Command {
 		Usage: "Manage scripts",
 		Commands: []*cli.Command{
 			list.NewCommand(),
-			//exec.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		OnUsageError:    actions.UsageError,
