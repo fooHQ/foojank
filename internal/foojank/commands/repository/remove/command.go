@@ -1,17 +1,13 @@
 package remove
 
-/*
 import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 
-	"github.com/nats-io/nats.go/jetstream"
 	"github.com/urfave/cli/v3"
 
-	"github.com/foohq/foojank/clients/repository"
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
@@ -69,70 +65,61 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	logger := log.New(*conf.LogLevel, *conf.NoColor)
-
-	nc, err := server.New(logger, conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey, *conf.Client.TLSCACertificate)
+	srv, err := server.New(conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey, *conf.Client.TLSCACertificate)
 	if err != nil {
-		err := fmt.Errorf("cannot connect to the server: %w", err)
-		logger.ErrorContext(ctx, err.Error())
+		log.Error(ctx, "Cannot connect to the server: %v", err)
 		return err
 	}
 
-	js, err := jetstream.New(nc)
-	if err != nil {
-		err := fmt.Errorf("cannot create a JetStream context: %w", err)
-		logger.ErrorContext(ctx, err.Error())
-		return err
+	if c.Args().Len() == 0 {
+		log.Error(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
+		return errors.New("not enough arguments")
 	}
 
-	client := repository.New(js)
-	return removeAction(logger, client)(ctx, c)
-}
-
-func removeAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
-	return func(ctx context.Context, c *cli.Command) error {
-		if c.Args().Len() == 0 {
-			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
-			logger.ErrorContext(ctx, err.Error())
-			return err
+	for _, file := range c.Args().Slice() {
+		filePath, err := path.Parse(file)
+		if err != nil {
+			log.Error(ctx, "Invalid path %q: %v.", file, err)
+			continue
 		}
 
-		for _, file := range c.Args().Slice() {
-			filePath, err := path.Parse(file)
-			if err != nil {
-				err := fmt.Errorf("invalid destination path '%s': %w", file, err)
-				logger.ErrorContext(ctx, err.Error())
-				continue
-			}
-
-			if filePath.IsLocal() {
-				err := fmt.Errorf("path '%s' is a local path, files can only be removed from a repository", filePath)
-				logger.ErrorContext(ctx, err.Error())
-				continue
-			}
-
-			err = removeFile(ctx, client, filePath.Repository, filePath.FilePath)
-			if err != nil {
-				err := fmt.Errorf("cannot delete file '%s' from a repository '%s': %w", filePath.FilePath, filePath.Repository, err)
-				logger.ErrorContext(ctx, err.Error())
-				continue
-			}
+		if filePath.IsLocal() {
+			log.Error(ctx, "Path %q is a local path. Files can only be removed from a repository.", filePath)
+			continue
 		}
 
-		return nil
+		err = removeFile(ctx, srv, filePath.Repository, filePath.FilePath)
+		if err != nil {
+			log.Error(ctx, "Cannot delete file %q from a repository %q: %v.", filePath.FilePath, filePath.Repository, err)
+			continue
+		}
 	}
+
+	return nil
+
 }
 
-func removeFile(ctx context.Context, client *repository.Client, name, file string) error {
-	repo, err := client.Get(ctx, name)
+func removeFile(ctx context.Context, srv *server.Client, name, file string) error {
+	repo, err := srv.GetObjectStore(ctx, name)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot open repository: %w", err)
 	}
-	defer repo.Close()
+	defer func() {
+		_ = repo.Close()
+	}()
 
 	err = repo.Wait(ctx)
 	if err != nil {
+		return fmt.Errorf("cannot synchronize repository: %w", err)
+	}
+
+	info, err := repo.Stat(file)
+	if err != nil {
 		return err
+	}
+
+	if info.IsDir() {
+		return fmt.Errorf("file %q is a directory", file)
 	}
 
 	err = repo.Remove(file)
@@ -174,4 +161,3 @@ func validateConfiguration(conf *config.Config) error {
 
 	return nil
 }
-*/
