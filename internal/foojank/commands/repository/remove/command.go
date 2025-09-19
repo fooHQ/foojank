@@ -100,20 +100,20 @@ func action(ctx context.Context, c *cli.Command) error {
 }
 
 func removeFile(ctx context.Context, srv *server.Client, name, file string) error {
-	repo, err := srv.GetObjectStore(ctx, name)
+	storage, err := srv.GetObjectStore(ctx, name)
 	if err != nil {
 		return fmt.Errorf("cannot open storage: %w", err)
 	}
 	defer func() {
-		_ = repo.Close()
+		_ = storage.Close()
 	}()
 
-	err = repo.Wait(ctx)
+	err = storage.Wait(ctx)
 	if err != nil {
 		return fmt.Errorf("cannot synchronize storage: %w", err)
 	}
 
-	info, err := repo.Stat(file)
+	info, err := storage.Stat(file)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func removeFile(ctx context.Context, srv *server.Client, name, file string) erro
 		return fmt.Errorf("file %q is a directory", file)
 	}
 
-	err = repo.Remove(file)
+	err = storage.Remove(file)
 	if err != nil {
 		return err
 	}

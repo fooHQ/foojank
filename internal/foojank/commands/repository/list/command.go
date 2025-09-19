@@ -122,10 +122,10 @@ func listStorages(ctx context.Context, srv *server.Client, format string) error 
 		"size",
 		"description",
 	})
-	for _, repo := range stores {
-		name := repo.Name()
-		size := formatBytes(repo.Size())
-		description := repo.Description()
+	for _, storage := range stores {
+		name := storage.Name()
+		size := formatBytes(storage.Size())
+		description := storage.Description()
 		table.AddRow([]string{
 			name,
 			size,
