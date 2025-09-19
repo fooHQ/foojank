@@ -44,10 +44,6 @@ func (c *Client) VesselConfigFile() string {
 	return filepath.Join(c.baseDir, "internal", "vessel", "config", "config.go")
 }
 
-func (c *Client) RunscriptConfigFile() string {
-	return filepath.Join(c.baseDir, "internal", "runscript", "config", "config.go")
-}
-
 type BuildAgentOptions struct {
 	OS         string
 	Arch       string
@@ -172,36 +168,6 @@ func (c *Client) WriteAgentConfig(b []byte) error {
 	}
 
 	err = os.WriteFile(c.VesselConfigFile(), b, 0600)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *Client) BuildRunscript(ctx context.Context, tags []string) (string, string, error) {
-	err := c.baseDirExists()
-	if err != nil {
-		return "", "", err
-	}
-
-	output := filepath.Join(c.BuildDir(), fmt.Sprintf("runscript-%s", nuid.Next()))
-	result, err := c.devboxRun(ctx, "build-runscript", map[string]string{
-		"OUTPUT": output,
-		"TAGS":   strings.Join(tags, " "),
-	})
-	if err != nil {
-		return "", result, err
-	}
-	return output, result, nil
-}
-
-func (c *Client) WriteRunscriptConfig(b []byte) error {
-	err := c.baseDirExists()
-	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile(c.RunscriptConfigFile(), b, 0600)
 	if err != nil {
 		return err
 	}
