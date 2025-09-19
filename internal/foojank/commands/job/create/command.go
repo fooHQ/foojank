@@ -99,7 +99,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	dstPath := path.Join("/_cache", nuid.Next())
 	err = copyPackage(ctx, srv, srcPath, repoName, dstPath)
 	if err != nil {
-		log.Error(ctx, "Cannot copy package %q to repository %q: %v", srcPath, repoName, err)
+		log.Error(ctx, "Cannot copy package %q to storage %q: %v", srcPath, repoName, err)
 		return err
 	}
 
