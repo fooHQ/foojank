@@ -43,15 +43,15 @@ func Parse(input string) (Path, error) {
 	}
 
 	parts := strings.SplitN(input, ":", 2)
-	repo := strings.TrimSpace(parts[0])
+	storage := strings.TrimSpace(parts[0])
 	filePath := strings.TrimSpace(parts[1])
 
-	if repo == "" || filePath == "" {
+	if storage == "" || filePath == "" {
 		return Path{}, errors.New("storage name and path cannot be empty")
 	}
 
 	return Path{
-		Storage:  repo,
+		Storage:  storage,
 		FilePath: filePath,
 	}, nil
 }
