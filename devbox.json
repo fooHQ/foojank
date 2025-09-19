@@ -26,9 +26,6 @@
       "generate-proto": [
         "./devbox.sh generate_proto"
       ],
-      "build-runscript": [
-        "./devbox.sh build_runscript"
-      ],
       "build-agent-dev": [
         "./devbox.sh build_agent_dev"
       ],
