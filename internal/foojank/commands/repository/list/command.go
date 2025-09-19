@@ -33,7 +33,7 @@ const (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "list",
-		ArgsUsage: "[repository:<file> ...]",
+		ArgsUsage: "[storage:<file> ...]",
 		Usage:     "List repositories or their contents",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -101,9 +101,9 @@ func action(ctx context.Context, c *cli.Command) error {
 			return err
 		}
 
-		err = listRepository(ctx, srv, format, result.Repository, result.FilePath)
+		err = listStorage(ctx, srv, format, result.Storage, result.FilePath)
 		if err != nil {
-			log.Error(ctx, "Cannot list repository %q: %v", result.Repository, err)
+			log.Error(ctx, "Cannot list storage %q: %v", result.Storage, err)
 			return err
 		}
 	}
@@ -136,15 +136,15 @@ func listRepositories(ctx context.Context, srv *server.Client, format string) er
 	return formatOutput(os.Stdout, format, table)
 }
 
-func listRepository(ctx context.Context, srv *server.Client, format, repository, pth string) error {
-	store, err := srv.GetObjectStore(ctx, repository)
+func listStorage(ctx context.Context, srv *server.Client, format, storage, pth string) error {
+	store, err := srv.GetObjectStore(ctx, storage)
 	if err != nil {
-		return fmt.Errorf("cannot open repository: %w", err)
+		return fmt.Errorf("cannot open storage: %w", err)
 	}
 
 	err = store.Wait(ctx)
 	if err != nil {
-		return fmt.Errorf("cannot synchronize repository: %w", err)
+		return fmt.Errorf("cannot synchronize storage: %w", err)
 	}
 
 	info, err := store.Stat(pth)
@@ -225,8 +225,8 @@ func formatOutput(w io.Writer, format string, table *formatter.Table) error {
 func parsePath(pth string) (path.Path, error) {
 	if !strings.Contains(pth, ":") {
 		return path.Path{
-			Repository: pth,
-			FilePath:   "/",
+			Storage:  pth,
+			FilePath: "/",
 		}, nil
 	}
 	return path.Parse(pth)

@@ -28,8 +28,8 @@ const (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "copy",
-		ArgsUsage: "[repository:]<file> [repository:]<destination-path>",
-		Usage:     "Copy files between local filesystem and a repository or vice versa",
+		ArgsUsage: "[storage:]<file> [storage:]<destination-path>",
+		Usage:     "Copy files between local filesystem and a storage or vice versa",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
 				Name:  FlagServer,
@@ -110,9 +110,9 @@ func action(ctx context.Context, c *cli.Command) error {
 		destPath = stdpath.Join("/", dstPath.FilePath)
 	}
 
-	// Copy local file to a remote repository
+	// Copy local file to a remote storage
 	if srcPath.IsLocal() {
-		err := copyLocalFile(ctx, srv, srcPath.FilePath, dstPath.Repository, destPath)
+		err := copyLocalFile(ctx, srv, srcPath.FilePath, dstPath.Storage, destPath)
 		if err != nil {
 			log.Error(ctx, "Cannot copy file %q to %q: %v", srcPath.String(), dstPath.String(), err)
 			return err
@@ -120,9 +120,9 @@ func action(ctx context.Context, c *cli.Command) error {
 		return nil
 	}
 
-	// Copy file from a remote repository to a local directory
+	// Copy file from a remote storage to a local directory
 	if !srcPath.IsLocal() {
-		err := copyRemoteFile(ctx, srv, srcPath.Repository, srcPath.FilePath, destPath)
+		err := copyRemoteFile(ctx, srv, srcPath.Storage, srcPath.FilePath, destPath)
 		if err != nil {
 			log.Error(ctx, "Cannot copy file %q to %q: %v", srcPath.String(), dstPath.String(), err)
 			return err
@@ -132,7 +132,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	return nil
 }
 
-func copyLocalFile(ctx context.Context, srv *server.Client, src string, repository, dst string) error {
+func copyLocalFile(ctx context.Context, srv *server.Client, src string, storage, dst string) error {
 	srcFile, err := os.Open(src)
 	if err != nil {
 		return err
@@ -150,9 +150,9 @@ func copyLocalFile(ctx context.Context, srv *server.Client, src string, reposito
 		return fmt.Errorf("source file is a directory")
 	}
 
-	repo, err := srv.GetObjectStore(ctx, repository)
+	repo, err := srv.GetObjectStore(ctx, storage)
 	if err != nil {
-		return fmt.Errorf("cannot open repository: %w", err)
+		return fmt.Errorf("cannot open storage: %w", err)
 	}
 	defer func() {
 		_ = repo.Close()
@@ -160,7 +160,7 @@ func copyLocalFile(ctx context.Context, srv *server.Client, src string, reposito
 
 	err = repo.Wait(ctx)
 	if err != nil {
-		return fmt.Errorf("cannot synchronize repository: %w", err)
+		return fmt.Errorf("cannot synchronize storage: %w", err)
 	}
 
 	err = repo.MkdirAll(stdpath.Dir(dst), 0755)
@@ -184,10 +184,10 @@ func copyLocalFile(ctx context.Context, srv *server.Client, src string, reposito
 	return nil
 }
 
-func copyRemoteFile(ctx context.Context, srv *server.Client, repository, src string, dst string) error {
-	repo, err := srv.GetObjectStore(ctx, repository)
+func copyRemoteFile(ctx context.Context, srv *server.Client, storage, src string, dst string) error {
+	repo, err := srv.GetObjectStore(ctx, storage)
 	if err != nil {
-		return fmt.Errorf("cannot open repository: %w", err)
+		return fmt.Errorf("cannot open storage: %w", err)
 	}
 	defer func() {
 		_ = repo.Close()
@@ -195,7 +195,7 @@ func copyRemoteFile(ctx context.Context, srv *server.Client, repository, src str
 
 	err = repo.Wait(ctx)
 	if err != nil {
-		return fmt.Errorf("cannot synchronize repository: %w", err)
+		return fmt.Errorf("cannot synchronize storage: %w", err)
 	}
 
 	srcFile, err := repo.Open(src)
