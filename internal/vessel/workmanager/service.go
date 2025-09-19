@@ -197,6 +197,7 @@ func (s *Service) handleWorkerStatusStopped(_ context.Context, params router.Par
 		return nil
 	}
 
+	_ = s.stopWorker(v.WorkerID)
 	s.removeWorker(v.WorkerID)
 
 	return Message{
