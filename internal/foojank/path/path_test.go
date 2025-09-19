@@ -14,14 +14,14 @@ func TestParse(t *testing.T) {
 		expected path.Path
 		err      bool
 	}{
-		{"myrepo:/path/to/file", path.Path{"myrepo", "/path/to/file"}, false},
-		{"anotherrepo:/another/path", path.Path{"anotherrepo", "/another/path"}, false},
+		{"mystorage:/path/to/file", path.Path{"mystorage", "/path/to/file"}, false},
+		{"anotherstorage:/another/path", path.Path{"anotherstorage", "/another/path"}, false},
 		{"/path/to/file", path.Path{"", "/path/to/file"}, false},
 		{"filename", path.Path{"", "filename"}, false},
-		{"repo:", path.Path{}, true},
+		{"storage:", path.Path{}, true},
 		{":/path/to/file", path.Path{}, true},
 		{" : /path/to/file", path.Path{}, true},
-		{"repo: ", path.Path{"repo", ""}, true},
+		{"storage: ", path.Path{"storage", ""}, true},
 		{" ", path.Path{}, true},
 	}
 
