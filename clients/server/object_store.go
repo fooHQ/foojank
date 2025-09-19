@@ -61,13 +61,13 @@ type errorObjectStore struct {
 func (e *errorObjectStore) Error() string {
 	switch {
 	case errors.Is(e.err, jetstream.ErrBucketExists):
-		return "repository already exists"
+		return "storage already exists"
 	case errors.Is(e.err, jetstream.ErrBucketNotFound):
-		return "repository not found"
+		return "storage not found"
 	case errors.Is(e.err, jetstream.ErrObjectNotFound):
 		return "file not found"
 	case errors.Is(e.err, jetstream.ErrInvalidStoreName):
-		return "invalid repository name"
+		return "invalid storage name"
 	}
 	return e.err.Error()
 }
