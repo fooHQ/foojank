@@ -1,19 +1,15 @@
 package copy
 
-/*
 import (
 	"context"
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
-	"path/filepath"
+	stdpath "path"
 
-	"github.com/nats-io/nats.go/jetstream"
 	"github.com/urfave/cli/v3"
 
-	"github.com/foohq/foojank/clients/repository"
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
@@ -71,184 +67,173 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	logger := log.New(*conf.LogLevel, *conf.NoColor)
-
-	nc, err := server.New(logger, conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey, *conf.Client.TLSCACertificate)
+	srv, err := server.New(conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey, *conf.Client.TLSCACertificate)
 	if err != nil {
-		err := fmt.Errorf("cannot connect to the server: %w", err)
-		logger.ErrorContext(ctx, err.Error())
+		log.Error(ctx, "Cannot connect to the server: %v", err)
 		return err
 	}
 
-	js, err := jetstream.New(nc)
+	if c.Args().Len() != 2 {
+		log.Error(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
+		return errors.New("not enough arguments")
+	}
+
+	files := c.Args().Slice()
+	src := files[0]
+	srcPath, err := path.Parse(src)
 	if err != nil {
-		err := fmt.Errorf("cannot create a JetStream context: %w", err)
-		logger.ErrorContext(ctx, err.Error())
+		log.Error(ctx, "Invalid path %q: %v.", src, err)
 		return err
 	}
 
-	client := repository.New(js)
-	return copyAction(logger, client)(ctx, c)
-}
+	dst := files[len(files)-1]
+	dstPath, err := path.Parse(dst)
+	if err != nil {
+		log.Error(ctx, "Invalid path %q: %v.", src, err)
+		return err
+	}
 
-func copyAction(logger *slog.Logger, client *repository.Client) cli.ActionFunc {
-	// Possible use cases:
-	// [Destination is a repository]
-	// ./path/to/file repository:/                      => repository:/path/to/file
-	// ./path/to/file repository:/test                  => repository:/test
-	// ./path/to/file repository:/test/                 => repository:/test/path/to/file
-	// ./path/to/file ./path/to/file2 repository:/test  => repository:/test/path/to/file
-	//                                                  => repository:/test/path/to/file2
-	// ./path/to/file ./path/to/file2 repository:/test/ => repository:/test/path/to/file
-	//                                                  => repository:/test/path/to/file2
-	// [Destination is a local directory]
-	// repository:/path/to/file ./ => file
-	// repository:/path/to/file repository:/path/to/file ./ => file (!!! SHOW WARNING THAT THIS WILL OVERWRITE THE FIRST FILE !!!)
-	return func(ctx context.Context, c *cli.Command) error {
-		if c.Args().Len() != 2 {
-			err := fmt.Errorf("command expects the following arguments: %s", c.ArgsUsage)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
+	if srcPath.IsLocal() && dstPath.IsLocal() {
+		log.Error(ctx, "Source and destination paths are both local paths. This operation is currently not supported.")
+		return errors.New("matching source and destination type")
+	}
 
-		files := c.Args().Slice()
-		src := files[0]
-		srcPath, err := path.Parse(src)
+	if !srcPath.IsLocal() && !dstPath.IsLocal() {
+		log.Error(ctx, "Source and destination paths are both repositories. This operation is currently not supported.")
+		return errors.New("matching source and destination type")
+	}
+
+	var destPath string
+	if dstPath.IsDir() {
+		destPath = stdpath.Join("/", dstPath.FilePath, srcPath.Base())
+	} else {
+		destPath = stdpath.Join("/", dstPath.FilePath)
+	}
+
+	// Copy local file to a remote repository
+	if srcPath.IsLocal() {
+		err := copyLocalFile(ctx, srv, srcPath.FilePath, dstPath.Repository, destPath)
 		if err != nil {
-			err := fmt.Errorf("invalid file path '%s': %w", src, err)
-			logger.ErrorContext(ctx, err.Error())
+			log.Error(ctx, "Cannot copy file %q to %q: %v", srcPath.String(), dstPath.String(), err)
 			return err
 		}
-
-		dst := files[len(files)-1]
-		dstPath, err := path.Parse(dst)
-		if err != nil {
-			err := fmt.Errorf("invalid destination path '%s': %w", dst, err)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		if srcPath.IsDir() {
-			err := fmt.Errorf("file '%s' is a directory, copying directories is currently not supported", srcPath)
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		if srcPath.IsLocal() && dstPath.IsLocal() {
-			err := fmt.Errorf("both paths are local paths, this operation is currently not supported")
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		if !srcPath.IsLocal() && !dstPath.IsLocal() {
-			err := fmt.Errorf("both paths are repository paths, this operation is currently not supported")
-			logger.ErrorContext(ctx, err.Error())
-			return err
-		}
-
-		var destPath string
-		if dstPath.IsDir() {
-			destPath = filepath.Join("/", dstPath.FilePath, srcPath.Base())
-		} else {
-			destPath = filepath.Join("/", dstPath.FilePath)
-		}
-
-		// Copy local file to a remote repository
-		if srcPath.IsLocal() {
-			srcFile, err := os.Open(srcPath.FilePath)
-			if err != nil {
-				err := fmt.Errorf("cannot open local file '%s': %w", srcPath.FilePath, err)
-				logger.ErrorContext(ctx, err.Error())
-				return err
-			}
-			defer func() {
-				_ = srcFile.Close()
-			}()
-
-			repo, err := client.Get(ctx, dstPath.Repository)
-			if err != nil {
-				err := fmt.Errorf("cannot open repository '%s': %w", dstPath.Repository, err)
-				logger.ErrorContext(ctx, err.Error())
-				return err
-			}
-			defer func() {
-				_ = repo.Close()
-			}()
-
-			err = repo.Wait(ctx)
-			if err != nil {
-				err := fmt.Errorf("cannot synchronize repository '%s': %w", dstPath.Repository, err)
-				logger.ErrorContext(ctx, err.Error())
-				return err
-			}
-
-			dstFile, err := repo.Create(destPath)
-			if err != nil {
-				err := fmt.Errorf("cannot create file '%s' in repository '%s': %w", destPath, dstPath.Repository, err)
-				logger.ErrorContext(ctx, err.Error())
-				return err
-			}
-			defer func() {
-				_ = dstFile.Close()
-			}()
-
-			_, err = io.Copy(dstFile, srcFile)
-			if err != nil {
-				err := fmt.Errorf("cannot copy file '%s': %w", srcPath.FilePath, err)
-				logger.ErrorContext(ctx, err.Error())
-				return err
-			}
-
-			return nil
-		}
-
-		// Copy file from a remote repository to a local directory
-		if !srcPath.IsLocal() {
-			repo, err := client.Get(ctx, srcPath.Repository)
-			if err != nil {
-				err := fmt.Errorf("cannot open repository '%s': %w", srcPath.Repository, err)
-				logger.ErrorContext(ctx, err.Error())
-				return err
-			}
-			defer repo.Close()
-
-			err = repo.Wait(ctx)
-			if err != nil {
-				err := fmt.Errorf("cannot synchronize repository '%s': %w", srcPath.Repository, err)
-				logger.ErrorContext(ctx, err.Error())
-				return err
-			}
-
-			srcFile, err := repo.Open(srcPath.FilePath)
-			if err != nil {
-				err := fmt.Errorf("cannot open file '%s' in repository '%s': %w", srcPath.FilePath, srcPath.Repository, err)
-				logger.ErrorContext(ctx, err.Error())
-				return err
-			}
-			defer func() {
-				_ = srcFile.Close()
-			}()
-
-			dstFile, err := os.Create(destPath)
-			if err != nil {
-				err := fmt.Errorf("cannot create local file '%s': %w", destPath, err)
-				logger.ErrorContext(ctx, err.Error())
-				return err
-			}
-			defer func() {
-				_ = dstFile.Close()
-			}()
-
-			_, err = io.Copy(dstFile, srcFile)
-			if err != nil {
-				err := fmt.Errorf("cannot copy file '%s' in repository '%s': %w", srcPath.FilePath, srcPath.Repository, err)
-				logger.ErrorContext(ctx, err.Error())
-				return err
-			}
-		}
-
 		return nil
 	}
+
+	// Copy file from a remote repository to a local directory
+	if !srcPath.IsLocal() {
+		err := copyRemoteFile(ctx, srv, srcPath.Repository, srcPath.FilePath, destPath)
+		if err != nil {
+			log.Error(ctx, "Cannot copy file %q to %q: %v", srcPath.String(), dstPath.String(), err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func copyLocalFile(ctx context.Context, srv *server.Client, src string, repository, dst string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = srcFile.Close()
+	}()
+
+	srcInfo, err := srcFile.Stat()
+	if err != nil {
+		return err
+	}
+
+	if srcInfo.IsDir() {
+		return fmt.Errorf("source file is a directory")
+	}
+
+	repo, err := srv.GetObjectStore(ctx, repository)
+	if err != nil {
+		return fmt.Errorf("cannot open repository: %w", err)
+	}
+	defer func() {
+		_ = repo.Close()
+	}()
+
+	err = repo.Wait(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot synchronize repository: %w", err)
+	}
+
+	err = repo.MkdirAll(stdpath.Dir(dst), 0755)
+	if err != nil {
+		return err
+	}
+
+	dstFile, err := repo.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = dstFile.Close()
+	}()
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func copyRemoteFile(ctx context.Context, srv *server.Client, repository, src string, dst string) error {
+	repo, err := srv.GetObjectStore(ctx, repository)
+	if err != nil {
+		return fmt.Errorf("cannot open repository: %w", err)
+	}
+	defer func() {
+		_ = repo.Close()
+	}()
+
+	err = repo.Wait(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot synchronize repository: %w", err)
+	}
+
+	srcFile, err := repo.Open(src)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = srcFile.Close()
+	}()
+
+	srcInfo, err := srcFile.Stat()
+	if err != nil {
+		return err
+	}
+
+	if srcInfo.IsDir() {
+		return fmt.Errorf("source file is a directory")
+	}
+
+	err = os.MkdirAll(stdpath.Dir(dst), 0755)
+	if err != nil {
+		return err
+	}
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = dstFile.Close()
+	}()
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func validateConfiguration(conf *config.Config) error {
@@ -282,4 +267,3 @@ func validateConfiguration(conf *config.Config) error {
 
 	return nil
 }
-*/
