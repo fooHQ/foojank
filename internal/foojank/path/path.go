@@ -7,12 +7,12 @@ import (
 )
 
 type Path struct {
-	Repository string
-	FilePath   string
+	Storage  string
+	FilePath string
 }
 
 func (p Path) IsLocal() bool {
-	return p.Repository == ""
+	return p.Storage == ""
 }
 
 func (p Path) IsDir() bool {
@@ -27,7 +27,7 @@ func (p Path) String() string {
 	if p.IsLocal() {
 		return p.FilePath
 	}
-	return strings.Join([]string{p.Repository, p.FilePath}, ":")
+	return strings.Join([]string{p.Storage, p.FilePath}, ":")
 }
 
 func Parse(input string) (Path, error) {
@@ -47,11 +47,11 @@ func Parse(input string) (Path, error) {
 	filePath := strings.TrimSpace(parts[1])
 
 	if repo == "" || filePath == "" {
-		return Path{}, errors.New("repository and path cannot be empty")
+		return Path{}, errors.New("storage name and path cannot be empty")
 	}
 
 	return Path{
-		Repository: repo,
-		FilePath:   filePath,
+		Storage:  repo,
+		FilePath: filePath,
 	}, nil
 }
