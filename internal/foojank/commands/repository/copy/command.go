@@ -99,7 +99,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	if !srcPath.IsLocal() && !dstPath.IsLocal() {
-		log.Error(ctx, "Source and destination paths are both repositories. This operation is currently not supported.")
+		log.Error(ctx, "Source and destination paths are both storages. This operation is currently not supported.")
 		return errors.New("matching source and destination type")
 	}
 

@@ -34,7 +34,7 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "list",
 		ArgsUsage: "[storage:<file> ...]",
-		Usage:     "List repositories or their contents",
+		Usage:     "List storages or their contents",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  FlagFormat,
@@ -86,9 +86,9 @@ func action(ctx context.Context, c *cli.Command) error {
 	format := c.String(FlagFormat)
 
 	if c.NArg() == 0 {
-		err := listRepositories(ctx, srv, format)
+		err := listStorages(ctx, srv, format)
 		if err != nil {
-			log.Error(ctx, "Cannot get a list of repositories: %v", err)
+			log.Error(ctx, "Cannot get a list of storages: %v", err)
 			return err
 		}
 		return nil
@@ -111,7 +111,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	return nil
 }
 
-func listRepositories(ctx context.Context, srv *server.Client, format string) error {
+func listStorages(ctx context.Context, srv *server.Client, format string) error {
 	stores, err := srv.ListObjectStores(ctx)
 	if err != nil {
 		return err
