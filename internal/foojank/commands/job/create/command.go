@@ -95,11 +95,11 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	srcPath := file
-	repoName := agentID
+	storageName := agentID
 	dstPath := path.Join("/_cache", nuid.Next())
-	err = copyPackage(ctx, srv, srcPath, repoName, dstPath)
+	err = copyPackage(ctx, srv, srcPath, storageName, dstPath)
 	if err != nil {
-		log.Error(ctx, "Cannot copy package %q to storage %q: %v", srcPath, repoName, err)
+		log.Error(ctx, "Cannot copy package %q to storage %q: %v", srcPath, storageName, err)
 		return err
 	}
 
@@ -117,25 +117,25 @@ func action(ctx context.Context, c *cli.Command) error {
 	return nil
 }
 
-func copyPackage(ctx context.Context, srv *server.Client, srcPath, dstRepo, dstPath string) error {
+func copyPackage(ctx context.Context, srv *server.Client, srcPath, dstStorage, dstPath string) error {
 	srcFile, err := os.Open(srcPath)
 	if err != nil {
 		return err
 	}
 	defer srcFile.Close()
 
-	repo, err := srv.GetObjectStore(ctx, dstRepo)
+	storage, err := srv.GetObjectStore(ctx, dstStorage)
 	if err != nil {
 		return err
 	}
-	defer repo.Close()
+	defer storage.Close()
 
-	err = repo.Wait(ctx)
+	err = storage.Wait(ctx)
 	if err != nil {
 		return err
 	}
 
-	dstFile, err := repo.Create(dstPath)
+	dstFile, err := storage.Create(dstPath)
 	if err != nil {
 		return err
 	}
