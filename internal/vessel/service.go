@@ -44,7 +44,7 @@ func New(args Arguments) *Service {
 
 func (s *Service) Start(ctx context.Context) error {
 	log.Debug("Service started", "service", "vessel", "id", s.args.ID)
-	defer log.Debug("Service stopped", "service", "vessel")
+	defer log.Debug("Service stopped", "service", "vessel", "id", s.args.ID)
 
 	fileFS, err := localfs.NewFS()
 	if err != nil {
