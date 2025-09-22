@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"time"
 
 	risoros "github.com/risor-io/risor/os"
 
@@ -39,6 +40,9 @@ func New(args Arguments) *Service {
 }
 
 func (s *Service) Start(ctx context.Context) error {
+	log.Debug("Service started", "service", "vessel.workmanager")
+	defer log.Debug("Service stopped", "service", "vessel.workmanager")
+
 	api := router.Handlers{
 		s.args.Templates.Render(subjects.StartWorker, "<agent>", "<worker>"):      s.handleStartWorker,
 		s.args.Templates.Render(subjects.StopWorker, "<agent>", "<worker>"):       s.handleStopWorker,
@@ -66,7 +70,7 @@ loop:
 				continue
 			}
 
-			s.sendMessage(ctx, Message{
+			s.sendMessage(Message{
 				msg:     msg,
 				subject: s.args.Templates.Render(subjects.Reply, s.args.ID, msg.ID()),
 				data:    resp,
@@ -83,7 +87,7 @@ loop:
 				continue
 			}
 
-			s.sendMessage(ctx, resp.(message.Msg))
+			s.sendMessage(resp.(message.Msg))
 
 		case <-ctx.Done():
 			break loop
@@ -104,14 +108,12 @@ loop:
 			continue
 		}
 
-		resp := handler(ctx, params, msg.Data())
+		resp := handler(context.Background(), params, msg.Data())
 		if resp == nil {
 			continue
 		}
 
-		// TODO: make sure EventWorkerStopped is forwarded to encoder | publisher
-		// 	This requires changing shutdown logic of the services so that encoder | publisher stop as last.
-		s.sendMessage(ctx, resp.(message.Msg))
+		s.sendMessage(resp.(message.Msg))
 	}
 
 	s.wg.Wait()
@@ -287,10 +289,11 @@ func (s *Service) writeWorkerStdin(ctx context.Context, id string, data []byte) 
 	return nil
 }
 
-func (s *Service) sendMessage(ctx context.Context, msg message.Msg) {
+func (s *Service) sendMessage(msg message.Msg) {
 	select {
 	case s.args.OutputCh <- msg:
-	case <-ctx.Done():
+	case <-time.After(3 * time.Second):
+		log.Debug("Timeout while waiting to write to output channel")
 	}
 }
 
