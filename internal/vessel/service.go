@@ -382,7 +382,7 @@ func publisher(ctx context.Context, conn jetstream.JetStream, inputCh <-chan mes
 				continue
 			}
 
-			_, err := conn.Publish(ctx, msg.Subject(), data)
+			_, err := conn.Publish(context.Background(), msg.Subject(), data)
 			if err != nil {
 				log.Debug("Cannot publish a message", "subject", msg.Subject(), "error", err)
 				continue
