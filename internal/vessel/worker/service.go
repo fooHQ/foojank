@@ -70,7 +70,8 @@ func (s *Service) Start(ctx context.Context) error {
 			Status:   code,
 			Error:    err,
 		})
-		// The error will trigger group shutdown which will lead to worker shutdown.
+
+		// The error will trigger a group shutdown which will lead to worker shutdown.
 		return errDone
 	})
 
@@ -134,7 +135,8 @@ func (s *Service) sendEvent(ctx context.Context, event message.Msg) {
 }
 
 const (
-	exitFailure = 1
+	exitFailure   = 1
+	exitCancelled = 130
 )
 
 func run(ctx context.Context, entrypoint string, args, env []string, stdin, stdout risoros.File, filesystems map[string]risoros.FS) (int, error) {
@@ -199,11 +201,15 @@ func run(ctx context.Context, entrypoint string, args, env []string, stdin, stdo
 		b,
 		opts...,
 	)
-	if err != nil && !errors.Is(err, context.Canceled) {
+
+	switch {
+	case err == nil:
+		return status, nil
+	case errors.Is(err, context.Canceled):
+		return exitCancelled, nil
+	default:
 		return exitFailure, err
 	}
-
-	return status, nil
 }
 
 func readStorageFile(fs risoros.FS, path string) ([]byte, error) {
