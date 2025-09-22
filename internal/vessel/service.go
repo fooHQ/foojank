@@ -15,7 +15,6 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	risoros "github.com/risor-io/risor/os"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/foohq/foojank/internal/vessel/log"
 	"github.com/foohq/foojank/internal/vessel/message"
@@ -76,39 +75,120 @@ func (s *Service) Start(ctx context.Context) error {
 	decoderOutCh := make(chan message.Msg)
 	encoderInCh := make(chan message.Msg)
 	publisherInCh := make(chan message.Msg)
+	termCh := make(chan struct{})
 
-	group, groupCtx := errgroup.WithContext(ctx)
-	group.Go(func() error {
-		return consumer(groupCtx, s.args.Consumer, consumerOutCh)
-	})
+	var wg sync.WaitGroup
 
-	group.Go(func() error {
-		return decoder(groupCtx, consumerOutCh, decoderOutCh)
-	})
+	consumerCtx, consumerCancel := context.WithCancel(context.Background())
+	defer consumerCancel()
 
-	group.Go(func() error {
-		return workmanager.New(workmanager.Arguments{
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := consumer(consumerCtx, s.args.Consumer, consumerOutCh)
+		if err != nil {
+			log.Debug("Consumer error", "error", err)
+		}
+		termCh <- struct{}{}
+	}()
+
+	decoderCtx, decoderCancel := context.WithCancel(context.Background())
+	defer decoderCancel()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := decoder(decoderCtx, consumerOutCh, decoderOutCh)
+		if err != nil {
+			log.Debug("Decoder error", "error", err)
+		}
+		termCh <- struct{}{}
+	}()
+
+	workManagerCtx, workManagerCancel := context.WithCancel(context.Background())
+	defer workManagerCancel()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := workmanager.New(workmanager.Arguments{
 			ID:          s.args.ID,
 			Templates:   s.args.Templates,
 			Filesystems: filesystems,
 			InputCh:     decoderOutCh,
 			OutputCh:    encoderInCh,
-		}).Start(groupCtx)
-	})
+		}).Start(workManagerCtx)
+		if err != nil {
+			log.Debug("WorkManager error", "error", err)
+		}
+		termCh <- struct{}{}
+	}()
 
-	group.Go(func() error {
-		return monitor(groupCtx, s.args.Connection, s.args.Templates.Render(subjects.ConnInfo, s.args.ID), encoderInCh)
-	})
+	monitorCtx, monitorCancel := context.WithCancel(context.Background())
+	defer monitorCancel()
 
-	group.Go(func() error {
-		return encoder(groupCtx, encoderInCh, publisherInCh)
-	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := monitor(monitorCtx, s.args.Connection, s.args.Templates.Render(subjects.ConnInfo, s.args.ID), encoderInCh)
+		if err != nil {
+			log.Debug("Monitor error", "error", err)
+		}
+		termCh <- struct{}{}
+	}()
 
-	group.Go(func() error {
-		return publisher(groupCtx, s.args.Connection, publisherInCh)
-	})
+	encoderCtx, encoderCancel := context.WithCancel(context.Background())
+	defer encoderCancel()
 
-	return group.Wait()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := encoder(encoderCtx, encoderInCh, publisherInCh)
+		if err != nil {
+			log.Debug("Encoder error", "error", err)
+		}
+		termCh <- struct{}{}
+	}()
+
+	publisherCtx, publisherCancel := context.WithCancel(context.Background())
+	defer publisherCancel()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := publisher(publisherCtx, s.args.Connection, publisherInCh)
+		if err != nil {
+			log.Debug("Publisher error", "error", err)
+		}
+		termCh <- struct{}{}
+	}()
+
+	cancels := []context.CancelFunc{
+		consumerCancel,
+		decoderCancel,
+		workManagerCancel,
+		monitorCancel,
+		encoderCancel,
+		publisherCancel,
+	}
+
+	select {
+	case <-ctx.Done():
+		for _, cancel := range cancels {
+			cancel()
+			<-termCh
+		}
+	case <-termCh:
+		// If an error occurs in one of the services, cancel all services without waiting for them to finish.
+		// Some messages may be lost in the process.
+		for _, cancel := range cancels {
+			cancel()
+		}
+	}
+
+	wg.Wait()
+
+	return nil
 }
 
 var _ message.Msg = consumerMessage{}
