@@ -255,9 +255,12 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]*Job,
 				return nil
 			}
 
-			if v.Status == 0 {
+			switch v.Status {
+			case 0:
 				job.info.Status = JobStatusFinished
-			} else {
+			case 130:
+				job.info.Status = JobStatusCancelled
+			default:
 				job.info.Status = JobStatusFailed
 			}
 
