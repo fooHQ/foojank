@@ -242,8 +242,9 @@ func consumer(ctx context.Context, consumer jetstream.Consumer, outputCh chan me
 			case outputCh <- consumerMessage{
 				msg: msg,
 			}:
-			case <-ctx.Done():
-				return
+			case <-time.After(3 * time.Second):
+				log.Debug("Timeout while waiting to write to output channel")
+				continue
 			}
 		}
 	}()
@@ -306,8 +307,9 @@ func decoder(ctx context.Context, inputCh <-chan message.Msg, outputCh chan<- me
 				msg:  msg,
 				data: decoded,
 			}:
-			case <-ctx.Done():
-				return nil
+			case <-time.After(3 * time.Second):
+				log.Debug("Timeout while waiting to write to output channel")
+				continue
 			}
 
 		case <-ctx.Done():
@@ -358,8 +360,9 @@ func encoder(ctx context.Context, inputCh <-chan message.Msg, outputCh chan<- me
 				msg:  msg,
 				data: data,
 			}:
-			case <-ctx.Done():
-				return nil
+			case <-time.After(3 * time.Second):
+				log.Debug("Timeout while waiting to write to output channel")
+				continue
 			}
 
 		case <-ctx.Done():
@@ -459,8 +462,9 @@ func monitor(ctx context.Context, conn jetstream.JetStream, subject string, outp
 					Address:  getAddress(conn.Conn()),
 				},
 			}:
-			case <-ctx.Done():
-				return nil
+			case <-time.After(3 * time.Second):
+				log.Debug("Timeout while waiting to write to output channel")
+				continue
 			}
 
 		case <-ctx.Done():
