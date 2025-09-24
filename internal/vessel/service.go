@@ -72,7 +72,6 @@ func (s *Service) Start(ctx context.Context) error {
 	}
 
 	consumerOutCh := make(chan message.Msg)
-	decoderOutCh := make(chan message.Msg)
 	encoderInCh := make(chan message.Msg)
 	publisherInCh := make(chan message.Msg)
 	termCh := make(chan struct{})
@@ -92,19 +91,6 @@ func (s *Service) Start(ctx context.Context) error {
 		termCh <- struct{}{}
 	}()
 
-	decoderCtx, decoderCancel := context.WithCancel(context.Background())
-	defer decoderCancel()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		err := decoder(decoderCtx, consumerOutCh, decoderOutCh)
-		if err != nil {
-			log.Debug("Decoder error", "error", err)
-		}
-		termCh <- struct{}{}
-	}()
-
 	workManagerCtx, workManagerCancel := context.WithCancel(context.Background())
 	defer workManagerCancel()
 
@@ -115,7 +101,7 @@ func (s *Service) Start(ctx context.Context) error {
 			ID:          s.args.ID,
 			Templates:   s.args.Templates,
 			Filesystems: filesystems,
-			InputCh:     decoderOutCh,
+			InputCh:     consumerOutCh,
 			OutputCh:    encoderInCh,
 		}).Start(workManagerCtx)
 		if err != nil {
@@ -165,7 +151,6 @@ func (s *Service) Start(ctx context.Context) error {
 
 	cancels := []context.CancelFunc{
 		consumerCancel,
-		decoderCancel,
 		workManagerCancel,
 		monitorCancel,
 		encoderCancel,
@@ -194,7 +179,8 @@ func (s *Service) Start(ctx context.Context) error {
 var _ message.Msg = consumerMessage{}
 
 type consumerMessage struct {
-	msg jetstream.Msg
+	msg  jetstream.Msg
+	data any
 }
 
 func (m consumerMessage) ID() string {
@@ -206,7 +192,7 @@ func (m consumerMessage) Subject() string {
 }
 
 func (m consumerMessage) Data() any {
-	return m.msg.Data()
+	return m.data
 }
 
 func (m consumerMessage) Ack() error {
@@ -238,9 +224,17 @@ func consumer(ctx context.Context, consumer jetstream.Consumer, outputCh chan me
 				continue
 			}
 
+			data, err := proto.Unmarshal(msg.Data())
+			if err != nil {
+				log.Debug("Cannot decode a message", "error", err)
+				_ = msg.Ack()
+				continue
+			}
+
 			select {
 			case outputCh <- consumerMessage{
-				msg: msg,
+				msg:  msg,
+				data: data,
 			}:
 			case <-time.After(3 * time.Second):
 				log.Debug("Timeout while waiting to write to output channel")
@@ -257,66 +251,6 @@ func consumer(ctx context.Context, consumer jetstream.Consumer, outputCh chan me
 }
 
 // TODO: messages should be aggregated so that CreateWorkerRequest can be canceled by StopWorkerRequest.
-
-var _ message.Msg = decoderMessage{}
-
-type decoderMessage struct {
-	msg  message.Msg
-	data any
-}
-
-func (m decoderMessage) ID() string {
-	return m.msg.ID()
-}
-
-func (m decoderMessage) Subject() string {
-	return m.msg.Subject()
-}
-
-func (m decoderMessage) Data() any {
-	return m.data
-}
-
-func (m decoderMessage) Ack() error {
-	return m.msg.Ack()
-}
-
-func decoder(ctx context.Context, inputCh <-chan message.Msg, outputCh chan<- message.Msg) error {
-	log.Debug("Service started", "service", "vessel.decoder")
-	defer log.Debug("Service stopped", "service", "vessel.decoder")
-
-	for {
-		select {
-		case msg := <-inputCh:
-			v, ok := msg.Data().([]byte)
-			if !ok {
-				log.Debug("Cannot decode a message", "error", errors.New("cannot cast to []byte"))
-				_ = msg.Ack()
-				continue
-			}
-
-			decoded, err := proto.Unmarshal(v)
-			if err != nil {
-				log.Debug("Cannot decode a message", "error", err)
-				_ = msg.Ack()
-				continue
-			}
-
-			select {
-			case outputCh <- decoderMessage{
-				msg:  msg,
-				data: decoded,
-			}:
-			case <-time.After(3 * time.Second):
-				log.Debug("Timeout while waiting to write to output channel")
-				continue
-			}
-
-		case <-ctx.Done():
-			return nil
-		}
-	}
-}
 
 var _ message.Msg = encoderMessage{}
 
