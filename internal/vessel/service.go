@@ -72,7 +72,6 @@ func (s *Service) Start(ctx context.Context) error {
 	}
 
 	consumerOutCh := make(chan message.Msg)
-	encoderInCh := make(chan message.Msg)
 	publisherInCh := make(chan message.Msg)
 	termCh := make(chan struct{})
 
@@ -102,7 +101,7 @@ func (s *Service) Start(ctx context.Context) error {
 			Templates:   s.args.Templates,
 			Filesystems: filesystems,
 			InputCh:     consumerOutCh,
-			OutputCh:    encoderInCh,
+			OutputCh:    publisherInCh,
 		}).Start(workManagerCtx)
 		if err != nil {
 			log.Debug("WorkManager error", "error", err)
@@ -116,22 +115,9 @@ func (s *Service) Start(ctx context.Context) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := monitor(monitorCtx, s.args.Connection, s.args.Templates.Render(subjects.ConnInfo, s.args.ID), encoderInCh)
+		err := monitor(monitorCtx, s.args.Connection, s.args.Templates.Render(subjects.ConnInfo, s.args.ID), publisherInCh)
 		if err != nil {
 			log.Debug("Monitor error", "error", err)
-		}
-		termCh <- struct{}{}
-	}()
-
-	encoderCtx, encoderCancel := context.WithCancel(context.Background())
-	defer encoderCancel()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		err := encoder(encoderCtx, encoderInCh, publisherInCh)
-		if err != nil {
-			log.Debug("Encoder error", "error", err)
 		}
 		termCh <- struct{}{}
 	}()
@@ -153,7 +139,6 @@ func (s *Service) Start(ctx context.Context) error {
 		consumerCancel,
 		workManagerCancel,
 		monitorCancel,
-		encoderCancel,
 		publisherCancel,
 	}
 
@@ -252,32 +237,9 @@ func consumer(ctx context.Context, consumer jetstream.Consumer, outputCh chan me
 
 // TODO: messages should be aggregated so that CreateWorkerRequest can be canceled by StopWorkerRequest.
 
-var _ message.Msg = encoderMessage{}
-
-type encoderMessage struct {
-	msg  message.Msg
-	data any
-}
-
-func (m encoderMessage) ID() string {
-	return m.msg.ID()
-}
-
-func (m encoderMessage) Subject() string {
-	return m.msg.Subject()
-}
-
-func (m encoderMessage) Data() any {
-	return m.data
-}
-
-func (m encoderMessage) Ack() error {
-	return m.msg.Ack()
-}
-
-func encoder(ctx context.Context, inputCh <-chan message.Msg, outputCh chan<- message.Msg) error {
-	log.Debug("Service started", "service", "vessel.encoder")
-	defer log.Debug("Service stopped", "service", "vessel.encoder")
+func publisher(ctx context.Context, conn jetstream.JetStream, inputCh <-chan message.Msg) error {
+	log.Debug("Service started", "service", "vessel.publisher")
+	defer log.Debug("Service stopped", "service", "vessel.publisher")
 
 	for {
 		select {
@@ -289,37 +251,7 @@ func encoder(ctx context.Context, inputCh <-chan message.Msg, outputCh chan<- me
 				continue
 			}
 
-			select {
-			case outputCh <- encoderMessage{
-				msg:  msg,
-				data: data,
-			}:
-			case <-time.After(3 * time.Second):
-				log.Debug("Timeout while waiting to write to output channel")
-				continue
-			}
-
-		case <-ctx.Done():
-			return nil
-		}
-	}
-}
-
-func publisher(ctx context.Context, conn jetstream.JetStream, inputCh <-chan message.Msg) error {
-	log.Debug("Service started", "service", "vessel.publisher")
-	defer log.Debug("Service stopped", "service", "vessel.publisher")
-
-	for {
-		select {
-		case msg := <-inputCh:
-			data, ok := msg.Data().([]byte)
-			if !ok {
-				log.Debug("Cannot convert data to byte slice")
-				_ = msg.Ack()
-				continue
-			}
-
-			_, err := conn.Publish(context.Background(), msg.Subject(), data)
+			_, err = conn.Publish(context.Background(), msg.Subject(), data)
 			if err != nil {
 				log.Debug("Cannot publish a message", "subject", msg.Subject(), "error", err)
 				_ = msg.Ack()
