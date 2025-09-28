@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/nats-io/nuid"
 
@@ -69,6 +70,9 @@ type BuildAgentConfig struct {
 	SubjectApiWorkerStatusT      string
 	SubjectApiConnInfoT          string
 	SubjectApiReplyT             string
+	ReconnectInterval            time.Duration
+	ReconnectJitter              time.Duration
+	AwaitMessagesDuration        time.Duration
 }
 
 func (c *BuildAgentConfig) ToFlags() string {
@@ -89,6 +93,9 @@ func (c *BuildAgentConfig) ToFlags() string {
 		"-X main.SubjectApiWorkerStatusT=%s",
 		"-X main.SubjectApiConnInfoT=%s",
 		"-X main.SubjectApiReplyT=%s",
+		"-X main.ReconnectInterval=%s",
+		"-X main.ReconnectJitter=%s",
+		"-X main.AwaitMessagesDuration=%s",
 	}
 	flags := []string{
 		"-race",
@@ -111,6 +118,9 @@ func (c *BuildAgentConfig) ToFlags() string {
 		c.SubjectApiWorkerStatusT,
 		c.SubjectApiConnInfoT,
 		c.SubjectApiReplyT,
+		c.ReconnectInterval,
+		c.ReconnectJitter,
+		c.AwaitMessagesDuration,
 	)
 }
 
@@ -151,6 +161,9 @@ func (c *Client) BuildAgent(ctx context.Context, opts BuildAgentOptions) (string
 		"SUBJECT_API_WORKER_STATUS_T":       opts.Config.SubjectApiWorkerStatusT,
 		"SUBJECT_API_CONN_INFO_T":           opts.Config.SubjectApiConnInfoT,
 		"SUBJECT_API_REPLY_T":               opts.Config.SubjectApiReplyT,
+		"RECONNECT_INTERVAL":                opts.Config.ReconnectInterval.String(),
+		"RECONNECT_JITTER":                  opts.Config.ReconnectJitter.String(),
+		"AWAIT_MESSAGES_DURATION":           opts.Config.AwaitMessagesDuration.String(),
 	}
 
 	result, err := c.devboxRun(ctx, script, env)
