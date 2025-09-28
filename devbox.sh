@@ -65,6 +65,9 @@ agent_config() {
 -X main.SubjectApiWorkerStatusT=$SUBJECT_API_WORKER_STATUS_T
 -X main.SubjectApiConnInfoT=$SUBJECT_API_CONN_INFO_T
 -X main.SubjectApiReplyT=$SUBJECT_API_REPLY_T
+-X main.ReconnectInterval=$RECONNECT_INTERVAL
+-X main.ReconnectJitter=$RECONNECT_JITTER
+-X main.AwaitMessagesDuration=$AWAIT_MESSAGES_DURATION
 EOF
 }
 
