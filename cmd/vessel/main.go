@@ -34,6 +34,9 @@ var (
 	SubjectApiWorkerStatusT      = ""
 	SubjectApiConnInfoT          = ""
 	SubjectApiReplyT             = ""
+	ReconnectInterval            = "" // time.Duration
+	ReconnectJitter              = "" // time.Duration
+	AwaitMessagesDuration        = "" // time.Duration
 )
 
 func main() {
@@ -43,7 +46,7 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	connDialer := dialer.New()
+	connDialer := dialer.New(mustGetAwaitMessagesDuration())
 	defer connDialer.Close()
 
 	conn, err := connect(ctx, Server, UserJWT, UserKey, CACertificate, connDialer)
@@ -105,6 +108,8 @@ func connect(
 		nats.CustomInboxPrefix(InboxPrefix),
 		nats.RetryOnFailedConnect(true),
 		nats.MaxReconnects(-1),
+		nats.ReconnectWait(mustGetReconnectInterval()),
+		nats.ReconnectJitter(mustGetReconnectJitter(), mustGetReconnectJitter()),
 		nats.ConnectHandler(connected),
 		nats.ReconnectHandler(connected),
 		nats.DisconnectErrHandler(disconnected),
@@ -133,7 +138,12 @@ func connect(
 		}
 	}
 
-	jetStream, err := jetstream.New(nc)
+	jetStream, err := jetstream.New(
+		nc,
+		jetstream.WithDefaultTimeout(5*time.Second),
+		jetstream.WithPublishAsyncTimeout(5*time.Second),
+		jetstream.WithPublishAsyncMaxPending(120),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -184,6 +194,30 @@ func getConsumer(ctx context.Context, conn jetstream.JetStream, stream, consumer
 		return nil, err
 	}
 	return c, nil
+}
+
+func mustGetReconnectInterval() time.Duration {
+	d, err := time.ParseDuration(ReconnectInterval)
+	if err != nil {
+		panic(err)
+	}
+	return d
+}
+
+func mustGetReconnectJitter() time.Duration {
+	d, err := time.ParseDuration(ReconnectJitter)
+	if err != nil {
+		panic(err)
+	}
+	return d
+}
+
+func mustGetAwaitMessagesDuration() time.Duration {
+	d, err := time.ParseDuration(AwaitMessagesDuration)
+	if err != nil {
+		panic(err)
+	}
+	return d
 }
 
 func connected(_ *nats.Conn) {
