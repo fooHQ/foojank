@@ -70,11 +70,15 @@ loop:
 				continue
 			}
 
-			s.sendMessage(Message{
+			err := forwardMessage(s.args.OutputCh, Message{
 				msg:     msg,
 				subject: s.args.Templates.Render(subjects.Reply, s.args.ID, msg.ID()),
 				data:    resp,
 			})
+			if err != nil {
+				log.Debug("Cannot forward a message", "error", err)
+				continue
+			}
 
 		case msg := <-s.eventCh:
 			handler, params, ok := events.Match(msg.Subject())
@@ -87,7 +91,11 @@ loop:
 				continue
 			}
 
-			s.sendMessage(resp.(message.Msg))
+			err := forwardMessage(s.args.OutputCh, resp.(message.Msg))
+			if err != nil {
+				log.Debug("Cannot forward a message", "error", err)
+				continue
+			}
 
 		case <-ctx.Done():
 			break loop
@@ -113,7 +121,11 @@ loop:
 			continue
 		}
 
-		s.sendMessage(resp.(message.Msg))
+		err := forwardMessage(s.args.OutputCh, resp.(message.Msg))
+		if err != nil {
+			log.Debug("Cannot forward a message", "error", err)
+			continue
+		}
 	}
 
 	s.wg.Wait()
@@ -289,14 +301,6 @@ func (s *Service) writeWorkerStdin(ctx context.Context, id string, data []byte) 
 	return nil
 }
 
-func (s *Service) sendMessage(msg message.Msg) {
-	select {
-	case s.args.OutputCh <- msg:
-	case <-time.After(3 * time.Second):
-		log.Debug("Timeout while waiting to write to output channel")
-	}
-}
-
 type Message struct {
 	msg     message.Msg
 	subject string
@@ -320,4 +324,13 @@ func (m Message) Ack() error {
 		return nil
 	}
 	return m.msg.Ack()
+}
+
+func forwardMessage(outputCh chan<- message.Msg, msg message.Msg) error {
+	select {
+	case outputCh <- msg:
+		return nil
+	case <-time.After(10 * time.Second):
+		return errors.New("timeout")
+	}
 }
