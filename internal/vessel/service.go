@@ -73,6 +73,7 @@ func (s *Service) Start(ctx context.Context) error {
 
 	consumerOutCh := make(chan message.Msg)
 	publisherInCh := make(chan message.Msg)
+	publisherOutCh := make(chan message.Msg)
 	termCh := make(chan struct{})
 
 	var wg sync.WaitGroup
@@ -128,9 +129,22 @@ func (s *Service) Start(ctx context.Context) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := publisher(publisherCtx, s.args.Connection, publisherInCh)
+		err := publisher(publisherCtx, s.args.Connection, publisherInCh, publisherOutCh)
 		if err != nil {
 			log.Debug("Publisher error", "error", err)
+		}
+		termCh <- struct{}{}
+	}()
+
+	ackerCtx, ackerCancel := context.WithCancel(context.Background())
+	defer ackerCancel()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := acker(ackerCtx, publisherOutCh)
+		if err != nil {
+			log.Debug("Acker error", "error", err)
 		}
 		termCh <- struct{}{}
 	}()
@@ -140,6 +154,7 @@ func (s *Service) Start(ctx context.Context) error {
 		workManagerCancel,
 		monitorCancel,
 		publisherCancel,
+		ackerCancel,
 	}
 
 	select {
@@ -188,8 +203,6 @@ func consumer(ctx context.Context, consumer jetstream.Consumer, outputCh chan me
 	log.Debug("Service started", "service", "vessel.consumer")
 	defer log.Debug("Service stopped", "service", "vessel.consumer")
 
-	// TODO: consumer should be able to go offline and online to avoid creating long standing connections.
-
 	msgs, err := consumer.Messages()
 	if err != nil {
 		log.Debug("Cannot obtain message context", "error", err)
@@ -216,13 +229,12 @@ func consumer(ctx context.Context, consumer jetstream.Consumer, outputCh chan me
 				continue
 			}
 
-			select {
-			case outputCh <- consumerMessage{
+			err = forwardMessage(outputCh, consumerMessage{
 				msg:  msg,
 				data: data,
-			}:
-			case <-time.After(3 * time.Second):
-				log.Debug("Timeout while waiting to write to output channel")
+			})
+			if err != nil {
+				log.Debug("Cannot forward a message", "error", err)
 				continue
 			}
 		}
@@ -237,10 +249,37 @@ func consumer(ctx context.Context, consumer jetstream.Consumer, outputCh chan me
 
 // TODO: messages should be aggregated so that CreateWorkerRequest can be canceled by StopWorkerRequest.
 
-func publisher(ctx context.Context, conn jetstream.JetStream, inputCh <-chan message.Msg) error {
+type publisherMessage struct {
+	msg  message.Msg
+	data jetstream.PubAckFuture
+}
+
+func (m publisherMessage) ID() string {
+	return m.msg.ID()
+}
+
+func (m publisherMessage) Subject() string {
+	return m.msg.Subject()
+}
+
+func (m publisherMessage) Data() any {
+	return m.data
+}
+
+func (m publisherMessage) Ack() error {
+	return m.msg.Ack()
+}
+
+func publisher(ctx context.Context, conn jetstream.JetStream, inputCh <-chan message.Msg, outputCh chan<- message.Msg) error {
 	log.Debug("Service started", "service", "vessel.publisher")
 	defer log.Debug("Service stopped", "service", "vessel.publisher")
 
+	opts := []jetstream.PublishOpt{
+		jetstream.WithRetryAttempts(3),
+		jetstream.WithRetryWait(250 * time.Millisecond),
+	}
+
+loop:
 	for {
 		select {
 		case msg := <-inputCh:
@@ -251,14 +290,59 @@ func publisher(ctx context.Context, conn jetstream.JetStream, inputCh <-chan mes
 				continue
 			}
 
-			_, err = conn.Publish(context.Background(), msg.Subject(), data)
+			pubAck, err := conn.PublishAsync(
+				msg.Subject(),
+				data,
+				opts...,
+			)
 			if err != nil {
 				log.Debug("Cannot publish a message", "subject", msg.Subject(), "error", err)
-				_ = msg.Ack()
 				continue
 			}
 
-			_ = msg.Ack()
+			err = forwardMessage(outputCh, publisherMessage{
+				msg:  msg,
+				data: pubAck,
+			})
+			if err != nil {
+				log.Debug("Cannot forward a message", "error", err)
+				continue
+			}
+
+		case <-ctx.Done():
+			break loop
+		}
+	}
+
+	select {
+	case <-conn.PublishAsyncComplete():
+	case <-time.After(5 * time.Second):
+		log.Debug("Some messages were not published", "error", "timeout while waiting for publish to complete")
+	}
+
+	return nil
+}
+
+func acker(ctx context.Context, inputCh <-chan message.Msg) error {
+	log.Debug("Service started", "service", "vessel.acker")
+	defer log.Debug("Service stopped", "service", "vessel.acker")
+
+	for {
+		select {
+		case msg := <-inputCh:
+			ack, ok := msg.Data().(jetstream.PubAckFuture)
+			if !ok {
+				log.Debug("Cannot cast to PubAckFuture")
+				return errors.New("invalid data")
+			}
+
+			// Waiting for ctx is not necessary as the publisher always sets a timeout on how long a single request can take.
+			select {
+			case <-ack.Ok():
+				_ = msg.Ack()
+			case err := <-ack.Err():
+				log.Debug("Cannot publish a message", "subject", msg.Subject(), "error", err)
+			}
 
 		case <-ctx.Done():
 			return nil
@@ -366,4 +450,13 @@ func getAddress(nc *nats.Conn) string {
 		return ""
 	}
 	return ip.String()
+}
+
+func forwardMessage(outputCh chan<- message.Msg, msg message.Msg) error {
+	select {
+	case outputCh <- msg:
+		return nil
+	case <-time.After(10 * time.Second):
+		return errors.New("timeout")
+	}
 }
