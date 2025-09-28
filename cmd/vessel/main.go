@@ -12,6 +12,7 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 
 	"github.com/foohq/foojank/internal/vessel"
+	"github.com/foohq/foojank/internal/vessel/dialer"
 	"github.com/foohq/foojank/internal/vessel/log"
 	"github.com/foohq/foojank/internal/vessel/subjects"
 )
@@ -42,11 +43,15 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	conn, err := connect(ctx, Server, UserJWT, UserKey, CACertificate)
+	connDialer := dialer.New()
+	defer connDialer.Close()
+
+	conn, err := connect(ctx, Server, UserJWT, UserKey, CACertificate, connDialer)
 	if err != nil {
 		log.Debug("Cannot connect to the server", "server", Server, "error", err)
 		return
 	}
+	defer conn.Conn().Close()
 
 	stream, err := getStream(ctx, conn, Stream)
 	if err != nil {
@@ -94,6 +99,7 @@ func connect(
 	userJWT,
 	userKey,
 	caCertificate string,
+	dialer nats.CustomDialer,
 ) (jetstream.JetStream, error) {
 	opts := []nats.Option{
 		nats.CustomInboxPrefix(InboxPrefix),
@@ -103,7 +109,7 @@ func connect(
 		nats.ReconnectHandler(connected),
 		nats.DisconnectErrHandler(disconnected),
 		nats.ErrorHandler(failed),
-		// TODO: set custom dialer
+		nats.SetCustomDialer(dialer),
 	}
 
 	if userJWT != "" && userKey != "" {
