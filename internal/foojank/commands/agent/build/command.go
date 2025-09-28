@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	petname "github.com/dustinkirkland/golang-petname"
 	"github.com/foohq/ren/modules"
@@ -254,6 +255,9 @@ func action(ctx context.Context, c *cli.Command) error {
 			SubjectApiWorkerStatusT:      vessel.SubjectApiWorkerStatusT,
 			SubjectApiConnInfoT:          vessel.SubjectApiConnInfoT,
 			SubjectApiReplyT:             vessel.SubjectApiReplyT,
+			ReconnectInterval:            1 * time.Minute, // TODO: make configurable
+			ReconnectJitter:              5 * time.Second, // TODO: make configurable
+			AwaitMessagesDuration:        5 * time.Second, // TODO: make configurable
 		},
 	)
 	if err != nil {
