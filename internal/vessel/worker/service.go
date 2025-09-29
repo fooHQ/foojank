@@ -213,7 +213,7 @@ func run(ctx context.Context, entrypoint string, args, env []string, stdin, stdo
 }
 
 func readStorageFile(fs risoros.FS, path string) ([]byte, error) {
-	const maxRetries = 3
+	const maxRetries = 5
 	var b []byte
 	var err error
 	for i := 0; i < maxRetries+1; i++ {
@@ -221,7 +221,7 @@ func readStorageFile(fs risoros.FS, path string) ([]byte, error) {
 		if err == nil {
 			break
 		}
-		time.Sleep(400 * time.Millisecond)
+		time.Sleep(2 * time.Second)
 	}
 	return b, err
 }
