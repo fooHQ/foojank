@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/router"
@@ -185,6 +186,24 @@ func (c *Client) WriteWorkerStdin(ctx context.Context, agentID, workerID string)
 	}
 
 	return nil
+}
+
+func (c *Client) ListAgentIDs(ctx context.Context) ([]string, error) {
+	streams, err := c.srv.ListStreams(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var agentIDs []string
+	for _, stream := range streams {
+		if !strings.HasPrefix(stream, StreamPrefix) {
+			continue
+		}
+		agentID := strings.TrimPrefix(stream, StreamPrefix)
+		agentIDs = append(agentIDs, agentID)
+	}
+
+	return agentIDs, nil
 }
 
 func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]*Job, error) {
