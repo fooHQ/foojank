@@ -174,19 +174,6 @@ func (c *Client) BuildAgent(ctx context.Context, opts BuildAgentOptions) (string
 	return output, result, nil
 }
 
-func (c *Client) WriteAgentConfig(b []byte) error {
-	err := c.baseDirExists()
-	if err != nil {
-		return nil
-	}
-
-	err = os.WriteFile(c.VesselConfigFile(), b, 0600)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (c *Client) GetScript(name string) (string, error) {
 	err := c.baseDirExists()
 	if err != nil {
