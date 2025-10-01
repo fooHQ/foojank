@@ -38,7 +38,7 @@ func New(srv *server.Client) *Client {
 }
 
 type DiscoverResult struct {
-	ID       string
+	AgentID  string
 	Username string
 	Hostname string
 	System   string
@@ -61,7 +61,7 @@ func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
 			}
 
 			return DiscoverResult{
-				ID:       agentID,
+				AgentID:  agentID,
 				Username: v.Username,
 				Hostname: v.Hostname,
 				System:   v.System,
@@ -84,7 +84,7 @@ func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
 
 		if len(msgs) == 0 {
 			results = append(results, DiscoverResult{
-				ID:      agentID,
+				AgentID: agentID,
 				Created: time.Time{}, // TODO: grab timestamp from the stream!
 			})
 			continue
@@ -108,7 +108,7 @@ func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
 
 			result := res.(DiscoverResult)
 			results = append(results, DiscoverResult{
-				ID:       result.ID,
+				AgentID:  result.AgentID,
 				Username: result.Username,
 				Hostname: result.Hostname,
 				System:   result.System,
