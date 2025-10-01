@@ -208,12 +208,6 @@ func (c *Client) CreateConsumer(ctx context.Context, agentID string) (jetstream.
 }
 
 func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]*Job, error) {
-	stream := StreamName(agentID)
-	consumer, err := c.srv.CreateConsumer(ctx, stream)
-	if err != nil {
-		return nil, err
-	}
-
 	jobs := make(map[string]*Job)
 	jobsMsgID := make(map[string]*Job)
 
@@ -321,59 +315,29 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]*Job,
 		},
 	}
 
-	for {
-		// TODO: increase the batch size
-		batch, err := consumer.FetchNoWait(1)
+	msgs, err := c.ListMessages(ctx, agentID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, msg := range msgs {
+		handler, params, ok := api.Match(msg.Subject)
+		if !ok {
+			continue
+		}
+
+		data, err := proto.Unmarshal(msg.Data())
 		if err != nil {
-			return nil, err
+			continue
 		}
 
-		var cnt int
-		for msg := range batch.Messages() {
-			if msg == nil {
-				break
-			}
-			cnt++
-
-			err := msg.Ack()
-			if err != nil {
-				return nil, err
-			}
-
-			handler, params, ok := api.Match(msg.Subject())
-			if !ok {
-				continue
-			}
-
-			data, err := proto.Unmarshal(msg.Data())
-			if err != nil {
-				continue
-			}
-
-			res := handler(ctx, params, data)
-			if res == nil {
-				continue
-			}
-
-			job := res.(*Job)
-			jobs[job.id] = job
-
-			msgID := msg.Headers().Get(nats.MsgIdHdr)
-			if msgID == "" {
-				continue
-			}
-
-			jobsMsgID[msgID] = job
+		res := handler(ctx, params, data)
+		if res == nil {
+			continue
 		}
 
-		err = batch.Error()
-		if err != nil {
-			return nil, err
-		}
-
-		if cnt == 0 {
-			break
-		}
+		job := res.(*Job)
+		jobs[job.id] = job
 	}
 
 	return jobs, nil
