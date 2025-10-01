@@ -207,6 +207,10 @@ func (c *Client) ListAgentIDs(ctx context.Context) ([]string, error) {
 	return agentIDs, nil
 }
 
+func (c *Client) CreateConsumer(ctx context.Context, agentID string) (jetstream.Consumer, error) {
+	return c.srv.CreateConsumer(ctx, StreamName(agentID))
+}
+
 func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]*Job, error) {
 	stream := StreamName(agentID)
 	consumer, err := c.srv.CreateConsumer(ctx, stream)
