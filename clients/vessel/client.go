@@ -48,6 +48,28 @@ type DiscoverResult struct {
 }
 
 func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
+	api := router.Handlers{
+		"FJ.API.CONNECTION.INFO.<agent>": func(ctx context.Context, params router.Params, data any) any {
+			agentID, ok := params["agent"]
+			if !ok {
+				return nil
+			}
+
+			v, ok := data.(proto.UpdateClientInfo)
+			if !ok {
+				return nil
+			}
+
+			return DiscoverResult{
+				ID:       agentID,
+				Username: v.Username,
+				Hostname: v.Hostname,
+				System:   v.System,
+				Address:  v.Address,
+			}
+		},
+	}
+
 	agentIDs, err := c.ListAgentIDs(ctx)
 	if err != nil {
 		return nil, err
@@ -55,76 +77,46 @@ func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
 
 	var results []DiscoverResult
 	for _, agentID := range agentIDs {
-		consumer, err := c.CreateConsumer(ctx, agentID)
+		msgs, err := c.ListMessages(ctx, agentID)
 		if err != nil {
 			return nil, err
 		}
 
-		var info DiscoverResult
-		for {
-			// TODO: increase the batch size
-			batch, err := consumer.FetchNoWait(1)
-			if err != nil {
-				return nil, err
-			}
-
-			var cnt int
-			for msg := range batch.Messages() {
-				if msg == nil {
-					break
-				}
-				cnt++
-
-				err := msg.Ack()
-				if err != nil {
-					return nil, err
-				}
-
-				meta, err := msg.Metadata()
-				if err != nil {
-					continue
-				}
-
-				data, err := proto.Unmarshal(msg.Data())
-				if err != nil {
-					continue
-				}
-
-				v, ok := data.(proto.UpdateClientInfo)
-				if !ok {
-					continue
-				}
-
-				info = DiscoverResult{
-					ID:       agentID,
-					Username: v.Username,
-					Hostname: v.Hostname,
-					System:   v.System,
-					Address:  v.Address,
-					LastSeen: meta.Timestamp,
-				}
-			}
-
-			err = batch.Error()
-			if err != nil {
-				return nil, err
-			}
-
-			if cnt == 0 {
-				break
-			}
+		if len(msgs) == 0 {
+			results = append(results, DiscoverResult{
+				ID:      agentID,
+				Created: time.Time{}, // TODO: grab timestamp from the stream!
+			})
+			continue
 		}
 
-		result := DiscoverResult{
-			ID:       agentID,
-			Username: info.Username,
-			Hostname: info.Hostname,
-			System:   info.System,
-			Address:  info.Address,
-			LastSeen: info.LastSeen,
-		}
+		for _, msg := range msgs {
+			handler, params, ok := api.Match(msg.Subject)
+			if !ok {
+				continue
+			}
 
-		results = append(results, result)
+			data, err := proto.Unmarshal(msg.Data())
+			if err != nil {
+				continue
+			}
+
+			res := handler(ctx, params, data)
+			if res == nil {
+				continue
+			}
+
+			result := res.(DiscoverResult)
+			results = append(results, DiscoverResult{
+				ID:       result.ID,
+				Username: result.Username,
+				Hostname: result.Hostname,
+				System:   result.System,
+				Address:  result.Address,
+				Created:  time.Time{}, // TODO: grab timestamp from the stream!
+				LastSeen: msg.Received,
+			})
+		}
 	}
 
 	return results, nil
