@@ -48,18 +48,14 @@ type DiscoverResult struct {
 }
 
 func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
-	streams, err := c.srv.ListStreams(ctx)
+	agentIDs, err := c.ListAgentIDs(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	var results []DiscoverResult
-	for _, stream := range streams {
-		if !strings.HasPrefix(stream, StreamPrefix) {
-			continue
-		}
-
-		consumer, err := c.srv.CreateConsumer(ctx, stream)
+	for _, agentID := range agentIDs {
+		consumer, err := c.CreateConsumer(ctx, agentID)
 		if err != nil {
 			return nil, err
 		}
@@ -100,7 +96,7 @@ func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
 				}
 
 				info = DiscoverResult{
-					ID:       strings.TrimPrefix(stream, StreamPrefix),
+					ID:       agentID,
 					Username: v.Username,
 					Hostname: v.Hostname,
 					System:   v.System,
@@ -120,7 +116,7 @@ func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
 		}
 
 		result := DiscoverResult{
-			ID:       strings.TrimPrefix(stream, StreamPrefix),
+			ID:       agentID,
 			Username: info.Username,
 			Hostname: info.Hostname,
 			System:   info.System,
