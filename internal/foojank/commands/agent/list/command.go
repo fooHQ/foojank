@@ -115,7 +115,7 @@ func formatOutput(w io.Writer, format string, data []vessel.DiscoverResult) erro
 	})
 	for _, service := range data {
 		table.AddRow([]string{
-			service.ID,
+			service.AgentID,
 			fmt.Sprintf("%s@%s", service.Username, service.Hostname),
 			service.System,
 			service.Address,
