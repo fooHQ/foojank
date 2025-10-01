@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
+	"sort"
 	"strings"
 	"time"
 
@@ -400,6 +401,79 @@ func (c *Client) ListAllJobs(ctx context.Context) (map[string]*Job, error) {
 	}
 
 	return result, nil
+}
+
+type Message struct {
+	msg      jetstream.Msg
+	ID       string
+	Subject  string
+	AgentID  string
+	Sent     time.Time
+	Received time.Time
+}
+
+func (m *Message) Data() []byte {
+	return m.msg.Data()
+}
+
+func (c *Client) ListMessages(ctx context.Context, agentID string) ([]*Message, error) {
+	consumer, err := c.CreateConsumer(ctx, agentID)
+	if err != nil {
+		return nil, err
+	}
+
+	var msgs []*Message
+
+	for {
+		batch, err := consumer.FetchNoWait(350)
+		if err != nil {
+			return nil, err
+		}
+
+		var cnt int
+		for msg := range batch.Messages() {
+			if msg == nil {
+				break
+			}
+			cnt++
+
+			err := msg.Ack()
+			if err != nil {
+				return nil, err
+			}
+
+			meta, err := msg.Metadata()
+			if err != nil {
+				return nil, err
+			}
+
+			msgID := msg.Headers().Get(nats.MsgIdHdr)
+
+			msgs = append(msgs, &Message{
+				ID:       msgID,
+				Subject:  msg.Subject(),
+				AgentID:  agentID,
+				Sent:     time.Time{}, // TODO: extract from the message headers!
+				Received: meta.Timestamp,
+				msg:      msg,
+			})
+		}
+
+		err = batch.Error()
+		if err != nil {
+			return nil, err
+		}
+
+		if cnt == 0 {
+			break
+		}
+	}
+
+	sort.Slice(msgs, func(i, j int) bool {
+		return msgs[i].ID >= msgs[j].ID
+	})
+
+	return msgs, nil
 }
 
 type Job struct {
