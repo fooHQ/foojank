@@ -380,18 +380,13 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]*Job,
 }
 
 func (c *Client) ListAllJobs(ctx context.Context) (map[string]*Job, error) {
-	streams, err := c.srv.ListStreams(ctx)
+	agentIDs, err := c.ListAgentIDs(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	result := make(map[string]*Job)
-	for _, stream := range streams {
-		if !strings.HasPrefix(stream, StreamPrefix) {
-			continue
-		}
-
-		agentID := strings.TrimPrefix(stream, StreamPrefix)
+	for _, agentID := range agentIDs {
 		jobs, err := c.ListJobs(ctx, agentID)
 		if err != nil {
 			return nil, err
