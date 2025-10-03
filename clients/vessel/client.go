@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -420,8 +420,23 @@ func (c *Client) ListMessages(ctx context.Context, agentID string) ([]*Message, 
 		}
 	}
 
-	sort.Slice(msgs, func(i, j int) bool {
-		return msgs[i].ID >= msgs[j].ID
+	msgs = slices.SortedFunc(slices.Values(msgs), func(v1, v2 *Message) int {
+		if !v1.Sent.IsZero() && !v1.Sent.IsZero() {
+			if v1.Sent.Before(v2.Sent) {
+				return -1
+			}
+			if v1.Sent.After(v2.Sent) {
+				return 1
+			}
+			return 0
+		}
+		if v1.Received.Before(v2.Received) {
+			return -1
+		}
+		if v1.Received.After(v2.Received) {
+			return 1
+		}
+		return 0
 	})
 
 	return msgs, nil
