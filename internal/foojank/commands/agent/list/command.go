@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
-	"sort"
+	"slices"
 	"time"
 
 	"github.com/urfave/cli/v3"
@@ -92,11 +93,17 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].LastSeen.Before(results[j].LastSeen)
+	sortedResults := slices.SortedFunc(maps.Values(results), func(v1, v2 vessel.DiscoverResult) int {
+		if v1.LastSeen.Before(v2.LastSeen) {
+			return -1
+		}
+		if v1.LastSeen.After(v2.LastSeen) {
+			return 1
+		}
+		return 0
 	})
 
-	err = formatOutput(os.Stdout, format, results)
+	err = formatOutput(os.Stdout, format, sortedResults)
 	if err != nil {
 		log.Error(ctx, "Cannot write formatted output: %v", err)
 		return err
