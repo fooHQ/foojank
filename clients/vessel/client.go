@@ -47,7 +47,7 @@ type DiscoverResult struct {
 	LastSeen time.Time
 }
 
-func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
+func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error) {
 	api := router.Handlers{
 		"FJ.API.CONNECTION.INFO.<agent>": func(ctx context.Context, params router.Params, data any) any {
 			agentID, ok := params["agent"]
@@ -75,7 +75,7 @@ func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
 		return nil, err
 	}
 
-	var results []DiscoverResult
+	results := make(map[string]DiscoverResult)
 	for _, agentID := range agentIDs {
 		msgs, err := c.ListMessages(ctx, agentID)
 		if err != nil {
@@ -83,10 +83,10 @@ func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
 		}
 
 		if len(msgs) == 0 {
-			results = append(results, DiscoverResult{
+			results[agentID] = DiscoverResult{
 				AgentID: agentID,
 				Created: time.Time{}, // TODO: grab timestamp from the stream!
-			})
+			}
 			continue
 		}
 
@@ -107,7 +107,7 @@ func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
 			}
 
 			result := res.(DiscoverResult)
-			results = append(results, DiscoverResult{
+			results[agentID] = DiscoverResult{
 				AgentID:  result.AgentID,
 				Username: result.Username,
 				Hostname: result.Hostname,
@@ -115,7 +115,7 @@ func (c *Client) Discover(ctx context.Context) ([]DiscoverResult, error) {
 				Address:  result.Address,
 				Created:  time.Time{}, // TODO: grab timestamp from the stream!
 				LastSeen: msg.Received,
-			})
+			}
 		}
 	}
 
