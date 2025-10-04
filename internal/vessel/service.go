@@ -63,7 +63,9 @@ func (s *Service) Start(ctx context.Context) error {
 		log.Debug("Cannot instantiate nats fs", "error", err)
 		return err
 	}
-	defer natsFS.Close()
+	defer func() {
+		_ = natsFS.Close()
+	}()
 
 	filesystems := map[string]risoros.FS{
 		"file": fileFS,
