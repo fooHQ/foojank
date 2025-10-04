@@ -73,7 +73,6 @@ func (s *Service) Start(ctx context.Context) error {
 
 	consumerOutCh := make(chan message.Msg)
 	publisherInCh := make(chan message.Msg)
-	publisherOutCh := make(chan message.Msg)
 	termCh := make(chan struct{})
 
 	var wg sync.WaitGroup
@@ -129,22 +128,9 @@ func (s *Service) Start(ctx context.Context) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := publisher(publisherCtx, s.args.Connection, publisherInCh, publisherOutCh)
+		err := publisher(publisherCtx, s.args.Connection, publisherInCh)
 		if err != nil {
 			log.Debug("Publisher error", "error", err)
-		}
-		termCh <- struct{}{}
-	}()
-
-	ackerCtx, ackerCancel := context.WithCancel(context.Background())
-	defer ackerCancel()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		err := acker(ackerCtx, publisherOutCh)
-		if err != nil {
-			log.Debug("Acker error", "error", err)
 		}
 		termCh <- struct{}{}
 	}()
@@ -154,7 +140,6 @@ func (s *Service) Start(ctx context.Context) error {
 		workManagerCancel,
 		monitorCancel,
 		publisherCancel,
-		ackerCancel,
 	}
 
 	select {
@@ -249,28 +234,7 @@ func consumer(ctx context.Context, consumer jetstream.Consumer, outputCh chan me
 
 // TODO: messages should be aggregated so that CreateWorkerRequest can be canceled by StopWorkerRequest.
 
-type publisherMessage struct {
-	msg  message.Msg
-	data jetstream.PubAckFuture
-}
-
-func (m publisherMessage) ID() string {
-	return m.msg.ID()
-}
-
-func (m publisherMessage) Subject() string {
-	return m.msg.Subject()
-}
-
-func (m publisherMessage) Data() any {
-	return m.data
-}
-
-func (m publisherMessage) Ack() error {
-	return m.msg.Ack()
-}
-
-func publisher(ctx context.Context, conn jetstream.JetStream, inputCh <-chan message.Msg, outputCh chan<- message.Msg) error {
+func publisher(ctx context.Context, conn jetstream.JetStream, inputCh <-chan message.Msg) error {
 	log.Debug("Service started", "service", "vessel.publisher")
 	defer log.Debug("Service stopped", "service", "vessel.publisher")
 
@@ -290,7 +254,7 @@ loop:
 				continue
 			}
 
-			pubAck, err := conn.PublishAsync(
+			_, err = conn.PublishAsync(
 				msg.Subject(),
 				data,
 				opts...,
@@ -300,14 +264,7 @@ loop:
 				continue
 			}
 
-			err = forwardMessage(outputCh, publisherMessage{
-				msg:  msg,
-				data: pubAck,
-			})
-			if err != nil {
-				log.Debug("Cannot forward a message", "error", err)
-				continue
-			}
+			_ = msg.Ack()
 
 		case <-ctx.Done():
 			break loop
@@ -317,37 +274,10 @@ loop:
 	select {
 	case <-conn.PublishAsyncComplete():
 	case <-time.After(5 * time.Second):
-		log.Debug("Some messages were not published", "error", "timeout while waiting for publish to complete")
+		log.Debug("Some messages were not published", "lost", conn.PublishAsyncPending(), "error", "timeout while waiting for publish to complete")
 	}
 
 	return nil
-}
-
-func acker(ctx context.Context, inputCh <-chan message.Msg) error {
-	log.Debug("Service started", "service", "vessel.acker")
-	defer log.Debug("Service stopped", "service", "vessel.acker")
-
-	for {
-		select {
-		case msg := <-inputCh:
-			ack, ok := msg.Data().(jetstream.PubAckFuture)
-			if !ok {
-				log.Debug("Cannot cast to PubAckFuture")
-				return errors.New("invalid data")
-			}
-
-			// Waiting for ctx is not necessary as the publisher always sets a timeout on how long a single request can take.
-			select {
-			case <-ack.Ok():
-				_ = msg.Ack()
-			case err := <-ack.Err():
-				log.Debug("Cannot publish a message", "subject", msg.Subject(), "error", err)
-			}
-
-		case <-ctx.Done():
-			return nil
-		}
-	}
 }
 
 var _ message.Msg = monitorMessage{}
