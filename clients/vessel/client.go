@@ -422,7 +422,7 @@ func (c *Client) ListMessages(ctx context.Context, agentID string) ([]*Message, 
 	}
 
 	msgs = slices.SortedFunc(slices.Values(msgs), func(v1, v2 *Message) int {
-		if !v1.Sent.IsZero() && !v1.Sent.IsZero() {
+		if !v1.Sent.IsZero() && !v2.Sent.IsZero() {
 			if v1.Sent.Before(v2.Sent) {
 				return -1
 			}
