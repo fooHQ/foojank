@@ -142,8 +142,8 @@ func connect(
 
 	jetStream, err := jetstream.New(
 		nc,
-		jetstream.WithDefaultTimeout(5*time.Second),
-		jetstream.WithPublishAsyncTimeout(5*time.Second),
+		jetstream.WithDefaultTimeout(10*time.Second),
+		jetstream.WithPublishAsyncTimeout(mustGetReconnectInterval()+mustGetReconnectJitter()+(15*time.Second)),
 		jetstream.WithPublishAsyncMaxPending(120),
 	)
 	if err != nil {
