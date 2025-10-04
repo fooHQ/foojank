@@ -47,7 +47,9 @@ func main() {
 	defer cancel()
 
 	connDialer := dialer.New(mustGetAwaitMessagesDuration())
-	defer connDialer.Close()
+	defer func() {
+		_ = connDialer.Close()
+	}()
 
 	conn, err := connect(ctx, Server, UserJWT, UserKey, CACertificate, connDialer)
 	if err != nil {
