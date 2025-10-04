@@ -122,13 +122,17 @@ func copyPackage(ctx context.Context, srv *server.Client, srcPath, dstStorage, d
 	if err != nil {
 		return err
 	}
-	defer srcFile.Close()
+	defer func() {
+		_ = srcFile.Close()
+	}()
 
 	storage, err := srv.GetObjectStore(ctx, dstStorage)
 	if err != nil {
 		return err
 	}
-	defer storage.Close()
+	defer func() {
+		_ = storage.Close()
+	}()
 
 	err = storage.Wait(ctx)
 	if err != nil {
@@ -139,7 +143,9 @@ func copyPackage(ctx context.Context, srv *server.Client, srcPath, dstStorage, d
 	if err != nil {
 		return err
 	}
-	defer dstFile.Close()
+	defer func() {
+		_ = dstFile.Close()
+	}()
 
 	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
