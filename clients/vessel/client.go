@@ -329,7 +329,8 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]*Job,
 		}
 
 		job := res.(*Job)
-		jobs[job.id] = job
+		jobs[job.ID()] = job
+		jobsMsgID[msg.ID] = job
 	}
 
 	return jobs, nil
