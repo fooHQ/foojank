@@ -82,22 +82,18 @@ func (s *Service) Start(ctx context.Context) error {
 	consumerCtx, consumerCancel := context.WithCancel(context.Background())
 	defer consumerCancel()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		err := consumer(consumerCtx, s.args.Consumer, consumerOutCh)
 		if err != nil {
 			log.Debug("Consumer error", "error", err)
 		}
 		termCh <- struct{}{}
-	}()
+	})
 
 	workManagerCtx, workManagerCancel := context.WithCancel(context.Background())
 	defer workManagerCancel()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		err := workmanager.New(workmanager.Arguments{
 			ID:          s.args.ID,
 			Templates:   s.args.Templates,
@@ -109,33 +105,29 @@ func (s *Service) Start(ctx context.Context) error {
 			log.Debug("WorkManager error", "error", err)
 		}
 		termCh <- struct{}{}
-	}()
+	})
 
 	monitorCtx, monitorCancel := context.WithCancel(context.Background())
 	defer monitorCancel()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		err := monitor(monitorCtx, s.args.Connection, s.args.Templates.Render(subjects.ConnInfo, s.args.ID), publisherInCh)
 		if err != nil {
 			log.Debug("Monitor error", "error", err)
 		}
 		termCh <- struct{}{}
-	}()
+	})
 
 	publisherCtx, publisherCancel := context.WithCancel(context.Background())
 	defer publisherCancel()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		err := publisher(publisherCtx, s.args.Connection, publisherInCh)
 		if err != nil {
 			log.Debug("Publisher error", "error", err)
 		}
 		termCh <- struct{}{}
-	}()
+	})
 
 	cancels := []context.CancelFunc{
 		consumerCancel,
@@ -197,9 +189,7 @@ func consumer(ctx context.Context, consumer jetstream.Consumer, outputCh chan me
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		wg.Done()
+	wg.Go(func() {
 		for {
 			msg, err := msgs.Next()
 			if err != nil {
@@ -225,7 +215,7 @@ func consumer(ctx context.Context, consumer jetstream.Consumer, outputCh chan me
 				continue
 			}
 		}
-	}()
+	})
 
 	<-ctx.Done()
 	msgs.Stop()
