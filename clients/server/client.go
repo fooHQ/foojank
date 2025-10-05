@@ -86,11 +86,12 @@ func (c *Client) ListStreams(ctx context.Context) ([]string, error) {
 	return names, nil
 }
 
-func (c *Client) CreateConsumer(ctx context.Context, stream string) (jetstream.Consumer, error) {
+func (c *Client) CreateConsumer(ctx context.Context, stream string, subjects []string) (jetstream.Consumer, error) {
 	consumer, err := c.js.CreateConsumer(ctx, stream, jetstream.ConsumerConfig{
-		DeliverPolicy: jetstream.DeliverAllPolicy,
-		AckPolicy:     jetstream.AckExplicitPolicy,
-		MaxAckPending: 1,
+		DeliverPolicy:  jetstream.DeliverAllPolicy,
+		AckPolicy:      jetstream.AckExplicitPolicy,
+		MaxAckPending:  1,
+		FilterSubjects: subjects,
 	})
 	if err != nil {
 		return nil, err
