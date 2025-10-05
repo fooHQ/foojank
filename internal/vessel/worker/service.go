@@ -39,10 +39,13 @@ func (s *Service) Start(ctx context.Context) error {
 	log.Debug("Service started", "service", "vessel.workmanager.worker", "id", s.args.ID)
 	defer log.Debug("Service stopped", "service", "vessel.workmanager.worker", "id", s.args.ID)
 
-	// IMPORTANT: Send event must not check the current context lest the message will be lost.
-	s.sendEvent(context.Background(), EventWorkerStarted{
+	err := forwardMessage(s.args.EventCh, EventWorkerStarted{
 		WorkerID: s.args.ID,
 	})
+	if err != nil {
+		log.Debug("Cannot forward a message", "error", err)
+		return err
+	}
 
 	termCh := make(chan struct{})
 
@@ -95,12 +98,15 @@ func (s *Service) Start(ctx context.Context) error {
 			log.Debug("Runner failed", "error", err)
 		}
 
-		// IMPORTANT: Send must not check context state lest the message will be lost.
-		s.sendEvent(context.Background(), EventWorkerStopped{
+		err = forwardMessage(s.args.EventCh, EventWorkerStopped{
 			WorkerID: s.args.ID,
 			Status:   code,
 			Error:    err,
 		})
+		if err != nil {
+			log.Debug("Cannot forward a message", "error", err)
+		}
+
 		termCh <- struct{}{}
 	}()
 
@@ -166,13 +172,6 @@ func stdoutReader(ctx context.Context, workerID string, inputFile risoros.File, 
 		case <-ctx.Done():
 			return nil
 		}
-	}
-}
-
-func (s *Service) sendEvent(ctx context.Context, event message.Msg) {
-	select {
-	case s.args.EventCh <- event:
-	case <-ctx.Done():
 	}
 }
 
@@ -266,4 +265,13 @@ func readStorageFile(fs risoros.FS, path string) ([]byte, error) {
 		time.Sleep(2 * time.Second)
 	}
 	return b, err
+}
+
+func forwardMessage(outputCh chan<- message.Msg, msg message.Msg) error {
+	select {
+	case outputCh <- msg:
+		return nil
+	case <-time.After(10 * time.Second):
+		return errors.New("timeout")
+	}
 }
