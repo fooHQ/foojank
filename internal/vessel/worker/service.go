@@ -59,15 +59,13 @@ func (s *Service) Start(ctx context.Context) error {
 	}
 	defer stdinWriterCancelWrapper()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		err := stdinWriter(stdinWriterCtx, s.args.StdinCh, stdin)
 		if err != nil {
 			log.Debug("Stdin writer failed", "error", err)
 		}
 		termCh <- struct{}{}
-	}()
+	})
 
 	stdout := ren.NewPipe()
 	stdoutReaderCtx, stdoutReaderCancel := context.WithCancel(ctx)
@@ -77,22 +75,18 @@ func (s *Service) Start(ctx context.Context) error {
 	}
 	defer stdoutReaderCancelWrapper()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		err := stdoutReader(stdoutReaderCtx, s.args.ID, stdout, s.args.EventCh)
 		if err != nil {
 			log.Debug("Stdout reader failed", "error", err)
 		}
 		termCh <- struct{}{}
-	}()
+	})
 
 	runnerCtx, runnerCancel := context.WithCancel(ctx)
 	defer runnerCancel()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		code, err := run(runnerCtx, s.args.File, s.args.Args, s.args.Env, stdin, stdout, s.args.Filesystems)
 		if err != nil {
 			log.Debug("Runner failed", "error", err)
@@ -108,7 +102,7 @@ func (s *Service) Start(ctx context.Context) error {
 		}
 
 		termCh <- struct{}{}
-	}()
+	})
 
 	cancels := []context.CancelFunc{
 		runnerCancel,
