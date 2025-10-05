@@ -77,7 +77,9 @@ func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error
 
 	results := make(map[string]DiscoverResult)
 	for _, agentID := range agentIDs {
-		msgs, err := c.ListMessages(ctx, agentID)
+		msgs, err := c.ListMessages(ctx, agentID, []string{
+			fmt.Sprintf(SubjectApiConnInfoT, agentID),
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -195,8 +197,8 @@ func (c *Client) ListAgentIDs(ctx context.Context) ([]string, error) {
 	return agentIDs, nil
 }
 
-func (c *Client) CreateConsumer(ctx context.Context, agentID string) (jetstream.Consumer, error) {
-	return c.srv.CreateConsumer(ctx, StreamName(agentID))
+func (c *Client) CreateConsumer(ctx context.Context, agentID string, subjects []string) (jetstream.Consumer, error) {
+	return c.srv.CreateConsumer(ctx, StreamName(agentID), subjects)
 }
 
 func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]*Job, error) {
@@ -307,7 +309,12 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]*Job,
 		},
 	}
 
-	msgs, err := c.ListMessages(ctx, agentID)
+	msgs, err := c.ListMessages(ctx, agentID, []string{
+		fmt.Sprintf(SubjectApiWorkerStartT, agentID, "*"),
+		fmt.Sprintf(SubjectApiWorkerStopT, agentID, "*"),
+		fmt.Sprintf(SubjectApiWorkerStatusT, agentID, "*"),
+		fmt.Sprintf(SubjectApiReplyT, agentID, "*"),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -368,8 +375,8 @@ func (m *Message) Data() []byte {
 	return m.msg.Data()
 }
 
-func (c *Client) ListMessages(ctx context.Context, agentID string) ([]*Message, error) {
-	consumer, err := c.CreateConsumer(ctx, agentID)
+func (c *Client) ListMessages(ctx context.Context, agentID string, subjects []string) ([]*Message, error) {
+	consumer, err := c.CreateConsumer(ctx, agentID, subjects)
 	if err != nil {
 		return nil, err
 	}
