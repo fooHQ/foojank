@@ -250,9 +250,7 @@ func (s *Service) startWorker(id, file string, args, env []string) (state, error
 
 	stdinCh := make(chan []byte)
 	wCtx, cancel := context.WithCancel(context.Background())
-	s.wg.Add(1)
-	go func() {
-		defer s.wg.Done()
+	s.wg.Go(func() {
 		err := worker.New(worker.Arguments{
 			ID:          id,
 			File:        file,
@@ -265,7 +263,7 @@ func (s *Service) startWorker(id, file string, args, env []string) (state, error
 		if err != nil {
 			log.Debug("Worker stopped with an error", "error", err)
 		}
-	}()
+	})
 	return state{
 		stdinCh: stdinCh,
 		cancel:  cancel,
