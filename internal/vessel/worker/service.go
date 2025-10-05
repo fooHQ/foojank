@@ -4,18 +4,16 @@ import (
 	"context"
 	"errors"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/foohq/ren"
 	"github.com/foohq/ren/modules"
 	risoros "github.com/risor-io/risor/os"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/foohq/foojank/internal/vessel/log"
 	"github.com/foohq/foojank/internal/vessel/message"
 )
-
-var errDone = errors.New("done")
 
 type Arguments struct {
 	ID          string
@@ -46,22 +44,55 @@ func (s *Service) Start(ctx context.Context) error {
 		WorkerID: s.args.ID,
 	})
 
+	termCh := make(chan struct{})
+
+	var wg sync.WaitGroup
+
 	stdin := ren.NewPipe()
-	stdout := ren.NewPipe()
+	stdinWriterCtx, stdinWriterCancel := context.WithCancel(ctx)
+	stdinWriterCancelWrapper := func() {
+		_ = stdin.Close()
+		stdinWriterCancel()
+	}
+	defer stdinWriterCancelWrapper()
 
-	group, groupCtx := errgroup.WithContext(ctx)
-	group.Go(func() error {
-		return stdinWriter(groupCtx, s.args.StdinCh, stdin)
-	})
-
-	group.Go(func() error {
-		return stdoutReader(groupCtx, s.args.ID, stdout, s.args.EventCh)
-	})
-
-	group.Go(func() error {
-		code, err := run(groupCtx, s.args.File, s.args.Args, s.args.Env, stdin, stdout, s.args.Filesystems)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := stdinWriter(stdinWriterCtx, s.args.StdinCh, stdin)
 		if err != nil {
-			log.Debug("Run failed", "error", err)
+			log.Debug("Stdin writer failed", "error", err)
+		}
+		termCh <- struct{}{}
+	}()
+
+	stdout := ren.NewPipe()
+	stdoutReaderCtx, stdoutReaderCancel := context.WithCancel(ctx)
+	stdoutReaderCancelWrapper := func() {
+		_ = stdout.Close()
+		stdoutReaderCancel()
+	}
+	defer stdoutReaderCancelWrapper()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := stdoutReader(stdoutReaderCtx, s.args.ID, stdout, s.args.EventCh)
+		if err != nil {
+			log.Debug("Stdout reader failed", "error", err)
+		}
+		termCh <- struct{}{}
+	}()
+
+	runnerCtx, runnerCancel := context.WithCancel(ctx)
+	defer runnerCancel()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		code, err := run(runnerCtx, s.args.File, s.args.Args, s.args.Env, stdin, stdout, s.args.Filesystems)
+		if err != nil {
+			log.Debug("Runner failed", "error", err)
 		}
 
 		// IMPORTANT: Send must not check context state lest the message will be lost.
@@ -70,19 +101,30 @@ func (s *Service) Start(ctx context.Context) error {
 			Status:   code,
 			Error:    err,
 		})
+		termCh <- struct{}{}
+	}()
 
-		// The error will trigger a group shutdown which will lead to worker shutdown.
-		return errDone
-	})
-
-	<-groupCtx.Done()
-	_ = stdin.Close()
-	_ = stdout.Close()
-
-	err := group.Wait()
-	if err != nil && !errors.Is(err, errDone) {
-		return err
+	cancels := []context.CancelFunc{
+		runnerCancel,
+		stdinWriterCancelWrapper,
+		stdoutReaderCancelWrapper,
 	}
+
+	select {
+	case <-ctx.Done():
+		for _, cancel := range cancels {
+			cancel()
+			<-termCh
+		}
+	case <-termCh:
+		// If an error occurs in one of the services, cancel all services without waiting for them to finish.
+		// Some messages may be lost in the process.
+		for _, cancel := range cancels {
+			cancel()
+		}
+	}
+
+	wg.Wait()
 
 	return nil
 }
