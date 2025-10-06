@@ -1,7 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.13.6/.schema/devbox.schema.json",
   "packages": [
-    "natscli@0.1.5",
     "capnproto@1.0.2",
     "go@1.25.0",
     "golangci-lint@2.4.0"

@@ -144,54 +144,6 @@
           "store_path": "/nix/store/dlz6z4dih7rd6q9dnigvz49npfmv8m52-golangci-lint-2.4.0"
         }
       }
-    },
-    "natscli@0.1.5": {
-      "last_modified": "2024-12-03T12:40:06Z",
-      "resolved": "github:NixOS/nixpkgs/566e53c2ad750c84f6d31f9ccb9d00f823165550#natscli",
-      "source": "devbox-search",
-      "version": "0.1.5",
-      "systems": {
-        "aarch64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/f83z15759b92497f04abib94wvhsiqcw-natscli-0.1.5",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/f83z15759b92497f04abib94wvhsiqcw-natscli-0.1.5"
-        },
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/1np08fd2qvmxpalcw2nsnsqc6g26k9xd-natscli-0.1.5",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/1np08fd2qvmxpalcw2nsnsqc6g26k9xd-natscli-0.1.5"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/0pghz84k152a97bim1hdd6m8i3az5yc9-natscli-0.1.5",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/0pghz84k152a97bim1hdd6m8i3az5yc9-natscli-0.1.5"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/asy2p69f0g0yfg1iqblmx27g3ym6n7wq-natscli-0.1.5",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/asy2p69f0g0yfg1iqblmx27g3ym6n7wq-natscli-0.1.5"
-        }
-      }
     }
   }
 }
