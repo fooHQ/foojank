@@ -121,12 +121,11 @@ func formatOutput(w io.Writer, format string, data map[string]vessel.Job) error 
 		"status",
 	})
 	for _, job := range data {
-		info := job.Info()
 		table.AddRow([]string{
-			job.ID(),
-			job.AgentID(),
-			fmt.Sprintf("%s %s", info.File, info.Args),
-			info.Status,
+			job.ID,
+			job.AgentID,
+			fmt.Sprintf("%s %s", job.File, job.Args),
+			job.Status,
 		})
 	}
 
