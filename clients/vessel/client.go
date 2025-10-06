@@ -218,13 +218,11 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 			}
 
 			return Job{
-				id:      workerID,
-				agentID: agentID,
-				info: JobInfo{
-					File:   v.File,
-					Args:   strings.Join(v.Args, " "),
-					Status: JobStatusPending,
-				},
+				ID:      workerID,
+				AgentID: agentID,
+				File:    v.File,
+				Args:    strings.Join(v.Args, " "),
+				Status:  JobStatusPending,
 			}
 		},
 		"FJ.API.WORKER.STOP.<agent>.<worker>": func(ctx context.Context, params router.Params, data any) any {
@@ -243,7 +241,7 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 				return nil
 			}
 
-			job.info.Status = JobStatusCancelling
+			job.Status = JobStatusCancelling
 
 			return job
 		},
@@ -265,11 +263,11 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 
 			switch v.Status {
 			case 0:
-				job.info.Status = JobStatusFinished
+				job.Status = JobStatusFinished
 			case 130:
-				job.info.Status = JobStatusCancelled
+				job.Status = JobStatusCancelled
 			default:
-				job.info.Status = JobStatusFailed
+				job.Status = JobStatusFailed
 			}
 
 			return job
@@ -293,19 +291,19 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 			switch v := data.(type) {
 			case proto.StartWorkerResponse:
 				if v.Error != nil {
-					job.info.Error = v.Error
-					job.info.Status = JobStatusFailed
+					job.Error = v.Error
+					job.Status = JobStatusFailed
 				} else {
-					job.info.Status = JobStatusRunning
+					job.Status = JobStatusRunning
 				}
 				return job
 
 			case proto.StopWorkerResponse:
 				if v.Error != nil {
-					job.info.Error = v.Error
-					job.info.Status = JobStatusFailed
+					job.Error = v.Error
+					job.Status = JobStatusFailed
 				} else {
-					job.info.Status = JobStatusCancelled
+					job.Status = JobStatusCancelled
 				}
 				return job
 			}
@@ -341,8 +339,8 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 		}
 
 		job := res.(Job)
-		jobs[job.ID()] = job
-		jobsMsgIDRef[msg.ID] = job.ID()
+		jobs[job.ID] = job
+		jobsMsgIDRef[msg.ID] = job.ID
 	}
 
 	return jobs, nil
@@ -456,21 +454,12 @@ func (c *Client) ListMessages(ctx context.Context, agentID string, subjects []st
 }
 
 type Job struct {
-	id      string
-	agentID string
-	info    JobInfo
-}
-
-func (j *Job) ID() string {
-	return j.id
-}
-
-func (j *Job) AgentID() string {
-	return j.agentID
-}
-
-func (j *Job) Info() JobInfo {
-	return j.info
+	ID      string
+	AgentID string
+	File    string
+	Args    string
+	Status  string
+	Error   error
 }
 
 const (
@@ -481,13 +470,6 @@ const (
 	JobStatusFinished   = "Finished"
 	JobStatusFailed     = "Failed"
 )
-
-type JobInfo struct {
-	File   string
-	Args   string
-	Status string
-	Error  error
-}
 
 const StreamPrefix = "FJ_"
 
