@@ -380,13 +380,13 @@ func (m *Message) Data() []byte {
 	return m.msg.Data()
 }
 
-func (c *Client) ListMessages(ctx context.Context, agentID string, subjects []string) ([]*Message, error) {
+func (c *Client) ListMessages(ctx context.Context, agentID string, subjects []string) ([]Message, error) {
 	consumer, err := c.CreateConsumer(ctx, agentID, subjects)
 	if err != nil {
 		return nil, err
 	}
 
-	var msgs []*Message
+	var msgs []Message
 
 	for {
 		batch, err := consumer.FetchNoWait(350)
@@ -413,7 +413,7 @@ func (c *Client) ListMessages(ctx context.Context, agentID string, subjects []st
 
 			msgID := msg.Headers().Get(nats.MsgIdHdr)
 
-			msgs = append(msgs, &Message{
+			msgs = append(msgs, Message{
 				ID:       msgID,
 				Subject:  msg.Subject(),
 				AgentID:  agentID,
@@ -433,7 +433,7 @@ func (c *Client) ListMessages(ctx context.Context, agentID string, subjects []st
 		}
 	}
 
-	msgs = slices.SortedFunc(slices.Values(msgs), func(v1, v2 *Message) int {
+	msgs = slices.SortedFunc(slices.Values(msgs), func(v1, v2 Message) int {
 		if !v1.Sent.IsZero() && !v2.Sent.IsZero() {
 			if v1.Sent.Before(v2.Sent) {
 				return -1
