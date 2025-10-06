@@ -91,7 +91,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	agentID := c.Args().First()
 	format := c.String(FlagFormat)
 
-	var jobs map[string]*vessel.Job
+	var jobs map[string]vessel.Job
 	if agentID != "" {
 		jobs, err = client.ListJobs(ctx, agentID)
 	} else {
@@ -113,7 +113,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	return nil
 }
 
-func formatOutput(w io.Writer, format string, data map[string]*vessel.Job) error {
+func formatOutput(w io.Writer, format string, data map[string]vessel.Job) error {
 	table := formatter.NewTable([]string{
 		"job_id",
 		"agent_id",
