@@ -96,8 +96,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	subject := job.AgentID()
-	err = client.StopWorker(ctx, subject, jobID)
+	err = client.StopWorker(ctx, job.AgentID, jobID)
 	if err != nil {
 		log.Error(ctx, "Cannot cancel job: %v", err)
 		return err
