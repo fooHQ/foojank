@@ -49,54 +49,6 @@
         }
       }
     },
-    "garble@0.14.1": {
-      "last_modified": "2025-02-17T23:19:04Z",
-      "resolved": "github:NixOS/nixpkgs/f0295845e58ada369322524631821b01c0db13a7#garble",
-      "source": "devbox-search",
-      "version": "0.14.1",
-      "systems": {
-        "aarch64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/2n8rqngvsn4a4gfj75s3q171qnp06w59-garble-0.14.1",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/2n8rqngvsn4a4gfj75s3q171qnp06w59-garble-0.14.1"
-        },
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/4kmhbb1cjssgczsvpwii5qzvxsvcqxmi-garble-0.14.1",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/4kmhbb1cjssgczsvpwii5qzvxsvcqxmi-garble-0.14.1"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/17i5hdavxpzc17jyhb4hp3d1syfygkk1-garble-0.14.1",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/17i5hdavxpzc17jyhb4hp3d1syfygkk1-garble-0.14.1"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/6dla3pkx1kv6fpjfbb67ghsa8q2ji5ly-garble-0.14.1",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/6dla3pkx1kv6fpjfbb67ghsa8q2ji5ly-garble-0.14.1"
-        }
-      }
-    },
     "go@1.25.0": {
       "last_modified": "2025-09-18T16:33:27Z",
       "resolved": "github:NixOS/nixpkgs/f4b140d5b253f5e2a1ff4e5506edbf8267724bde#go",

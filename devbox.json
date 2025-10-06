@@ -3,7 +3,6 @@
   "packages": [
     "natscli@0.1.5",
     "capnproto@1.0.2",
-    "garble@0.14.1",
     "go@1.25.0",
     "golangci-lint@2.4.0"
   ],
