@@ -201,9 +201,9 @@ func (c *Client) CreateConsumer(ctx context.Context, agentID string, subjects []
 	return c.srv.CreateConsumer(ctx, StreamName(agentID), subjects)
 }
 
-func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]*Job, error) {
-	jobs := make(map[string]*Job)
-	jobsMsgID := make(map[string]*Job)
+func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, error) {
+	jobs := make(map[string]Job)
+	jobsMsgIDRef := make(map[string]string)
 
 	api := router.Handlers{
 		"FJ.API.WORKER.START.<agent>.<worker>": func(ctx context.Context, params router.Params, data any) any {
@@ -217,7 +217,7 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]*Job,
 				return nil
 			}
 
-			return &Job{
+			return Job{
 				id:      workerID,
 				agentID: agentID,
 				info: JobInfo{
@@ -280,7 +280,12 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]*Job,
 				return nil
 			}
 
-			job, ok := jobsMsgID[msgID]
+			jobRef, ok := jobsMsgIDRef[msgID]
+			if !ok {
+				return nil
+			}
+
+			job, ok := jobs[jobRef]
 			if !ok {
 				return nil
 			}
@@ -335,21 +340,21 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]*Job,
 			continue
 		}
 
-		job := res.(*Job)
+		job := res.(Job)
 		jobs[job.ID()] = job
-		jobsMsgID[msg.ID] = job
+		jobsMsgIDRef[msg.ID] = job.ID()
 	}
 
 	return jobs, nil
 }
 
-func (c *Client) ListAllJobs(ctx context.Context) (map[string]*Job, error) {
+func (c *Client) ListAllJobs(ctx context.Context) (map[string]Job, error) {
 	agentIDs, err := c.ListAgentIDs(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make(map[string]*Job)
+	result := make(map[string]Job)
 	for _, agentID := range agentIDs {
 		jobs, err := c.ListJobs(ctx, agentID)
 		if err != nil {
