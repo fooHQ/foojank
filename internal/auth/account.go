@@ -100,6 +100,27 @@ func ReadAccount(name string) (string, []byte, error) {
 	return accountJWT, accountSeed, nil
 }
 
+func ListAccounts() ([]string, error) {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return nil, err
+	}
+
+	pth := filepath.Join(configDir, accountRootPath)
+
+	files, err := os.ReadDir(pth)
+	if err != nil {
+		return nil, err
+	}
+
+	var accounts []string
+	for _, file := range files {
+		accounts = append(accounts, file.Name())
+	}
+
+	return accounts, nil
+}
+
 func NewAccount(name string) (string, []byte, error) {
 	account, err := nkeys.CreateAccount()
 	if err != nil {
