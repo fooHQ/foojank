@@ -13,7 +13,6 @@ import (
 	petname "github.com/dustinkirkland/golang-petname"
 	"github.com/foohq/ren/modules"
 	"github.com/foohq/urlpath"
-	"github.com/nats-io/jwt/v2"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/clients/codebase"
@@ -222,7 +221,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	usr, err := createUser(*conf.Client.AccountJWT, *conf.Client.AccountKey, agentID)
+	userJWT, userSeed, err := createUser(*conf.Client.AccountKey, agentID)
 	if err != nil {
 		log.Error(ctx, "Cannot create a user: %v", err)
 		return err
@@ -241,8 +240,8 @@ func action(ctx context.Context, c *cli.Command) error {
 		codebase.BuildAgentConfig{
 			ID:                           agentID,
 			Server:                       strings.Join(servers, ","),
-			UserJWT:                      usr.JWT,
-			UserKey:                      usr.Key,
+			UserJWT:                      userJWT,
+			UserKey:                      userSeed,
 			CACertificate:                *conf.Client.TLSCACertificate,
 			Stream:                       streamName,
 			Consumer:                     consumerName,
@@ -271,22 +270,15 @@ func action(ctx context.Context, c *cli.Command) error {
 }
 
 func createUser(
-	accountJWT,
-	accountKey,
+	accountSeed,
 	agentID string,
-) (*auth.User, error) {
-	accountClaims, err := jwt.DecodeAccountClaims(accountJWT)
+) (string, string, error) {
+	perms := vessel.NewAgentPermissions(agentID)
+	userJWT, userSeed, err := auth.NewUser(agentID, []byte(accountSeed), perms)
 	if err != nil {
-		return nil, fmt.Errorf("cannot decode account JWT: %w", err)
+		return "", "", err
 	}
-
-	accountPubKey := accountClaims.Subject
-	user, err := auth.NewUserAgent(agentID, accountPubKey, []byte(accountKey))
-	if err != nil {
-		return nil, fmt.Errorf("cannot generate agent configuration: %w", err)
-	}
-
-	return user, nil
+	return userJWT, string(userSeed), nil
 }
 
 func buildExecutable(
