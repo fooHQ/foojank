@@ -1,111 +1,139 @@
 package auth
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
-
-	"github.com/foohq/foojank/clients/vessel"
 )
 
-type User struct {
-	JWT string
-	Key string
+func WriteUser(name string, userJWT string, userSeed []byte) error {
+	// Validate that the JWT is a user JWT.
+	_, err := jwt.DecodeUserClaims(userJWT)
+	if err != nil {
+		return fmt.Errorf("cannot decode JWT: %w", err)
+	}
+
+	if !isUserSeed(userSeed) {
+		return errors.New("invalid user seed")
+	}
+
+	jwtDecorated, err := jwt.DecorateJWT(userJWT)
+	if err != nil {
+		return fmt.Errorf("cannot encode decorated JWT: %w", err)
+	}
+
+	seedDecorated, err := jwt.DecorateSeed(userSeed)
+	if err != nil {
+		return fmt.Errorf("cannot encode decorated seed: %w", err)
+	}
+
+	data := bytes.Join([][]byte{jwtDecorated, seedDecorated}, []byte(""))
+
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return err
+	}
+
+	pth := filepath.Join(configDir, "foojank", name, "user")
+
+	err = os.MkdirAll(filepath.Dir(pth), 0700)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(pth, data, 0600)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func NewUserManager(name, accountPubKey string, accountSigningKey []byte) (*User, error) {
-	accountSignKeyPair, err := nkeys.FromSeed(accountSigningKey)
+func ReadUser(name string) (string, []byte, error) {
+	configDir, err := os.UserConfigDir()
 	if err != nil {
-		return nil, fmt.Errorf("cannot decode account's signing key: %w", err)
+		return "", nil, err
 	}
 
-	keyPair, err := nkeys.CreateUser()
+	pth := filepath.Join(configDir, "foojank", name, "user")
+
+	data, err := os.ReadFile(pth)
 	if err != nil {
-		return nil, fmt.Errorf("cannot generate user key: %w", err)
+		return "", nil, err
 	}
 
-	pubKey, err := keyPair.PublicKey()
+	userJWT, err := jwt.ParseDecoratedJWT(data)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get user's public key: %w", err)
+		return "", nil, fmt.Errorf("cannot decode decorated JWT: %w", err)
 	}
 
-	claims := jwt.NewUserClaims(pubKey)
-	claims.Name = name
-	claims.IssuerAccount = accountPubKey
-	claimsEnc, err := claims.Encode(accountSignKeyPair)
+	// Validate that the JWT is a user JWT.
+	_, err = jwt.DecodeUserClaims(userJWT)
 	if err != nil {
-		return nil, fmt.Errorf("cannot encode and sign user claims: %w", err)
+		return "", nil, fmt.Errorf("cannot decode JWT: %w", err)
 	}
 
-	keySeed, err := keyPair.Seed()
+	user, err := jwt.ParseDecoratedNKey(data)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get a seed of user's key-pair: %w", err)
+		return "", nil, fmt.Errorf("cannot decode decorated seed: %w", err)
 	}
 
-	return &User{
-		JWT: claimsEnc,
-		Key: string(keySeed),
-	}, nil
+	userSeed, err := user.Seed()
+	if err != nil {
+		return "", nil, fmt.Errorf("cannot encode seed: %w", err)
+	}
+
+	if !isUserSeed(userSeed) {
+		return "", nil, errors.New("invalid user seed")
+	}
+
+	return userJWT, userSeed, nil
 }
 
-func NewUserAgent(name, accountPubKey string, accountSigningKey []byte) (*User, error) {
-	accountSignKeyPair, err := nkeys.FromSeed(accountSigningKey)
+func NewUser(name string, accountSeed []byte, perms jwt.Permissions) (string, []byte, error) {
+	account, err := nkeys.FromSeed(accountSeed)
 	if err != nil {
-		return nil, fmt.Errorf("cannot decode account's signing key: %w", err)
+		return "", nil, fmt.Errorf("cannot decode account seed: %w", err)
 	}
 
-	keyPair, err := nkeys.CreateUser()
+	accountPublicKey, err := account.PublicKey()
 	if err != nil {
-		return nil, fmt.Errorf("cannot generate user key: %w", err)
+		return "", nil, fmt.Errorf("cannot get account public key: %w", err)
 	}
 
-	pubKey, err := keyPair.PublicKey()
+	user, err := nkeys.CreateUser()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get user's public key: %w", err)
+		return "", nil, fmt.Errorf("cannot generate key pair: %w", err)
 	}
 
-	claims := jwt.NewUserClaims(pubKey)
+	userPublicKey, err := user.PublicKey()
+	if err != nil {
+		return "", nil, fmt.Errorf("cannot get public key: %w", err)
+	}
+
+	claims := jwt.NewUserClaims(userPublicKey)
 	claims.Name = name
-	claims.IssuerAccount = accountPubKey
-	claims.Sub = jwt.Permission{
-		Allow: []string{
-			fmt.Sprintf("_INBOX_%s.>", name),
-		},
-	}
-	claims.Pub = jwt.Permission{
-		Allow: []string{
-			fmt.Sprintf(vessel.SubjectApiWorkerWriteStdoutT, name, "*"),
-			fmt.Sprintf(vessel.SubjectApiWorkerStatusT, name, "*"),
-			fmt.Sprintf(vessel.SubjectApiReplyT, name, "*"),
-			fmt.Sprintf(vessel.SubjectApiConnInfoT, name),
+	claims.IssuerAccount = accountPublicKey
+	claims.Permissions = perms
 
-			fmt.Sprintf("$JS.ACK.FJ_%s.>", name),
-			fmt.Sprintf("$JS.API.STREAM.INFO.FJ_%s", name),
-			fmt.Sprintf("$JS.API.STREAM.INFO.OBJ_%s", name),
-			fmt.Sprintf("$JS.API.STREAM.PURGE.OBJ_%s", name),
-			fmt.Sprintf("$JS.API.CONSUMER.INFO.FJ_%s.*", name),
-			fmt.Sprintf("$JS.API.CONSUMER.MSG.NEXT.FJ_%s.*", name),
-			fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.*.$O.%s.M.*", name, name),
-			fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.>", name),
-			fmt.Sprintf("$JS.API.CONSUMER.DELETE.OBJ_%s.*", name),
-			fmt.Sprintf("$JS.API.DIRECT.GET.OBJ_%s.>", name),
-			fmt.Sprintf("$O.%s.M.*", name),
-			fmt.Sprintf("$O.%s.C.*", name),
-		},
-	}
-	claimsEnc, err := claims.Encode(accountSignKeyPair)
+	userJWT, err := claims.Encode(account)
 	if err != nil {
-		return nil, fmt.Errorf("cannot encode and sign user claims: %w", err)
+		return "", nil, fmt.Errorf("cannot encode JWT: %w", err)
 	}
 
-	keySeed, err := keyPair.Seed()
+	userSeed, err := user.Seed()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get a seed of user's key-pair: %w", err)
+		return "", nil, fmt.Errorf("cannot encode seed: %w", err)
 	}
 
-	return &User{
-		JWT: claimsEnc,
-		Key: string(keySeed),
-	}, nil
+	return userJWT, userSeed, nil
+}
+
+func isUserSeed(key []byte) bool {
+	return bytes.HasPrefix(key, []byte("SU"))
 }
