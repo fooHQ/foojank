@@ -16,6 +16,10 @@ const (
 	accountPathT    = accountRootPath + "/%s/account"
 )
 
+var (
+	ErrAccountNotFound = errors.New("account not found")
+)
+
 func WriteAccount(name string, accountJWT string, accountSeed []byte) error {
 	// Validate that the JWT is an account JWT.
 	_, err := jwt.DecodeAccountClaims(accountJWT)
@@ -69,6 +73,9 @@ func ReadAccount(name string) (string, []byte, error) {
 
 	data, err := os.ReadFile(pth)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", nil, ErrAccountNotFound
+		}
 		return "", nil, err
 	}
 
@@ -110,6 +117,9 @@ func ListAccounts() ([]string, error) {
 
 	files, err := os.ReadDir(pth)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, ErrAccountNotFound
+		}
 		return nil, err
 	}
 
