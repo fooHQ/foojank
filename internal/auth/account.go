@@ -1,71 +1,131 @@
 package auth
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
 )
 
-type Account struct {
-	JWT        string
-	Key        string
-	SigningKey string
+func WriteAccount(name string, accountJWT string, accountSeed []byte) error {
+	// Validate that the JWT is an account JWT.
+	_, err := jwt.DecodeAccountClaims(accountJWT)
+	if err != nil {
+		return fmt.Errorf("cannot decode JWT: %w", err)
+	}
+
+	if !isAccountSeed(accountSeed) {
+		return errors.New("invalid account seed")
+	}
+
+	jwtDecorated, err := jwt.DecorateJWT(accountJWT)
+	if err != nil {
+		return fmt.Errorf("cannot encode decorated JWT: %w", err)
+	}
+
+	seedDecorated, err := jwt.DecorateSeed(accountSeed)
+	if err != nil {
+		return fmt.Errorf("cannot encode decorated seed: %w", err)
+	}
+
+	data := bytes.Join([][]byte{jwtDecorated, seedDecorated}, []byte(""))
+
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return err
+	}
+
+	pth := filepath.Join(configDir, "foojank", name, "account")
+
+	err = os.MkdirAll(filepath.Dir(pth), 0700)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(pth, data, 0600)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func NewAccount(name string, operatorSignKey []byte, enableJetstream bool) (*Account, error) {
-	operatorSignKeyPair, err := nkeys.FromSeed(operatorSignKey)
+func ReadAccount(name string) (string, []byte, error) {
+	configDir, err := os.UserConfigDir()
 	if err != nil {
-		return nil, fmt.Errorf("cannot decode operator's signing key: %w", err)
+		return "", nil, err
 	}
 
-	keyPair, err := nkeys.CreateAccount()
+	pth := filepath.Join(configDir, "foojank", name, "account")
+
+	data, err := os.ReadFile(pth)
 	if err != nil {
-		return nil, fmt.Errorf("cannot generate account's key: %w", err)
+		return "", nil, err
 	}
 
-	pubKey, err := keyPair.PublicKey()
+	accountJWT, err := jwt.ParseDecoratedJWT(data)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get account's public key: %w", err)
+		return "", nil, fmt.Errorf("cannot decode decorated JWT: %w", err)
 	}
 
-	signKeyPair, err := nkeys.CreateAccount()
+	// Validate that the JWT is account JWT.
+	_, err = jwt.DecodeAccountClaims(accountJWT)
 	if err != nil {
-		return nil, fmt.Errorf("cannot generate account's key: %w", err)
+		return "", nil, fmt.Errorf("cannot decode JWT: %w", err)
 	}
 
-	signPubKey, err := signKeyPair.PublicKey()
+	account, err := jwt.ParseDecoratedNKey(data)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get account's signing public key: %w", err)
+		return "", nil, fmt.Errorf("cannot decode decorated seed: %w", err)
 	}
 
-	claims := jwt.NewAccountClaims(pubKey)
+	accountSeed, err := account.Seed()
+	if err != nil {
+		return "", nil, fmt.Errorf("cannot encode seed: %w", err)
+	}
+
+	if !isAccountSeed(accountSeed) {
+		return "", nil, errors.New("invalid account seed")
+	}
+
+	return accountJWT, accountSeed, nil
+}
+
+func NewAccount(name string) (string, []byte, error) {
+	account, err := nkeys.CreateAccount()
+	if err != nil {
+		return "", nil, fmt.Errorf("cannot generate key pair: %w", err)
+	}
+
+	publicKey, err := account.PublicKey()
+	if err != nil {
+		return "", nil, fmt.Errorf("cannot get public key: %w", err)
+	}
+
+	claims := jwt.NewAccountClaims(publicKey)
 	claims.Name = name
-	if enableJetstream {
-		claims.Limits.JetStreamLimits = jwt.JetStreamLimits{
-			DiskStorage:   -1,
-			MemoryStorage: -1,
-		}
-	}
-	claims.SigningKeys.Add(signPubKey)
-	claimsEnc, err := claims.Encode(operatorSignKeyPair)
-	if err != nil {
-		return nil, fmt.Errorf("cannot encode and sign account claims: %w", err)
+	claims.Limits.JetStreamLimits = jwt.JetStreamLimits{
+		DiskStorage:   -1,
+		MemoryStorage: -1,
 	}
 
-	keySeed, err := keyPair.Seed()
+	accountJWT, err := claims.Encode(account)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get a seed of account's key: %w", err)
+		return "", nil, fmt.Errorf("cannot encode JWT: %w", err)
 	}
 
-	signKeySeed, err := signKeyPair.Seed()
+	accountSeed, err := account.Seed()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get a seed of account's key: %w", err)
+		return "", nil, fmt.Errorf("cannot encode seed: %w", err)
 	}
 
-	return &Account{
-		JWT:        claimsEnc,
-		Key:        string(keySeed),
-		SigningKey: string(signKeySeed),
-	}, nil
+	return accountJWT, accountSeed, nil
+}
+
+func isAccountSeed(key []byte) bool {
+	return bytes.HasPrefix(key, []byte("SA"))
 }
