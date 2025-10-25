@@ -2,7 +2,6 @@ package codebase
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,12 +10,6 @@ import (
 	"time"
 
 	"github.com/nats-io/nuid"
-
-	"github.com/foohq/ren/packager"
-)
-
-var (
-	ErrScriptNotFound = errors.New("script not found")
 )
 
 type Client struct {
@@ -35,10 +28,6 @@ func (c *Client) BuildDir() string {
 
 func (c *Client) ModulesDir() string {
 	return filepath.Join(c.baseDir, "internal/engine/modules")
-}
-
-func (c *Client) ScriptsDir() string {
-	return filepath.Join(c.baseDir, "scripts")
 }
 
 func (c *Client) VesselConfigFile() string {
@@ -172,67 +161,6 @@ func (c *Client) BuildAgent(ctx context.Context, opts BuildAgentOptions) (string
 	}
 
 	return output, result, nil
-}
-
-func (c *Client) GetScript(name string) (string, error) {
-	err := c.baseDirExists()
-	if err != nil {
-		return "", err
-	}
-
-	scriptDir := filepath.Join(c.ScriptsDir(), name)
-	_, err = os.ReadDir(scriptDir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return "", ErrScriptNotFound
-		}
-		return "", err
-	}
-
-	return scriptDir, nil
-}
-
-func (c *Client) BuildScript(name string) (string, error) {
-	err := c.baseDirExists()
-	if err != nil {
-		return "", err
-	}
-
-	scriptSrc, err := c.GetScript(name)
-	if err != nil {
-		return "", err
-	}
-
-	outputName := filepath.Join(c.BuildDir(), nuid.Next())
-	err = packager.Build(scriptSrc, outputName)
-	if err != nil {
-		return "", err
-	}
-
-	return outputName, nil
-}
-
-func (c *Client) ListScripts() ([]string, error) {
-	err := c.baseDirExists()
-	if err != nil {
-		return nil, err
-	}
-
-	files, err := os.ReadDir(c.ScriptsDir())
-	if err != nil {
-		return nil, err
-	}
-
-	var result []string
-	for _, file := range files {
-		if !file.IsDir() {
-			continue
-		}
-
-		result = append(result, file.Name())
-	}
-
-	return result, nil
 }
 
 func (c *Client) devboxRun(ctx context.Context, script string, env map[string]string) (string, error) {
