@@ -48,7 +48,7 @@ func WriteAccount(name string, accountJWT string, accountSeed []byte) error {
 		return err
 	}
 
-	pth := filepath.Join(configDir, fmt.Sprintf(accountPathT, name))
+	pth := filepath.Join(configDir, fmt.Sprintf(accountPathT, filepath.Clean(name)))
 
 	err = os.MkdirAll(filepath.Dir(pth), 0700)
 	if err != nil {
@@ -69,7 +69,7 @@ func ReadAccount(name string) (string, []byte, error) {
 		return "", nil, err
 	}
 
-	pth := filepath.Join(configDir, fmt.Sprintf(accountPathT, name))
+	pth := filepath.Join(configDir, fmt.Sprintf(accountPathT, filepath.Clean(name)))
 
 	data, err := os.ReadFile(pth)
 	if err != nil {
