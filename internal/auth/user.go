@@ -11,6 +11,10 @@ import (
 	"github.com/nats-io/nkeys"
 )
 
+const (
+	userPathT = accountRootPath + "/%s/user"
+)
+
 func WriteUser(name string, userJWT string, userSeed []byte) error {
 	// Validate that the JWT is a user JWT.
 	_, err := jwt.DecodeUserClaims(userJWT)
@@ -39,7 +43,7 @@ func WriteUser(name string, userJWT string, userSeed []byte) error {
 		return err
 	}
 
-	pth := filepath.Join(configDir, "foojank", name, "user")
+	pth := filepath.Join(configDir, fmt.Sprintf(userPathT, name))
 
 	err = os.MkdirAll(filepath.Dir(pth), 0700)
 	if err != nil {
@@ -60,7 +64,7 @@ func ReadUser(name string) (string, []byte, error) {
 		return "", nil, err
 	}
 
-	pth := filepath.Join(configDir, "foojank", name, "user")
+	pth := filepath.Join(configDir, fmt.Sprintf(userPathT, name))
 
 	data, err := os.ReadFile(pth)
 	if err != nil {
