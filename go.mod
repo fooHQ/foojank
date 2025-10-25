@@ -10,7 +10,6 @@ require (
 	github.com/foohq/ren-natsfs v0.0.0-20250715161259-1f76eedb0ef2
 	github.com/foohq/urlpath v0.1.0
 	github.com/lmittmann/tint v1.1.2
-	github.com/muesli/cancelreader v0.2.2
 	github.com/nats-io/jwt/v2 v2.7.4
 	github.com/nats-io/nats-server/v2 v2.11.6
 	github.com/nats-io/nats.go v1.43.0
@@ -21,7 +20,6 @@ require (
 	github.com/risor-io/risor v1.8.1
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v3 v3.3.8
-	golang.org/x/sync v0.15.0
 )
 
 require (
@@ -46,6 +44,7 @@ require (
 	github.com/urfave/cli/v2 v2.27.7 // indirect
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
 	golang.org/x/crypto v0.39.0 // indirect
+	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
