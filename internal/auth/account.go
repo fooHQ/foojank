@@ -11,6 +11,11 @@ import (
 	"github.com/nats-io/nkeys"
 )
 
+const (
+	accountRootPath = "foojank/accounts"
+	accountPathT    = accountRootPath + "/%s/account"
+)
+
 func WriteAccount(name string, accountJWT string, accountSeed []byte) error {
 	// Validate that the JWT is an account JWT.
 	_, err := jwt.DecodeAccountClaims(accountJWT)
@@ -39,7 +44,7 @@ func WriteAccount(name string, accountJWT string, accountSeed []byte) error {
 		return err
 	}
 
-	pth := filepath.Join(configDir, "foojank", name, "account")
+	pth := filepath.Join(configDir, fmt.Sprintf(accountPathT, name))
 
 	err = os.MkdirAll(filepath.Dir(pth), 0700)
 	if err != nil {
@@ -60,7 +65,7 @@ func ReadAccount(name string) (string, []byte, error) {
 		return "", nil, err
 	}
 
-	pth := filepath.Join(configDir, "foojank", name, "account")
+	pth := filepath.Join(configDir, fmt.Sprintf(accountPathT, name))
 
 	data, err := os.ReadFile(pth)
 	if err != nil {
