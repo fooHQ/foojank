@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 
@@ -481,4 +482,35 @@ const InboxPrefix = "_INBOX_"
 
 func InboxName(name string) string {
 	return InboxPrefix + name
+}
+
+func NewAgentPermissions(agentID string) jwt.Permissions {
+	return jwt.Permissions{
+		Pub: jwt.Permission{
+			Allow: []string{
+				fmt.Sprintf(SubjectApiWorkerWriteStdoutT, agentID, "*"),
+				fmt.Sprintf(SubjectApiWorkerStatusT, agentID, "*"),
+				fmt.Sprintf(SubjectApiReplyT, agentID, "*"),
+				fmt.Sprintf(SubjectApiConnInfoT, agentID),
+
+				fmt.Sprintf("$JS.ACK.FJ_%s.>", agentID),
+				fmt.Sprintf("$JS.API.STREAM.INFO.FJ_%s", agentID),
+				fmt.Sprintf("$JS.API.STREAM.INFO.OBJ_%s", agentID),
+				fmt.Sprintf("$JS.API.STREAM.PURGE.OBJ_%s", agentID),
+				fmt.Sprintf("$JS.API.CONSUMER.INFO.FJ_%s.*", agentID),
+				fmt.Sprintf("$JS.API.CONSUMER.MSG.NEXT.FJ_%s.*", agentID),
+				fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.*.$O.%s.M.*", agentID, agentID),
+				fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.>", agentID),
+				fmt.Sprintf("$JS.API.CONSUMER.DELETE.OBJ_%s.*", agentID),
+				fmt.Sprintf("$JS.API.DIRECT.GET.OBJ_%s.>", agentID),
+				fmt.Sprintf("$O.%s.M.*", agentID),
+				fmt.Sprintf("$O.%s.C.*", agentID),
+			},
+		},
+		Sub: jwt.Permission{
+			Allow: []string{
+				fmt.Sprintf("_INBOX_%s.>", agentID),
+			},
+		},
+	}
 }
