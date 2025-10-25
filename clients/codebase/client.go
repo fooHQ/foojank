@@ -26,14 +26,6 @@ func (c *Client) BuildDir() string {
 	return filepath.Join(c.baseDir, "build")
 }
 
-func (c *Client) ModulesDir() string {
-	return filepath.Join(c.baseDir, "internal/engine/modules")
-}
-
-func (c *Client) VesselConfigFile() string {
-	return filepath.Join(c.baseDir, "internal", "vessel", "config", "config.go")
-}
-
 type BuildAgentOptions struct {
 	OS         string
 	Arch       string
