@@ -15,6 +15,10 @@ const (
 	userPathT = accountRootPath + "/%s/user"
 )
 
+var (
+	ErrUserNotFound = errors.New("user not found")
+)
+
 func WriteUser(name string, userJWT string, userSeed []byte) error {
 	// Validate that the JWT is a user JWT.
 	_, err := jwt.DecodeUserClaims(userJWT)
@@ -68,6 +72,9 @@ func ReadUser(name string) (string, []byte, error) {
 
 	data, err := os.ReadFile(pth)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", nil, ErrUserNotFound
+		}
 		return "", nil, err
 	}
 
