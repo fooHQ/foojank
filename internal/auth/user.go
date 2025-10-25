@@ -47,7 +47,7 @@ func WriteUser(name string, userJWT string, userSeed []byte) error {
 		return err
 	}
 
-	pth := filepath.Join(configDir, fmt.Sprintf(userPathT, name))
+	pth := filepath.Join(configDir, fmt.Sprintf(userPathT, filepath.Clean(name)))
 
 	err = os.MkdirAll(filepath.Dir(pth), 0700)
 	if err != nil {
@@ -68,7 +68,7 @@ func ReadUser(name string) (string, []byte, error) {
 		return "", nil, err
 	}
 
-	pth := filepath.Join(configDir, fmt.Sprintf(userPathT, name))
+	pth := filepath.Join(configDir, fmt.Sprintf(userPathT, filepath.Clean(name)))
 
 	data, err := os.ReadFile(pth)
 	if err != nil {
