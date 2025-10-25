@@ -5,7 +5,6 @@ import (
 
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/commands/config/generate/client"
-	"github.com/foohq/foojank/internal/foojank/commands/config/generate/server"
 )
 
 func NewCommand() *cli.Command {
@@ -13,7 +12,6 @@ func NewCommand() *cli.Command {
 		Name:  "generate",
 		Usage: "Generate configuration",
 		Commands: []*cli.Command{
-			server.NewCommand(),
 			client.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
