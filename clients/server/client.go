@@ -2,13 +2,14 @@ package server
 
 import (
 	"context"
+	"crypto/x509"
+	"encoding/base64"
 	"strings"
+	"time"
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nats-io/nuid"
-
-	"github.com/foohq/foojank/internal/sstls"
 )
 
 type Client struct {
@@ -18,34 +19,10 @@ type Client struct {
 func New(
 	servers []string,
 	userJWT,
-	userKey,
-	caCertFile string,
+	userSeed,
+	serverCert string,
 ) (*Client, error) {
-	nc, err := nats.Connect(
-		strings.Join(servers, ","),
-		nats.UserJWTAndSeed(userJWT, userKey),
-		nats.MaxReconnects(-1),
-		nats.ClientTLSConfig(nil, sstls.DecodeCertificateHandler(caCertFile)),
-		/*nats.ConnectHandler(func(_ *nats.Conn) {
-			logger.Debug("connected to the server")
-		}),
-		nats.ReconnectHandler(func(_ *nats.Conn) {
-			logger.Info("reconnected to the server")
-		}),
-		nats.DisconnectErrHandler(func(_ *nats.Conn, err error) {
-			err = fmt.Errorf("disconnected from the server: %w", err)
-			logger.Warn(err.Error())
-		}),
-		nats.ErrorHandler(func(_ *nats.Conn, _ *nats.Subscription, err error) {
-			err = fmt.Errorf("server error: %w", err)
-			logger.Warn(err.Error())
-		}),*/
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	js, err := jetstream.New(nc)
+	js, err := connect(strings.Join(servers, ","), userJWT, userSeed, serverCert)
 	if err != nil {
 		return nil, err
 	}
@@ -162,4 +139,56 @@ func (c *Client) GetObjectStore(ctx context.Context, name string) (*ObjectStore,
 	}
 
 	return s, nil
+}
+
+func connect(
+	server,
+	userJWT,
+	userKey,
+	caCertificate string,
+) (jetstream.JetStream, error) {
+	opts := []nats.Option{
+		nats.MaxReconnects(-1),
+	}
+
+	if userJWT != "" && userKey != "" {
+		opts = append(opts, nats.UserJWTAndSeed(userJWT, userKey))
+	}
+
+	if caCertificate != "" {
+		opts = append(opts, nats.ClientTLSConfig(nil, decodeCertificateHandler(caCertificate)))
+	}
+
+	nc, err := nats.Connect(server, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	jetStream, err := jetstream.New(
+		nc,
+		jetstream.WithDefaultTimeout(10*time.Second),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return jetStream, nil
+}
+
+func decodeCertificateHandler(s string) func() (*x509.CertPool, error) {
+	return func() (*x509.CertPool, error) {
+		b, err := base64.StdEncoding.DecodeString(s)
+		if err != nil {
+			return nil, err
+		}
+
+		cert, err := x509.ParseCertificate(b)
+		if err != nil {
+			return nil, err
+		}
+
+		pool := x509.NewCertPool()
+		pool.AddCert(cert)
+		return pool, nil
+	}
 }
