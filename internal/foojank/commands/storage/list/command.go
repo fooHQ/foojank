@@ -12,6 +12,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/clients/server"
+	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
@@ -22,14 +23,6 @@ import (
 	"github.com/foohq/foojank/internal/log"
 )
 
-const (
-	FlagFormat           = "format"
-	FlagServer           = flags.Server
-	FlagUserJWT          = flags.UserJWT
-	FlagUserKey          = flags.UserKey
-	FlagTLSCACertificate = flags.TLSCACertificate
-)
-
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "list",
@@ -37,25 +30,20 @@ func NewCommand() *cli.Command {
 		Usage:     "List storages or their contents",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  FlagFormat,
+				Name:  flags.Format,
 				Usage: "set output format",
-				Value: "table",
 			},
-			&cli.StringSliceFlag{
-				Name:  FlagServer,
+			&cli.StringFlag{
+				Name:  flags.ServerURL,
 				Usage: "set server URL",
 			},
 			&cli.StringFlag{
-				Name:  FlagUserJWT,
-				Usage: "set user JWT token",
+				Name:  flags.ServerCertificate,
+				Usage: "set server TLS certificate",
 			},
 			&cli.StringFlag{
-				Name:  FlagUserKey,
-				Usage: "set user secret key",
-			},
-			&cli.StringFlag{
-				Name:  FlagTLSCACertificate,
-				Usage: "set TLS CA certificate",
+				Name:  flags.Account,
+				Usage: "set server account",
 			},
 		},
 		Action:       action,
@@ -77,13 +65,22 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	srv, err := server.New(conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey, *conf.Client.TLSCACertificate)
+	serverURL, _ := conf.String(flags.ServerURL)
+	serverCert, _ := conf.String(flags.ServerCertificate)
+	accountName, _ := conf.String(flags.Account)
+	format, _ := conf.String(flags.Format)
+
+	userJWT, userSeed, err := auth.ReadUser(accountName)
+	if err != nil {
+		log.Error(ctx, "Cannot read user %q: %v", accountName, err)
+		return err
+	}
+
+	srv, err := server.New([]string{serverURL}, userJWT, string(userSeed), serverCert)
 	if err != nil {
 		log.Error(ctx, "Cannot connect to the server: %v", err)
 		return err
 	}
-
-	format := c.String(FlagFormat)
 
 	if c.NArg() == 0 {
 		err := listStorages(ctx, srv, format)
@@ -277,33 +274,22 @@ func formatTypeIndicator(isDir bool) string {
 }
 
 func validateConfiguration(conf *config.Config) error {
-	if conf.LogLevel == nil {
-		return errors.New("log level not configured")
+	for _, opt := range []string{
+		flags.ServerURL,
+		flags.Account,
+	} {
+		switch opt {
+		case flags.ServerURL:
+			v, ok := conf.String(opt)
+			if !ok || v == "" {
+				return errors.New("server URL not configured")
+			}
+		case flags.Account:
+			v, ok := conf.String(opt)
+			if !ok || v == "" {
+				return errors.New("account not configured")
+			}
+		}
 	}
-
-	if conf.NoColor == nil {
-		return errors.New("no color not configured")
-	}
-
-	if conf.Client == nil {
-		return errors.New("client configuration is missing")
-	}
-
-	if len(conf.Client.Server) == 0 {
-		return errors.New("server not configured")
-	}
-
-	if conf.Client.UserJWT == nil {
-		return errors.New("user jwt not configured")
-	}
-
-	if conf.Client.UserKey == nil {
-		return errors.New("user key not configured")
-	}
-
-	if conf.Client.TLSCACertificate == nil {
-		return errors.New("tls ca certificate not configured")
-	}
-
 	return nil
 }

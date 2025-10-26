@@ -25,80 +25,51 @@ import (
 	"github.com/foohq/foojank/internal/log"
 )
 
-const (
-	FlagOs               = "os"
-	FlagArch             = "arch"
-	FlagOutput           = "output"
-	FlagDev              = "dev"
-	FlagWithServer       = "with-server"
-	FlagWithoutModule    = "without-module"
-	FlagServer           = flags.Server
-	FlagUserJWT          = flags.UserJWT
-	FlagUserKey          = flags.UserKey
-	FlagAccountJWT       = flags.AccountJWT
-	FlagAccountKey       = flags.AccountKey
-	FlagTLSCACertificate = flags.TLSCACertificate
-	FlagDataDir          = flags.DataDir
-)
-
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "build",
 		Usage: "Build an agent",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
-				Name:  FlagDev,
+				Name:  flags.Dev,
 				Usage: "enable development mode",
-				Value: false,
 			},
 			&cli.StringFlag{
-				Name:  FlagOs,
+				Name:  flags.Os,
 				Usage: "set build operating system",
 			},
 			&cli.StringFlag{
-				Name:  FlagArch,
+				Name:  flags.Arch,
 				Usage: "set build architecture",
 			},
 			&cli.StringFlag{
-				Name:    FlagOutput,
+				Name:  flags.SourceDirectory,
+				Usage: "set path to source directory",
+			},
+			&cli.StringFlag{
+				Name:    flags.Output,
 				Usage:   "set output file",
 				Aliases: []string{"o"},
 			},
 			&cli.StringSliceFlag{
-				Name:  FlagWithServer,
+				Name:  flags.WithServer,
 				Usage: "set agent's server",
 			},
 			&cli.StringSliceFlag{
-				Name:  FlagWithoutModule,
+				Name:  flags.WithoutModule,
 				Usage: "disable compilation of a module",
 			},
-			&cli.StringSliceFlag{
-				Name:  FlagServer,
+			&cli.StringFlag{
+				Name:  flags.ServerURL,
 				Usage: "set server URL",
 			},
 			&cli.StringFlag{
-				Name:  FlagUserJWT,
-				Usage: "set user JWT token",
+				Name:  flags.ServerCertificate,
+				Usage: "set server TLS certificate",
 			},
 			&cli.StringFlag{
-				Name:  FlagUserKey,
-				Usage: "set user secret key",
-			},
-			&cli.StringFlag{
-				Name:  FlagAccountJWT,
-				Usage: "set account JWT",
-			},
-			&cli.StringFlag{
-				Name:  FlagAccountKey,
-				Usage: "set account signing key",
-			},
-			&cli.StringFlag{
-				Name:  FlagTLSCACertificate,
-				Usage: "set TLS CA certificate",
-			},
-			&cli.StringFlag{
-				Name:  FlagDataDir,
-				Usage: "set path to a data directory",
+				Name:  flags.Account,
+				Usage: "set server account",
 			},
 		},
 		Action:       action,
@@ -119,21 +90,38 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	srv, err := server.New(conf.Client.Server, *conf.Client.UserJWT, *conf.Client.UserKey, *conf.Client.TLSCACertificate)
+	serverURL, _ := conf.String(flags.ServerURL)
+	serverCert, _ := conf.String(flags.ServerCertificate)
+	accountName, _ := conf.String(flags.Account)
+	outputName, _ := conf.String(flags.Output)
+	targetOS, _ := conf.String(flags.Os)
+	targetArch, _ := conf.String(flags.Arch)
+	isDevBuild, _ := conf.Bool(flags.Dev)
+	agentServer, _ := conf.StringSlice(flags.WithServer)
+	disabledModules, _ := conf.StringSlice(flags.WithoutModule)
+	sourceDir, _ := conf.String(flags.SourceDirectory)
+
+	_, accountSeed, err := auth.ReadUser(accountName)
+	if err != nil {
+		log.Error(ctx, "Cannot read account %q: %v", accountName, err)
+		return err
+	}
+
+	userJWT, userSeed, err := auth.ReadUser(accountName)
+	if err != nil {
+		log.Error(ctx, "Cannot read user %q: %v", accountName, err)
+		return err
+	}
+
+	srv, err := server.New([]string{serverURL}, userJWT, string(userSeed), serverCert)
 	if err != nil {
 		log.Error(ctx, "Cannot connect to the server: %v", err)
 		return err
 	}
 
-	codebaseCli := codebase.New(*conf.DataDir)
+	codebaseCli := codebase.New(sourceDir)
 
 	agentID := petname.Generate(2, "-")
-	outputName := c.String(FlagOutput)
-	targetOS := c.String(FlagOs)
-	targetArch := c.String(FlagArch)
-	isDevBuild := c.Bool(FlagDev)
-	agentServer := c.StringSlice(FlagWithServer)
-	disabledModules := c.StringSlice(FlagWithoutModule)
 
 	if outputName == "" {
 		wd, err := os.Getwd()
@@ -163,7 +151,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	servers := agentServer
 	if len(servers) == 0 {
-		log.Error(ctx, "No server configured. Use --%s flag to specify one", FlagWithServer)
+		log.Error(ctx, "No server configured. Use --%s flag to specify one", flags.WithServer)
 		return err
 	}
 
@@ -221,7 +209,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	userJWT, userSeed, err := createUser(*conf.Client.AccountKey, agentID)
+	agentJWT, agentSeed, err := createUser(agentID, string(accountSeed))
 	if err != nil {
 		log.Error(ctx, "Cannot create a user: %v", err)
 		return err
@@ -240,9 +228,9 @@ func action(ctx context.Context, c *cli.Command) error {
 		codebase.BuildAgentConfig{
 			ID:                           agentID,
 			Server:                       strings.Join(servers, ","),
-			UserJWT:                      userJWT,
-			UserKey:                      userSeed,
-			CACertificate:                *conf.Client.TLSCACertificate,
+			UserJWT:                      agentJWT,
+			UserKey:                      agentSeed,
+			CACertificate:                serverCert,
 			Stream:                       streamName,
 			Consumer:                     consumerName,
 			InboxPrefix:                  vessel.InboxName(agentID),
@@ -270,8 +258,8 @@ func action(ctx context.Context, c *cli.Command) error {
 }
 
 func createUser(
-	accountSeed,
-	agentID string,
+	agentID,
+	accountSeed string,
 ) (string, string, error) {
 	perms := vessel.NewAgentPermissions(agentID)
 	userJWT, userSeed, err := auth.NewUser(agentID, []byte(accountSeed), perms)
@@ -319,50 +307,6 @@ func buildExecutable(
 	return nil
 }
 
-func validateConfiguration(conf *config.Config) error {
-	if conf.LogLevel == nil {
-		return errors.New("log level not configured")
-	}
-
-	if conf.NoColor == nil {
-		return errors.New("no color not configured")
-	}
-
-	if conf.DataDir == nil {
-		return errors.New("data directory not configured")
-	}
-
-	if conf.Client == nil {
-		return errors.New("client configuration is missing")
-	}
-
-	if len(conf.Client.Server) == 0 {
-		return errors.New("server not configured")
-	}
-
-	if conf.Client.UserJWT == nil {
-		return errors.New("user jwt not configured")
-	}
-
-	if conf.Client.UserKey == nil {
-		return errors.New("user key not configured")
-	}
-
-	if conf.Client.AccountJWT == nil {
-		return errors.New("account jwt not configured")
-	}
-
-	if conf.Client.AccountKey == nil {
-		return errors.New("account key not configured")
-	}
-
-	if conf.Client.TLSCACertificate == nil {
-		return errors.New("tls ca certificate not configured")
-	}
-
-	return nil
-}
-
 func moduleExists(mods []string, name string) bool {
 	for _, m := range mods {
 		if m == name {
@@ -388,4 +332,25 @@ func configureBuildTags(mods, disabledMods []string) ([]string, error) {
 		}
 	}
 	return buildTags, nil
+}
+
+func validateConfiguration(conf *config.Config) error {
+	for _, opt := range []string{
+		flags.ServerURL,
+		flags.Account,
+	} {
+		switch opt {
+		case flags.ServerURL:
+			v, ok := conf.String(opt)
+			if !ok || v == "" {
+				return errors.New("server URL not configured")
+			}
+		case flags.Account:
+			v, ok := conf.String(opt)
+			if !ok || v == "" {
+				return errors.New("account not configured")
+			}
+		}
+	}
+	return nil
 }
