@@ -20,13 +20,8 @@ func New() *cli.Command {
 		Version: foojank.Version(),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:    flags.Config,
-				Usage:   "set path to a configuration file",
-				Aliases: []string{"c"},
-			},
-			&cli.StringFlag{
-				Name:  flags.LogLevel,
-				Usage: "set log level",
+				Name:  flags.ConfigDir,
+				Usage: "set path to a configuration directory",
 			},
 			&cli.BoolFlag{
 				Name:  flags.NoColor,
