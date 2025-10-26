@@ -80,7 +80,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	if c.Args().Len() < 2 {
 		log.Error(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
-		return err
+		return errors.New("not enough arguments")
 	}
 
 	client := vessel.New(srv)
