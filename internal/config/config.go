@@ -1,55 +1,75 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
-
-	"github.com/pelletier/go-toml/v2"
+	"strings"
 )
 
 var ErrParserError = errors.New("parser error")
 
-var (
-	DefaultClientConfigPath = userConfigDir() + string(os.PathSeparator) + "client.conf"
-)
+type config map[string]any
 
 type Config struct {
 	*Common `toml:",inline"`
 	Client  *Client `toml:"client"`
-	Server  *Server `toml:"server"`
+	data    config
 }
 
-func (c *Config) String() string {
-	b, _ := toml.Marshal(c)
-	return string(b)
+func (c *Config) String(name string) (string, bool) {
+	v, ok := c.get(name)
+	if !ok {
+		return "", false
+	}
+	s, ok := v.(string)
+	if !ok {
+		return "", false
+	}
+	return s, true
 }
 
-func (c *Config) Bytes() []byte {
-	b, _ := toml.Marshal(c)
-	return b
+func (c *Config) Bool(name string) (bool, bool) {
+	v, ok := c.get(name)
+	if !ok {
+		return false, false
+	}
+	s, ok := v.(bool)
+	if !ok {
+		return false, false
+	}
+	return s, true
 }
 
-func NewDefault() (*Config, error) {
-	confCommon, err := NewDefaultCommon()
-	if err != nil {
-		return nil, err
+func (c *Config) StringSlice(name string) ([]string, bool) {
+	v, ok := c.get(name)
+	if !ok {
+		return nil, false
 	}
-
-	confClient, err := NewDefaultClient()
-	if err != nil {
-		return nil, err
+	s, ok := v.([]string)
+	if !ok {
+		return nil, false
 	}
+	return s, true
+}
 
-	confServer, err := NewDefaultServer()
-	if err != nil {
-		return nil, err
+func (c *Config) get(name string) (any, bool) {
+	v, ok := c.data[FlagToOption(name)]
+	return v, ok
+}
+
+func (c *Config) MarshalJSON() ([]byte, error) {
+	return json.Marshal(c.data)
+}
+
+func NewWithOptions(opts map[string]any) *Config {
+	data := make(config, len(opts))
+	for k, v := range opts {
+		data[FlagToOption(k)] = v
 	}
-
 	return &Config{
-		Common: confCommon,
-		Client: confClient,
-		Server: confServer,
-	}, nil
+		data: data,
+	}
 }
 
 func ParseFile(file string) (*Config, error) {
@@ -58,56 +78,59 @@ func ParseFile(file string) (*Config, error) {
 		return nil, err
 	}
 
-	var conf Config
-	err = toml.Unmarshal(b, &conf)
+	var data config
+	err = json.Unmarshal(b, &data)
 	if err != nil {
 		return nil, errors.Join(ErrParserError, err)
 	}
 
-	return &conf, nil
+	return &Config{
+		data: data,
+	}, nil
 }
 
-func ParseFlags(fn func(string) (any, bool)) (*Config, error) {
-	confCommon, err := ParseCommonFlags(fn)
+func ParseFlags(flags []string, fn func(string) (any, bool)) (*Config, error) {
+	mdata := make(config, len(flags))
+	for _, flag := range flags {
+		v, ok := fn(flag)
+		if !ok {
+			continue
+		}
+		mdata[FlagToOption(flag)] = v
+	}
+
+	b, err := json.Marshal(mdata)
 	if err != nil {
 		return nil, err
 	}
 
-	confClient, err := ParseClientFlags(fn)
-	if err != nil {
-		return nil, err
-	}
-
-	confServer, err := ParseServerFlags(fn)
+	var data config
+	err = json.Unmarshal(b, &data)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Config{
-		Common: confCommon,
-		Client: confClient,
-		Server: confServer,
+		data: data,
 	}, nil
 }
 
 func Merge(confs ...*Config) *Config {
-	var result Config
+	result := &Config{
+		data: make(config),
+	}
 	for _, conf := range confs {
 		if conf == nil {
 			continue
 		}
 
-		result.Common = MergeCommon(result.Common, conf.Common)
-		result.Client = MergeClient(result.Client, conf.Client)
-		result.Server = MergeServer(result.Server, conf.Server)
+		for k, v := range conf.data {
+			result.data[k] = v
+		}
 	}
-	return &result
+	return result
 }
 
-func userConfigDir() string {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return "."
-	}
-	return dir + string(os.PathSeparator) + "foojank"
+func FlagToOption(flag string) string {
+	return strings.ReplaceAll(flag, "-", "_")
 }
