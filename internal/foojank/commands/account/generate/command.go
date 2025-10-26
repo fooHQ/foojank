@@ -2,7 +2,6 @@ package generate
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 
@@ -13,20 +12,17 @@ import (
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
+	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
-)
-
-const (
-	FlagName = "name"
 )
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "generate",
-		Usage: "Generate account key and JWT",
+		Usage: "Generate account JWT and seed",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  FlagName,
+				Name:  flags.Name,
 				Usage: "set account name",
 			},
 		},
@@ -48,7 +44,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	name := c.Args().First()
+	name, _ := conf.String(flags.Name)
 	if name == "" {
 		name = petname.Generate(2, "_")
 	}
@@ -85,13 +81,5 @@ func action(ctx context.Context, c *cli.Command) error {
 }
 
 func validateConfiguration(conf *config.Config) error {
-	if conf.LogLevel == nil {
-		return errors.New("log level not configured")
-	}
-
-	if conf.NoColor == nil {
-		return errors.New("no color not configured")
-	}
-
 	return nil
 }

@@ -2,7 +2,6 @@ package list
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -14,14 +13,11 @@ import (
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
+	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/foojank/formatter"
 	jsonformatter "github.com/foohq/foojank/internal/foojank/formatter/json"
 	tableformatter "github.com/foohq/foojank/internal/foojank/formatter/table"
 	"github.com/foohq/foojank/internal/log"
-)
-
-const (
-	FlagFormat = "format"
 )
 
 func NewCommand() *cli.Command {
@@ -30,9 +26,8 @@ func NewCommand() *cli.Command {
 		Usage: "List accounts",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  FlagFormat,
+				Name:  flags.Format,
 				Usage: "set output format",
-				Value: "table",
 			},
 		},
 		Action:       action,
@@ -54,7 +49,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	format := c.String(FlagFormat)
+	format, _ := conf.String(flags.Format)
 
 	accounts, err := auth.ListAccounts()
 	if err != nil {
@@ -122,13 +117,5 @@ func formatTime(t time.Time) string {
 }
 
 func validateConfiguration(conf *config.Config) error {
-	if conf.LogLevel == nil {
-		return errors.New("log level not configured")
-	}
-
-	if conf.NoColor == nil {
-		return errors.New("no color not configured")
-	}
-
 	return nil
 }
