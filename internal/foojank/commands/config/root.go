@@ -9,7 +9,7 @@ import (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:            "config",
-		Usage:           "Manage configuration files",
+		Usage:           "Manage configuration",
 		Commands:        []*cli.Command{},
 		CommandNotFound: actions.CommandNotFound,
 		OnUsageError:    actions.UsageError,
