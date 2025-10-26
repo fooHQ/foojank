@@ -39,7 +39,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	if c.Args().Len() < 1 {
 		log.Error(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
-		return err
+		return errors.New("not enough arguments")
 	}
 
 	name := c.Args().First()
