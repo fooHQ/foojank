@@ -16,7 +16,7 @@ import (
 func New() *cli.Command {
 	return &cli.Command{
 		Name:    "foojank",
-		Usage:   "A cross-platform command and control (C2) framework",
+		Usage:   "Command and control framework",
 		Version: foojank.Version(),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
