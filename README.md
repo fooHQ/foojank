@@ -16,11 +16,12 @@ Foojank is currently compatible only with our prototype agent, [Vessel](https://
 
 ## Installation
 
-These steps are only suitable for a quick evaluation of the framework's capabilities or for developers. For an actual installation guide, please refer to Foojank [manual](https://foojank.com).
+> [!NOTE]
+> These steps are only suitable for a quick evaluation of the framework's capabilities or for developers. For an actual installation guide, please refer to Foojank [manual](https://foojank.com).
 
 ### Requirements
 
-* [Devbox]([https://www.jetify.com/devbox](https://www.jetify.com/devbox))
+* [Devbox](https://www.jetify.com/devbox)
 
 ### Compatibility
 
