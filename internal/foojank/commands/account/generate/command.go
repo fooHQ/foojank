@@ -2,6 +2,7 @@ package generate
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -60,6 +61,23 @@ func action(ctx context.Context, c *cli.Command) error {
 	userJWT, userKey, err := auth.NewUser(name, accountKey, jwt.Permissions{})
 	if err != nil {
 		log.Error(ctx, "Cannot generate a user: %v", err)
+		return err
+	}
+
+	pth, err := auth.AccountPath(name)
+	if err != nil {
+		log.Error(ctx, "Cannot get account path: %v", err)
+		return err
+	}
+
+	_, err = os.Stat(pth)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		log.Error(ctx, "Cannot create account %q: %v", name, err)
+		return err
+	}
+	if err == nil {
+		err = errors.New("account already exists")
+		log.Error(ctx, "Cannot create account %q: %v", name, err)
 		return err
 	}
 
