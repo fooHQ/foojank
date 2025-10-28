@@ -42,12 +42,10 @@ func WriteUser(name string, userJWT string, userSeed []byte) error {
 
 	data := bytes.Join([][]byte{jwtDecorated, seedDecorated}, []byte(""))
 
-	configDir, err := os.UserConfigDir()
+	pth, err := UserPath(name)
 	if err != nil {
 		return err
 	}
-
-	pth := filepath.Join(configDir, fmt.Sprintf(userPathT, filepath.Clean(name)))
 
 	err = os.MkdirAll(filepath.Dir(pth), 0700)
 	if err != nil {
@@ -63,12 +61,10 @@ func WriteUser(name string, userJWT string, userSeed []byte) error {
 }
 
 func ReadUser(name string) (string, []byte, error) {
-	configDir, err := os.UserConfigDir()
+	pth, err := UserPath(name)
 	if err != nil {
 		return "", nil, err
 	}
-
-	pth := filepath.Join(configDir, fmt.Sprintf(userPathT, filepath.Clean(name)))
 
 	data, err := os.ReadFile(pth)
 	if err != nil {
@@ -143,6 +139,14 @@ func NewUser(name string, accountSeed []byte, perms jwt.Permissions) (string, []
 	}
 
 	return userJWT, userSeed, nil
+}
+
+func UserPath(name string) (string, error) {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(configDir, fmt.Sprintf(userPathT, filepath.Clean(name))), nil
 }
 
 func isUserSeed(key []byte) bool {
