@@ -43,12 +43,10 @@ func WriteAccount(name string, accountJWT string, accountSeed []byte) error {
 
 	data := bytes.Join([][]byte{jwtDecorated, seedDecorated}, []byte(""))
 
-	configDir, err := os.UserConfigDir()
+	pth, err := AccountPath(name)
 	if err != nil {
 		return err
 	}
-
-	pth := filepath.Join(configDir, fmt.Sprintf(accountPathT, filepath.Clean(name)))
 
 	err = os.MkdirAll(filepath.Dir(pth), 0700)
 	if err != nil {
@@ -64,12 +62,10 @@ func WriteAccount(name string, accountJWT string, accountSeed []byte) error {
 }
 
 func ReadAccount(name string) (string, []byte, error) {
-	configDir, err := os.UserConfigDir()
+	pth, err := AccountPath(name)
 	if err != nil {
 		return "", nil, err
 	}
-
-	pth := filepath.Join(configDir, fmt.Sprintf(accountPathT, filepath.Clean(name)))
 
 	data, err := os.ReadFile(pth)
 	if err != nil {
@@ -108,12 +104,10 @@ func ReadAccount(name string) (string, []byte, error) {
 }
 
 func ListAccounts() ([]string, error) {
-	configDir, err := os.UserConfigDir()
+	pth, err := AccountRootPath()
 	if err != nil {
 		return nil, err
 	}
-
-	pth := filepath.Join(configDir, accountRootPath)
 
 	files, err := os.ReadDir(pth)
 	if err != nil {
@@ -160,6 +154,24 @@ func NewAccount(name string) (string, []byte, error) {
 	}
 
 	return accountJWT, accountSeed, nil
+}
+
+func AccountPath(name string) (string, error) {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+
+	pth := filepath.Join(configDir, fmt.Sprintf(accountPathT, filepath.Clean(name)))
+	return pth, nil
+}
+
+func AccountRootPath() (string, error) {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(configDir, accountRootPath), nil
 }
 
 func isAccountSeed(key []byte) bool {
