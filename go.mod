@@ -16,7 +16,6 @@ require (
 	github.com/nats-io/nkeys v0.4.11
 	github.com/nats-io/nuid v1.0.1
 	github.com/olekukonko/tablewriter v1.0.7
-	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/risor-io/risor v1.8.1
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v3 v3.3.8
