@@ -1,0 +1,26 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.13.6/.schema/devbox.schema.json",
+  "packages": [
+    "nsc@latest",
+    "nats-server@latest"
+  ],
+  "shell": {
+    "init_hook": [
+      "echo 'Welcome to devbox!' > /dev/null"
+    ],
+    "scripts": {
+      "setup": [
+        "bash devbox.sh setup"
+      ],
+      "start": [
+        "bash devbox.sh start"
+      ],
+      "import": [
+        "bash devbox.sh import $@"
+      ],
+      "clean": [
+        "bash devbox.sh clean"
+      ]
+    }
+  }
+}

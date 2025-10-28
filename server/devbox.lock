@@ -1,0 +1,101 @@
+{
+  "lockfile_version": "1",
+  "packages": {
+    "nats-server@latest": {
+      "last_modified": "2025-10-07T08:41:47Z",
+      "resolved": "github:NixOS/nixpkgs/bce5fe2bb998488d8e7e7856315f90496723793c#nats-server",
+      "source": "devbox-search",
+      "version": "2.12.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/32gdkwj01b79zhhbwak58cf6r3dz7g26-nats-server-2.12.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/32gdkwj01b79zhhbwak58cf6r3dz7g26-nats-server-2.12.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/qrxja4ghkj53dsl0qa147w7r14rdf325-nats-server-2.12.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/qrxja4ghkj53dsl0qa147w7r14rdf325-nats-server-2.12.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/kmkwcgxwsvb7rfvi23llsgxlsn0dh4kw-nats-server-2.12.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/kmkwcgxwsvb7rfvi23llsgxlsn0dh4kw-nats-server-2.12.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/65qzwhcjjln4sacv77rdla6kr4xr36nv-nats-server-2.12.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/65qzwhcjjln4sacv77rdla6kr4xr36nv-nats-server-2.12.0"
+        }
+      }
+    },
+    "nsc@latest": {
+      "last_modified": "2025-10-07T08:41:47Z",
+      "resolved": "github:NixOS/nixpkgs/bce5fe2bb998488d8e7e7856315f90496723793c#nsc",
+      "source": "devbox-search",
+      "version": "2.12.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/bfnb15qw2p21p6salp5akz0lv7lbxm78-nsc-2.12.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/bfnb15qw2p21p6salp5akz0lv7lbxm78-nsc-2.12.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/3dw49zl9qyvy2pz2vb6f1dj79qcanb27-nsc-2.12.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/3dw49zl9qyvy2pz2vb6f1dj79qcanb27-nsc-2.12.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/gcc6ccb7p5xb6p8nhh0b9xn9fcyciaq8-nsc-2.12.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/gcc6ccb7p5xb6p8nhh0b9xn9fcyciaq8-nsc-2.12.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/wxwsfjxfaz7567yh6fc5139wx741c38i-nsc-2.12.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/wxwsfjxfaz7567yh6fc5139wx741c38i-nsc-2.12.0"
+        }
+      }
+    }
+  }
+}
