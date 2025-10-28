@@ -12,9 +12,7 @@ var ErrParserError = errors.New("parser error")
 type config map[string]any
 
 type Config struct {
-	*Common `toml:",inline"`
-	Client  *Client `toml:"client"`
-	data    config
+	data config
 }
 
 func (c *Config) String(name string) (string, bool) {
