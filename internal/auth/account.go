@@ -112,7 +112,7 @@ func ListAccounts() ([]string, error) {
 	files, err := os.ReadDir(pth)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil, ErrAccountNotFound
+			return nil, nil
 		}
 		return nil, err
 	}
