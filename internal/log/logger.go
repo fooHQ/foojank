@@ -6,25 +6,40 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/lmittmann/tint"
 )
 
-var DefaultLogger = New("info", false)
+const (
+	LevelDebug = "debug"
+	LevelInfo  = "info"
+	LevelWarn  = "warn"
+	LevelError = "error"
+)
+
+var setOptsOnce sync.Once
+var defaultLogger = New("info", false)
+
+func SetOptions(level string, noColor bool) {
+	setOptsOnce.Do(func() {
+		defaultLogger = New(level, noColor)
+	})
+}
 
 func Debug(ctx context.Context, format string, args ...any) {
 	s := fmt.Sprintf(format, args...)
-	DefaultLogger.DebugContext(ctx, s)
+	defaultLogger.DebugContext(ctx, s)
 }
 
 func Info(ctx context.Context, format string, args ...any) {
 	s := fmt.Sprintf(format, args...)
-	DefaultLogger.InfoContext(ctx, s)
+	defaultLogger.InfoContext(ctx, s)
 }
 
 func Error(ctx context.Context, format string, args ...any) {
 	s := fmt.Sprintf(format, args...)
-	DefaultLogger.ErrorContext(ctx, s)
+	defaultLogger.ErrorContext(ctx, s)
 }
 
 func New(level string, noColor bool) *slog.Logger {
