@@ -27,6 +27,10 @@ func NewCommand() *cli.Command {
 				Name:  flags.Format,
 				Usage: "set output format",
 			},
+			&cli.StringFlag{
+				Name:  flags.ConfigDir,
+				Usage: "set path to a configuration directory",
+			},
 		},
 		Before:       before,
 		Action:       action,
