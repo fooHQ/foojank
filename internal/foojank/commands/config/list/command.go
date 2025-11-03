@@ -28,24 +28,23 @@ func NewCommand() *cli.Command {
 				Usage: "set output format",
 			},
 		},
+		Before:       before,
 		Action:       action,
 		Aliases:      []string{"ls"},
 		OnUsageError: actions.UsageError,
 	}
 }
 
-func action(ctx context.Context, c *cli.Command) error {
-	conf, err := actions.NewConfig(ctx, c)
+func before(ctx context.Context, c *cli.Command) (context.Context, error) {
+	ctx, err := actions.LoadConfig(validateConfiguration)(ctx, c)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
-		return err
+		return ctx, err
 	}
+	return ctx, nil
+}
 
-	err = validateConfiguration(conf)
-	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
-		return err
-	}
+func action(ctx context.Context, c *cli.Command) error {
+	conf := actions.GetConfigFromContext(ctx)
 
 	format, _ := conf.String(flags.Format)
 
@@ -102,7 +101,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		})
 	}
 
-	err = formatOutput(os.Stdout, format, table)
+	err := formatOutput(os.Stdout, format, table)
 	if err != nil {
 		log.Error(ctx, "Cannot write formatted output: %v", err)
 		return err

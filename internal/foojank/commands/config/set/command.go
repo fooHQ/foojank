@@ -2,8 +2,6 @@ package set
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/urfave/cli/v3"
 
@@ -39,23 +37,22 @@ func NewCommand() *cli.Command {
 				Usage: "disable color output",
 			},
 		},
+		Before:       before,
 		Action:       action,
 		OnUsageError: actions.UsageError,
 	}
 }
 
-func action(ctx context.Context, c *cli.Command) error {
-	conf, err := actions.NewConfig(ctx, c)
+func before(ctx context.Context, c *cli.Command) (context.Context, error) {
+	ctx, err := actions.LoadConfig(validateConfiguration)(ctx, c)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
-		return err
+		return ctx, err
 	}
+	return ctx, nil
+}
 
-	err = validateConfiguration(conf)
-	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
-		return err
-	}
+func action(ctx context.Context, c *cli.Command) error {
+	conf := actions.GetConfigFromContext(ctx)
 
 	configDir, _ := conf.String(flags.ConfigDir)
 

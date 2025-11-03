@@ -3,7 +3,6 @@ package generate
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 
 	petname "github.com/dustinkirkland/golang-petname"
@@ -11,7 +10,6 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/auth"
-	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
@@ -27,23 +25,22 @@ func NewCommand() *cli.Command {
 				Usage: "set account name",
 			},
 		},
+		Before:       before,
 		Action:       action,
 		OnUsageError: actions.UsageError,
 	}
 }
 
-func action(ctx context.Context, c *cli.Command) error {
-	conf, err := actions.NewConfig(ctx, c)
+func before(ctx context.Context, c *cli.Command) (context.Context, error) {
+	ctx, err := actions.LoadFlags()(ctx, c)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
-		return err
+		return ctx, err
 	}
+	return ctx, nil
+}
 
-	err = validateConfiguration(conf)
-	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
-		return err
-	}
+func action(ctx context.Context, c *cli.Command) error {
+	conf := actions.GetConfigFromContext(ctx)
 
 	name, _ := conf.String(flags.Name)
 	if name == "" {
@@ -95,9 +92,5 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	log.Info(ctx, "Account %q has been created!", name)
 
-	return nil
-}
-
-func validateConfiguration(conf *config.Config) error {
 	return nil
 }
