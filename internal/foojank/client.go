@@ -19,10 +19,6 @@ func New() *cli.Command {
 		Usage:   "Command and control framework",
 		Version: foojank.Version(),
 		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  flags.ConfigDir,
-				Usage: "set path to a configuration directory",
-			},
 			&cli.BoolFlag{
 				Name:  flags.NoColor,
 				Usage: "disable color output",

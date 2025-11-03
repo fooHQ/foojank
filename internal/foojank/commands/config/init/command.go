@@ -14,8 +14,14 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:         "init",
-		Usage:        "Initialize configuration directory",
+		Name:  "init",
+		Usage: "Initialize configuration directory",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  flags.ConfigDir,
+				Usage: "set path to a configuration directory",
+			},
+		},
 		Before:       before,
 		Action:       action,
 		OnUsageError: actions.UsageError,

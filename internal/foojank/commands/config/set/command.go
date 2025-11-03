@@ -34,7 +34,11 @@ func NewCommand() *cli.Command {
 			},
 			&cli.BoolFlag{
 				Name:  flags.NoColor,
-				Usage: "disable color output",
+				Usage: "set disable color output",
+			},
+			&cli.StringFlag{
+				Name:  flags.ConfigDir,
+				Usage: "set path to a configuration directory",
 			},
 		},
 		Before:       before,

@@ -38,6 +38,10 @@ func NewCommand() *cli.Command {
 				Name:  flags.Account,
 				Usage: "set server account",
 			},
+			&cli.StringFlag{
+				Name:  flags.ConfigDir,
+				Usage: "set path to a configuration directory",
+			},
 		},
 		Before:       before,
 		Action:       action,
