@@ -56,24 +56,9 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	configDir, _ := conf.String(flags.ConfigDir)
 
-	if len(c.LocalFlagNames()) == 0 {
-		return nil
-	}
-
-	// Parse flags once again but this time parse only the local flags
-	confFlags, err := config.ParseFlags(c.LocalFlagNames(), func(name string) (any, bool) {
-		return c.Value(name), c.IsSet(name)
-	})
+	err := actions.UpdateConfigJson(configDir, conf)
 	if err != nil {
-		log.Error(ctx, "Cannot parse command options: %v", err)
-		return err
-	}
-
-	conf = config.Merge(conf, confFlags)
-
-	err = actions.UpdateConfigJson(configDir, conf)
-	if err != nil {
-		log.Error(ctx, "Cannot update config json: %v", err)
+		log.Error(ctx, "Cannot update configuration: %v", err)
 		return err
 	}
 
