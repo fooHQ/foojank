@@ -14,7 +14,7 @@ import (
 	"github.com/foohq/foojank/internal/foojank/flags"
 )
 
-func NewConfig(_ context.Context, c *cli.Command) (*config.Config, error) {
+func newConfig(_ context.Context, c *cli.Command) (*config.Config, error) {
 	confFlags, err := config.ParseFlags(c.FlagNames(), func(name string) (any, bool) {
 		return c.Value(name), c.IsSet(name)
 	})
@@ -171,7 +171,7 @@ func ParseConfigJson(dir string) (*config.Config, error) {
 
 func LoadConfig(validateFn func(conf *config.Config) error) func(ctx context.Context, c *cli.Command) (context.Context, error) {
 	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
-		conf, err := NewConfig(ctx, c)
+		conf, err := newConfig(ctx, c)
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
 			return ctx, err
