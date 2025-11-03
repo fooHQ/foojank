@@ -7,7 +7,6 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
@@ -17,21 +16,24 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:         "init",
 		Usage:        "Initialize configuration directory",
+		Before:       before,
 		Action:       action,
 		OnUsageError: actions.UsageError,
 	}
 }
 
-func action(ctx context.Context, c *cli.Command) error {
-	confFlags, err := config.ParseFlags(c.FlagNames(), func(name string) (any, bool) {
-		return c.Value(name), c.IsSet(name)
-	})
+func before(ctx context.Context, c *cli.Command) (context.Context, error) {
+	ctx, err := actions.LoadFlags()(ctx, c)
 	if err != nil {
-		log.Error(ctx, "Cannot parse command options: %v", err)
-		return err
+		return ctx, err
 	}
+	return ctx, nil
+}
 
-	configDir, isSet := confFlags.String(flags.ConfigDir)
+func action(ctx context.Context, c *cli.Command) error {
+	conf := actions.GetConfigFromContext(ctx)
+
+	configDir, isSet := conf.String(flags.ConfigDir)
 	if !isSet {
 		dir, err := actions.FindConfigDir(".")
 		if err == nil {
@@ -41,7 +43,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		}
 	}
 
-	configDir, err = filepath.Abs(configDir)
+	configDir, err := filepath.Abs(configDir)
 	if err != nil {
 		log.Error(ctx, "Cannot resolve configuration directory: %v", err)
 		return err

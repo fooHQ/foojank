@@ -11,7 +11,6 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/auth"
-	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/foojank/formatter"
@@ -30,24 +29,23 @@ func NewCommand() *cli.Command {
 				Usage: "set output format",
 			},
 		},
+		Before:       before,
 		Action:       action,
 		Aliases:      []string{"ls"},
 		OnUsageError: actions.UsageError,
 	}
 }
 
-func action(ctx context.Context, c *cli.Command) error {
-	conf, err := actions.NewConfig(ctx, c)
+func before(ctx context.Context, c *cli.Command) (context.Context, error) {
+	ctx, err := actions.LoadFlags()(ctx, c)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
-		return err
+		return ctx, err
 	}
+	return ctx, nil
+}
 
-	err = validateConfiguration(conf)
-	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
-		return err
-	}
+func action(ctx context.Context, c *cli.Command) error {
+	conf := actions.GetConfigFromContext(ctx)
 
 	format, _ := conf.String(flags.Format)
 
@@ -114,8 +112,4 @@ func formatOutput(w io.Writer, format string, table *formatter.Table) error {
 
 func formatTime(t time.Time) string {
 	return t.Format("2006-01-02 15:04:05")
-}
-
-func validateConfiguration(conf *config.Config) error {
-	return nil
 }
