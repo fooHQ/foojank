@@ -56,6 +56,11 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	configDir, _ := conf.String(flags.ConfigDir)
 
+	// Set ConfigDir to an empty value.
+	conf = config.Merge(conf, config.NewWithOptions(map[string]any{
+		flags.ConfigDir: "",
+	}))
+
 	err := actions.UpdateConfigJson(configDir, conf)
 	if err != nil {
 		log.Error(ctx, "Cannot update configuration: %v", err)
