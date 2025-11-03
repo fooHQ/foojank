@@ -169,6 +169,38 @@ func ParseConfigJson(dir string) (*config.Config, error) {
 	return config.ParseFile(pth)
 }
 
+func LoadConfig(validateFn func(conf *config.Config) error) func(ctx context.Context, c *cli.Command) (context.Context, error) {
+	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
+		conf, err := NewConfig(ctx, c)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
+			return ctx, err
+		}
+
+		err = validateFn(conf)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
+			return ctx, err
+		}
+
+		return setConfigToContext(ctx, conf), nil
+	}
+}
+
+func LoadFlags() func(ctx context.Context, c *cli.Command) (context.Context, error) {
+	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
+		conf, err := config.ParseFlags(c.FlagNames(), func(name string) (any, bool) {
+			return c.Value(name), c.IsSet(name)
+		})
+		if err != nil {
+			err = fmt.Errorf("cannot parse command options: %w", err)
+			return ctx, err
+		}
+
+		return setConfigToContext(ctx, conf), nil
+	}
+}
+
 func UsageError(ctx context.Context, c *cli.Command, err error, _ bool) error {
 	_, _ = fmt.Fprintf(os.Stderr, "%s: %v\n", c.FullName(), err.Error())
 	return nil
@@ -178,4 +210,18 @@ func CommandNotFound(_ context.Context, c *cli.Command, s string) {
 	err := fmt.Errorf("%q is not a valid command", s)
 	_, _ = fmt.Fprintf(os.Stderr, "%s: %v\n", c.FullName(), err.Error())
 	os.Exit(1)
+}
+
+type contextKey string
+
+var configKey contextKey = "foojank:config"
+
+func GetConfigFromContext(ctx context.Context) *config.Config {
+	// The function will panic if a context key is not found, that's intended to catch bugs early.
+	conf := ctx.Value(configKey).(*config.Config)
+	return conf
+}
+
+func setConfigToContext(ctx context.Context, conf *config.Config) context.Context {
+	return context.WithValue(ctx, configKey, conf)
 }
