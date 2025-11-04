@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -170,17 +171,17 @@ func ParseConfigJson(dir string) (*config.Config, error) {
 	return config.ParseFile(pth)
 }
 
-func LoadConfig(validateFn func(conf *config.Config) error) cli.BeforeFunc {
+func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.BeforeFunc {
 	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
 		conf, err := newConfig(ctx, c)
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
+			_, _ = fmt.Fprintf(w, "%s: invalid configuration: %v\n", c.FullName(), err)
 			return ctx, err
 		}
 
 		err = validateFn(conf)
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "%s: invalid configuration: %v\n", c.FullName(), err)
+			_, _ = fmt.Fprintf(w, "%s: invalid configuration: %v\n", c.FullName(), err)
 			return ctx, err
 		}
 
