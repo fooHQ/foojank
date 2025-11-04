@@ -12,6 +12,7 @@ import (
 
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/flags"
+	"github.com/foohq/foojank/internal/log"
 )
 
 func newConfig(_ context.Context, c *cli.Command) (*config.Config, error) {
@@ -236,4 +237,18 @@ func setConfigToContext(ctx context.Context, conf *config.Config) context.Contex
 
 func setLoggerToContext(ctx context.Context, logger *log.Logger) context.Context {
 	return context.WithValue(ctx, loggerKey, logger)
+}
+
+func SetupLogger() cli.BeforeFunc {
+	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
+		conf := GetConfigFromContext(ctx)
+
+		noColor, ok := conf.Bool(flags.NoColor)
+		if !ok {
+			noColor = false
+		}
+
+		logger := log.NewLogger(log.LevelInfo, noColor)
+		return setLoggerToContext(ctx, logger), nil
+	}
 }
