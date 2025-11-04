@@ -214,7 +214,10 @@ func CommandNotFound(_ context.Context, c *cli.Command, s string) {
 
 type contextKey string
 
-var configKey contextKey = "foojank:config"
+var (
+	configKey contextKey = "foojank:config"
+	loggerKey contextKey = "foojank:logger"
+)
 
 func GetConfigFromContext(ctx context.Context) *config.Config {
 	// The function will panic if a context key is not found, that's intended to catch bugs early.
@@ -222,6 +225,15 @@ func GetConfigFromContext(ctx context.Context) *config.Config {
 	return conf
 }
 
+func GetLoggerFromContext(ctx context.Context) *log.Logger {
+	logger := ctx.Value(loggerKey).(*log.Logger)
+	return logger
+}
+
 func setConfigToContext(ctx context.Context, conf *config.Config) context.Context {
 	return context.WithValue(ctx, configKey, conf)
+}
+
+func setLoggerToContext(ctx context.Context, logger *log.Logger) context.Context {
+	return context.WithValue(ctx, loggerKey, logger)
 }
