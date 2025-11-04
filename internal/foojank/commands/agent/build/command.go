@@ -22,7 +22,6 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
-	"github.com/foohq/foojank/internal/log"
 )
 
 func NewCommand() *cli.Command {
@@ -83,15 +82,22 @@ func NewCommand() *cli.Command {
 }
 
 func before(ctx context.Context, c *cli.Command) (context.Context, error) {
-	ctx, err := actions.LoadConfig(validateConfiguration)(ctx, c)
+	ctx, err := actions.LoadConfig(os.Stderr, validateConfiguration)(ctx, c)
 	if err != nil {
 		return ctx, err
 	}
+
+	ctx, err = actions.SetupLogger()(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
 	return ctx, nil
 }
 
 func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
+	logger := actions.GetLoggerFromContext(ctx)
 
 	serverURL, _ := conf.String(flags.ServerURL)
 	serverCert, _ := conf.String(flags.ServerCertificate)
@@ -106,19 +112,19 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	_, accountSeed, err := auth.ReadUser(accountName)
 	if err != nil {
-		log.Error(ctx, "Cannot read account %q: %v", accountName, err)
+		logger.ErrorContext(ctx, "Cannot read account %q: %v", accountName, err)
 		return err
 	}
 
 	userJWT, userSeed, err := auth.ReadUser(accountName)
 	if err != nil {
-		log.Error(ctx, "Cannot read user %q: %v", accountName, err)
+		logger.ErrorContext(ctx, "Cannot read user %q: %v", accountName, err)
 		return err
 	}
 
 	srv, err := server.New([]string{serverURL}, userJWT, string(userSeed), serverCert)
 	if err != nil {
-		log.Error(ctx, "Cannot connect to the server: %v", err)
+		logger.ErrorContext(ctx, "Cannot connect to the server: %v", err)
 		return err
 	}
 
@@ -129,7 +135,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	if outputName == "" {
 		wd, err := os.Getwd()
 		if err != nil {
-			log.Error(ctx, "Cannot get current working directory")
+			logger.ErrorContext(ctx, "Cannot get current working directory")
 			return err
 		}
 
@@ -154,7 +160,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	servers := agentServer
 	if len(servers) == 0 {
-		log.Error(ctx, "No server configured. Use --%s flag to specify one", flags.WithServer)
+		logger.ErrorContext(ctx, "No server configured. Use --%s flag to specify one", flags.WithServer)
 		return err
 	}
 
@@ -171,7 +177,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	streamName := vessel.StreamName(agentID)
 
-	log.Debug(ctx, "Create a stream")
+	logger.DebugContext(ctx, "Create a stream")
 
 	_, err = srv.CreateStream(ctx, streamName, []string{
 		fmt.Sprintf(vessel.SubjectApiWorkerStartT, agentID, "*"),
@@ -183,13 +189,13 @@ func action(ctx context.Context, c *cli.Command) error {
 		fmt.Sprintf(vessel.SubjectApiConnInfoT, agentID),
 	})
 	if err != nil {
-		log.Error(ctx, "Cannot create stream: %v", err)
+		logger.ErrorContext(ctx, "Cannot create stream: %v", err)
 		return err
 	}
 
 	consumerName := agentID
 
-	log.Debug(ctx, "Create a message consumer")
+	logger.DebugContext(ctx, "Create a message consumer")
 
 	_, err = srv.CreateDurableConsumer(ctx, streamName, consumerName, []string{
 		fmt.Sprintf(vessel.SubjectApiWorkerStartT, agentID, "*"),
@@ -197,29 +203,50 @@ func action(ctx context.Context, c *cli.Command) error {
 		fmt.Sprintf(vessel.SubjectApiWorkerWriteStdinT, agentID, "*"),
 	})
 	if err != nil {
-		log.Error(ctx, "Cannot create consumer: %v", err)
+		logger.ErrorContext(ctx, "Cannot create consumer: %v", err)
 		return err
 	}
 
 	storeName := agentID
 	storeDescription := fmt.Sprintf("Agent %s (%s/%s)", agentID, targetOS, targetArch)
 
-	log.Info(ctx, "Create a store")
+	logger.InfoContext(ctx, "Create a store")
 
 	err = srv.CreateObjectStore(ctx, storeName, storeDescription)
 	if err != nil {
-		log.Error(ctx, "Cannot create a store: %v", err)
+		logger.ErrorContext(ctx, "Cannot create a store: %v", err)
 		return err
 	}
 
 	agentJWT, agentSeed, err := createUser(agentID, string(accountSeed))
 	if err != nil {
-		log.Error(ctx, "Cannot create a user: %v", err)
+		logger.ErrorContext(ctx, "Cannot create a user: %v", err)
 		return err
 	}
 
-	log.Info(ctx, "Build an executable file %q [%s/%s] [%s]", outputName, targetOS, targetArch, buildMode)
+	logger.InfoContext(ctx, "Build an executable file %q [%s/%s] [%s]", outputName, targetOS, targetArch, buildMode)
 
+	agentConf := codebase.BuildAgentConfig{
+		ID:                           agentID,
+		Server:                       strings.Join(servers, ","),
+		UserJWT:                      agentJWT,
+		UserKey:                      agentSeed,
+		CACertificate:                serverCert,
+		Stream:                       streamName,
+		Consumer:                     consumerName,
+		InboxPrefix:                  vessel.InboxName(agentID),
+		ObjectStoreName:              agentID,
+		SubjectApiWorkerStartT:       vessel.SubjectApiWorkerStartT,
+		SubjectApiWorkerStopT:        vessel.SubjectApiWorkerStopT,
+		SubjectApiWorkerWriteStdinT:  vessel.SubjectApiWorkerWriteStdinT,
+		SubjectApiWorkerWriteStdoutT: vessel.SubjectApiWorkerWriteStdoutT,
+		SubjectApiWorkerStatusT:      vessel.SubjectApiWorkerStatusT,
+		SubjectApiConnInfoT:          vessel.SubjectApiConnInfoT,
+		SubjectApiReplyT:             vessel.SubjectApiReplyT,
+		ReconnectInterval:            1 * time.Minute, // TODO: make configurable
+		ReconnectJitter:              5 * time.Second, // TODO: make configurable
+		AwaitMessagesDuration:        5 * time.Second, // TODO: make configurable
+	}
 	err = buildExecutable(
 		ctx,
 		codebaseCli,
@@ -228,34 +255,15 @@ func action(ctx context.Context, c *cli.Command) error {
 		outputName,
 		isDevBuild,
 		disabledModules,
-		codebase.BuildAgentConfig{
-			ID:                           agentID,
-			Server:                       strings.Join(servers, ","),
-			UserJWT:                      agentJWT,
-			UserKey:                      agentSeed,
-			CACertificate:                serverCert,
-			Stream:                       streamName,
-			Consumer:                     consumerName,
-			InboxPrefix:                  vessel.InboxName(agentID),
-			ObjectStoreName:              agentID,
-			SubjectApiWorkerStartT:       vessel.SubjectApiWorkerStartT,
-			SubjectApiWorkerStopT:        vessel.SubjectApiWorkerStopT,
-			SubjectApiWorkerWriteStdinT:  vessel.SubjectApiWorkerWriteStdinT,
-			SubjectApiWorkerWriteStdoutT: vessel.SubjectApiWorkerWriteStdoutT,
-			SubjectApiWorkerStatusT:      vessel.SubjectApiWorkerStatusT,
-			SubjectApiConnInfoT:          vessel.SubjectApiConnInfoT,
-			SubjectApiReplyT:             vessel.SubjectApiReplyT,
-			ReconnectInterval:            1 * time.Minute, // TODO: make configurable
-			ReconnectJitter:              5 * time.Second, // TODO: make configurable
-			AwaitMessagesDuration:        5 * time.Second, // TODO: make configurable
-		},
+		agentConf,
 	)
 	if err != nil {
-		log.Error(ctx, "Cannot build executable: %v", err)
+		logger.ErrorContext(ctx, "Cannot build executable: %v", err)
 		return err
 	}
 
-	log.Info(ctx, "Agent %q has been built!", agentID)
+	logger.DebugContext(ctx, "Go flags: %s", agentConf.ToFlags())
+	logger.InfoContext(ctx, "Agent %q has been built!", agentID)
 
 	return nil
 }
@@ -303,9 +311,6 @@ func buildExecutable(
 		_ = os.Remove(binPath)
 		return fmt.Errorf("cannot rename the executable file: %w", err)
 	}
-
-	// TODO: should be debug!
-	log.Info(ctx, "Go flags: %s", conf.ToFlags())
 
 	return nil
 }

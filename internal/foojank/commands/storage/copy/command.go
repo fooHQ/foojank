@@ -16,7 +16,6 @@ import (
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/foojank/path"
-	"github.com/foohq/foojank/internal/log"
 )
 
 func NewCommand() *cli.Command {
@@ -50,15 +49,22 @@ func NewCommand() *cli.Command {
 }
 
 func before(ctx context.Context, c *cli.Command) (context.Context, error) {
-	ctx, err := actions.LoadConfig(validateConfiguration)(ctx, c)
+	ctx, err := actions.LoadConfig(os.Stderr, validateConfiguration)(ctx, c)
 	if err != nil {
 		return ctx, err
 	}
+
+	ctx, err = actions.SetupLogger()(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
 	return ctx, nil
 }
 
 func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
+	logger := actions.GetLoggerFromContext(ctx)
 
 	serverURL, _ := conf.String(flags.ServerURL)
 	serverCert, _ := conf.String(flags.ServerCertificate)
@@ -66,18 +72,18 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	userJWT, userSeed, err := auth.ReadUser(accountName)
 	if err != nil {
-		log.Error(ctx, "Cannot read user %q: %v", accountName, err)
+		logger.ErrorContext(ctx, "Cannot read user %q: %v", accountName, err)
 		return err
 	}
 
 	srv, err := server.New([]string{serverURL}, userJWT, string(userSeed), serverCert)
 	if err != nil {
-		log.Error(ctx, "Cannot connect to the server: %v", err)
+		logger.ErrorContext(ctx, "Cannot connect to the server: %v", err)
 		return err
 	}
 
 	if c.Args().Len() != 2 {
-		log.Error(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
+		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
 		return errors.New("not enough arguments")
 	}
 
@@ -85,24 +91,24 @@ func action(ctx context.Context, c *cli.Command) error {
 	src := files[0]
 	srcPath, err := path.Parse(src)
 	if err != nil {
-		log.Error(ctx, "Invalid path %q: %v.", src, err)
+		logger.ErrorContext(ctx, "Invalid path %q: %v.", src, err)
 		return err
 	}
 
 	dst := files[len(files)-1]
 	dstPath, err := path.Parse(dst)
 	if err != nil {
-		log.Error(ctx, "Invalid path %q: %v.", src, err)
+		logger.ErrorContext(ctx, "Invalid path %q: %v.", src, err)
 		return err
 	}
 
 	if srcPath.IsLocal() && dstPath.IsLocal() {
-		log.Error(ctx, "Source and destination paths are both local paths. This operation is currently not supported.")
+		logger.ErrorContext(ctx, "Source and destination paths are both local paths. This operation is currently not supported.")
 		return errors.New("matching source and destination type")
 	}
 
 	if !srcPath.IsLocal() && !dstPath.IsLocal() {
-		log.Error(ctx, "Source and destination paths are both storages. This operation is currently not supported.")
+		logger.ErrorContext(ctx, "Source and destination paths are both storages. This operation is currently not supported.")
 		return errors.New("matching source and destination type")
 	}
 
@@ -117,7 +123,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	if srcPath.IsLocal() {
 		err := copyLocalFile(ctx, srv, srcPath.FilePath, dstPath.Storage, destPath)
 		if err != nil {
-			log.Error(ctx, "Cannot copy file %q to %q: %v", srcPath.String(), dstPath.String(), err)
+			logger.ErrorContext(ctx, "Cannot copy file %q to %q: %v", srcPath.String(), dstPath.String(), err)
 			return err
 		}
 		return nil
@@ -127,7 +133,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	if !srcPath.IsLocal() {
 		err := copyRemoteFile(ctx, srv, srcPath.Storage, srcPath.FilePath, destPath)
 		if err != nil {
-			log.Error(ctx, "Cannot copy file %q to %q: %v", srcPath.String(), dstPath.String(), err)
+			logger.ErrorContext(ctx, "Cannot copy file %q to %q: %v", srcPath.String(), dstPath.String(), err)
 			return err
 		}
 	}

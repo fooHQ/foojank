@@ -3,6 +3,7 @@ package cancel
 import (
 	"context"
 	"errors"
+	"os"
 
 	"github.com/urfave/cli/v3"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
-	"github.com/foohq/foojank/internal/log"
 )
 
 func NewCommand() *cli.Command {
@@ -45,15 +45,22 @@ func NewCommand() *cli.Command {
 }
 
 func before(ctx context.Context, c *cli.Command) (context.Context, error) {
-	ctx, err := actions.LoadConfig(validateConfiguration)(ctx, c)
+	ctx, err := actions.LoadConfig(os.Stderr, validateConfiguration)(ctx, c)
 	if err != nil {
 		return ctx, err
 	}
+
+	ctx, err = actions.SetupLogger()(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
 	return ctx, nil
 }
 
 func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
+	logger := actions.GetLoggerFromContext(ctx)
 
 	serverURL, _ := conf.String(flags.ServerURL)
 	serverCert, _ := conf.String(flags.ServerCertificate)
@@ -61,18 +68,18 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	userJWT, userSeed, err := auth.ReadUser(accountName)
 	if err != nil {
-		log.Error(ctx, "Cannot read user %q: %v", accountName, err)
+		logger.ErrorContext(ctx, "Cannot read user %q: %v", accountName, err)
 		return err
 	}
 
 	srv, err := server.New([]string{serverURL}, userJWT, string(userSeed), serverCert)
 	if err != nil {
-		log.Error(ctx, "Cannot connect to the server: %v", err)
+		logger.ErrorContext(ctx, "Cannot connect to the server: %v", err)
 		return err
 	}
 
 	if c.Args().Len() < 1 {
-		log.Error(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
+		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
 		return errors.New("not enough arguments")
 	}
 
@@ -82,23 +89,23 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	jobs, err := client.ListAllJobs(ctx)
 	if err != nil {
-		log.Error(ctx, "Cannot get a list of jobs: %v", err)
+		logger.ErrorContext(ctx, "Cannot get a list of jobs: %v", err)
 		return err
 	}
 
 	job, ok := jobs[jobID]
 	if !ok {
-		log.Error(ctx, "Job %q not found", jobID)
+		logger.ErrorContext(ctx, "Job %q not found", jobID)
 		return err
 	}
 
 	err = client.StopWorker(ctx, job.AgentID, jobID)
 	if err != nil {
-		log.Error(ctx, "Cannot cancel job: %v", err)
+		logger.ErrorContext(ctx, "Cannot cancel job: %v", err)
 		return err
 	}
 
-	log.Info(ctx, "Job %q has been canceled!", jobID)
+	logger.InfoContext(ctx, "Job %q has been canceled!", jobID)
 
 	return nil
 }

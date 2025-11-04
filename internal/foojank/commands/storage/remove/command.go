@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/urfave/cli/v3"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/foojank/path"
-	"github.com/foohq/foojank/internal/log"
 )
 
 func NewCommand() *cli.Command {
@@ -47,15 +47,22 @@ func NewCommand() *cli.Command {
 }
 
 func before(ctx context.Context, c *cli.Command) (context.Context, error) {
-	ctx, err := actions.LoadConfig(validateConfiguration)(ctx, c)
+	ctx, err := actions.LoadConfig(os.Stderr, validateConfiguration)(ctx, c)
 	if err != nil {
 		return ctx, err
 	}
+
+	ctx, err = actions.SetupLogger()(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
 	return ctx, nil
 }
 
 func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
+	logger := actions.GetLoggerFromContext(ctx)
 
 	serverURL, _ := conf.String(flags.ServerURL)
 	serverCert, _ := conf.String(flags.ServerCertificate)
@@ -63,36 +70,36 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	userJWT, userSeed, err := auth.ReadUser(accountName)
 	if err != nil {
-		log.Error(ctx, "Cannot read user %q: %v", accountName, err)
+		logger.ErrorContext(ctx, "Cannot read user %q: %v", accountName, err)
 		return err
 	}
 
 	srv, err := server.New([]string{serverURL}, userJWT, string(userSeed), serverCert)
 	if err != nil {
-		log.Error(ctx, "Cannot connect to the server: %v", err)
+		logger.ErrorContext(ctx, "Cannot connect to the server: %v", err)
 		return err
 	}
 
 	if c.Args().Len() == 0 {
-		log.Error(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
+		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
 		return errors.New("not enough arguments")
 	}
 
 	for _, file := range c.Args().Slice() {
 		filePath, err := path.Parse(file)
 		if err != nil {
-			log.Error(ctx, "Invalid path %q: %v.", file, err)
+			logger.ErrorContext(ctx, "Invalid path %q: %v.", file, err)
 			continue
 		}
 
 		if filePath.IsLocal() {
-			log.Error(ctx, "Path %q is a local path. Files can only be removed from a storage.", filePath)
+			logger.ErrorContext(ctx, "Path %q is a local path. Files can only be removed from a storage.", filePath)
 			continue
 		}
 
 		err = removeFile(ctx, srv, filePath.Storage, filePath.FilePath)
 		if err != nil {
-			log.Error(ctx, "Cannot delete file %q from a storage %q: %v.", filePath.FilePath, filePath.Storage, err)
+			logger.ErrorContext(ctx, "Cannot delete file %q from a storage %q: %v.", filePath.FilePath, filePath.Storage, err)
 			continue
 		}
 	}

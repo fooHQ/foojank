@@ -3,6 +3,7 @@ package generate
 import (
 	"context"
 	"errors"
+	"io"
 	"os"
 
 	petname "github.com/dustinkirkland/golang-petname"
@@ -10,9 +11,9 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/auth"
+	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
-	"github.com/foohq/foojank/internal/log"
 )
 
 func NewCommand() *cli.Command {
@@ -32,15 +33,25 @@ func NewCommand() *cli.Command {
 }
 
 func before(ctx context.Context, c *cli.Command) (context.Context, error) {
-	ctx, err := actions.LoadFlags()(ctx, c)
+	ctx, err := actions.LoadConfig(io.Discard, validateConfiguration)(ctx, c)
+	if err != nil {
+		ctx, err = actions.LoadFlags()(ctx, c)
+		if err != nil {
+			return ctx, err
+		}
+	}
+
+	ctx, err = actions.SetupLogger()(ctx, c)
 	if err != nil {
 		return ctx, err
 	}
+
 	return ctx, nil
 }
 
 func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
+	logger := actions.GetLoggerFromContext(ctx)
 
 	name, _ := conf.String(flags.Name)
 	if name == "" {
@@ -49,7 +60,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	accountJWT, accountKey, err := auth.NewAccount(name)
 	if err != nil {
-		log.Error(ctx, "Cannot generate an account: %v", err)
+		logger.ErrorContext(ctx, "Cannot generate an account: %v", err)
 		return err
 	}
 
@@ -57,40 +68,44 @@ func action(ctx context.Context, c *cli.Command) error {
 	// TODO: make atomic write of all changes
 	userJWT, userKey, err := auth.NewUser(name, accountKey, jwt.Permissions{})
 	if err != nil {
-		log.Error(ctx, "Cannot generate a user: %v", err)
+		logger.ErrorContext(ctx, "Cannot generate a user: %v", err)
 		return err
 	}
 
 	pth, err := auth.AccountPath(name)
 	if err != nil {
-		log.Error(ctx, "Cannot get account path: %v", err)
+		logger.ErrorContext(ctx, "Cannot get account path: %v", err)
 		return err
 	}
 
 	_, err = os.Stat(pth)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		log.Error(ctx, "Cannot create account %q: %v", name, err)
+		logger.ErrorContext(ctx, "Cannot create account %q: %v", name, err)
 		return err
 	}
 	if err == nil {
 		err = errors.New("account already exists")
-		log.Error(ctx, "Cannot create account %q: %v", name, err)
+		logger.ErrorContext(ctx, "Cannot create account %q: %v", name, err)
 		return err
 	}
 
 	err = auth.WriteAccount(name, accountJWT, accountKey)
 	if err != nil {
-		log.Error(ctx, "Cannot store account: %v", err)
+		logger.ErrorContext(ctx, "Cannot store account: %v", err)
 		return err
 	}
 
 	err = auth.WriteUser(name, userJWT, userKey)
 	if err != nil {
-		log.Error(ctx, "Cannot store user: %v", err)
+		logger.ErrorContext(ctx, "Cannot store user: %v", err)
 		return err
 	}
 
-	log.Info(ctx, "Account %q has been created!", name)
+	logger.InfoContext(ctx, "Account %q has been created!", name)
 
+	return nil
+}
+
+func validateConfiguration(conf *config.Config) error {
 	return nil
 }

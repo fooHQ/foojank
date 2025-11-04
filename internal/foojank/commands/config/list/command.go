@@ -15,7 +15,6 @@ import (
 	"github.com/foohq/foojank/internal/foojank/formatter"
 	jsonformatter "github.com/foohq/foojank/internal/foojank/formatter/json"
 	tableformatter "github.com/foohq/foojank/internal/foojank/formatter/table"
-	"github.com/foohq/foojank/internal/log"
 )
 
 func NewCommand() *cli.Command {
@@ -40,15 +39,22 @@ func NewCommand() *cli.Command {
 }
 
 func before(ctx context.Context, c *cli.Command) (context.Context, error) {
-	ctx, err := actions.LoadConfig(validateConfiguration)(ctx, c)
+	ctx, err := actions.LoadConfig(os.Stderr, validateConfiguration)(ctx, c)
 	if err != nil {
 		return ctx, err
 	}
+
+	ctx, err = actions.SetupLogger()(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
 	return ctx, nil
 }
 
 func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
+	logger := actions.GetLoggerFromContext(ctx)
 
 	format, _ := conf.String(flags.Format)
 
@@ -107,7 +113,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	err := formatOutput(os.Stdout, format, table)
 	if err != nil {
-		log.Error(ctx, "Cannot write formatted output: %v", err)
+		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
 	}
 

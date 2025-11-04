@@ -17,7 +17,6 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
-	"github.com/foohq/foojank/internal/log"
 )
 
 func NewCommand() *cli.Command {
@@ -50,15 +49,22 @@ func NewCommand() *cli.Command {
 }
 
 func before(ctx context.Context, c *cli.Command) (context.Context, error) {
-	ctx, err := actions.LoadConfig(validateConfiguration)(ctx, c)
+	ctx, err := actions.LoadConfig(os.Stderr, validateConfiguration)(ctx, c)
 	if err != nil {
 		return ctx, err
 	}
+
+	ctx, err = actions.SetupLogger()(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
 	return ctx, nil
 }
 
 func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
+	logger := actions.GetLoggerFromContext(ctx)
 
 	serverURL, _ := conf.String(flags.ServerURL)
 	serverCert, _ := conf.String(flags.ServerCertificate)
@@ -66,18 +72,18 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	userJWT, userSeed, err := auth.ReadUser(accountName)
 	if err != nil {
-		log.Error(ctx, "Cannot read user %q: %v", accountName, err)
+		logger.ErrorContext(ctx, "Cannot read user %q: %v", accountName, err)
 		return err
 	}
 
 	srv, err := server.New([]string{serverURL}, userJWT, string(userSeed), serverCert)
 	if err != nil {
-		log.Error(ctx, "Cannot connect to the server: %v", err)
+		logger.ErrorContext(ctx, "Cannot connect to the server: %v", err)
 		return err
 	}
 
 	if c.Args().Len() < 2 {
-		log.Error(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
+		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
 		return errors.New("not enough arguments")
 	}
 
@@ -97,7 +103,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	dstPath := path.Join("/_cache", nuid.Next())
 	err = copyPackage(ctx, srv, srcPath, storageName, dstPath)
 	if err != nil {
-		log.Error(ctx, "Cannot copy package %q to storage %q: %v", srcPath, storageName, err)
+		logger.ErrorContext(ctx, "Cannot copy package %q to storage %q: %v", srcPath, storageName, err)
 		return err
 	}
 
@@ -106,11 +112,11 @@ func action(ctx context.Context, c *cli.Command) error {
 	// TODO: env variables
 	err = client.StartWorker(ctx, agentID, workerID, file, args, nil)
 	if err != nil {
-		log.Error(ctx, "Cannot create job: %v", err)
+		logger.ErrorContext(ctx, "Cannot create job: %v", err)
 		return err
 	}
 
-	log.Info(ctx, "Job %q has been created!", workerID)
+	logger.InfoContext(ctx, "Job %q has been created!", workerID)
 
 	return nil
 }
