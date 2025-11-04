@@ -169,7 +169,7 @@ func ParseConfigJson(dir string) (*config.Config, error) {
 	return config.ParseFile(pth)
 }
 
-func LoadConfig(validateFn func(conf *config.Config) error) func(ctx context.Context, c *cli.Command) (context.Context, error) {
+func LoadConfig(validateFn func(conf *config.Config) error) cli.BeforeFunc {
 	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
 		conf, err := newConfig(ctx, c)
 		if err != nil {
@@ -187,7 +187,7 @@ func LoadConfig(validateFn func(conf *config.Config) error) func(ctx context.Con
 	}
 }
 
-func LoadFlags() func(ctx context.Context, c *cli.Command) (context.Context, error) {
+func LoadFlags() cli.BeforeFunc {
 	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
 		conf, err := config.ParseFlags(c.FlagNames(), func(name string) (any, bool) {
 			return c.Value(name), c.IsSet(name)
