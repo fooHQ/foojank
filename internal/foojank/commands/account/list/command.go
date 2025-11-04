@@ -11,12 +11,12 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/auth"
+	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/foojank/formatter"
 	jsonformatter "github.com/foohq/foojank/internal/foojank/formatter/json"
 	tableformatter "github.com/foohq/foojank/internal/foojank/formatter/table"
-	"github.com/foohq/foojank/internal/log"
 )
 
 func NewCommand() *cli.Command {
@@ -37,21 +37,31 @@ func NewCommand() *cli.Command {
 }
 
 func before(ctx context.Context, c *cli.Command) (context.Context, error) {
-	ctx, err := actions.LoadFlags()(ctx, c)
+	ctx, err := actions.LoadConfig(io.Discard, validateConfiguration)(ctx, c)
+	if err != nil {
+		ctx, err = actions.LoadFlags()(ctx, c)
+		if err != nil {
+			return ctx, err
+		}
+	}
+
+	ctx, err = actions.SetupLogger()(ctx, c)
 	if err != nil {
 		return ctx, err
 	}
+
 	return ctx, nil
 }
 
 func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
+	logger := actions.GetLoggerFromContext(ctx)
 
 	format, _ := conf.String(flags.Format)
 
 	accounts, err := auth.ListAccounts()
 	if err != nil {
-		log.Error(ctx, "Cannot list accounts: %v", err)
+		logger.ErrorContext(ctx, "Cannot list accounts: %v", err)
 		return err
 	}
 
@@ -63,13 +73,13 @@ func action(ctx context.Context, c *cli.Command) error {
 	for _, account := range accounts {
 		accountJWT, _, err := auth.ReadAccount(account)
 		if err != nil {
-			log.Error(ctx, "Cannot read account %q: %v", account, err)
+			logger.ErrorContext(ctx, "Cannot read account %q: %v", account, err)
 			return err
 		}
 
 		claims, err := jwt.DecodeAccountClaims(accountJWT)
 		if err != nil {
-			log.Error(ctx, "Cannot decode JWT: %v", err)
+			logger.ErrorContext(ctx, "Cannot decode JWT: %v", err)
 			return err
 		}
 
@@ -84,7 +94,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	err = formatOutput(os.Stdout, format, table)
 	if err != nil {
-		log.Error(ctx, "Cannot write formatted output: %v", err)
+		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
 	}
 
@@ -112,4 +122,8 @@ func formatOutput(w io.Writer, format string, table *formatter.Table) error {
 
 func formatTime(t time.Time) string {
 	return t.Format("2006-01-02 15:04:05")
+}
+
+func validateConfiguration(conf *config.Config) error {
+	return nil
 }

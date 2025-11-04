@@ -2,13 +2,13 @@ package set
 
 import (
 	"context"
+	"os"
 
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
-	"github.com/foohq/foojank/internal/log"
 )
 
 func NewCommand() *cli.Command {
@@ -48,15 +48,22 @@ func NewCommand() *cli.Command {
 }
 
 func before(ctx context.Context, c *cli.Command) (context.Context, error) {
-	ctx, err := actions.LoadConfig(validateConfiguration)(ctx, c)
+	ctx, err := actions.LoadConfig(os.Stderr, validateConfiguration)(ctx, c)
 	if err != nil {
 		return ctx, err
 	}
+
+	ctx, err = actions.SetupLogger()(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
 	return ctx, nil
 }
 
 func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
+	logger := actions.GetLoggerFromContext(ctx)
 
 	configDir, _ := conf.String(flags.ConfigDir)
 
@@ -67,7 +74,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	err := actions.UpdateConfigJson(configDir, conf)
 	if err != nil {
-		log.Error(ctx, "Cannot update configuration: %v", err)
+		logger.ErrorContext(ctx, "Cannot update configuration: %v", err)
 		return err
 	}
 

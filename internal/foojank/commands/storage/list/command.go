@@ -20,7 +20,6 @@ import (
 	jsonformatter "github.com/foohq/foojank/internal/foojank/formatter/json"
 	tableformatter "github.com/foohq/foojank/internal/foojank/formatter/table"
 	"github.com/foohq/foojank/internal/foojank/path"
-	"github.com/foohq/foojank/internal/log"
 )
 
 func NewCommand() *cli.Command {
@@ -58,15 +57,22 @@ func NewCommand() *cli.Command {
 }
 
 func before(ctx context.Context, c *cli.Command) (context.Context, error) {
-	ctx, err := actions.LoadConfig(validateConfiguration)(ctx, c)
+	ctx, err := actions.LoadConfig(os.Stderr, validateConfiguration)(ctx, c)
 	if err != nil {
 		return ctx, err
 	}
+
+	ctx, err = actions.SetupLogger()(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
 	return ctx, nil
 }
 
 func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
+	logger := actions.GetLoggerFromContext(ctx)
 
 	serverURL, _ := conf.String(flags.ServerURL)
 	serverCert, _ := conf.String(flags.ServerCertificate)
@@ -75,20 +81,20 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	userJWT, userSeed, err := auth.ReadUser(accountName)
 	if err != nil {
-		log.Error(ctx, "Cannot read user %q: %v", accountName, err)
+		logger.ErrorContext(ctx, "Cannot read user %q: %v", accountName, err)
 		return err
 	}
 
 	srv, err := server.New([]string{serverURL}, userJWT, string(userSeed), serverCert)
 	if err != nil {
-		log.Error(ctx, "Cannot connect to the server: %v", err)
+		logger.ErrorContext(ctx, "Cannot connect to the server: %v", err)
 		return err
 	}
 
 	if c.NArg() == 0 {
 		err := listStorages(ctx, srv, format)
 		if err != nil {
-			log.Error(ctx, "Cannot get a list of storages: %v", err)
+			logger.ErrorContext(ctx, "Cannot get a list of storages: %v", err)
 			return err
 		}
 		return nil
@@ -97,13 +103,13 @@ func action(ctx context.Context, c *cli.Command) error {
 	for _, pth := range c.Args().Slice() {
 		result, err := parsePath(pth)
 		if err != nil {
-			log.Error(ctx, "Cannot parse path %q: %v", pth, err)
+			logger.ErrorContext(ctx, "Cannot parse path %q: %v", pth, err)
 			return err
 		}
 
 		err = listStorage(ctx, srv, format, result.Storage, result.FilePath)
 		if err != nil {
-			log.Error(ctx, "Cannot list storage %q: %v", result.Storage, err)
+			logger.ErrorContext(ctx, "Cannot list storage %q: %v", result.Storage, err)
 			return err
 		}
 	}
@@ -194,13 +200,7 @@ func listStorage(ctx context.Context, srv *server.Client, format, storage, pth s
 		})
 	}
 
-	err = formatOutput(os.Stdout, format, table)
-	if err != nil {
-		log.Error(ctx, "Cannot write formatted output: %v", err)
-		return err
-	}
-
-	return nil
+	return formatOutput(os.Stdout, format, table)
 }
 
 func formatOutput(w io.Writer, format string, table *formatter.Table) error {

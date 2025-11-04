@@ -9,7 +9,6 @@ import (
 
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
-	"github.com/foohq/foojank/internal/log"
 )
 
 func NewCommand() *cli.Command {
@@ -33,11 +32,18 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 	if err != nil {
 		return ctx, err
 	}
+
+	ctx, err = actions.SetupLogger()(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
 	return ctx, nil
 }
 
 func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
+	logger := actions.GetLoggerFromContext(ctx)
 
 	configDir, isSet := conf.String(flags.ConfigDir)
 	if !isSet {
@@ -51,28 +57,28 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	configDir, err := filepath.Abs(configDir)
 	if err != nil {
-		log.Error(ctx, "Cannot resolve configuration directory: %v", err)
+		logger.ErrorContext(ctx, "Cannot resolve configuration directory: %v", err)
 		return err
 	}
 
 	isConfigDir, err := actions.IsConfigDir(configDir)
 	if err != nil {
-		log.Error(ctx, "Cannot initialize configuration directory %q: %v", configDir, errors.Unwrap(err))
+		logger.ErrorContext(ctx, "Cannot initialize configuration directory %q: %v", configDir, errors.Unwrap(err))
 		return err
 	}
 
 	if isConfigDir {
-		log.Info(ctx, "Configuration directory has already been initialized in %q", configDir)
+		logger.InfoContext(ctx, "Configuration directory has already been initialized in %q", configDir)
 		return nil
 	}
 
 	err = actions.InitConfigDir(configDir)
 	if err != nil {
-		log.Error(ctx, "Cannot initialize configuration directory %q: %v", configDir, errors.Unwrap(err))
+		logger.ErrorContext(ctx, "Cannot initialize configuration directory %q: %v", configDir, errors.Unwrap(err))
 		return err
 	}
 
-	log.Info(ctx, "Initialized empty configuration directory in %q", configDir)
+	logger.InfoContext(ctx, "Initialized empty configuration directory in %q", configDir)
 
 	return nil
 }
