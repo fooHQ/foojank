@@ -10,30 +10,46 @@ import (
 	"github.com/lmittmann/tint"
 )
 
-var DefaultLogger = New("info", false)
+const (
+	LevelDebug = "debug"
+	LevelInfo  = "info"
+	LevelWarn  = "warn"
+	LevelError = "error"
+)
 
-func Debug(ctx context.Context, format string, args ...any) {
-	s := fmt.Sprintf(format, args...)
-	DefaultLogger.DebugContext(ctx, s)
+type Logger struct {
+	log *slog.Logger
 }
 
-func Info(ctx context.Context, format string, args ...any) {
-	s := fmt.Sprintf(format, args...)
-	DefaultLogger.InfoContext(ctx, s)
+func (l *Logger) DebugContext(ctx context.Context, format string, a ...any) {
+	s := fmt.Sprintf(format, a...)
+	l.log.DebugContext(ctx, s)
 }
 
-func Error(ctx context.Context, format string, args ...any) {
-	s := fmt.Sprintf(format, args...)
-	DefaultLogger.ErrorContext(ctx, s)
+func (l *Logger) InfoContext(ctx context.Context, format string, a ...any) {
+	s := fmt.Sprintf(format, a...)
+	l.log.InfoContext(ctx, s)
 }
 
-func New(level string, noColor bool) *slog.Logger {
+func (l *Logger) WarnContext(ctx context.Context, format string, a ...any) {
+	s := fmt.Sprintf(format, a...)
+	l.log.WarnContext(ctx, s)
+}
+
+func (l *Logger) ErrorContext(ctx context.Context, format string, a ...any) {
+	s := fmt.Sprintf(format, a...)
+	l.log.ErrorContext(ctx, s)
+}
+
+func NewLogger(level string, noColor bool) *Logger {
 	l := parseLevel(level)
-	return slog.New(tint.NewHandler(os.Stderr, &tint.Options{
-		Level:     l,
-		NoColor:   noColor,
-		AddSource: l == slog.LevelDebug,
-	}))
+	return &Logger{
+		log: slog.New(tint.NewHandler(os.Stderr, &tint.Options{
+			Level:     l,
+			NoColor:   noColor,
+			AddSource: l == slog.LevelDebug,
+		})),
+	}
 }
 
 func parseLevel(level string) slog.Level {
