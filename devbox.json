@@ -24,12 +24,6 @@
       "generate-proto": [
         "./devbox.sh generate_proto"
       ],
-      "build-agent-dev": [
-        "./devbox.sh build_agent_dev"
-      ],
-      "build-agent-prod": [
-        "./devbox.sh build_agent_prod"
-      ],
       "build-foojank-dev": [
         "./devbox.sh build_foojank_dev"
       ],
