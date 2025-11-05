@@ -3,6 +3,14 @@ using Go = import "/go.capnp";
 $Go.package("capnp");
 $Go.import("github.com/foohq/foojank/proto/capnp");
 
+const startWorkerT :Text = "FJ.API.WORKER.START.%s.%s";
+const stopWorkerT :Text = "FJ.API.WORKER.STOP.%s.%s";
+const writeWorkerStdinT :Text = "FJ.API.WORKER.WRITE.STDIN.%s.%s";
+const writeWorkerStdoutT :Text = "FJ.API.WORKER.WRITE.STDOUT.%s.%s";
+const updateWorkerStatusT :Text = "FJ.API.WORKER.UPDATE.STATUS.%s.%s";
+const updateClientInfoT :Text = "FJ.API.CLIENT.UPDATE.INFO.%s";
+const replyMessageT :Text = "FJ.API.MESSAGE.REPLY.%s.%s";
+
 struct StartWorkerRequest {
     file @0 :Text;
     args @1 :List(Text);
