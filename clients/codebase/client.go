@@ -35,25 +35,18 @@ type BuildAgentOptions struct {
 }
 
 type BuildAgentConfig struct {
-	ID                           string
-	Server                       string
-	UserJWT                      string
-	UserKey                      string
-	CACertificate                string
-	Stream                       string
-	Consumer                     string
-	InboxPrefix                  string
-	ObjectStoreName              string
-	SubjectApiWorkerStartT       string
-	SubjectApiWorkerStopT        string
-	SubjectApiWorkerWriteStdinT  string
-	SubjectApiWorkerWriteStdoutT string
-	SubjectApiWorkerStatusT      string
-	SubjectApiConnInfoT          string
-	SubjectApiReplyT             string
-	ReconnectInterval            time.Duration
-	ReconnectJitter              time.Duration
-	AwaitMessagesDuration        time.Duration
+	ID                    string
+	Server                string
+	UserJWT               string
+	UserKey               string
+	CACertificate         string
+	Stream                string
+	Consumer              string
+	InboxPrefix           string
+	ObjectStoreName       string
+	ReconnectInterval     time.Duration
+	ReconnectJitter       time.Duration
+	AwaitMessagesDuration time.Duration
 }
 
 func (c *BuildAgentConfig) ToFlags() string {
@@ -67,13 +60,6 @@ func (c *BuildAgentConfig) ToFlags() string {
 		"-X main.Consumer=%s",
 		"-X main.InboxPrefix=%s",
 		"-X main.ObjectStoreName=%s",
-		"-X main.SubjectApiWorkerStartT=%s",
-		"-X main.SubjectApiWorkerStopT=%s",
-		"-X main.SubjectApiWorkerWriteStdinT=%s",
-		"-X main.SubjectApiWorkerWriteStdoutT=%s",
-		"-X main.SubjectApiWorkerStatusT=%s",
-		"-X main.SubjectApiConnInfoT=%s",
-		"-X main.SubjectApiReplyT=%s",
 		"-X main.ReconnectInterval=%s",
 		"-X main.ReconnectJitter=%s",
 		"-X main.AwaitMessagesDuration=%s",
@@ -92,13 +78,6 @@ func (c *BuildAgentConfig) ToFlags() string {
 		c.Consumer,
 		c.InboxPrefix,
 		c.ObjectStoreName,
-		c.SubjectApiWorkerStartT,
-		c.SubjectApiWorkerStopT,
-		c.SubjectApiWorkerWriteStdinT,
-		c.SubjectApiWorkerWriteStdoutT,
-		c.SubjectApiWorkerStatusT,
-		c.SubjectApiConnInfoT,
-		c.SubjectApiReplyT,
 		c.ReconnectInterval,
 		c.ReconnectJitter,
 		c.AwaitMessagesDuration,
@@ -122,29 +101,22 @@ func (c *Client) BuildAgent(ctx context.Context, opts BuildAgentOptions) (string
 	}
 
 	env := map[string]string{
-		"GOOS":                              opts.OS,
-		"GOARCH":                            opts.Arch,
-		"OUTPUT":                            output,
-		"TAGS":                              strings.Join(opts.Tags, " "),
-		"ID":                                opts.Config.ID,
-		"SERVER":                            opts.Config.Server,
-		"USER_JWT":                          opts.Config.UserJWT,
-		"USER_KEY":                          opts.Config.UserKey,
-		"CA_CERTIFICATE":                    opts.Config.CACertificate,
-		"STREAM":                            opts.Config.Stream,
-		"CONSUMER":                          opts.Config.Consumer,
-		"INBOX_PREFIX":                      opts.Config.InboxPrefix,
-		"OBJECT_STORE_NAME":                 opts.Config.ObjectStoreName,
-		"SUBJECT_API_WORKER_START_T":        opts.Config.SubjectApiWorkerStartT,
-		"SUBJECT_API_WORKER_STOP_T":         opts.Config.SubjectApiWorkerStopT,
-		"SUBJECT_API_WORKER_WRITE_STDIN_T":  opts.Config.SubjectApiWorkerWriteStdinT,
-		"SUBJECT_API_WORKER_WRITE_STDOUT_T": opts.Config.SubjectApiWorkerWriteStdoutT,
-		"SUBJECT_API_WORKER_STATUS_T":       opts.Config.SubjectApiWorkerStatusT,
-		"SUBJECT_API_CONN_INFO_T":           opts.Config.SubjectApiConnInfoT,
-		"SUBJECT_API_REPLY_T":               opts.Config.SubjectApiReplyT,
-		"RECONNECT_INTERVAL":                opts.Config.ReconnectInterval.String(),
-		"RECONNECT_JITTER":                  opts.Config.ReconnectJitter.String(),
-		"AWAIT_MESSAGES_DURATION":           opts.Config.AwaitMessagesDuration.String(),
+		"GOOS":                    opts.OS,
+		"GOARCH":                  opts.Arch,
+		"OUTPUT":                  output,
+		"TAGS":                    strings.Join(opts.Tags, " "),
+		"ID":                      opts.Config.ID,
+		"SERVER":                  opts.Config.Server,
+		"USER_JWT":                opts.Config.UserJWT,
+		"USER_KEY":                opts.Config.UserKey,
+		"CA_CERTIFICATE":          opts.Config.CACertificate,
+		"STREAM":                  opts.Config.Stream,
+		"CONSUMER":                opts.Config.Consumer,
+		"INBOX_PREFIX":            opts.Config.InboxPrefix,
+		"OBJECT_STORE_NAME":       opts.Config.ObjectStoreName,
+		"RECONNECT_INTERVAL":      opts.Config.ReconnectInterval.String(),
+		"RECONNECT_JITTER":        opts.Config.ReconnectJitter.String(),
+		"AWAIT_MESSAGES_DURATION": opts.Config.AwaitMessagesDuration.String(),
 	}
 
 	result, err := c.devboxRun(ctx, script, env)
