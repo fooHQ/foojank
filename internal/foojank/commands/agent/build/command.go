@@ -22,6 +22,7 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
+	"github.com/foohq/foojank/proto"
 )
 
 func NewCommand() *cli.Command {
@@ -180,13 +181,13 @@ func action(ctx context.Context, c *cli.Command) error {
 	logger.DebugContext(ctx, "Create a stream")
 
 	_, err = srv.CreateStream(ctx, streamName, []string{
-		fmt.Sprintf(vessel.SubjectApiWorkerStartT, agentID, "*"),
-		fmt.Sprintf(vessel.SubjectApiWorkerStopT, agentID, "*"),
-		fmt.Sprintf(vessel.SubjectApiWorkerWriteStdinT, agentID, "*"),
-		fmt.Sprintf(vessel.SubjectApiWorkerWriteStdoutT, agentID, "*"),
-		fmt.Sprintf(vessel.SubjectApiWorkerStatusT, agentID, "*"),
-		fmt.Sprintf(vessel.SubjectApiReplyT, agentID, "*"),
-		fmt.Sprintf(vessel.SubjectApiConnInfoT, agentID),
+		proto.StartWorkerSubject(agentID, "*"),
+		proto.StopWorkerSubject(agentID, "*"),
+		proto.WriteWorkerStdinSubject(agentID, "*"),
+		proto.WriteWorkerStdoutSubject(agentID, "*"),
+		proto.UpdateWorkerStatusSubject(agentID, "*"),
+		proto.ReplyMessageSubject(agentID, "*"),
+		proto.UpdateClientInfoSubject(agentID),
 	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create stream: %v", err)
@@ -198,9 +199,9 @@ func action(ctx context.Context, c *cli.Command) error {
 	logger.DebugContext(ctx, "Create a message consumer")
 
 	_, err = srv.CreateDurableConsumer(ctx, streamName, consumerName, []string{
-		fmt.Sprintf(vessel.SubjectApiWorkerStartT, agentID, "*"),
-		fmt.Sprintf(vessel.SubjectApiWorkerStopT, agentID, "*"),
-		fmt.Sprintf(vessel.SubjectApiWorkerWriteStdinT, agentID, "*"),
+		proto.StartWorkerSubject(agentID, "*"),
+		proto.StopWorkerSubject(agentID, "*"),
+		proto.WriteWorkerStdinSubject(agentID, "*"),
 	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create consumer: %v", err)
