@@ -228,25 +228,18 @@ func action(ctx context.Context, c *cli.Command) error {
 	logger.InfoContext(ctx, "Build an executable file %q [%s/%s] [%s]", outputName, targetOS, targetArch, buildMode)
 
 	agentConf := codebase.BuildAgentConfig{
-		ID:                           agentID,
-		Server:                       strings.Join(servers, ","),
-		UserJWT:                      agentJWT,
-		UserKey:                      agentSeed,
-		CACertificate:                serverCert,
-		Stream:                       streamName,
-		Consumer:                     consumerName,
-		InboxPrefix:                  vessel.InboxName(agentID),
-		ObjectStoreName:              agentID,
-		SubjectApiWorkerStartT:       vessel.SubjectApiWorkerStartT,
-		SubjectApiWorkerStopT:        vessel.SubjectApiWorkerStopT,
-		SubjectApiWorkerWriteStdinT:  vessel.SubjectApiWorkerWriteStdinT,
-		SubjectApiWorkerWriteStdoutT: vessel.SubjectApiWorkerWriteStdoutT,
-		SubjectApiWorkerStatusT:      vessel.SubjectApiWorkerStatusT,
-		SubjectApiConnInfoT:          vessel.SubjectApiConnInfoT,
-		SubjectApiReplyT:             vessel.SubjectApiReplyT,
-		ReconnectInterval:            1 * time.Minute, // TODO: make configurable
-		ReconnectJitter:              5 * time.Second, // TODO: make configurable
-		AwaitMessagesDuration:        5 * time.Second, // TODO: make configurable
+		ID:                    agentID,
+		Server:                strings.Join(servers, ","),
+		UserJWT:               agentJWT,
+		UserKey:               agentSeed,
+		CACertificate:         serverCert,
+		Stream:                streamName,
+		Consumer:              consumerName,
+		InboxPrefix:           vessel.InboxName(agentID),
+		ObjectStoreName:       agentID,
+		ReconnectInterval:     1 * time.Minute, // TODO: make configurable
+		ReconnectJitter:       5 * time.Second, // TODO: make configurable
+		AwaitMessagesDuration: 5 * time.Second, // TODO: make configurable
 	}
 	err = buildExecutable(
 		ctx,
