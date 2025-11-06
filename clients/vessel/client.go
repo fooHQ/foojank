@@ -17,17 +17,6 @@ import (
 	"github.com/foohq/foojank/proto"
 )
 
-const (
-	SubjectApiPrefix             = "FJ.API"
-	SubjectApiWorkerStartT       = SubjectApiPrefix + "." + "WORKER.START.%s.%s"
-	SubjectApiWorkerStopT        = SubjectApiPrefix + "." + "WORKER.STOP.%s.%s"
-	SubjectApiWorkerWriteStdinT  = SubjectApiPrefix + "." + "WORKER.WRITE.STDIN.%s.%s"
-	SubjectApiWorkerWriteStdoutT = SubjectApiPrefix + "." + "WORKER.WRITE.STDOUT.%s.%s"
-	SubjectApiWorkerStatusT      = SubjectApiPrefix + "." + "WORKER.STATUS.%s.%s"
-	SubjectApiConnInfoT          = SubjectApiPrefix + "." + "CONNECTION.INFO.%s"
-	SubjectApiReplyT             = SubjectApiPrefix + "." + "REPLY.%s.%s"
-)
-
 type Client struct {
 	srv *server.Client
 }
