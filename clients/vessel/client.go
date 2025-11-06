@@ -50,7 +50,7 @@ type DiscoverResult struct {
 
 func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error) {
 	api := router.Handlers{
-		"FJ.API.CONNECTION.INFO.<agent>": func(ctx context.Context, params router.Params, data any) any {
+		proto.UpdateClientInfoSubject("<agent>"): func(ctx context.Context, params router.Params, data any) any {
 			agentID, ok := params["agent"]
 			if !ok {
 				return nil
@@ -79,7 +79,7 @@ func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error
 	results := make(map[string]DiscoverResult)
 	for _, agentID := range agentIDs {
 		msgs, err := c.ListMessages(ctx, agentID, []string{
-			fmt.Sprintf(SubjectApiConnInfoT, agentID),
+			proto.UpdateClientInfoSubject(agentID),
 		})
 		if err != nil {
 			return nil, err
@@ -136,7 +136,7 @@ func (c *Client) StartWorker(ctx context.Context, agentID, workerID, file string
 	}
 
 	err = c.srv.Publish(ctx, &nats.Msg{
-		Subject: fmt.Sprintf(SubjectApiWorkerStartT, agentID, workerID),
+		Subject: proto.StartWorkerSubject(agentID, workerID),
 		Data:    b,
 	})
 	if err != nil {
@@ -153,7 +153,7 @@ func (c *Client) StopWorker(ctx context.Context, agentID, workerID string) error
 	}
 
 	err = c.srv.Publish(ctx, &nats.Msg{
-		Subject: fmt.Sprintf(SubjectApiWorkerStopT, agentID, workerID),
+		Subject: proto.StopWorkerSubject(agentID, workerID),
 		Data:    b,
 	})
 	if err != nil {
@@ -170,7 +170,7 @@ func (c *Client) WriteWorkerStdin(ctx context.Context, agentID, workerID string)
 	}
 
 	err = c.srv.Publish(ctx, &nats.Msg{
-		Subject: fmt.Sprintf(SubjectApiWorkerWriteStdinT, agentID, workerID),
+		Subject: proto.WriteWorkerStdinSubject(agentID, workerID),
 		Data:    b,
 	})
 	if err != nil {
@@ -207,7 +207,7 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 	jobsMsgIDRef := make(map[string]string)
 
 	api := router.Handlers{
-		"FJ.API.WORKER.START.<agent>.<worker>": func(ctx context.Context, params router.Params, data any) any {
+		proto.StartWorkerSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {
 			workerID, ok := params["worker"]
 			if !ok {
 				return nil
@@ -226,7 +226,7 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 				Status:  JobStatusPending,
 			}
 		},
-		"FJ.API.WORKER.STOP.<agent>.<worker>": func(ctx context.Context, params router.Params, data any) any {
+		proto.StopWorkerSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {
 			workerID, ok := params["worker"]
 			if !ok {
 				return nil
@@ -246,7 +246,7 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 
 			return job
 		},
-		"FJ.API.WORKER.STATUS.<agent>.<worker>": func(ctx context.Context, params router.Params, data any) any {
+		proto.UpdateWorkerStatusSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {
 			workerID, ok := params["worker"]
 			if !ok {
 				return nil
@@ -273,7 +273,7 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 
 			return job
 		},
-		"FJ.API.REPLY.<agent>.<message>": func(ctx context.Context, params router.Params, data any) any {
+		proto.ReplyMessageSubject("<agent>", "<message>"): func(ctx context.Context, params router.Params, data any) any {
 			msgID, ok := params["message"]
 			if !ok {
 				return nil
@@ -314,10 +314,10 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 	}
 
 	msgs, err := c.ListMessages(ctx, agentID, []string{
-		fmt.Sprintf(SubjectApiWorkerStartT, agentID, "*"),
-		fmt.Sprintf(SubjectApiWorkerStopT, agentID, "*"),
-		fmt.Sprintf(SubjectApiWorkerStatusT, agentID, "*"),
-		fmt.Sprintf(SubjectApiReplyT, agentID, "*"),
+		proto.StartWorkerSubject(agentID, "*"),
+		proto.StopWorkerSubject(agentID, "*"),
+		proto.UpdateWorkerStatusSubject(agentID, "*"),
+		proto.ReplyMessageSubject(agentID, "*"),
 	})
 	if err != nil {
 		return nil, err
@@ -488,10 +488,10 @@ func NewAgentPermissions(agentID string) jwt.Permissions {
 	return jwt.Permissions{
 		Pub: jwt.Permission{
 			Allow: []string{
-				fmt.Sprintf(SubjectApiWorkerWriteStdoutT, agentID, "*"),
-				fmt.Sprintf(SubjectApiWorkerStatusT, agentID, "*"),
-				fmt.Sprintf(SubjectApiReplyT, agentID, "*"),
-				fmt.Sprintf(SubjectApiConnInfoT, agentID),
+				proto.WriteWorkerStdoutSubject(agentID, "*"),
+				proto.UpdateWorkerStatusSubject(agentID, "*"),
+				proto.ReplyMessageSubject(agentID, "*"),
+				proto.UpdateClientInfoSubject(agentID),
 
 				fmt.Sprintf("$JS.ACK.FJ_%s.>", agentID),
 				fmt.Sprintf("$JS.API.STREAM.INFO.FJ_%s", agentID),
