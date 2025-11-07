@@ -256,7 +256,6 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	logger.DebugContext(ctx, "Go flags: %s", agentConf.ToFlags())
 	logger.InfoContext(ctx, "Agent %q has been built!", agentID)
 
 	return nil
