@@ -49,41 +49,6 @@ type BuildAgentConfig struct {
 	AwaitMessagesDuration time.Duration
 }
 
-func (c *BuildAgentConfig) ToFlags() string {
-	ldFlags := []string{
-		"-X main.ID=%s",
-		"-X main.Server=%s",
-		"-X main.UserJWT=%s",
-		"-X main.UserKey=%s",
-		"-X main.CACertificate=%s",
-		"-X main.Stream=%s",
-		"-X main.Consumer=%s",
-		"-X main.InboxPrefix=%s",
-		"-X main.ObjectStoreName=%s",
-		"-X main.ReconnectInterval=%s",
-		"-X main.ReconnectJitter=%s",
-		"-X main.AwaitMessagesDuration=%s",
-	}
-	flags := []string{
-		"-race",
-		fmt.Sprintf("-ldflags=\"%s\"", strings.Join(ldFlags, " ")),
-	}
-	return fmt.Sprintf(strings.Join(flags, " "),
-		c.ID,
-		c.Server,
-		c.UserJWT,
-		c.UserKey,
-		c.CACertificate,
-		c.Stream,
-		c.Consumer,
-		c.InboxPrefix,
-		c.ObjectStoreName,
-		c.ReconnectInterval,
-		c.ReconnectJitter,
-		c.AwaitMessagesDuration,
-	)
-}
-
 func (c *Client) BuildAgent(ctx context.Context, opts BuildAgentOptions) (string, string, error) {
 	err := c.baseDirExists()
 	if err != nil {
