@@ -35,18 +35,18 @@ type BuildAgentOptions struct {
 }
 
 type BuildAgentConfig struct {
-	ID                    string
-	Server                string
+	AgentID               string
+	ServerURL             string
+	ServerCertificate     string
 	UserJWT               string
 	UserKey               string
-	CACertificate         string
 	Stream                string
 	Consumer              string
 	InboxPrefix           string
-	ObjectStoreName       string
-	ReconnectInterval     time.Duration
-	ReconnectJitter       time.Duration
+	ObjectStore           string
 	AwaitMessagesDuration time.Duration
+	IdleDuration          time.Duration
+	IdleJitter            time.Duration
 }
 
 func (c *Client) BuildAgent(ctx context.Context, opts BuildAgentOptions) (string, string, error) {
@@ -66,22 +66,22 @@ func (c *Client) BuildAgent(ctx context.Context, opts BuildAgentOptions) (string
 	}
 
 	env := map[string]string{
-		"GOOS":                    opts.OS,
-		"GOARCH":                  opts.Arch,
-		"OUTPUT":                  output,
-		"TAGS":                    strings.Join(opts.Tags, " "),
-		"ID":                      opts.Config.ID,
-		"SERVER":                  opts.Config.Server,
-		"USER_JWT":                opts.Config.UserJWT,
-		"USER_KEY":                opts.Config.UserKey,
-		"CA_CERTIFICATE":          opts.Config.CACertificate,
-		"STREAM":                  opts.Config.Stream,
-		"CONSUMER":                opts.Config.Consumer,
-		"INBOX_PREFIX":            opts.Config.InboxPrefix,
-		"OBJECT_STORE_NAME":       opts.Config.ObjectStoreName,
-		"RECONNECT_INTERVAL":      opts.Config.ReconnectInterval.String(),
-		"RECONNECT_JITTER":        opts.Config.ReconnectJitter.String(),
-		"AWAIT_MESSAGES_DURATION": opts.Config.AwaitMessagesDuration.String(),
+		"GOOS":                       opts.OS,
+		"GOARCH":                     opts.Arch,
+		"OUTPUT":                     output,
+		"TAGS":                       strings.Join(opts.Tags, " "),
+		"FJ_AGENT_ID":                opts.Config.AgentID,
+		"FJ_SERVER_URL":              opts.Config.ServerURL,
+		"FJ_SERVER_CERTIFICATE":      opts.Config.ServerCertificate,
+		"FJ_USER_JWT":                opts.Config.UserJWT,
+		"FJ_USER_KEY":                opts.Config.UserKey,
+		"FJ_STREAM":                  opts.Config.Stream,
+		"FJ_CONSUMER":                opts.Config.Consumer,
+		"FJ_INBOX_PREFIX":            opts.Config.InboxPrefix,
+		"FJ_OBJECT_STORE":            opts.Config.ObjectStore,
+		"FJ_AWAIT_MESSAGES_DURATION": opts.Config.AwaitMessagesDuration.String(),
+		"FJ_IDLE_INTERVAL":           opts.Config.IdleDuration.String(),
+		"FJ_IDLE_JITTER":             opts.Config.IdleJitter.String(),
 	}
 
 	result, err := c.devboxRun(ctx, script, env)
