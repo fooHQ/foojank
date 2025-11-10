@@ -228,18 +228,18 @@ func action(ctx context.Context, c *cli.Command) error {
 	logger.InfoContext(ctx, "Build an executable file %q [%s/%s] [%s]", outputName, targetOS, targetArch, buildMode)
 
 	agentConf := codebase.BuildAgentConfig{
-		ID:                    agentID,
-		Server:                strings.Join(servers, ","),
+		AgentID:               agentID,
+		ServerURL:             strings.Join(servers, ","),
+		ServerCertificate:     serverCert,
 		UserJWT:               agentJWT,
 		UserKey:               agentSeed,
-		CACertificate:         serverCert,
 		Stream:                streamName,
 		Consumer:              consumerName,
 		InboxPrefix:           vessel.InboxName(agentID),
-		ObjectStoreName:       agentID,
-		ReconnectInterval:     1 * time.Minute, // TODO: make configurable
-		ReconnectJitter:       5 * time.Second, // TODO: make configurable
+		ObjectStore:           agentID,
 		AwaitMessagesDuration: 5 * time.Second, // TODO: make configurable
+		IdleDuration:          1 * time.Minute, // TODO: make configurable
+		IdleJitter:            5 * time.Second, // TODO: make configurable
 	}
 	err = buildExecutable(
 		ctx,
