@@ -51,7 +51,7 @@ func Build(ctx context.Context, dir, target string, opts Options) (string, error
 		"FJ_INBOX_PREFIX":            opts.Config.InboxPrefix,
 		"FJ_OBJECT_STORE":            opts.Config.ObjectStore,
 		"FJ_AWAIT_MESSAGES_DURATION": opts.Config.AwaitMessagesDuration.String(),
-		"FJ_IDLE_INTERVAL":           opts.Config.IdleDuration.String(),
+		"FJ_IDLE_DURATION":           opts.Config.IdleDuration.String(),
 		"FJ_IDLE_JITTER":             opts.Config.IdleJitter.String(),
 	}
 
