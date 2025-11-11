@@ -55,11 +55,6 @@ func (c *Client) BuildAgent(ctx context.Context, opts BuildAgentOptions) (string
 		return "", "", err
 	}
 
-	script := "build-agent-dev"
-	if opts.Production {
-		script = "build-agent-prod"
-	}
-
 	output := filepath.Join(c.BuildDir(), nuid.Next())
 	if opts.OS == "windows" {
 		output += ".exe"
@@ -84,7 +79,7 @@ func (c *Client) BuildAgent(ctx context.Context, opts BuildAgentOptions) (string
 		"FJ_IDLE_JITTER":             opts.Config.IdleJitter.String(),
 	}
 
-	result, err := c.devboxRun(ctx, script, env)
+	result, err := c.devboxRun(ctx, "build", env)
 	if err != nil {
 		return "", result, err
 	}
