@@ -8,6 +8,7 @@ import (
 
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
+	"github.com/foohq/foojank/internal/foojank/configdir"
 	"github.com/foohq/foojank/internal/foojank/flags"
 )
 
@@ -72,7 +73,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		flags.ConfigDir: "",
 	}))
 
-	err := actions.UpdateConfigJson(configDir, conf)
+	err := configdir.UpdateConfigJson(configDir, conf)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot update configuration: %v", err)
 		return err

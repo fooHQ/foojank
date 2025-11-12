@@ -8,6 +8,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/foojank/actions"
+	"github.com/foohq/foojank/internal/foojank/configdir"
 	"github.com/foohq/foojank/internal/foojank/flags"
 )
 
@@ -47,7 +48,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	configDir, isSet := conf.String(flags.ConfigDir)
 	if !isSet {
-		dir, err := actions.FindConfigDir(".")
+		dir, err := configdir.Search(".")
 		if err == nil {
 			configDir = dir
 		} else {
@@ -61,7 +62,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	isConfigDir, err := actions.IsConfigDir(configDir)
+	isConfigDir, err := configdir.IsConfigDir(configDir)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot initialize configuration directory %q: %v", configDir, errors.Unwrap(err))
 		return err
@@ -72,7 +73,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		return nil
 	}
 
-	err = actions.InitConfigDir(configDir)
+	err = configdir.Init(configDir)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot initialize configuration directory %q: %v", configDir, errors.Unwrap(err))
 		return err
