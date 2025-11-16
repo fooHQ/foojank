@@ -6,29 +6,22 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"time"
 )
 
 type Options struct {
-	OS       string
-	Arch     string
-	Features []string
-	Config   Config
-}
-
-type Config struct {
-	AgentID               string
-	ServerURL             string
-	ServerCertificate     string
-	UserJWT               string
-	UserKey               string
-	Stream                string
-	Consumer              string
-	InboxPrefix           string
-	ObjectStore           string
-	AwaitMessagesDuration time.Duration
-	IdleDuration          time.Duration
-	IdleJitter            time.Duration
+	OS                string
+	Architecture      string
+	Features          []string
+	AgentID           string
+	ServerURL         string
+	ServerCertificate string
+	UserJWT           string
+	UserKey           string
+	Stream            string
+	Consumer          string
+	InboxPrefix       string
+	ObjectStore       string
+	Custom            map[string]string
 }
 
 func Build(ctx context.Context, dir, target string, opts Options) (string, error) {
@@ -37,22 +30,23 @@ func Build(ctx context.Context, dir, target string, opts Options) (string, error
 	}
 
 	env := map[string]string{
-		"OS":                         opts.OS,
-		"ARCH":                       opts.Arch,
-		"TARGET":                     target,
-		"FEATURES":                   strings.Join(opts.Features, ","),
-		"FJ_AGENT_ID":                opts.Config.AgentID,
-		"FJ_SERVER_URL":              opts.Config.ServerURL,
-		"FJ_SERVER_CERTIFICATE":      opts.Config.ServerCertificate,
-		"FJ_USER_JWT":                opts.Config.UserJWT,
-		"FJ_USER_KEY":                opts.Config.UserKey,
-		"FJ_STREAM":                  opts.Config.Stream,
-		"FJ_CONSUMER":                opts.Config.Consumer,
-		"FJ_INBOX_PREFIX":            opts.Config.InboxPrefix,
-		"FJ_OBJECT_STORE":            opts.Config.ObjectStore,
-		"FJ_AWAIT_MESSAGES_DURATION": opts.Config.AwaitMessagesDuration.String(),
-		"FJ_IDLE_DURATION":           opts.Config.IdleDuration.String(),
-		"FJ_IDLE_JITTER":             opts.Config.IdleJitter.String(),
+		"OS":                    opts.OS,
+		"ARCH":                  opts.Architecture,
+		"TARGET":                target,
+		"FEATURES":              strings.Join(opts.Features, ","),
+		"FJ_AGENT_ID":           opts.AgentID,
+		"FJ_SERVER_URL":         opts.ServerURL,
+		"FJ_SERVER_CERTIFICATE": opts.ServerCertificate,
+		"FJ_USER_JWT":           opts.UserJWT,
+		"FJ_USER_KEY":           opts.UserKey,
+		"FJ_STREAM":             opts.Stream,
+		"FJ_CONSUMER":           opts.Consumer,
+		"FJ_INBOX_PREFIX":       opts.InboxPrefix,
+		"FJ_OBJECT_STORE":       opts.ObjectStore,
+	}
+
+	for k, v := range opts.Custom {
+		env[k] = v
 	}
 
 	result, err := devboxRun(ctx, dir, "build", env)
