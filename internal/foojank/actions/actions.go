@@ -17,11 +17,45 @@ import (
 
 func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.BeforeFunc {
 	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
-		conf, err := newConfig(ctx, c)
+		confFlags, err := config.ParseFlags(c.FlagNames(), func(name string) (any, bool) {
+			return c.Value(name), c.IsSet(name)
+		})
 		if err != nil {
-			_, _ = fmt.Fprintf(w, "%s: invalid configuration: %v\n", c.FullName(), err)
-			return ctx, err
+			err = fmt.Errorf("cannot parse command options: %w", err)
+			return nil, err
 		}
+
+		configDir, isSet := confFlags.String(flags.ConfigDir)
+		if !isSet {
+			dir, err := configdir.Search(".")
+			if err != nil {
+				return nil, errors.New("configuration directory not found in the current directory (or any of the parent directories)")
+			}
+
+			configDir = dir
+		}
+
+		isConfigDir, err := configdir.IsConfigDir(configDir)
+		if err != nil {
+			return nil, err
+		}
+
+		if !isConfigDir {
+			err = fmt.Errorf("configuration directory not found in %q", configDir)
+			return nil, err
+		}
+
+		confFile, err := configdir.ParseConfigJson(configDir)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				err = fmt.Errorf("configuration directory not found in %q", configDir)
+			} else {
+				err = fmt.Errorf("cannot parse config file: %w", err)
+			}
+			return nil, err
+		}
+
+		conf := config.Merge(newDefaultConfig(), confFile, confFlags)
 
 		err = validateFn(conf)
 		if err != nil {
@@ -45,49 +79,6 @@ func LoadFlags() cli.BeforeFunc {
 
 		return setConfigToContext(ctx, conf), nil
 	}
-}
-
-func newConfig(_ context.Context, c *cli.Command) (*config.Config, error) {
-	confFlags, err := config.ParseFlags(c.FlagNames(), func(name string) (any, bool) {
-		return c.Value(name), c.IsSet(name)
-	})
-	if err != nil {
-		err = fmt.Errorf("cannot parse command options: %w", err)
-		return nil, err
-	}
-
-	configDir, isSet := confFlags.String(flags.ConfigDir)
-	if !isSet {
-		dir, err := configdir.Search(".")
-		if err != nil {
-			return nil, errors.New("configuration directory not found in the current directory (or any of the parent directories)")
-		}
-
-		configDir = dir
-	}
-
-	isConfigDir, err := configdir.IsConfigDir(configDir)
-	if err != nil {
-		return nil, err
-	}
-
-	if !isConfigDir {
-		err = fmt.Errorf("configuration directory not found in %q", configDir)
-		return nil, err
-	}
-
-	confFile, err := configdir.ParseConfigJson(configDir)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			err = fmt.Errorf("configuration directory not found in %q", configDir)
-		} else {
-			err = fmt.Errorf("cannot parse config file: %w", err)
-		}
-		return nil, err
-	}
-
-	conf := config.Merge(newDefaultConfig(), confFile, confFlags)
-	return conf, nil
 }
 
 func newDefaultConfig() *config.Config {
