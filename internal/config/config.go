@@ -44,11 +44,19 @@ func (c *Config) StringSlice(name string) ([]string, bool) {
 	if !ok {
 		return nil, false
 	}
-	s, ok := v.([]string)
+	sa, ok := v.([]any)
 	if !ok {
 		return nil, false
 	}
-	return s, true
+	ss := make([]string, 0, len(sa))
+	for _, a := range sa {
+		s, ok := a.(string)
+		if !ok {
+			return nil, false
+		}
+		ss = append(ss, s)
+	}
+	return ss, true
 }
 
 func (c *Config) get(name string) (any, bool) {
