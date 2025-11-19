@@ -7,6 +7,8 @@ const (
 	Account           = "account"
 	Format            = "format"
 	Name              = "name"
+	Set               = "set"
+	SourceDir         = "source-dir"
 	Output            = "output"
 	Os                = "os"
 	Arch              = "arch"
