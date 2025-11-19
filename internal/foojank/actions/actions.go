@@ -21,7 +21,7 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 			return c.Value(name), c.IsSet(name)
 		})
 		if err != nil {
-			err = fmt.Errorf("cannot parse command options: %w", err)
+			_, _ = fmt.Fprintf(w, "%s: cannot parse command options: %v\n", c.FullName(), err)
 			return nil, err
 		}
 
@@ -29,19 +29,18 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 		if !isSet {
 			dir, err := configdir.Search(".")
 			if err != nil {
-				return nil, errors.New("configuration directory not found in the current directory (or any of the parent directories)")
+				err = errors.New("configuration directory not found in the current directory (or any of the parent directories)")
+				_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
+				return nil, err
 			}
 
 			configDir = dir
 		}
 
 		isConfigDir, err := configdir.IsConfigDir(configDir)
-		if err != nil {
-			return nil, err
-		}
-
-		if !isConfigDir {
+		if err != nil || !isConfigDir {
 			err = fmt.Errorf("configuration directory not found in %q", configDir)
+			_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
 			return nil, err
 		}
 
@@ -52,6 +51,7 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 			} else {
 				err = fmt.Errorf("cannot parse config file: %w", err)
 			}
+			_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
 			return nil, err
 		}
 
@@ -67,13 +67,14 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 	}
 }
 
-func LoadFlags() cli.BeforeFunc {
+func LoadFlags(w io.Writer) cli.BeforeFunc {
 	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
 		conf, err := config.ParseFlags(c.FlagNames(), func(name string) (any, bool) {
 			return c.Value(name), c.IsSet(name)
 		})
 		if err != nil {
 			err = fmt.Errorf("cannot parse command options: %w", err)
+			_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
 			return ctx, err
 		}
 
@@ -93,7 +94,7 @@ func newDefaultConfig() *config.Config {
 	return config.NewWithOptions(opts)
 }
 
-func SetupLogger() cli.BeforeFunc {
+func SetupLogger(w io.Writer) cli.BeforeFunc {
 	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
 		conf := GetConfigFromContext(ctx)
 
