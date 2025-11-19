@@ -55,7 +55,13 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 			return nil, err
 		}
 
-		conf := config.Merge(newDefaultConfig(), confFile, confFlags)
+		confDefs := config.NewWithOptions(map[string]any{
+			flags.ConfigDir: configDir,
+			flags.Format:    "table",
+			flags.NoColor:   false,
+		})
+
+		conf := config.Merge(confDefs, confFile, confFlags)
 
 		err = validateFn(conf)
 		if err != nil {
@@ -80,18 +86,6 @@ func LoadFlags(w io.Writer) cli.BeforeFunc {
 
 		return setConfigToContext(ctx, conf), nil
 	}
-}
-
-func newDefaultConfig() *config.Config {
-	opts := map[string]any{
-		flags.Format: "table",
-	}
-
-	if true { // TODO: check if output is tty!
-		opts[flags.NoColor] = false
-	}
-
-	return config.NewWithOptions(opts)
 }
 
 func SetupLogger(w io.Writer) cli.BeforeFunc {
