@@ -59,7 +59,7 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 		return ctx, err
 	}
 
-	ctx, err = actions.SetupLogger()(ctx, c)
+	ctx, err = actions.SetupLogger(os.Stderr)(ctx, c)
 	if err != nil {
 		return ctx, err
 	}
