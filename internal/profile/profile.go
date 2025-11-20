@@ -3,6 +3,7 @@ package profile
 import (
 	"encoding/json"
 	"errors"
+	"maps"
 	"os"
 )
 
@@ -40,6 +41,12 @@ func (p *Profiles) Add(name string, profile Profile) error {
 
 	p.data.Items[name] = profile
 	return nil
+}
+
+func (p *Profiles) List() map[string]Profile {
+	profs := make(map[string]Profile, len(p.data.Items))
+	maps.Copy(profs, p.data.Items)
+	return profs
 }
 
 type profiles struct {
