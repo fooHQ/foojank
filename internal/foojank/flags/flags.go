@@ -8,6 +8,7 @@ const (
 	Format            = "format"
 	Name              = "name"
 	Set               = "set"
+	Unset             = "unset"
 	SourceDir         = "source-dir"
 	Output            = "output"
 	Os                = "os"
