@@ -43,6 +43,26 @@ func (p *Profiles) Add(name string, profile Profile) error {
 	return nil
 }
 
+func (p *Profiles) Update(name string, profile Profile) error {
+	_, ok := p.data.Items[name]
+	if !ok {
+		return ErrProfileNotFound
+	}
+
+	p.data.Items[name] = profile
+	return nil
+}
+
+func (p *Profiles) Delete(name string) error {
+	_, ok := p.data.Items[name]
+	if !ok {
+		return ErrProfileNotFound
+	}
+
+	delete(p.data.Items, name)
+	return nil
+}
+
 func (p *Profiles) List() map[string]Profile {
 	profs := make(map[string]Profile, len(p.data.Items))
 	maps.Copy(profs, p.data.Items)
