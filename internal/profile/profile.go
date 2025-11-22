@@ -3,8 +3,23 @@ package profile
 import (
 	"encoding/json"
 	"errors"
-	"maps"
 	"os"
+)
+
+const (
+	VarOS                = "OS"
+	VarArch              = "ARCH"
+	VarTarget            = "TARGET"
+	VarFeatures          = "FEATURES"
+	VarAgentID           = "FJ_AGENT_ID"
+	VarServerURL         = "FJ_SERVER_URL"
+	VarServerCertificate = "FJ_SERVER_CERTIFICATE"
+	VarUserJWT           = "FJ_USER_JWT"
+	VarUserKey           = "FJ_USER_KEY"
+	VarStream            = "FJ_STREAM"
+	VarConsumer          = "FJ_CONSUMER"
+	VarInboxPrefix       = "FJ_INBOX_PREFIX"
+	VarObjectStore       = "FJ_OBJECT_STORE"
 )
 
 var (
@@ -14,72 +29,176 @@ var (
 )
 
 type Profiles struct {
-	data profiles
+	data map[string]*Profile
+}
+
+func (p *Profiles) UnmarshalJSON(b []byte) error {
+	return json.Unmarshal(b, &p.data)
 }
 
 func (p *Profiles) MarshalJSON() ([]byte, error) {
 	return json.Marshal(p.data)
 }
 
-func (p *Profiles) Get(name string) (Profile, error) {
-	v, ok := p.data.Items[name]
+func (p *Profiles) Get(name string) (*Profile, error) {
+	v, ok := p.data[name]
 	if !ok {
-		return Profile{}, ErrProfileNotFound
+		return nil, ErrProfileNotFound
 	}
-	return v, nil
+	if v == nil {
+		// If a profile with the name exists but is empty, return an empty profile.
+		return New(), nil
+	}
+
+	return &Profile{
+		data: v.data,
+	}, nil
 }
 
-func (p *Profiles) Add(name string, profile Profile) error {
-	if p.data.Items == nil {
-		p.data.Items = make(map[string]Profile)
+func (p *Profiles) Add(name string, profile *Profile) error {
+	if p.data == nil {
+		p.data = make(map[string]*Profile)
 	}
 
-	_, ok := p.data.Items[name]
+	_, ok := p.data[name]
 	if ok {
 		return ErrProfileExists
 	}
 
-	p.data.Items[name] = profile
+	p.data[name] = &Profile{
+		data: profile.data,
+	}
 	return nil
 }
 
-func (p *Profiles) Update(name string, profile Profile) error {
-	_, ok := p.data.Items[name]
+func (p *Profiles) Update(name string, profile *Profile) error {
+	_, ok := p.data[name]
 	if !ok {
 		return ErrProfileNotFound
 	}
 
-	p.data.Items[name] = profile
+	p.data[name] = &Profile{
+		data: profile.data,
+	}
 	return nil
 }
 
 func (p *Profiles) Delete(name string) error {
-	_, ok := p.data.Items[name]
+	_, ok := p.data[name]
 	if !ok {
 		return ErrProfileNotFound
 	}
 
-	delete(p.data.Items, name)
+	delete(p.data, name)
 	return nil
 }
 
-func (p *Profiles) List() map[string]Profile {
-	profs := make(map[string]Profile, len(p.data.Items))
-	maps.Copy(profs, p.data.Items)
+func (p *Profiles) List() []string {
+	profs := make([]string, 0, len(p.data))
+	for name := range p.data {
+		profs = append(profs, name)
+	}
 	return profs
 }
 
-type profiles struct {
-	Items  map[string]Profile `json:"items"`
-	Schema map[string]Schema  `json:"schema"`
-}
-
 type Profile struct {
-	SourceDir   string            `json:"source_dir"`
-	Environment map[string]string `json:"environment"`
+	data profileData
 }
 
-type Schema struct {
+func New() *Profile {
+	return &Profile{
+		data: profileData{
+			Environment: make(map[string]*Var),
+		},
+	}
+}
+
+func (p *Profile) SetSourceDir(dir string) {
+	p.data.SourceDir = dir
+}
+
+func (p *Profile) SourceDir() string {
+	return p.data.SourceDir
+}
+
+func (p *Profile) Get(name string) *Var {
+	v, ok := p.data.Environment[name]
+	if !ok {
+		return &Var{}
+	}
+	return &Var{
+		data: v.data,
+	}
+}
+
+func (p *Profile) Set(name string, v *Var) {
+	p.data.Environment[name] = &Var{
+		data: v.data,
+	}
+}
+
+func (p *Profile) Delete(name string) {
+	delete(p.data.Environment, name)
+}
+
+func (p *Profile) List() map[string]string {
+	result := make(map[string]string, len(p.data.Environment))
+	for k, v := range p.data.Environment {
+		result[k] = v.Value()
+	}
+	return result
+}
+
+func (p *Profile) UnmarshalJSON(b []byte) error {
+	return json.Unmarshal(b, &p.data)
+}
+
+func (p *Profile) MarshalJSON() ([]byte, error) {
+	return json.Marshal(p.data)
+}
+
+type profileData struct {
+	SourceDir   string          `json:"source_dir"`
+	Environment map[string]*Var `json:"environment"`
+}
+
+type Var struct {
+	data varData
+}
+
+func NewVar(value string) *Var {
+	return &Var{
+		data: varData{
+			Value: value,
+		},
+	}
+}
+
+func (v *Var) SetValue(value string) {
+	v.data.Value = value
+}
+
+func (v *Var) Value() string {
+	if v.data.Value == "" {
+		return v.data.Default
+	}
+	return v.data.Value
+}
+
+func (v *Var) Description() string {
+	return v.data.Description
+}
+
+func (v *Var) UnmarshalJSON(b []byte) error {
+	return json.Unmarshal(b, &v.data)
+}
+
+func (v *Var) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.data)
+}
+
+type varData struct {
+	Value       string `json:"value"`
 	Default     string `json:"default"`
 	Description string `json:"description"`
 }
@@ -90,7 +209,7 @@ func ParseFile(file string) (*Profiles, error) {
 		return nil, err
 	}
 
-	var data profiles
+	var data map[string]*Profile
 	err = json.Unmarshal(b, &data)
 	if err != nil {
 		return nil, errors.Join(ErrParserError, err)
@@ -99,4 +218,20 @@ func ParseFile(file string) (*Profiles, error) {
 	return &Profiles{
 		data: data,
 	}, nil
+}
+
+func Merge(profs ...*Profile) *Profile {
+	result := New()
+	for _, prof := range profs {
+		if prof == nil {
+			continue
+		}
+		result.data.SourceDir = prof.data.SourceDir
+		for k, v := range prof.data.Environment {
+			result.data.Environment[k] = &Var{
+				data: v.data,
+			}
+		}
+	}
+	return result
 }
