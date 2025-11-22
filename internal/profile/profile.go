@@ -14,7 +14,7 @@ var (
 )
 
 type Profiles struct {
-	data profiles
+	data map[string]Profile
 }
 
 func (p *Profiles) MarshalJSON() ([]byte, error) {
@@ -22,7 +22,7 @@ func (p *Profiles) MarshalJSON() ([]byte, error) {
 }
 
 func (p *Profiles) Get(name string) (Profile, error) {
-	v, ok := p.data.Items[name]
+	v, ok := p.data[name]
 	if !ok {
 		return Profile{}, ErrProfileNotFound
 	}
@@ -30,56 +30,52 @@ func (p *Profiles) Get(name string) (Profile, error) {
 }
 
 func (p *Profiles) Add(name string, profile Profile) error {
-	if p.data.Items == nil {
-		p.data.Items = make(map[string]Profile)
+	if p.data == nil {
+		p.data = make(map[string]Profile)
 	}
 
-	_, ok := p.data.Items[name]
+	_, ok := p.data[name]
 	if ok {
 		return ErrProfileExists
 	}
 
-	p.data.Items[name] = profile
+	p.data[name] = profile
 	return nil
 }
 
 func (p *Profiles) Update(name string, profile Profile) error {
-	_, ok := p.data.Items[name]
+	_, ok := p.data[name]
 	if !ok {
 		return ErrProfileNotFound
 	}
 
-	p.data.Items[name] = profile
+	p.data[name] = profile
 	return nil
 }
 
 func (p *Profiles) Delete(name string) error {
-	_, ok := p.data.Items[name]
+	_, ok := p.data[name]
 	if !ok {
 		return ErrProfileNotFound
 	}
 
-	delete(p.data.Items, name)
+	delete(p.data, name)
 	return nil
 }
 
 func (p *Profiles) List() map[string]Profile {
-	profs := make(map[string]Profile, len(p.data.Items))
-	maps.Copy(profs, p.data.Items)
+	profs := make(map[string]Profile, len(p.data))
+	maps.Copy(profs, p.data)
 	return profs
 }
 
-type profiles struct {
-	Items  map[string]Profile `json:"items"`
-	Schema map[string]Schema  `json:"schema"`
-}
-
 type Profile struct {
-	SourceDir   string            `json:"source_dir"`
-	Environment map[string]string `json:"environment"`
+	SourceDir   string         `json:"source_dir"`
+	Environment map[string]Var `json:"environment"`
 }
 
-type Schema struct {
+type Var struct {
+	Value       string `json:"value"`
 	Default     string `json:"default"`
 	Description string `json:"description"`
 }
@@ -90,7 +86,7 @@ func ParseFile(file string) (*Profiles, error) {
 		return nil, err
 	}
 
-	var data profiles
+	var data map[string]Profile
 	err = json.Unmarshal(b, &data)
 	if err != nil {
 		return nil, errors.Join(ErrParserError, err)
