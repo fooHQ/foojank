@@ -13,6 +13,7 @@ import (
 	"github.com/foohq/foojank/internal/foojank/configdir"
 	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
+	"github.com/foohq/foojank/internal/profile"
 )
 
 func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.BeforeFunc {
@@ -55,7 +56,13 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 			return nil, err
 		}
 
-		conf := config.Merge(newDefaultConfig(), confFile, confFlags)
+		confDefs := config.NewWithOptions(map[string]any{
+			flags.ConfigDir: configDir,
+			flags.Format:    "table",
+			flags.NoColor:   false,
+		})
+
+		conf := config.Merge(confDefs, confFile, confFlags)
 
 		err = validateFn(conf)
 		if err != nil {
@@ -82,16 +89,26 @@ func LoadFlags(w io.Writer) cli.BeforeFunc {
 	}
 }
 
-func newDefaultConfig() *config.Config {
-	opts := map[string]any{
-		flags.Format: "table",
-	}
+func LoadProfiles(w io.Writer) cli.BeforeFunc {
+	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
+		conf := GetConfigFromContext(ctx)
 
-	if true { // TODO: check if output is tty!
-		opts[flags.NoColor] = false
-	}
+		configDir, ok := conf.String(flags.ConfigDir)
+		if !ok {
+			err := fmt.Errorf("cannot load profiles: configuration directory not set")
+			_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
+			return ctx, err
+		}
 
-	return config.NewWithOptions(opts)
+		profiles, err := configdir.ParseProfilesJson(configDir)
+		if err != nil {
+			err = fmt.Errorf("cannot parse profiles: %w", err)
+			_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
+			return ctx, err
+		}
+
+		return setProfilesToContext(ctx, profiles), nil
+	}
 }
 
 func SetupLogger(w io.Writer) cli.BeforeFunc {
@@ -122,8 +139,9 @@ func CommandNotFound(_ context.Context, c *cli.Command, s string) {
 type contextKey string
 
 var (
-	configKey contextKey = "foojank:config"
-	loggerKey contextKey = "foojank:logger"
+	configKey   contextKey = "foojank:config"
+	loggerKey   contextKey = "foojank:logger"
+	profilesKey contextKey = "foojank:profiles"
 )
 
 func GetConfigFromContext(ctx context.Context) *config.Config {
@@ -137,10 +155,19 @@ func GetLoggerFromContext(ctx context.Context) *log.Logger {
 	return logger
 }
 
+func GetProfilesFromContext(ctx context.Context) *profile.Profiles {
+	profs := ctx.Value(profilesKey).(*profile.Profiles)
+	return profs
+}
+
 func setConfigToContext(ctx context.Context, conf *config.Config) context.Context {
 	return context.WithValue(ctx, configKey, conf)
 }
 
 func setLoggerToContext(ctx context.Context, logger *log.Logger) context.Context {
 	return context.WithValue(ctx, loggerKey, logger)
+}
+
+func setProfilesToContext(ctx context.Context, profs *profile.Profiles) context.Context {
+	return context.WithValue(ctx, profilesKey, profs)
 }

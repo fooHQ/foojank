@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/profile"
 )
 
 func Init(dir string) error {
@@ -16,6 +17,11 @@ func Init(dir string) error {
 	}
 
 	err = InitConfigJson(dir)
+	if err != nil {
+		return err
+	}
+
+	err = InitProfilesJson(dir)
 	if err != nil {
 		return err
 	}
@@ -107,4 +113,48 @@ func UpdateConfigJson(dir string, conf *config.Config) error {
 func ParseConfigJson(dir string) (*config.Config, error) {
 	pth := filepath.Join(dir, ".foojank", "config.json")
 	return config.ParseFile(pth)
+}
+
+func InitProfilesJson(dir string) error {
+	pth := filepath.Join(dir, ".foojank", "profiles.json")
+	return os.WriteFile(pth, []byte("{}"), 0644)
+}
+
+func UpdateProfilesJson(dir string, profs *profile.Profiles) error {
+	b, err := json.Marshal(profs)
+	if err != nil {
+		return err
+	}
+
+	pth := filepath.Join(dir, ".foojank", "profiles.json")
+	f, err := os.CreateTemp(filepath.Dir(pth), "profiles*.json")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = f.Close()
+		_ = os.Remove(f.Name())
+	}()
+
+	_, err = f.Write(b)
+	if err != nil {
+		return err
+	}
+
+	err = f.Close()
+	if err != nil {
+		return err
+	}
+
+	err = os.Rename(f.Name(), pth)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ParseProfilesJson(dir string) (*profile.Profiles, error) {
+	pth := filepath.Join(dir, ".foojank", "profiles.json")
+	return profile.ParseFile(pth)
 }
