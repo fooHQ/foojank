@@ -9,6 +9,7 @@ const (
 	Name              = "name"
 	Set               = "set"
 	Unset             = "unset"
+	Profile           = "profile"
 	SourceDir         = "source-dir"
 	Output            = "output"
 	Os                = "os"
