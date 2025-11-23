@@ -199,8 +199,8 @@ func (v *Var) MarshalJSON() ([]byte, error) {
 
 type varData struct {
 	Value       string `json:"value"`
-	Default     string `json:"default"`
-	Description string `json:"description"`
+	Default     string `json:"default,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
 func ParseFile(file string) (*Profiles, error) {
