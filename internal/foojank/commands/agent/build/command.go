@@ -8,20 +8,19 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 
 	petname "github.com/dustinkirkland/golang-petname"
-	"github.com/foohq/ren/modules"
 	"github.com/foohq/urlpath"
 	"github.com/urfave/cli/v3"
 
-	"github.com/foohq/foojank/clients/codebase"
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/clients/vessel"
 	"github.com/foohq/foojank/internal/auth"
+	"github.com/foohq/foojank/internal/builder"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/flags"
+	"github.com/foohq/foojank/internal/profile"
 	"github.com/foohq/foojank/proto"
 )
 
@@ -30,34 +29,46 @@ func NewCommand() *cli.Command {
 		Name:  "build",
 		Usage: "Build an agent",
 		Flags: []cli.Flag{
-			&cli.BoolFlag{
-				Name:  flags.Dev,
-				Usage: "enable development mode",
+			&cli.StringFlag{
+				Name:  flags.Profile,
+				Usage: "set profile",
 			},
 			&cli.StringFlag{
 				Name:  flags.Os,
-				Usage: "set build operating system",
+				Usage: "set target operating system",
 			},
 			&cli.StringFlag{
 				Name:  flags.Arch,
-				Usage: "set build architecture",
+				Usage: "set target architecture",
+			},
+			&cli.StringSliceFlag{
+				Name:  flags.Feature,
+				Usage: "enable build features",
 			},
 			&cli.StringFlag{
-				Name:  flags.SourceDirectory,
-				Usage: "set path to source directory",
+				Name:  flags.Server,
+				Usage: "set agent's server URL",
+			},
+			&cli.StringFlag{
+				Name:  flags.Certificate,
+				Usage: "set TLS certificate for agent's server",
 			},
 			&cli.StringFlag{
 				Name:    flags.Output,
-				Usage:   "set output file",
+				Usage:   "set path to an output file",
 				Aliases: []string{"o"},
 			},
-			&cli.StringSliceFlag{
-				Name:  flags.WithServer,
-				Usage: "set agent's server",
+			&cli.StringFlag{
+				Name:  flags.SourceDir,
+				Usage: "set path to a source code directory",
 			},
 			&cli.StringSliceFlag{
-				Name:  flags.WithoutModule,
-				Usage: "disable compilation of a module",
+				Name:  flags.Set,
+				Usage: "set environment variable (format: KEY=value)",
+			},
+			&cli.StringSliceFlag{
+				Name:  flags.Unset,
+				Usage: "unset environment variable (format: KEY)",
 			},
 			&cli.StringFlag{
 				Name:  flags.ServerURL,
@@ -88,6 +99,11 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 		return ctx, err
 	}
 
+	ctx, err = actions.LoadProfiles(os.Stderr)(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
 	ctx, err = actions.SetupLogger(os.Stderr)(ctx, c)
 	if err != nil {
 		return ctx, err
@@ -98,6 +114,7 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 
 func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
+	profs := actions.GetProfilesFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
 	serverURL, _ := conf.String(flags.ServerURL)
@@ -106,12 +123,15 @@ func action(ctx context.Context, c *cli.Command) error {
 	outputName, _ := conf.String(flags.Output)
 	targetOS, _ := conf.String(flags.Os)
 	targetArch, _ := conf.String(flags.Arch)
-	isDevBuild, _ := conf.Bool(flags.Dev)
-	agentServer, _ := conf.StringSlice(flags.WithServer)
-	disabledModules, _ := conf.StringSlice(flags.WithoutModule)
-	sourceDir, _ := conf.String(flags.SourceDirectory)
+	sourceDir, _ := conf.String(flags.SourceDir)
+	setVars, _ := conf.StringSlice(flags.Set)
+	unsetVars, _ := conf.StringSlice(flags.Unset)
+	features, _ := conf.StringSlice(flags.Feature)
+	targetServer, _ := conf.String(flags.Server)
+	targetCert, _ := conf.String(flags.Certificate)
+	profName, _ := conf.String(flags.Profile)
 
-	_, accountSeed, err := auth.ReadUser(accountName)
+	_, accountSeed, err := auth.ReadAccount(accountName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot read account %q: %v", accountName, err)
 		return err
@@ -129,41 +149,88 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	codebaseCli := codebase.New(sourceDir)
-
 	agentID := petname.Generate(2, "-")
 
-	if outputName == "" {
-		wd, err := os.Getwd()
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get current working directory")
-			return err
-		}
-
-		outputName = filepath.Join(wd, agentID)
-		if targetOS == "windows" && !strings.HasSuffix(outputName, ".exe") {
-			outputName += ".exe"
-		}
-	}
-
-	if targetOS == "" {
-		targetOS = runtime.GOOS
-	}
-
-	if targetArch == "" {
-		targetArch = runtime.GOARCH
-	}
-
-	buildMode := "production"
-	if isDevBuild {
-		buildMode = "development"
-	}
-
-	servers := agentServer
-	if len(servers) == 0 {
-		logger.ErrorContext(ctx, "No server configured. Use --%s flag to specify one", flags.WithServer)
+	agentJWT, agentSeed, err := createUser(agentID, string(accountSeed))
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot create a user: %v", err)
 		return err
 	}
+
+	pwd, err := filepath.Abs(".")
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot get current directory: %v", err)
+		return err
+	}
+
+	// Default profile.
+	profDefault := profile.New()
+	profDefault.Set(profile.VarAgentID, profile.NewVar(agentID))
+	profDefault.Set(profile.VarServerURL, profile.NewVar(serverURL))
+	if serverCert != "" {
+		profDefault.Set(profile.VarServerCertificate, profile.NewVar(serverCert))
+	}
+	profDefault.Set(profile.VarUserJWT, profile.NewVar(agentJWT))
+	profDefault.Set(profile.VarUserKey, profile.NewVar(agentSeed))
+	profDefault.Set(profile.VarStream, profile.NewVar(vessel.StreamName(agentID)))
+	profDefault.Set(profile.VarConsumer, profile.NewVar(agentID))
+	profDefault.Set(profile.VarInboxPrefix, profile.NewVar(vessel.InboxName(agentID)))
+	profDefault.Set(profile.VarObjectStore, profile.NewVar(agentID))
+	profDefault.Set(profile.VarOS, profile.NewVar(runtime.GOOS))
+	profDefault.Set(profile.VarArch, profile.NewVar(runtime.GOARCH))
+	profDefault.Set(profile.VarTarget, profile.NewVar(filepath.Join(pwd, agentID)))
+
+	// Parse profile profName defined in the config dir.
+	var profFile *profile.Profile
+	if profName != "" {
+		var err error
+		profFile, err = profs.Get(profName)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot get profile %q: %v", profName, err)
+			return err
+		}
+	}
+
+	// Parse profile flags.
+	profFlags := profile.New()
+	profFlags.SetSourceDir(sourceDir)
+	if targetServer != "" {
+		profFlags.Set(profile.VarServerURL, profile.NewVar(targetServer))
+	}
+	if targetCert != "" {
+		profFlags.Set(profile.VarServerCertificate, profile.NewVar(targetCert))
+	}
+	if targetOS != "" {
+		profFlags.Set(profile.VarOS, profile.NewVar(targetOS))
+	}
+	if targetArch != "" {
+		profFlags.Set(profile.VarArch, profile.NewVar(targetArch))
+	}
+	if outputName != "" {
+		profFlags.Set(profile.VarTarget, profile.NewVar(filepath.Join(pwd, outputName)))
+	}
+	if len(features) > 0 {
+		profFlags.Set(profile.VarFeatures, profile.NewVar(strings.Join(features, ",")))
+	}
+
+	for k, v := range parseEnvVars(setVars) {
+		profFlags.Set(k, v)
+	}
+
+	// Merge all profiles to create a final profile.
+	prof := profile.Merge(profDefault, profFile, profFlags)
+
+	// Remove unset variables.
+	for _, v := range unsetVars {
+		prof.Delete(v)
+	}
+
+	sourceDir = prof.SourceDir()
+	agentID = prof.Get(profile.VarAgentID).Value()
+	streamName := prof.Get(profile.VarStream).Value()
+	consumerName := prof.Get(profile.VarConsumer).Value()
+	storeName := prof.Get(profile.VarObjectStore).Value()
+	servers := strings.Split(prof.Get(profile.VarServerURL).Value(), ",")
 
 	for i := range servers {
 		scheme, err := urlpath.Scheme(servers[i])
@@ -175,10 +242,6 @@ func action(ctx context.Context, c *cli.Command) error {
 			servers[i] = fmt.Sprintf("wss://%s", servers[i])
 		}
 	}
-
-	streamName := vessel.StreamName(agentID)
-
-	logger.DebugContext(ctx, "Create a stream")
 
 	_, err = srv.CreateStream(ctx, streamName, []string{
 		proto.StartWorkerSubject(agentID, "*"),
@@ -194,10 +257,6 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	consumerName := agentID
-
-	logger.DebugContext(ctx, "Create a message consumer")
-
 	_, err = srv.CreateDurableConsumer(ctx, streamName, consumerName, []string{
 		proto.StartWorkerSubject(agentID, "*"),
 		proto.StopWorkerSubject(agentID, "*"),
@@ -208,52 +267,25 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	storeName := agentID
-	storeDescription := fmt.Sprintf("Agent %s (%s/%s)", agentID, targetOS, targetArch)
-
-	logger.InfoContext(ctx, "Create a store")
-
+	storeDescription := fmt.Sprintf("Agent %s", agentID)
 	err = srv.CreateObjectStore(ctx, storeName, storeDescription)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create a store: %v", err)
 		return err
 	}
 
-	agentJWT, agentSeed, err := createUser(agentID, string(accountSeed))
+	output, err := builder.Run(ctx, sourceDir, prof.List())
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot create a user: %v", err)
-		return err
-	}
-
-	logger.InfoContext(ctx, "Build an executable file %q [%s/%s] [%s]", outputName, targetOS, targetArch, buildMode)
-
-	agentConf := codebase.BuildAgentConfig{
-		AgentID:               agentID,
-		ServerURL:             strings.Join(servers, ","),
-		ServerCertificate:     serverCert,
-		UserJWT:               agentJWT,
-		UserKey:               agentSeed,
-		Stream:                streamName,
-		Consumer:              consumerName,
-		InboxPrefix:           vessel.InboxName(agentID),
-		ObjectStore:           agentID,
-		AwaitMessagesDuration: 5 * time.Second, // TODO: make configurable
-		IdleDuration:          1 * time.Minute, // TODO: make configurable
-		IdleJitter:            5 * time.Second, // TODO: make configurable
-	}
-	err = buildExecutable(
-		ctx,
-		codebaseCli,
-		targetOS,
-		targetArch,
-		outputName,
-		isDevBuild,
-		disabledModules,
-		agentConf,
-	)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot build executable: %v", err)
-		return err
+		lines := strings.Split(output, "\n")
+		for _, line := range lines {
+			if line == "" {
+				continue
+			}
+			logger.ErrorContext(ctx, "%s", line)
+		}
+		// Return a generic error instead of "err".
+		// Err can be of type exit.ExitError, which is apparently printed to stderr by cli.
+		return errors.New("build failed")
 	}
 
 	logger.InfoContext(ctx, "Agent %q has been built!", agentID)
@@ -273,66 +305,13 @@ func createUser(
 	return userJWT, string(userSeed), nil
 }
 
-func buildExecutable(
-	ctx context.Context,
-	cli *codebase.Client,
-	targetOS,
-	targetArch,
-	outputName string,
-	isDevBuild bool,
-	disabledModules []string,
-	conf codebase.BuildAgentConfig,
-) error {
-	buildTags, err := configureBuildTags(modules.Modules(), disabledModules)
-	if err != nil {
-		return fmt.Errorf("cannot configure modules: %w", err)
+func parseEnvVars(envVars []string) map[string]*profile.Var {
+	env := make(map[string]*profile.Var, len(envVars))
+	for _, envVar := range envVars {
+		parts := strings.SplitN(envVar, "=", 2)
+		env[strings.TrimSpace(parts[0])] = profile.NewVar(parts[1])
 	}
-
-	binPath, output, err := cli.BuildAgent(ctx, codebase.BuildAgentOptions{
-		OS:         targetOS,
-		Arch:       targetArch,
-		Production: !isDevBuild,
-		Tags:       buildTags,
-		Config:     conf,
-	})
-	if err != nil {
-		return fmt.Errorf("%s", output)
-	}
-
-	err = os.Rename(binPath, outputName)
-	if err != nil {
-		_ = os.Remove(binPath)
-		return fmt.Errorf("cannot rename the executable file: %w", err)
-	}
-
-	return nil
-}
-
-func moduleExists(mods []string, name string) bool {
-	for _, m := range mods {
-		if m == name {
-			return true
-		}
-	}
-	return false
-}
-
-func configureBuildTags(mods, disabledMods []string) ([]string, error) {
-	// Verify that disabled modules exist, otherwise throw an error.
-	for _, m := range disabledMods {
-		if !moduleExists(mods, m) {
-			err := fmt.Errorf("module '%s' does not exist", m)
-			return nil, err
-		}
-	}
-
-	var buildTags []string
-	for _, m := range mods {
-		if moduleExists(disabledMods, m) {
-			buildTags = append(buildTags, modules.StubBuildTag(m))
-		}
-	}
-	return buildTags, nil
+	return env
 }
 
 func validateConfiguration(conf *config.Config) error {
