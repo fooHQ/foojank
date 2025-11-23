@@ -28,10 +28,10 @@ func New() *cli.Command {
 		Commands: []*cli.Command{
 			account.NewCommand(),
 			agent.NewCommand(),
-			job.NewCommand(),
-			storage.NewCommand(),
 			config.NewCommand(),
+			job.NewCommand(),
 			profile.NewCommand(),
+			storage.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		OnUsageError:    actions.UsageError,
