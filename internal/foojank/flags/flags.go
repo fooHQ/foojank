@@ -17,9 +17,5 @@ const (
 	Feature           = "feature"
 	Server            = "server"
 	Certificate       = "certificate"
-	Dev               = "dev"
-	SourceDirectory   = "source-directory"
-	WithServer        = "with-server"
-	WithoutModule     = "without-module"
 	NoColor           = "no-color"
 )
