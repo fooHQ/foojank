@@ -4,6 +4,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank"
+	config2 "github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/commands/account"
 	"github.com/foohq/foojank/internal/foojank/commands/agent"
@@ -11,7 +12,6 @@ import (
 	"github.com/foohq/foojank/internal/foojank/commands/job"
 	"github.com/foohq/foojank/internal/foojank/commands/profile"
 	"github.com/foohq/foojank/internal/foojank/commands/storage"
-	"github.com/foohq/foojank/internal/foojank/flags"
 )
 
 func NewCommand() *cli.Command {
@@ -21,7 +21,7 @@ func NewCommand() *cli.Command {
 		Version: foojank.Version(),
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
-				Name:  flags.NoColor,
+				Name:  config2.NoColor,
 				Usage: "disable color output",
 			},
 		},

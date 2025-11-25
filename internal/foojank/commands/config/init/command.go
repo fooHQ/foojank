@@ -8,9 +8,9 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/configdir"
-	"github.com/foohq/foojank/internal/foojank/flags"
 )
 
 func NewCommand() *cli.Command {
@@ -19,7 +19,7 @@ func NewCommand() *cli.Command {
 		Usage: "Initialize configuration directory",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  flags.ConfigDir,
+				Name:  config.ConfigDir,
 				Usage: "set path to a configuration directory",
 			},
 		},
@@ -47,7 +47,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
-	configDir, isSet := conf.String(flags.ConfigDir)
+	configDir, isSet := conf.String(config.ConfigDir)
 	if !isSet {
 		dir, err := configdir.Search(".")
 		if err == nil {

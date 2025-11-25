@@ -13,7 +13,6 @@ import (
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
-	"github.com/foohq/foojank/internal/foojank/flags"
 )
 
 func NewCommand() *cli.Command {
@@ -22,7 +21,7 @@ func NewCommand() *cli.Command {
 		Usage: "Generate account JWT and seed",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  flags.Name,
+				Name:  config.Name,
 				Usage: "set account name",
 			},
 		},
@@ -53,7 +52,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
-	name, _ := conf.String(flags.Name)
+	name, _ := conf.String(config.Name)
 	if name == "" {
 		name = petname.Generate(2, "_")
 	}

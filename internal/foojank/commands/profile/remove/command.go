@@ -10,7 +10,6 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/configdir"
-	"github.com/foohq/foojank/internal/foojank/flags"
 )
 
 func NewCommand() *cli.Command {
@@ -20,7 +19,7 @@ func NewCommand() *cli.Command {
 		Usage:     "Remove a profile",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  flags.ConfigDir,
+				Name:  config.ConfigDir,
 				Usage: "set path to a configuration directory",
 			},
 		},
@@ -55,7 +54,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	profs := actions.GetProfilesFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
-	configDir, _ := conf.String(flags.ConfigDir)
+	configDir, _ := conf.String(config.ConfigDir)
 
 	if c.Args().Len() != 1 {
 		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)

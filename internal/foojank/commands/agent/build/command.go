@@ -19,7 +19,6 @@ import (
 	"github.com/foohq/foojank/internal/builder"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
-	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/profile"
 	"github.com/foohq/foojank/proto"
 )
@@ -30,60 +29,60 @@ func NewCommand() *cli.Command {
 		Usage: "Build an agent",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  flags.Profile,
+				Name:  config.Profile,
 				Usage: "set profile",
 			},
 			&cli.StringFlag{
-				Name:  flags.Os,
+				Name:  config.Os,
 				Usage: "set target operating system",
 			},
 			&cli.StringFlag{
-				Name:  flags.Arch,
+				Name:  config.Arch,
 				Usage: "set target architecture",
 			},
 			&cli.StringSliceFlag{
-				Name:  flags.Feature,
+				Name:  config.Feature,
 				Usage: "enable build features",
 			},
 			&cli.StringFlag{
-				Name:  flags.Server,
+				Name:  config.Server,
 				Usage: "set agent's server URL",
 			},
 			&cli.StringFlag{
-				Name:  flags.Certificate,
+				Name:  config.Certificate,
 				Usage: "set TLS certificate for agent's server",
 			},
 			&cli.StringFlag{
-				Name:    flags.Output,
+				Name:    config.Output,
 				Usage:   "set path to an output file",
 				Aliases: []string{"o"},
 			},
 			&cli.StringFlag{
-				Name:  flags.SourceDir,
+				Name:  config.SourceDir,
 				Usage: "set path to a source code directory",
 			},
 			&cli.StringSliceFlag{
-				Name:  flags.Set,
+				Name:  config.Set,
 				Usage: "set environment variable (format: KEY=value)",
 			},
 			&cli.StringSliceFlag{
-				Name:  flags.Unset,
+				Name:  config.Unset,
 				Usage: "unset environment variable (format: KEY)",
 			},
 			&cli.StringFlag{
-				Name:  flags.ServerURL,
+				Name:  config.ServerURL,
 				Usage: "set server URL",
 			},
 			&cli.StringFlag{
-				Name:  flags.ServerCertificate,
+				Name:  config.ServerCertificate,
 				Usage: "set server TLS certificate",
 			},
 			&cli.StringFlag{
-				Name:  flags.Account,
+				Name:  config.Account,
 				Usage: "set server account",
 			},
 			&cli.StringFlag{
-				Name:  flags.ConfigDir,
+				Name:  config.ConfigDir,
 				Usage: "set path to a configuration directory",
 			},
 		},
@@ -117,19 +116,19 @@ func action(ctx context.Context, c *cli.Command) error {
 	profs := actions.GetProfilesFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
-	serverURL, _ := conf.String(flags.ServerURL)
-	serverCert, _ := conf.String(flags.ServerCertificate)
-	accountName, _ := conf.String(flags.Account)
-	outputName, _ := conf.String(flags.Output)
-	targetOS, _ := conf.String(flags.Os)
-	targetArch, _ := conf.String(flags.Arch)
-	sourceDir, _ := conf.String(flags.SourceDir)
-	setVars, _ := conf.StringSlice(flags.Set)
-	unsetVars, _ := conf.StringSlice(flags.Unset)
-	features, _ := conf.StringSlice(flags.Feature)
-	targetServer, _ := conf.String(flags.Server)
-	targetCert, _ := conf.String(flags.Certificate)
-	profName, _ := conf.String(flags.Profile)
+	serverURL, _ := conf.String(config.ServerURL)
+	serverCert, _ := conf.String(config.ServerCertificate)
+	accountName, _ := conf.String(config.Account)
+	outputName, _ := conf.String(config.Output)
+	targetOS, _ := conf.String(config.Os)
+	targetArch, _ := conf.String(config.Arch)
+	sourceDir, _ := conf.String(config.SourceDir)
+	setVars, _ := conf.StringSlice(config.Set)
+	unsetVars, _ := conf.StringSlice(config.Unset)
+	features, _ := conf.StringSlice(config.Feature)
+	targetServer, _ := conf.String(config.Server)
+	targetCert, _ := conf.String(config.Certificate)
+	profName, _ := conf.String(config.Profile)
 
 	_, accountSeed, err := auth.ReadAccount(accountName)
 	if err != nil {
@@ -316,16 +315,16 @@ func parseEnvVars(envVars []string) map[string]*profile.Var {
 
 func validateConfiguration(conf *config.Config) error {
 	for _, opt := range []string{
-		flags.ServerURL,
-		flags.Account,
+		config.ServerURL,
+		config.Account,
 	} {
 		switch opt {
-		case flags.ServerURL:
+		case config.ServerURL:
 			v, ok := conf.String(opt)
 			if !ok || v == "" {
 				return errors.New("server URL not configured")
 			}
-		case flags.Account:
+		case config.Account:
 			v, ok := conf.String(opt)
 			if !ok || v == "" {
 				return errors.New("account not configured")

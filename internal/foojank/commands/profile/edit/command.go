@@ -12,7 +12,6 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/configdir"
-	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/profile"
 )
 
@@ -23,23 +22,23 @@ func NewCommand() *cli.Command {
 		Usage:     "Edit a profile",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  flags.Name,
+				Name:  config.Name,
 				Usage: "set new name",
 			},
 			&cli.StringFlag{
-				Name:  flags.SourceDir,
+				Name:  config.SourceDir,
 				Usage: "set path to a source code directory",
 			},
 			&cli.StringSliceFlag{
-				Name:  flags.Set,
+				Name:  config.Set,
 				Usage: "set environment variable (format: KEY=value)",
 			},
 			&cli.StringSliceFlag{
-				Name:  flags.Unset,
+				Name:  config.Unset,
 				Usage: "unset environment variable (format: KEY)",
 			},
 			&cli.StringFlag{
-				Name:  flags.ConfigDir,
+				Name:  config.ConfigDir,
 				Usage: "set path to a configuration directory",
 			},
 		},
@@ -73,11 +72,11 @@ func action(ctx context.Context, c *cli.Command) error {
 	profs := actions.GetProfilesFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
-	configDir, _ := conf.String(flags.ConfigDir)
-	sourceDir, _ := conf.String(flags.SourceDir)
-	setVars, _ := conf.StringSlice(flags.Set)
-	unsetVars, _ := conf.StringSlice(flags.Unset)
-	newName, _ := conf.String(flags.Name)
+	configDir, _ := conf.String(config.ConfigDir)
+	sourceDir, _ := conf.String(config.SourceDir)
+	setVars, _ := conf.StringSlice(config.Set)
+	unsetVars, _ := conf.StringSlice(config.Unset)
+	newName, _ := conf.String(config.Name)
 
 	if c.Args().Len() != 1 {
 		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)

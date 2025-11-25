@@ -11,7 +11,6 @@ import (
 
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
-	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/foojank/formatter"
 	jsonformatter "github.com/foohq/foojank/internal/foojank/formatter/json"
 	tableformatter "github.com/foohq/foojank/internal/foojank/formatter/table"
@@ -23,11 +22,11 @@ func NewCommand() *cli.Command {
 		Usage: "List configuration options",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  flags.Format,
+				Name:  config.Format,
 				Usage: "set output format",
 			},
 			&cli.StringFlag{
-				Name:  flags.ConfigDir,
+				Name:  config.ConfigDir,
 				Usage: "set path to a configuration directory",
 			},
 		},
@@ -56,27 +55,27 @@ func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
-	format, _ := conf.String(flags.Format)
+	format, _ := conf.String(config.Format)
 
 	opts := []any{
 		&cli.StringFlag{
-			Name:  flags.ServerURL,
+			Name:  config.ServerURL,
 			Usage: "Server URL",
 		},
 		&cli.StringFlag{
-			Name:  flags.ServerCertificate,
+			Name:  config.ServerCertificate,
 			Usage: "Server TLS certificate",
 		},
 		&cli.StringFlag{
-			Name:  flags.Account,
+			Name:  config.Account,
 			Usage: "Account for server authentication",
 		},
 		&cli.StringFlag{
-			Name:  flags.Format,
+			Name:  config.Format,
 			Usage: "Output format: table or json",
 		},
 		&cli.BoolFlag{
-			Name:  flags.NoColor,
+			Name:  config.NoColor,
 			Usage: "Color output",
 		},
 	}

@@ -11,7 +11,6 @@ import (
 
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/configdir"
-	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/log"
 	"github.com/foohq/foojank/internal/profile"
 )
@@ -26,7 +25,7 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 			return nil, err
 		}
 
-		configDir, isSet := confFlags.String(flags.ConfigDir)
+		configDir, isSet := confFlags.String(config.ConfigDir)
 		if !isSet {
 			dir, err := configdir.Search(".")
 			if err != nil {
@@ -57,9 +56,9 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 		}
 
 		confDefs := config.NewWithOptions(map[string]any{
-			flags.ConfigDir: configDir,
-			flags.Format:    "table",
-			flags.NoColor:   false,
+			config.ConfigDir: configDir,
+			config.Format:    "table",
+			config.NoColor:   false,
 		})
 
 		conf := config.Merge(confDefs, confFile, confFlags)
@@ -93,7 +92,7 @@ func LoadProfiles(w io.Writer) cli.BeforeFunc {
 	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
 		conf := GetConfigFromContext(ctx)
 
-		configDir, ok := conf.String(flags.ConfigDir)
+		configDir, ok := conf.String(config.ConfigDir)
 		if !ok {
 			err := fmt.Errorf("cannot load profiles: configuration directory not set")
 			_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
@@ -115,7 +114,7 @@ func SetupLogger(w io.Writer) cli.BeforeFunc {
 	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
 		conf := GetConfigFromContext(ctx)
 
-		noColor, ok := conf.Bool(flags.NoColor)
+		noColor, ok := conf.Bool(config.NoColor)
 		if !ok {
 			noColor = false
 		}

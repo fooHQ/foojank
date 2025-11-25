@@ -13,7 +13,6 @@ import (
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
-	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/foojank/formatter"
 	jsonformatter "github.com/foohq/foojank/internal/foojank/formatter/json"
 	tableformatter "github.com/foohq/foojank/internal/foojank/formatter/table"
@@ -25,7 +24,7 @@ func NewCommand() *cli.Command {
 		Usage: "List accounts",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  flags.Format,
+				Name:  config.Format,
 				Usage: "set output format",
 			},
 		},
@@ -57,7 +56,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
-	format, _ := conf.String(flags.Format)
+	format, _ := conf.String(config.Format)
 
 	accounts, err := auth.ListAccounts()
 	if err != nil {

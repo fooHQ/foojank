@@ -14,7 +14,6 @@ import (
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
-	"github.com/foohq/foojank/internal/foojank/flags"
 	"github.com/foohq/foojank/internal/foojank/formatter"
 	jsonformatter "github.com/foohq/foojank/internal/foojank/formatter/json"
 	tableformatter "github.com/foohq/foojank/internal/foojank/formatter/table"
@@ -27,23 +26,23 @@ func NewCommand() *cli.Command {
 		Usage:     "Display all messages in agent's stream",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  flags.Format,
+				Name:  config.Format,
 				Usage: "set output format",
 			},
 			&cli.StringFlag{
-				Name:  flags.ServerURL,
+				Name:  config.ServerURL,
 				Usage: "set server URL",
 			},
 			&cli.StringFlag{
-				Name:  flags.ServerCertificate,
+				Name:  config.ServerCertificate,
 				Usage: "set server TLS certificate",
 			},
 			&cli.StringFlag{
-				Name:  flags.Account,
+				Name:  config.Account,
 				Usage: "set server account",
 			},
 			&cli.StringFlag{
-				Name:  flags.ConfigDir,
+				Name:  config.ConfigDir,
 				Usage: "set path to a configuration directory",
 			},
 		},
@@ -71,10 +70,10 @@ func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
-	serverURL, _ := conf.String(flags.ServerURL)
-	serverCert, _ := conf.String(flags.ServerCertificate)
-	accountName, _ := conf.String(flags.Account)
-	format, _ := conf.String(flags.Format)
+	serverURL, _ := conf.String(config.ServerURL)
+	serverCert, _ := conf.String(config.ServerCertificate)
+	accountName, _ := conf.String(config.Account)
+	format, _ := conf.String(config.Format)
 
 	userJWT, userSeed, err := auth.ReadUser(accountName)
 	if err != nil {
@@ -150,16 +149,16 @@ func formatTime(t time.Time) string {
 
 func validateConfiguration(conf *config.Config) error {
 	for _, opt := range []string{
-		flags.ServerURL,
-		flags.Account,
+		config.ServerURL,
+		config.Account,
 	} {
 		switch opt {
-		case flags.ServerURL:
+		case config.ServerURL:
 			v, ok := conf.String(opt)
 			if !ok || v == "" {
 				return errors.New("server URL not configured")
 			}
-		case flags.Account:
+		case config.Account:
 			v, ok := conf.String(opt)
 			if !ok || v == "" {
 				return errors.New("account not configured")

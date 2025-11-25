@@ -9,7 +9,6 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/foojank/actions"
 	"github.com/foohq/foojank/internal/foojank/configdir"
-	"github.com/foohq/foojank/internal/foojank/flags"
 )
 
 func NewCommand() *cli.Command {
@@ -18,27 +17,27 @@ func NewCommand() *cli.Command {
 		Usage: "Set configuration option",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  flags.ServerURL,
+				Name:  config.ServerURL,
 				Usage: "set server URL",
 			},
 			&cli.StringFlag{
-				Name:  flags.ServerCertificate,
+				Name:  config.ServerCertificate,
 				Usage: "set server TLS certificate",
 			},
 			&cli.StringFlag{
-				Name:  flags.Account,
+				Name:  config.Account,
 				Usage: "set server account",
 			},
 			&cli.StringFlag{
-				Name:  flags.Format,
+				Name:  config.Format,
 				Usage: "set output format",
 			},
 			&cli.BoolFlag{
-				Name:  flags.NoColor,
+				Name:  config.NoColor,
 				Usage: "set disable color output",
 			},
 			&cli.StringFlag{
-				Name:  flags.ConfigDir,
+				Name:  config.ConfigDir,
 				Usage: "set path to a configuration directory",
 			},
 		},
@@ -66,11 +65,11 @@ func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
-	configDir, _ := conf.String(flags.ConfigDir)
+	configDir, _ := conf.String(config.ConfigDir)
 
 	// Set ConfigDir to an empty value.
 	conf = config.Merge(conf, config.NewWithOptions(map[string]any{
-		flags.ConfigDir: "",
+		config.ConfigDir: "",
 	}))
 
 	err := configdir.UpdateConfigJson(configDir, conf)
