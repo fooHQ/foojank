@@ -5,7 +5,6 @@ go 1.25.0
 require (
 	capnproto.org/go/capnp/v3 v3.1.0-alpha.1
 	github.com/dustinkirkland/golang-petname v0.0.0-20240428194347-eebcea082ee0
-	github.com/foohq/ren v0.1.0
 	github.com/foohq/ren-natsfs v0.0.0-20250715161259-1f76eedb0ef2
 	github.com/foohq/urlpath v0.1.0
 	github.com/lmittmann/tint v1.1.2
@@ -21,7 +20,6 @@ require (
 
 require (
 	github.com/colega/zeropool v0.0.0-20230505084239-6fb4a4f75381 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/foohq/ren-memfs v0.0.0-20250715161330-d886928c2dee // indirect
@@ -35,13 +33,7 @@ require (
 	github.com/olekukonko/ll v0.0.9 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/risor-io/risor v1.8.1 // indirect
-	github.com/risor-io/risor/modules/cli v1.8.1 // indirect
-	github.com/risor-io/risor/modules/shlex v1.8.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/u-root/u-root v0.14.0 // indirect
-	github.com/urfave/cli/v2 v2.27.7 // indirect
-	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
 	golang.org/x/crypto v0.39.0 // indirect
 	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
