@@ -6,13 +6,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/foohq/foojank/internal/foojank"
+	"github.com/foohq/foojank/internal/foojank/commands"
 )
 
 func run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
-	return foojank.New().Run(ctx, os.Args)
+	return commands.NewCommand().Run(ctx, os.Args)
 }
 
 func main() {

@@ -1,4 +1,4 @@
-package foojank
+package commands
 
 import (
 	"github.com/urfave/cli/v3"
@@ -14,7 +14,7 @@ import (
 	"github.com/foohq/foojank/internal/foojank/flags"
 )
 
-func New() *cli.Command {
+func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:    "foojank",
 		Usage:   "Command and control framework",
