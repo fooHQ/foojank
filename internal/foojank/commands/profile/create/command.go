@@ -5,7 +5,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/urfave/cli/v3"
 
@@ -87,7 +86,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	prof := profile.New()
 	prof.SetSourceDir(sourceDir)
-	for k, v := range parseEnvVars(setVars) {
+	for k, v := range profile.ParseKVPairs(setVars) {
 		prof.Set(k, v)
 	}
 
@@ -104,15 +103,6 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	return nil
-}
-
-func parseEnvVars(envVars []string) map[string]*profile.Var {
-	env := make(map[string]*profile.Var, len(envVars))
-	for _, envVar := range envVars {
-		parts := strings.SplitN(envVar, "=", 2)
-		env[strings.TrimSpace(parts[0])] = profile.NewVar(parts[1])
-	}
-	return env
 }
 
 func validateConfiguration(conf *config.Config) error {
