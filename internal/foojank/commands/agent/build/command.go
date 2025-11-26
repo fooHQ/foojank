@@ -169,9 +169,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	profDefault := profile.New()
 	profDefault.Set(profile.VarAgentID, profile.NewVar(agentID))
 	profDefault.Set(profile.VarServerURL, profile.NewVar(serverURL))
-	if serverCert != "" {
-		profDefault.Set(profile.VarServerCertificate, profile.NewVar(serverCert))
-	}
+	profDefault.Set(profile.VarServerCertificate, profile.NewVar(serverCert))
 	profDefault.Set(profile.VarUserJWT, profile.NewVar(agentJWT))
 	profDefault.Set(profile.VarUserKey, profile.NewVar(agentSeed))
 	profDefault.Set(profile.VarStream, profile.NewVar(vessel.StreamName(agentID)))
