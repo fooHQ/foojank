@@ -1,4 +1,4 @@
-package generate
+package create
 
 import (
 	"context"
@@ -18,8 +18,8 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:  "generate",
-		Usage: "Generate account JWT and seed",
+		Name:  "create",
+		Usage: "Create a new account",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  flags.Name,

@@ -4,8 +4,8 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/foojank/actions"
+	"github.com/foohq/foojank/internal/foojank/commands/account/create"
 	"github.com/foohq/foojank/internal/foojank/commands/account/export"
-	"github.com/foohq/foojank/internal/foojank/commands/account/generate"
 	"github.com/foohq/foojank/internal/foojank/commands/account/list"
 )
 
@@ -14,7 +14,7 @@ func NewCommand() *cli.Command {
 		Name:  "account",
 		Usage: "Manage accounts",
 		Commands: []*cli.Command{
-			generate.NewCommand(),
+			create.NewCommand(),
 			export.NewCommand(),
 			list.NewCommand(),
 		},
