@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"strings"
 )
 
 const (
@@ -172,6 +173,21 @@ func NewVar(value string) *Var {
 			Value: value,
 		},
 	}
+}
+
+func ParseKVPairs(pairs []string) map[string]*Var {
+	env := make(map[string]*Var, len(pairs))
+	for _, pair := range pairs {
+		parts := strings.SplitN(pair, "=", 2)
+		var v *Var
+		if len(parts) > 1 {
+			v = NewVar(parts[1])
+		} else {
+			v = NewVar("")
+		}
+		env[strings.TrimSpace(parts[0])] = v
+	}
+	return env
 }
 
 func (v *Var) SetValue(value string) {
