@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	petname "github.com/dustinkirkland/golang-petname"
-	"github.com/foohq/urlpath"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/clients/server"
@@ -230,18 +229,6 @@ func action(ctx context.Context, c *cli.Command) error {
 	streamName := prof.Get(profile.VarStream).Value()
 	consumerName := prof.Get(profile.VarConsumer).Value()
 	storeName := prof.Get(profile.VarObjectStore).Value()
-	servers := strings.Split(prof.Get(profile.VarServerURL).Value(), ",")
-
-	for i := range servers {
-		scheme, err := urlpath.Scheme(servers[i])
-		if err != nil {
-			return err
-		}
-
-		if scheme == "" {
-			servers[i] = fmt.Sprintf("wss://%s", servers[i])
-		}
-	}
 
 	_, err = srv.CreateStream(ctx, streamName, []string{
 		proto.StartWorkerSubject(agentID, "*"),
