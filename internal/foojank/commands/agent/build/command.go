@@ -50,8 +50,9 @@ func NewCommand() *cli.Command {
 				Usage: "set agent's server URL",
 			},
 			&cli.StringFlag{
-				Name:  flags.Certificate,
-				Usage: "set TLS certificate for agent's server",
+				Name:      flags.Certificate,
+				Usage:     "set path to agent's server certificate",
+				TakesFile: true,
 			},
 			&cli.StringFlag{
 				Name:    flags.Output,
@@ -75,8 +76,9 @@ func NewCommand() *cli.Command {
 				Usage: "set server URL",
 			},
 			&cli.StringFlag{
-				Name:  flags.ServerCertificate,
-				Usage: "set server TLS certificate",
+				Name:      flags.ServerCertificate,
+				Usage:     "set path to server's certificate",
+				TakesFile: true,
 			},
 			&cli.StringFlag{
 				Name:  flags.Account,

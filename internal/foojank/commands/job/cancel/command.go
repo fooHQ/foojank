@@ -26,8 +26,9 @@ func NewCommand() *cli.Command {
 				Usage: "set server URL",
 			},
 			&cli.StringFlag{
-				Name:  flags.ServerCertificate,
-				Usage: "set server TLS certificate",
+				Name:      flags.ServerCertificate,
+				Usage:     "set path to server's certificate",
+				TakesFile: true,
 			},
 			&cli.StringFlag{
 				Name:  flags.Account,
