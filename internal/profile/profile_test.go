@@ -167,3 +167,86 @@ func TestMerge(t *testing.T) {
 	require.Equal(t, "val2_override", merged.Get("VAR2").Value())
 	require.Equal(t, "val3", merged.Get("VAR3").Value())
 }
+
+func TestParseKVPairs(t *testing.T) {
+	tests := []struct {
+		name     string
+		pairs    []string
+		expected map[string]string
+	}{
+		{
+			name:     "nil input",
+			pairs:    nil,
+			expected: map[string]string{},
+		},
+		{
+			name:     "empty input",
+			pairs:    []string{},
+			expected: map[string]string{},
+		},
+		{
+			name:  "simple key value",
+			pairs: []string{"KEY=value"},
+			expected: map[string]string{
+				"KEY": "value",
+			},
+		},
+		{
+			name:  "multiple pairs",
+			pairs: []string{"KEY1=value1", "KEY2=value2"},
+			expected: map[string]string{
+				"KEY1": "value1",
+				"KEY2": "value2",
+			},
+		},
+		{
+			name:  "value containing equals sign",
+			pairs: []string{"CONN_STR=host=localhost;port=5432"},
+			expected: map[string]string{
+				"CONN_STR": "host=localhost;port=5432",
+			},
+		},
+		{
+			name:  "key without value",
+			pairs: []string{"FLAG_ENABLED"},
+			expected: map[string]string{
+				"FLAG_ENABLED": "",
+			},
+		},
+		{
+			name:  "empty value with equals",
+			pairs: []string{"EMPTY_VAL="},
+			expected: map[string]string{
+				"EMPTY_VAL": "",
+			},
+		},
+		{
+			name:  "key with surrounding spaces is trimmed",
+			pairs: []string{"  SPACED_KEY  =value"},
+			expected: map[string]string{
+				"SPACED_KEY": "value",
+			},
+		},
+		{
+			name:  "value with spaces is preserved",
+			pairs: []string{"GREETING= Hello World "},
+			expected: map[string]string{
+				"GREETING": " Hello World ",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := profile.ParseKVPairs(tt.pairs)
+
+			require.Len(t, got, len(tt.expected))
+
+			for k, wantVal := range tt.expected {
+				gotVar, ok := got[k]
+				require.True(t, ok, "ParseKVPairs() missing key %q", k)
+				require.Equal(t, wantVal, gotVar.Value(), "ParseKVPairs()[%q] value mismatch", k)
+			}
+		})
+	}
+}
