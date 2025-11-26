@@ -3,7 +3,9 @@ package server
 import (
 	"context"
 	"crypto/x509"
-	"encoding/base64"
+	"encoding/pem"
+	"errors"
+	"os"
 	"strings"
 	"time"
 
@@ -145,7 +147,7 @@ func connect(
 	server,
 	userJWT,
 	userKey,
-	caCertificate string,
+	serverCert string,
 ) (jetstream.JetStream, error) {
 	opts := []nats.Option{
 		nats.MaxReconnects(-1),
@@ -155,8 +157,12 @@ func connect(
 		opts = append(opts, nats.UserJWTAndSeed(userJWT, userKey))
 	}
 
-	if caCertificate != "" {
-		opts = append(opts, nats.ClientTLSConfig(nil, decodeCertificateHandler(caCertificate)))
+	if serverCert != "" {
+		b, err := os.ReadFile(serverCert)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, nats.ClientTLSConfig(nil, decodeCertificatesHandler(b)))
 	}
 
 	nc, err := nats.Connect(server, opts...)
@@ -175,20 +181,34 @@ func connect(
 	return jetStream, nil
 }
 
-func decodeCertificateHandler(s string) func() (*x509.CertPool, error) {
+func decodeCertificatesHandler(b []byte) func() (*x509.CertPool, error) {
 	return func() (*x509.CertPool, error) {
-		b, err := base64.StdEncoding.DecodeString(s)
-		if err != nil {
-			return nil, err
+		var certs []*x509.Certificate
+		for len(b) > 0 {
+			block, rest := pem.Decode(b)
+			if block == nil {
+				break
+			}
+			b = rest
+
+			if block.Type == "CERTIFICATE" {
+				cert, err := x509.ParseCertificate(block.Bytes)
+				if err != nil {
+					return nil, err
+				}
+				certs = append(certs, cert)
+			}
 		}
 
-		cert, err := x509.ParseCertificate(b)
-		if err != nil {
-			return nil, err
+		if len(certs) == 0 {
+			return nil, errors.New("no certificates found")
 		}
 
 		pool := x509.NewCertPool()
-		pool.AddCert(cert)
+		for _, cert := range certs {
+			pool.AddCert(cert)
+		}
+
 		return pool, nil
 	}
 }
