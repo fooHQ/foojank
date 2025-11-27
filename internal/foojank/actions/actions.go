@@ -56,10 +56,10 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 			return nil, err
 		}
 
-		confDefs := config.NewWithOptions(map[string]any{
+		confDefs := config.NewWithOptions(map[string]string{
 			flags.ConfigDir: configDir,
 			flags.Format:    "table",
-			flags.NoColor:   false,
+			flags.NoColor:   "false",
 		})
 
 		conf := config.Merge(confDefs, confFile, confFlags)
