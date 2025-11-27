@@ -31,11 +31,11 @@ func NewCommand() *cli.Command {
 			},
 			&cli.StringSliceFlag{
 				Name:  flags.Set,
-				Usage: "set environment variable (format: KEY=value)",
+				Usage: "set environment variable (format: key=value)",
 			},
 			&cli.StringSliceFlag{
 				Name:  flags.Unset,
-				Usage: "unset environment variable (format: KEY)",
+				Usage: "unset environment variable (format: key)",
 			},
 			&cli.StringFlag{
 				Name:  flags.ConfigDir,
