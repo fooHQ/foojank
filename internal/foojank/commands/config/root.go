@@ -4,9 +4,9 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/foojank/actions"
+	"github.com/foohq/foojank/internal/foojank/commands/config/edit"
 	confinit "github.com/foohq/foojank/internal/foojank/commands/config/init"
 	"github.com/foohq/foojank/internal/foojank/commands/config/list"
-	"github.com/foohq/foojank/internal/foojank/commands/config/set"
 )
 
 func NewCommand() *cli.Command {
@@ -15,7 +15,7 @@ func NewCommand() *cli.Command {
 		Usage: "Manage configuration",
 		Commands: []*cli.Command{
 			confinit.NewCommand(),
-			set.NewCommand(),
+			edit.NewCommand(),
 			list.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
