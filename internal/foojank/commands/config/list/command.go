@@ -64,9 +64,8 @@ func action(ctx context.Context, c *cli.Command) error {
 			Usage: "Server URL",
 		},
 		&cli.StringFlag{
-			Name:      flags.ServerCertificate,
-			Usage:     "set path to server's certificate",
-			TakesFile: true,
+			Name:  flags.ServerCertificate,
+			Usage: "Path to server's certificate",
 		},
 		&cli.StringFlag{
 			Name:  flags.Account,
