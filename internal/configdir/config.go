@@ -73,6 +73,11 @@ func IsConfigDir(dir string) (bool, error) {
 
 func InitConfigJson(dir string) error {
 	pth := filepath.Join(dir, ".foojank", "config.json")
+	_, err := os.Open(pth)
+	if err == nil {
+		// File already exists
+		return nil
+	}
 	return os.WriteFile(pth, []byte("{}"), 0644)
 }
 
@@ -117,6 +122,11 @@ func ParseConfigJson(dir string) (*config.Config, error) {
 
 func InitProfilesJson(dir string) error {
 	pth := filepath.Join(dir, ".foojank", "profiles.json")
+	_, err := os.Open(pth)
+	if err == nil {
+		// File already exists
+		return nil
+	}
 	return os.WriteFile(pth, []byte("{}"), 0644)
 }
 
