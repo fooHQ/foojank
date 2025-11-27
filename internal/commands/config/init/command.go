@@ -69,18 +69,17 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	if isConfigDir {
-		logger.InfoContext(ctx, "Configuration directory has already been initialized in %q", configDir)
-		return nil
-	}
-
 	err = configdir.Init(configDir)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot initialize configuration directory %q: %v", configDir, errors.Unwrap(err))
 		return err
 	}
 
-	logger.InfoContext(ctx, "Initialized empty configuration directory in %q", configDir)
+	if isConfigDir {
+		logger.InfoContext(ctx, "Reinitialized existing configuration directory in %q", configDir)
+	} else {
+		logger.InfoContext(ctx, "Initialized empty configuration directory in %q", configDir)
+	}
 
 	return nil
 }
