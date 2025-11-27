@@ -13,23 +13,23 @@ import (
 func TestNewWithOptions(t *testing.T) {
 	tests := []struct {
 		name string
-		opts map[string]any
-		want map[string]any
+		opts map[string]string
+		want map[string]string
 	}{
 		{
 			name: "empty options",
-			opts: map[string]any{},
-			want: map[string]any{},
+			opts: map[string]string{},
+			want: map[string]string{},
 		},
 		{
 			name: "with simple options",
-			opts: map[string]any{
+			opts: map[string]string{
 				"test-key": "test-value",
-				"flag-1":   true,
+				"flag-1":   "true",
 			},
-			want: map[string]any{
+			want: map[string]string{
 				"test_key": "test-value",
-				"flag_1":   true,
+				"flag_1":   "true",
 			},
 		},
 	}
@@ -50,9 +50,9 @@ func TestNewWithOptions(t *testing.T) {
 }
 
 func TestConfig_String(t *testing.T) {
-	cfg := config.NewWithOptions(map[string]any{
+	cfg := config.NewWithOptions(map[string]string{
 		"string-key": "value",
-		"other-key":  42,
+		"other-key":  "42",
 	})
 
 	tests := []struct {
@@ -68,10 +68,10 @@ func TestConfig_String(t *testing.T) {
 			wantOk:    true,
 		},
 		{
-			name:      "wrong type key",
+			name:      "existing int key as string",
 			key:       "other-key",
-			wantValue: "",
-			wantOk:    false,
+			wantValue: "42",
+			wantOk:    true,
 		},
 		{
 			name:      "non-existing key",
@@ -91,8 +91,8 @@ func TestConfig_String(t *testing.T) {
 }
 
 func TestConfig_Bool(t *testing.T) {
-	cfg := config.NewWithOptions(map[string]any{
-		"bool-key":  true,
+	cfg := config.NewWithOptions(map[string]string{
+		"bool-key":  "true",
 		"other-key": "not-a-bool",
 	})
 
@@ -136,13 +136,13 @@ func TestParseFile(t *testing.T) {
 		name     string
 		content  string
 		wantErr  bool
-		wantData map[string]any
+		wantData map[string]string
 	}{
 		{
 			name:     "valid json",
-			content:  `{"key": "value", "bool_key": true}`,
+			content:  `{"key": "value", "bool_key": "true"}`,
 			wantErr:  false,
-			wantData: map[string]any{"key": "value", "bool_key": true},
+			wantData: map[string]string{"key": "value", "bool_key": "true"},
 		},
 		{
 			name:    "invalid json",
@@ -185,31 +185,31 @@ func TestMerge(t *testing.T) {
 	tests := []struct {
 		name  string
 		confs []*config.Config
-		want  map[string]any
+		want  map[string]string
 	}{
 		{
 			name: "merge two configs",
 			confs: []*config.Config{
-				config.NewWithOptions(map[string]any{"key1": "value1"}),
-				config.NewWithOptions(map[string]any{"key2": "value2"}),
+				config.NewWithOptions(map[string]string{"key1": "value1"}),
+				config.NewWithOptions(map[string]string{"key2": "value2"}),
 			},
-			want: map[string]any{"key1": "value1", "key2": "value2"},
+			want: map[string]string{"key1": "value1", "key2": "value2"},
 		},
 		{
 			name: "override values",
 			confs: []*config.Config{
-				config.NewWithOptions(map[string]any{"key": "value1"}),
-				config.NewWithOptions(map[string]any{"key": "value2"}),
+				config.NewWithOptions(map[string]string{"key": "value1"}),
+				config.NewWithOptions(map[string]string{"key": "value2"}),
 			},
-			want: map[string]any{"key": "value2"},
+			want: map[string]string{"key": "value2"},
 		},
 		{
 			name: "with nil config",
 			confs: []*config.Config{
-				config.NewWithOptions(map[string]any{"key": "value"}),
+				config.NewWithOptions(map[string]string{"key": "value"}),
 				nil,
 			},
-			want: map[string]any{"key": "value"},
+			want: map[string]string{"key": "value"},
 		},
 	}
 
