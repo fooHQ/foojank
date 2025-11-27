@@ -62,15 +62,15 @@ VERSION:
 COMMANDS:
    account  Manage accounts
    agent    Manage agents
-   job      Manage jobs
-   storage  Manage storage
    config   Manage configuration
+   job      Manage jobs
+   profile  Manage profiles
+   storage  Manage storage
 
 GLOBAL OPTIONS:
-   --config-dir string  set path to a configuration directory
-   --no-color           disable color output (default: false)
-   --help, -h           show help
-   --version, -v        print the version
+   --no-color     disable color output (default: false)
+   --help, -h     show help
+   --version, -v  print the version
 ```
 
 ## License
