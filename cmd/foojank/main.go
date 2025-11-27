@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/foohq/foojank/internal/foojank/commands"
+	"github.com/foohq/foojank/internal/commands"
 )
 
 func run() error {
