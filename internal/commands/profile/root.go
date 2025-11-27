@@ -6,6 +6,7 @@ import (
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/commands/profile/create"
 	"github.com/foohq/foojank/internal/commands/profile/edit"
+	_import "github.com/foohq/foojank/internal/commands/profile/import"
 	"github.com/foohq/foojank/internal/commands/profile/list"
 	"github.com/foohq/foojank/internal/commands/profile/remove"
 )
@@ -19,6 +20,7 @@ func NewCommand() *cli.Command {
 			edit.NewCommand(),
 			list.NewCommand(),
 			remove.NewCommand(),
+			_import.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		OnUsageError:    actions.UsageError,
