@@ -64,7 +64,6 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	// TODO: limit user permissions
 	// TODO: make atomic write of all changes
 	userJWT, userKey, err := auth.NewUser(name, accountKey, jwt.Permissions{})
 	if err != nil {
