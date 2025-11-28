@@ -34,7 +34,13 @@ type Profiles struct {
 }
 
 func (p *Profiles) UnmarshalJSON(b []byte) error {
-	return json.Unmarshal(b, &p.data)
+	var data map[string]*Profile
+	err := json.Unmarshal(b, &data)
+	if err != nil {
+		return err
+	}
+	p.data = data
+	return nil
 }
 
 func (p *Profiles) MarshalJSON() ([]byte, error) {
@@ -151,7 +157,13 @@ func (p *Profile) List() map[string]string {
 }
 
 func (p *Profile) UnmarshalJSON(b []byte) error {
-	return json.Unmarshal(b, &p.data)
+	var data profileData
+	err := json.Unmarshal(b, &data)
+	if err != nil {
+		return err
+	}
+	p.data = data
+	return nil
 }
 
 func (p *Profile) MarshalJSON() ([]byte, error) {
@@ -206,7 +218,13 @@ func (v *Var) Description() string {
 }
 
 func (v *Var) UnmarshalJSON(b []byte) error {
-	return json.Unmarshal(b, &v.data)
+	var data varData
+	err := json.Unmarshal(b, &data)
+	if err != nil {
+		return err
+	}
+	v.data = data
+	return nil
 }
 
 func (v *Var) MarshalJSON() ([]byte, error) {
