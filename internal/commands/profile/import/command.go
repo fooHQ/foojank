@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"path/filepath"
 
 	"github.com/urfave/cli/v3"
 
@@ -64,6 +65,12 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	pth := c.Args().First()
 
+	sourceDir, err := filepath.Abs(filepath.Dir(pth))
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot get absolute path to source directory: %v", err)
+		return err
+	}
+
 	profsImport, err := profile.ParseFile(pth)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot parse profiles in %q: %v", pth, err)
@@ -76,6 +83,8 @@ func action(ctx context.Context, c *cli.Command) error {
 			logger.ErrorContext(ctx, "Cannot find profile %q in file %q: %v", profName, pth, err)
 			return err
 		}
+
+		profImport.SetSourceDir(sourceDir)
 
 		err = profs.Add(profName, profImport)
 		if err != nil {
