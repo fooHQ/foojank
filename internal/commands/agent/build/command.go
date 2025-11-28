@@ -273,6 +273,7 @@ func action(ctx context.Context, c *cli.Command) error {
 			}
 			logger.ErrorContext(ctx, "%s", line)
 		}
+		logger.ErrorContext(ctx, "Build failed: %v", err)
 		// Return a generic error instead of "err".
 		// Err can be of type exit.ExitError, which is apparently printed to stderr by cli.
 		return errors.New("build failed")
