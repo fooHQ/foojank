@@ -178,6 +178,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	profDefault.Set(profile.VarOS, profile.NewVar(runtime.GOOS))
 	profDefault.Set(profile.VarArch, profile.NewVar(runtime.GOARCH))
 	profDefault.Set(profile.VarTarget, profile.NewVar(filepath.Join(pwd, agentID)))
+	profDefault.Set(profile.VarFeatures, profile.NewVar(""))
 
 	// Parse profile profName defined in the config dir.
 	var profFile *profile.Profile
