@@ -121,11 +121,15 @@ func New() *Profile {
 }
 
 func (p *Profile) SetSourceDir(dir string) {
-	p.data.SourceDir = dir
+	s := dir
+	p.data.SourceDir = &s
 }
 
 func (p *Profile) SourceDir() string {
-	return p.data.SourceDir
+	if p.data.SourceDir == nil {
+		return ""
+	}
+	return *p.data.SourceDir
 }
 
 func (p *Profile) Get(name string) *Var {
@@ -171,7 +175,7 @@ func (p *Profile) MarshalJSON() ([]byte, error) {
 }
 
 type profileData struct {
-	SourceDir   string          `json:"source_dir"`
+	SourceDir   *string         `json:"source_dir,omitempty"`
 	Environment map[string]*Var `json:"environment"`
 }
 
@@ -260,7 +264,9 @@ func Merge(profs ...*Profile) *Profile {
 		if prof == nil {
 			continue
 		}
-		result.data.SourceDir = prof.data.SourceDir
+		if prof.data.SourceDir != nil {
+			result.data.SourceDir = prof.data.SourceDir
+		}
 		for k, v := range prof.data.Environment {
 			result.data.Environment[k] = &Var{
 				data: v.data,
