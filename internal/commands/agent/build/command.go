@@ -193,7 +193,9 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	// Parse profile flags.
 	profFlags := profile.New()
-	profFlags.SetSourceDir(sourceDir)
+	if sourceDir != "" {
+		profFlags.SetSourceDir(sourceDir)
+	}
 	if targetServer != "" {
 		profFlags.Set(profile.VarServerURL, profile.NewVar(targetServer))
 	}
