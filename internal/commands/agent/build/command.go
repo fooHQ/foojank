@@ -12,8 +12,8 @@ import (
 	petname "github.com/dustinkirkland/golang-petname"
 	"github.com/urfave/cli/v3"
 
+	"github.com/foohq/foojank/clients/agent"
 	"github.com/foohq/foojank/clients/server"
-	"github.com/foohq/foojank/clients/vessel"
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/builder"
@@ -171,9 +171,9 @@ func action(ctx context.Context, c *cli.Command) error {
 	profDefault.Set(profile.VarServerCertificate, profile.NewVar(serverCert))
 	profDefault.Set(profile.VarUserJWT, profile.NewVar(agentJWT))
 	profDefault.Set(profile.VarUserKey, profile.NewVar(agentSeed))
-	profDefault.Set(profile.VarStream, profile.NewVar(vessel.StreamName(agentID)))
+	profDefault.Set(profile.VarStream, profile.NewVar(agent.StreamName(agentID)))
 	profDefault.Set(profile.VarConsumer, profile.NewVar(agentID))
-	profDefault.Set(profile.VarInboxPrefix, profile.NewVar(vessel.InboxName(agentID)))
+	profDefault.Set(profile.VarInboxPrefix, profile.NewVar(agent.InboxName(agentID)))
 	profDefault.Set(profile.VarObjectStore, profile.NewVar(agentID))
 	profDefault.Set(profile.VarOS, profile.NewVar(runtime.GOOS))
 	profDefault.Set(profile.VarArch, profile.NewVar(runtime.GOARCH))
@@ -288,7 +288,7 @@ func createUser(
 	agentID,
 	accountSeed string,
 ) (string, string, error) {
-	perms := vessel.NewAgentPermissions(agentID)
+	perms := agent.NewAgentPermissions(agentID)
 	userJWT, userSeed, err := auth.NewUser(agentID, []byte(accountSeed), perms)
 	if err != nil {
 		return "", "", err

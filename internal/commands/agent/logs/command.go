@@ -9,8 +9,8 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/foohq/foojank/clients/agent"
 	"github.com/foohq/foojank/clients/server"
-	"github.com/foohq/foojank/clients/vessel"
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/config"
@@ -94,7 +94,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		return errors.New("not enough arguments")
 	}
 
-	client := vessel.New(srv)
+	client := agent.New(srv)
 
 	agentID := c.Args().First()
 
@@ -113,7 +113,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	return nil
 }
 
-func formatOutput(w io.Writer, format string, data []vessel.Message) error {
+func formatOutput(w io.Writer, format string, data []agent.Message) error {
 	table := formatter.NewTable([]string{
 		"message_id",
 		"subject",
