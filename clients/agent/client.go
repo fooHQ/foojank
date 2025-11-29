@@ -114,11 +114,11 @@ func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error
 	return results, nil
 }
 
-func (c *Client) StartWorker(ctx context.Context, agentID, workerID, file string, args, env []string) error {
+func (c *Client) StartWorker(ctx context.Context, agentID, workerID, command string, args, env []string) error {
 	b, err := proto.Marshal(proto.StartWorkerRequest{
-		File: file,
-		Args: args,
-		Env:  env,
+		Command: command,
+		Args:    args,
+		Env:     env,
 	})
 	if err != nil {
 		return err
@@ -210,7 +210,7 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 			return Job{
 				ID:      workerID,
 				AgentID: agentID,
-				File:    v.File,
+				Command: v.Command,
 				Args:    strings.Join(v.Args, " "),
 				Status:  JobStatusPending,
 			}
@@ -446,7 +446,7 @@ func (c *Client) ListMessages(ctx context.Context, agentID string, subjects []st
 type Job struct {
 	ID      string
 	AgentID string
-	File    string
+	Command string
 	Args    string
 	Status  string
 	Error   error
