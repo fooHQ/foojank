@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/urfave/cli/v3"
 
@@ -22,12 +23,24 @@ func NewCommand() *cli.Command {
 		Usage:     "Create a new profile",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  flags.SourceDir,
-				Usage: "set path to a source code directory",
+				Name:  flags.Os,
+				Usage: "set OS environment variable",
+			},
+			&cli.StringFlag{
+				Name:  flags.Arch,
+				Usage: "set ARCH environment variable",
+			},
+			&cli.StringSliceFlag{
+				Name:  flags.Feature,
+				Usage: "set FEATURE environment variable",
 			},
 			&cli.StringSliceFlag{
 				Name:  flags.Set,
 				Usage: "set environment variable (format: key=value)",
+			},
+			&cli.StringFlag{
+				Name:  flags.SourceDir,
+				Usage: "set path to a source code directory",
 			},
 			&cli.StringFlag{
 				Name:  flags.ConfigDir,
@@ -66,6 +79,9 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	configDir, _ := conf.String(flags.ConfigDir)
 	sourceDir, _ := conf.String(flags.SourceDir)
+	osVar, _ := conf.String(flags.Os)
+	archVar, _ := conf.String(flags.Arch)
+	featureVars, _ := conf.StringSlice(flags.Feature)
 	setVars, _ := conf.StringSlice(flags.Set)
 
 	if c.Args().Len() != 1 {
@@ -86,6 +102,19 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	prof := profile.New()
 	prof.SetSourceDir(sourceDir)
+
+	if osVar != "" {
+		prof.Set(profile.VarOS, profile.NewVar(osVar))
+	}
+
+	if archVar != "" {
+		prof.Set(profile.VarArch, profile.NewVar(archVar))
+	}
+
+	if len(featureVars) > 0 {
+		prof.Set(profile.VarFeatures, profile.NewVar(strings.Join(featureVars, ",")))
+	}
+
 	for k, v := range profile.ParseKVPairs(setVars) {
 		prof.Set(k, v)
 	}
