@@ -132,7 +132,7 @@ func formatOutput(w io.Writer, format string, data map[string]agent.Job) error {
 		table.AddRow([]string{
 			job.ID,
 			job.AgentID,
-			fmt.Sprintf("%s %s", job.File, job.Args),
+			fmt.Sprintf("%s %s", job.Command, job.Args),
 			job.Status,
 		})
 	}
