@@ -37,7 +37,7 @@ func marshalStartWorkerRequest(data StartWorkerRequest) ([]byte, error) {
 		return nil, err
 	}
 
-	err = m.SetFile(data.File)
+	err = m.SetCommand(data.Command)
 	if err != nil {
 		return nil, err
 	}
