@@ -3,10 +3,7 @@ package create
 import (
 	"context"
 	"errors"
-	"fmt"
-	"io"
 	"os"
-	"path"
 
 	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
@@ -93,69 +90,21 @@ func action(ctx context.Context, c *cli.Command) error {
 	agentID := c.Args().First()
 	cmdArgs := c.Args().Tail()
 
-	file := cmdArgs[0]
+	command := cmdArgs[0]
 	var args []string
 	if len(cmdArgs) > 1 {
 		args = cmdArgs[1:]
 	}
 
-	srcPath := file
-	storageName := agentID
-	dstPath := path.Join("/_cache", nuid.Next())
-	err = copyPackage(ctx, srv, srcPath, storageName, dstPath)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot copy package %q to storage %q: %v", srcPath, storageName, err)
-		return err
-	}
-
 	workerID := nuid.Next()
-	file = fmt.Sprintf("nats://%s", dstPath)
 	// TODO: env variables
-	err = client.StartWorker(ctx, agentID, workerID, file, args, nil)
+	err = client.StartWorker(ctx, agentID, workerID, command, args, nil)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create job: %v", err)
 		return err
 	}
 
 	logger.InfoContext(ctx, "Job %q has been created!", workerID)
-
-	return nil
-}
-
-func copyPackage(ctx context.Context, srv *server.Client, srcPath, dstStorage, dstPath string) error {
-	srcFile, err := os.Open(srcPath)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = srcFile.Close()
-	}()
-
-	storage, err := srv.GetObjectStore(ctx, dstStorage)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = storage.Close()
-	}()
-
-	err = storage.Wait(ctx)
-	if err != nil {
-		return err
-	}
-
-	dstFile, err := storage.Create(dstPath)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = dstFile.Close()
-	}()
-
-	_, err = io.Copy(dstFile, srcFile)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }
