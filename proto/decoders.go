@@ -46,9 +46,9 @@ func Unmarshal(b []byte) (any, error) {
 }
 
 type StartWorkerRequest struct {
-	File string
-	Args []string
-	Env  []string
+	Command string
+	Args    []string
+	Env     []string
 }
 
 func unmarshalStartWorkerRequest(message capnp.Message) (StartWorkerRequest, error) {
@@ -57,7 +57,7 @@ func unmarshalStartWorkerRequest(message capnp.Message) (StartWorkerRequest, err
 		return StartWorkerRequest{}, err
 	}
 
-	file, err := v.File()
+	command, err := v.Command()
 	if err != nil {
 		return StartWorkerRequest{}, err
 	}
@@ -83,9 +83,9 @@ func unmarshalStartWorkerRequest(message capnp.Message) (StartWorkerRequest, err
 	}
 
 	return StartWorkerRequest{
-		File: file,
-		Args: args,
-		Env:  env,
+		Command: command,
+		Args:    args,
+		Env:     env,
 	}, nil
 }
 
