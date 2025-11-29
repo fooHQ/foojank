@@ -12,7 +12,7 @@ const updateClientInfoT :Text = "FJ.API.CLIENT.UPDATE.INFO.%s";
 const replyMessageT :Text = "FJ.API.MESSAGE.REPLY.%s.%s";
 
 struct StartWorkerRequest {
-    file @0 :Text;
+    command @0 :Text;
     args @1 :List(Text);
     env @2 :List(Text);
 }
