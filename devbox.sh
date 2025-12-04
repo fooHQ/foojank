@@ -24,4 +24,12 @@ generate_proto() {
     go generate ./proto/capnp
 }
 
+test() {
+    CGO_ENABLED=1 go test -race -timeout 30s -tags dev ./...
+}
+
+lint() {
+    golangci-lint run --timeout 10m
+}
+
 eval $@
