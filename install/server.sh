@@ -7,6 +7,7 @@ NATS_DOWNLOAD_URL="https://binaries.nats.dev/nats-io/nats-server/v2@latest"
 NSC_DOWNLOAD_URL="https://binaries.nats.dev/nats-io/nsc/v2@latest"
 SYSTEMD_UNIT_DOWNLOAD_URL="https://raw.githubusercontent.com/nats-io/nats-server/refs/heads/main/util/nats-server.service"
 NATS_CONFIG_PATH="/etc/nats-server"
+NATS_OPERATOR_NAME="nats-prod"
 NATS_DEFAULT_CONFIG=$(cat <<EOF
 # JetStream must be enabled.
 jetstream: true
@@ -58,7 +59,7 @@ id -u nats >/dev/null 2>&1 || $(command -v sudo || true) useradd --system -g nat
 echo "[*] Configuring NATS server."
 $(command -v sudo || true) mkdir -p "$NATS_CONFIG_PATH"
 echo "$NATS_DEFAULT_CONFIG" | $(command -v sudo || true) tee "$NATS_CONFIG_PATH/server.conf"
-$(command -v sudo || true) nsc add operator --sys --name "nats-prod"
+nsc describe operator --name "$NATS_OPERATOR_NAME" >/dev/null 2>&1 || $(command -v sudo || true) nsc add operator --sys --name "$NATS_OPERATOR_NAME"
 $(command -v sudo || true) nsc edit operator --account-jwt-server-url "nats://127.0.0.1"
 $(command -v sudo || true) nsc generate config --nats-resolver --config-file "$NATS_CONFIG_PATH/auth.conf"
 
