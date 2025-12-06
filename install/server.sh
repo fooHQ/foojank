@@ -7,9 +7,11 @@ NATS_DOWNLOAD_URL="https://binaries.nats.dev/nats-io/nats-server/v2@latest"
 NSC_DOWNLOAD_URL="https://binaries.nats.dev/nats-io/nsc/v2@latest"
 SYSTEMD_UNIT_DOWNLOAD_URL="https://raw.githubusercontent.com/nats-io/nats-server/refs/heads/main/util/nats-server.service"
 NATS_CONFIG_PATH="/etc/nats-server"
-NATS_DEFAULT_CONFIG=<<EOF
-# The default configuration prefers WebSocket over NATS' TCP-based protocol and does not expose it by default.
-# If you want the clients to use TCP-based protocol, you must rebind it to a non-local address.
+NATS_DEFAULT_CONFIG=$(cat <<EOF
+# JetStream must be enabled.
+jetstream: true
+# The default configuration prefers WebSocket over NATS' TCP-based protocol.
+# If you want the clients to use TCP-based protocol, rebind it to a non-local address.
 host: 127.0.0.1
 port: 4222
 
@@ -32,10 +34,9 @@ websocket {
     }
 }
 
-jetstream: true
-
 include ./auth.conf
 EOF
+)
 
 echo "[*] Downloading NATS server installer from the project's website ($NATS_DOWNLOAD_URL)."
 curl -fsSL "$NATS_DOWNLOAD_URL" | PREFIX="$INSTALL_PATH" sh
