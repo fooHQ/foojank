@@ -50,7 +50,7 @@ curl -fsSL -o "$tmp_file" "$SYSTEMD_UNIT_DOWNLOAD_URL"
 $(command -v sudo || true) mv "$tmp_file" "/etc/systemd/system/nats-server.service"
 
 echo "[*] Adding nats group."
-$(command -v sudo || true) groupadd --system nats
+$(command -v sudo || true) groupadd --force --system nats
 
 echo "[*] Adding nats user."
 $(command -v sudo || true) useradd --system -g nats -s /usr/sbin/nologin -c "NATS service user" nats
