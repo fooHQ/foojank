@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-INSTALL_PATH="/usr/local/bin"
+INSTALL_PATH="/usr/sbin"
 NATS_DOWNLOAD_URL="https://binaries.nats.dev/nats-io/nats-server/v2@latest"
 NSC_DOWNLOAD_URL="https://binaries.nats.dev/nats-io/nsc/v2@latest"
 SYSTEMD_UNIT_DOWNLOAD_URL="https://raw.githubusercontent.com/nats-io/nats-server/refs/heads/main/util/nats-server.service"
