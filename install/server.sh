@@ -53,7 +53,7 @@ echo "[*] Adding nats group."
 $(command -v sudo || true) groupadd --force --system nats
 
 echo "[*] Adding nats user."
-$(command -v sudo || true) useradd --system -g nats -s /usr/sbin/nologin -c "NATS service user" nats
+id -u nats >/dev/null 2>&1 || $(command -v sudo || true) useradd --system -g nats -s /usr/sbin/nologin -c "NATS service user" nats
 
 echo "[*] Configuring NATS server."
 $(command -v sudo || true) mkdir "$NATS_CONFIG_PATH"
