@@ -65,6 +65,14 @@ func (c *Client) ListStreams(ctx context.Context) ([]string, error) {
 	return names, nil
 }
 
+func (c *Client) DeleteStream(ctx context.Context, name string) error {
+	err := c.js.DeleteStream(ctx, name)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *Client) CreateConsumer(ctx context.Context, stream string, subjects []string) (jetstream.Consumer, error) {
 	consumer, err := c.js.CreateConsumer(ctx, stream, jetstream.ConsumerConfig{
 		DeliverPolicy:  jetstream.DeliverAllPolicy,
@@ -90,6 +98,14 @@ func (c *Client) CreateDurableConsumer(ctx context.Context, stream, name string,
 		return nil, err
 	}
 	return consumer, nil
+}
+
+func (c *Client) DeleteConsumer(ctx context.Context, stream, name string) error {
+	err := c.js.DeleteConsumer(ctx, stream, name)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *Client) CreateObjectStore(ctx context.Context, name, description string) error {
