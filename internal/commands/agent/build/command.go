@@ -113,7 +113,7 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 	return ctx, nil
 }
 
-func action(ctx context.Context, c *cli.Command) error {
+func action(ctx context.Context, c *cli.Command) (err error) {
 	conf := actions.GetConfigFromContext(ctx)
 	profs := actions.GetProfilesFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
@@ -183,7 +183,6 @@ func action(ctx context.Context, c *cli.Command) error {
 	// Parse profile profName defined in the config dir.
 	var profFile *profile.Profile
 	if profName != "" {
-		var err error
 		profFile, err = profs.Get(profName)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get profile %q: %v", profName, err)
@@ -228,41 +227,11 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	sourceDir = prof.SourceDir()
+	outputName = prof.Get(profile.VarTarget).Value()
 	agentID = prof.Get(profile.VarAgentID).Value()
 	streamName := prof.Get(profile.VarStream).Value()
 	consumerName := prof.Get(profile.VarConsumer).Value()
 	storeName := prof.Get(profile.VarObjectStore).Value()
-
-	_, err = srv.CreateStream(ctx, streamName, []string{
-		proto.StartWorkerSubject(agentID, "*"),
-		proto.StopWorkerSubject(agentID, "*"),
-		proto.WriteWorkerStdinSubject(agentID, "*"),
-		proto.WriteWorkerStdoutSubject(agentID, "*"),
-		proto.UpdateWorkerStatusSubject(agentID, "*"),
-		proto.ReplyMessageSubject(agentID, "*"),
-		proto.UpdateClientInfoSubject(agentID),
-	})
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot create stream: %v", err)
-		return err
-	}
-
-	_, err = srv.CreateDurableConsumer(ctx, streamName, consumerName, []string{
-		proto.StartWorkerSubject(agentID, "*"),
-		proto.StopWorkerSubject(agentID, "*"),
-		proto.WriteWorkerStdinSubject(agentID, "*"),
-	})
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot create consumer: %v", err)
-		return err
-	}
-
-	storeDescription := fmt.Sprintf("Agent %s", agentID)
-	err = srv.CreateObjectStore(ctx, storeName, storeDescription)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot create a store: %v", err)
-		return err
-	}
 
 	output, err := builder.Run(ctx, sourceDir, prof.List())
 	if err != nil {
@@ -278,6 +247,73 @@ func action(ctx context.Context, c *cli.Command) error {
 		// Err can be of type exit.ExitError, which is apparently printed to stderr by cli.
 		return errors.New("build failed")
 	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		err := os.Remove(outputName)
+		if err != nil {
+			logger.WarnContext(ctx, "Cannot remove executable file %q: %v", outputName, err)
+		}
+	}()
+
+	_, err = srv.CreateStream(ctx, streamName, []string{
+		proto.StartWorkerSubject(agentID, "*"),
+		proto.StopWorkerSubject(agentID, "*"),
+		proto.WriteWorkerStdinSubject(agentID, "*"),
+		proto.WriteWorkerStdoutSubject(agentID, "*"),
+		proto.UpdateWorkerStatusSubject(agentID, "*"),
+		proto.ReplyMessageSubject(agentID, "*"),
+		proto.UpdateClientInfoSubject(agentID),
+	})
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot create stream: %v", err)
+		return err
+	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		err := srv.DeleteStream(ctx, streamName)
+		if err != nil {
+			logger.WarnContext(ctx, "Cannot delete stream %q: %v", streamName, err)
+		}
+	}()
+
+	_, err = srv.CreateDurableConsumer(ctx, streamName, consumerName, []string{
+		proto.StartWorkerSubject(agentID, "*"),
+		proto.StopWorkerSubject(agentID, "*"),
+		proto.WriteWorkerStdinSubject(agentID, "*"),
+	})
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot create consumer: %v", err)
+		return err
+	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		err := srv.DeleteConsumer(ctx, streamName, consumerName)
+		if err != nil {
+			logger.WarnContext(ctx, "Cannot delete consumer %q: %v", consumerName, err)
+		}
+	}()
+
+	storeDescription := fmt.Sprintf("Agent %s", agentID)
+	err = srv.CreateObjectStore(ctx, storeName, storeDescription)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot create a store: %v", err)
+		return err
+	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		err := srv.DeleteObjectStore(ctx, storeName)
+		if err != nil {
+			logger.WarnContext(ctx, "Cannot delete store %q: %v", storeName, err)
+		}
+	}()
 
 	logger.InfoContext(ctx, "Agent %q has been built!", agentID)
 
