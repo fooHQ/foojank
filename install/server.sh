@@ -56,7 +56,7 @@ echo "[*] Adding nats user."
 id -u nats >/dev/null 2>&1 || $(command -v sudo || true) useradd --system -g nats -s /usr/sbin/nologin -c "NATS service user" nats
 
 echo "[*] Configuring NATS server."
-$(command -v sudo || true) mkdir "$NATS_CONFIG_PATH"
+$(command -v sudo || true) mkdir -p "$NATS_CONFIG_PATH"
 echo "$NATS_DEFAULT_CONFIG" | $(command -v sudo || true) tee "$NATS_CONFIG_PATH/server.conf"
 $(command -v sudo || true) nsc add operator --sys --name "nats-prod"
 $(command -v sudo || true) nsc edit operator --account-jwt-server-url "nats://127.0.0.1"
