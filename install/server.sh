@@ -7,6 +7,7 @@ SYSTEMD_UNIT_DOWNLOAD_URL="https://raw.githubusercontent.com/nats-io/nats-server
 NATS_CONFIG_PATH="/etc/nats-server.conf"
 NATS_SYSTEMD_PATH="/etc/systemd/system/nats-server.service"
 NATS_OPERATOR_NAME="nats-prod"
+NATS_PATH="/opt/nats"
 NATS_DEFAULT_CONFIG=$(cat <<EOF
 # The default configuration prefers WebSocket over NATS' TCP-based protocol.
 # If you want the clients to use TCP-based protocol, rebind it to a non-local address.
@@ -36,7 +37,7 @@ websocket {
 }
 
 jetstream {
-    store_dir: /opt/nats
+    store_dir: $NATS_PATH
 }
 
 EOF
@@ -105,8 +106,10 @@ configure_nats() {
     fi
     echo "$NATS_DEFAULT_CONFIG" | $(command -v sudo || true) tee "$NATS_CONFIG_PATH"
     $(command -v sudo || true) nsc generate config --nats-resolver | $(command -v sudo || true) tee -a "$NATS_CONFIG_PATH"
-    $(command -v sudo || true) mkdir -p /opt/nats
-    $(command -v sudo || true) chown nats:nats /opt/nats
+    # Replace resolver's default JWT directory path.
+    $(command -v sudo || true) sed -i "s|dir: './jwt'|dir: '$NATS_PATH/jwt'|" "$NATS_CONFIG_PATH"
+    $(command -v sudo || true) mkdir -p "$NATS_PATH"
+    $(command -v sudo || true) chown nats:nats "$NATS_PATH"
 }
 
 install_nats
