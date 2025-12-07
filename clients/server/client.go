@@ -165,6 +165,7 @@ func connect(
 ) (jetstream.JetStream, error) {
 	opts := []nats.Option{
 		nats.MaxReconnects(-1),
+		nats.TLSHandshakeFirst(),
 	}
 
 	if userJWT != "" && userKey != "" {
