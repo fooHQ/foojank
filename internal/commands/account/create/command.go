@@ -49,7 +49,7 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 	return ctx, nil
 }
 
-func action(ctx context.Context, c *cli.Command) error {
+func action(ctx context.Context, c *cli.Command) (err error) {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
@@ -64,7 +64,6 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	// TODO: make atomic write of all changes
 	userJWT, userKey, err := auth.NewUser(name, accountKey, jwt.Permissions{})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot generate a user: %v", err)
@@ -83,6 +82,15 @@ func action(ctx context.Context, c *cli.Command) error {
 		logger.ErrorContext(ctx, "Cannot store account: %v", err)
 		return err
 	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		err := auth.DeleteAccount(name)
+		if err != nil {
+			logger.WarnContext(ctx, "Cannot delete account %q: %v", name, err)
+		}
+	}()
 
 	err = auth.WriteUser(name, userJWT, userKey)
 	if err != nil {
