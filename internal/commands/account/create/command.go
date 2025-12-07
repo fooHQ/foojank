@@ -71,18 +71,8 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	pth, err := auth.AccountPath(name)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get account path: %v", err)
-		return err
-	}
-
-	_, err = os.Stat(pth)
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		logger.ErrorContext(ctx, "Cannot create account %q: %v", name, err)
-		return err
-	}
-	if err == nil {
+	_, _, err = auth.ReadAccount(name)
+	if !errors.Is(err, auth.ErrAccountNotFound) {
 		err = errors.New("account already exists")
 		logger.ErrorContext(ctx, "Cannot create account %q: %v", name, err)
 		return err
