@@ -125,6 +125,19 @@ func ListAccounts() ([]string, error) {
 	return accounts, nil
 }
 
+func DeleteAccount(name string) error {
+	pth, err := AccountPath(name)
+	if err != nil {
+		return err
+	}
+
+	err = os.RemoveAll(pth)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func NewAccount(name string) (string, []byte, error) {
 	account, err := nkeys.CreateAccount()
 	if err != nil {
