@@ -24,7 +24,7 @@ port: 4222
 websocket {
     # For more information visit: https://docs.nats.io/running-a-nats-service/configuration/websocket/websocket_conf
     host: 0.0.0.0
-    port: 443
+    port: 8443
     compression: true
 
     tls {
