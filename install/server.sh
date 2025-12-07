@@ -10,7 +10,7 @@ NATS_OPERATOR_NAME="nats-prod"
 NATS_DEFAULT_CONFIG=$(cat <<EOF
 # The default configuration prefers WebSocket over NATS' TCP-based protocol.
 # If you want the clients to use TCP-based protocol, rebind it to a non-local address.
-host: 127.0.0.1
+host: 0.0.0.0
 port: 4222
 
 # Uncomment and change according to your configuration.
