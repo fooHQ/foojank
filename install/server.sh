@@ -8,8 +8,6 @@ NATS_CONFIG_PATH="/etc/nats-server.conf"
 NATS_SYSTEMD_PATH="/etc/systemd/system/nats-server.service"
 NATS_OPERATOR_NAME="nats-prod"
 NATS_DEFAULT_CONFIG=$(cat <<EOF
-# JetStream must be enabled.
-jetstream: true
 # The default configuration prefers WebSocket over NATS' TCP-based protocol.
 # If you want the clients to use TCP-based protocol, rebind it to a non-local address.
 host: 127.0.0.1
@@ -32,6 +30,10 @@ websocket {
         # cert_file: "/etc/letsencrypt/live/example.com/fullchain.pem"
         # key_file: "/etc/letsencrypt/live/example.com/privkey.pem"
     }
+}
+
+jetstream {
+    store_dir: /opt/nats
 }
 
 EOF
@@ -87,6 +89,8 @@ configure_nats() {
         return
     fi
     echo "$NATS_DEFAULT_CONFIG" | $(command -v sudo || true) tee "$NATS_CONFIG_PATH"
+    $(command -v sudo || true) mkdir -p /opt/nats
+    $(command -v sudo || true) chown nats:nats /opt/nats
 }
 
 configure_nats_auth() {
