@@ -85,18 +85,7 @@ install_nats_user() {
     $(command -v sudo || true) useradd --system -g nats -s /usr/sbin/nologin -c "NATS service user" nats
 }
 
-configure_nats() {
-    echo "[+] Configuring NATS server."
-    if [ -f "$NATS_CONFIG_PATH" ]; then
-        echo "[!] NATS configuration file already exists in '$NATS_CONFIG_PATH'."
-        return
-    fi
-    echo "$NATS_DEFAULT_CONFIG" | $(command -v sudo || true) tee "$NATS_CONFIG_PATH"
-    $(command -v sudo || true) mkdir -p /opt/nats
-    $(command -v sudo || true) chown nats:nats /opt/nats
-}
-
-configure_nats_auth() {
+configure_nats_operator() {
     echo "[+] Creating NATS Operator."
     nsc describe operator --name "$NATS_OPERATOR_NAME" >/dev/null 2>&1
     ret=$?
@@ -106,7 +95,18 @@ configure_nats_auth() {
     fi
     $(command -v sudo || true) nsc add operator --sys --name "$NATS_OPERATOR_NAME"
     $(command -v sudo || true) nsc edit operator --account-jwt-server-url "nats://127.0.0.1"
+}
+
+configure_nats() {
+    echo "[+] Configuring NATS server."
+    if [ -f "$NATS_CONFIG_PATH" ]; then
+        echo "[!] NATS configuration file already exists in '$NATS_CONFIG_PATH'."
+        return
+    fi
+    echo "$NATS_DEFAULT_CONFIG" | $(command -v sudo || true) tee "$NATS_CONFIG_PATH"
     $(command -v sudo || true) nsc generate config --nats-resolver | $(command -v sudo || true) tee -a "$NATS_CONFIG_PATH"
+    $(command -v sudo || true) mkdir -p /opt/nats
+    $(command -v sudo || true) chown nats:nats /opt/nats
 }
 
 install_nats
@@ -114,8 +114,8 @@ install_nsc
 install_nats_systemd
 install_nats_group
 install_nats_user
+configure_nats_operator
 configure_nats
-configure_nats_auth
 
 echo
 echo "[*] Installation was successful!"
