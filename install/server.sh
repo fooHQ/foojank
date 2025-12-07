@@ -110,7 +110,8 @@ install_nats_user
 configure_nats
 configure_nats_auth
 
-echo "[!] Installation was successful!"
-echo "[!] Default configuration has been created in $NATS_CONFIG_PATH. You must now generate a TLS certificate for the server and enable it in $NATS_CONFIG_PATH/server.conf."
-echo "[!] For more information please visit NATS official documentation https://docs.nats.io/running-a-nats-service/configuration."
-echo "[!] To start NATS server run: systemctl start nats-server.service"
+echo
+echo "[*] Installation was successful!"
+echo "[*] Default configuration has been created in $NATS_CONFIG_PATH. You must now generate a TLS certificate for the server and enable it in $NATS_CONFIG_PATH/server.conf."
+echo "[*] For more information please visit NATS official documentation https://docs.nats.io/running-a-nats-service/configuration."
+echo "[*] To start NATS server run: systemctl start nats-server.service"
