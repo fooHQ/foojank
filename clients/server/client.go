@@ -3,8 +3,6 @@ package server
 import (
 	"context"
 	"crypto/x509"
-	"encoding/pem"
-	"errors"
 	"os"
 	"strings"
 	"time"
@@ -199,32 +197,8 @@ func connect(
 
 func decodeCertificatesHandler(b []byte) func() (*x509.CertPool, error) {
 	return func() (*x509.CertPool, error) {
-		var certs []*x509.Certificate
-		for len(b) > 0 {
-			block, rest := pem.Decode(b)
-			if block == nil {
-				break
-			}
-			b = rest
-
-			if block.Type == "CERTIFICATE" {
-				cert, err := x509.ParseCertificate(block.Bytes)
-				if err != nil {
-					return nil, err
-				}
-				certs = append(certs, cert)
-			}
-		}
-
-		if len(certs) == 0 {
-			return nil, errors.New("no certificates found")
-		}
-
 		pool := x509.NewCertPool()
-		for _, cert := range certs {
-			pool.AddCert(cert)
-		}
-
+		pool.AppendCertsFromPEM(b)
 		return pool, nil
 	}
 }
