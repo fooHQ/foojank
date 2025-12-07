@@ -95,7 +95,6 @@ configure_nats_operator() {
         return
     fi
     $(command -v sudo || true) nsc add operator --sys --name "$NATS_OPERATOR_NAME"
-    $(command -v sudo || true) nsc edit operator --account-jwt-server-url "nats://127.0.0.1"
 }
 
 configure_nats() {
