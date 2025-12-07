@@ -15,21 +15,24 @@ port: 4222
 
 # Uncomment and change according to your configuration.
 # For more information visit: https://docs.nats.io/running-a-nats-service/configuration/securing_nats/tls
-# cert_file: "/etc/letsencrypt/live/example.com/fullchain.pem"
-# key_file: "/etc/letsencrypt/live/example.com/privkey.pem"
-# handshake_first: true
+#tls {
+    # Uncomment and change according to your configuration.
+    # cert_file: "/etc/letsencrypt/live/example.com/fullchain.pem"
+    # key_file: "/etc/letsencrypt/live/example.com/privkey.pem"
+    # handshake_first: true
+#}
 
+# For more information visit: https://docs.nats.io/running-a-nats-service/configuration/websocket/websocket_conf
 websocket {
-    # For more information visit: https://docs.nats.io/running-a-nats-service/configuration/websocket/websocket_conf
     host: 0.0.0.0
     port: 8443
     compression: true
 
-    tls {
+    #tls {
         # Uncomment and change according to your configuration.
         # cert_file: "/etc/letsencrypt/live/example.com/fullchain.pem"
         # key_file: "/etc/letsencrypt/live/example.com/privkey.pem"
-    }
+    #}
 }
 
 jetstream {
