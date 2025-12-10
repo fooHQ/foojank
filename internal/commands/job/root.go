@@ -20,5 +20,6 @@ func NewCommand() *cli.Command {
 		},
 		CommandNotFound: actions.CommandNotFound,
 		OnUsageError:    actions.UsageError,
+		HideHelpCommand: true,
 	}
 }

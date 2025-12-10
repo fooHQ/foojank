@@ -26,9 +26,10 @@ func NewCommand() *cli.Command {
 				Usage: "set account name",
 			},
 		},
-		Before:       before,
-		Action:       action,
-		OnUsageError: actions.UsageError,
+		Before:          before,
+		Action:          action,
+		OnUsageError:    actions.UsageError,
+		HideHelpCommand: true,
 	}
 }
 

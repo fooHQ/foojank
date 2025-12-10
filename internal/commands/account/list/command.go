@@ -29,10 +29,11 @@ func NewCommand() *cli.Command {
 				Usage: "set output format",
 			},
 		},
-		Before:       before,
-		Action:       action,
-		Aliases:      []string{"ls"},
-		OnUsageError: actions.UsageError,
+		Before:          before,
+		Action:          action,
+		Aliases:         []string{"ls"},
+		OnUsageError:    actions.UsageError,
+		HideHelpCommand: true,
 	}
 }
 

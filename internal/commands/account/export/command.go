@@ -16,12 +16,13 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:         "export",
-		ArgsUsage:    "<account-name>",
-		Usage:        "Export account's JWT",
-		Before:       before,
-		Action:       action,
-		OnUsageError: actions.UsageError,
+		Name:            "export",
+		ArgsUsage:       "<account-name>",
+		Usage:           "Export account's JWT",
+		Before:          before,
+		Action:          action,
+		OnUsageError:    actions.UsageError,
+		HideHelpCommand: true,
 	}
 }
 
