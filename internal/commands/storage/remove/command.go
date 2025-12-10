@@ -40,10 +40,11 @@ func NewCommand() *cli.Command {
 				Usage: "set path to a configuration directory",
 			},
 		},
-		Before:       before,
-		Action:       action,
-		Aliases:      []string{"rm"},
-		OnUsageError: actions.UsageError,
+		Before:          before,
+		Action:          action,
+		Aliases:         []string{"rm"},
+		OnUsageError:    actions.UsageError,
+		HideHelpCommand: true,
 	}
 }
 
