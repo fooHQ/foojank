@@ -4,7 +4,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/actions"
-	copy2 "github.com/foohq/foojank/internal/commands/storage/copy"
+	"github.com/foohq/foojank/internal/commands/storage/copy"
 	"github.com/foohq/foojank/internal/commands/storage/list"
 	"github.com/foohq/foojank/internal/commands/storage/remove"
 )
@@ -15,7 +15,7 @@ func NewCommand() *cli.Command {
 		Usage: "Manage storage",
 		Commands: []*cli.Command{
 			list.NewCommand(),
-			copy2.NewCommand(),
+			copy.NewCommand(),
 			remove.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
