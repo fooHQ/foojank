@@ -188,7 +188,11 @@ func (c *Client) ListAgentIDs(ctx context.Context) ([]string, error) {
 }
 
 func (c *Client) CreateConsumer(ctx context.Context, agentID string, subjects []string) (jetstream.Consumer, error) {
-	return c.srv.CreateConsumer(ctx, StreamName(agentID), subjects)
+	consumer, err := c.srv.CreateConsumer(ctx, StreamName(agentID), subjects)
+	if err != nil {
+		return nil, &errorApi{err}
+	}
+	return consumer, nil
 }
 
 func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, error) {
