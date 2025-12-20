@@ -1,5 +1,7 @@
 package agent
 
+import "time"
+
 const (
 	JobStatusPending    = "Pending"
 	JobStatusRunning    = "Running"
@@ -16,4 +18,6 @@ type Job struct {
 	Args    string
 	Status  string
 	Error   error
+	Created time.Time
+	Updated time.Time
 }
