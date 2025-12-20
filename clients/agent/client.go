@@ -2,7 +2,6 @@ package agent
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"maps"
 	"slices"
@@ -12,6 +11,7 @@ import (
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
+	"github.com/nats-io/nuid"
 
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/router"
@@ -61,7 +61,7 @@ func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error
 		},
 	}
 
-	agentIDs, err := c.ListAgentIDs(ctx)
+	agentIDs, err := c.listAgentIDs(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -125,10 +125,14 @@ func (c *Client) StartWorker(ctx context.Context, agentID, workerID, command str
 		return err
 	}
 
-	err = c.srv.Publish(ctx, &nats.Msg{
-		Subject: proto.StartWorkerSubject(agentID, workerID),
-		Data:    b,
-	})
+	err = c.publishMsg(
+		ctx,
+		StreamName(agentID),
+		&nats.Msg{
+			Subject: proto.StartWorkerSubject(agentID, workerID),
+			Data:    b,
+		},
+	)
 	if err != nil {
 		return err
 	}
@@ -142,10 +146,14 @@ func (c *Client) StopWorker(ctx context.Context, agentID, workerID string) error
 		return err
 	}
 
-	err = c.srv.Publish(ctx, &nats.Msg{
-		Subject: proto.StopWorkerSubject(agentID, workerID),
-		Data:    b,
-	})
+	err = c.publishMsg(
+		ctx,
+		StreamName(agentID),
+		&nats.Msg{
+			Subject: proto.StopWorkerSubject(agentID, workerID),
+			Data:    b,
+		},
+	)
 	if err != nil {
 		return err
 	}
@@ -159,41 +167,19 @@ func (c *Client) WriteWorkerStdin(ctx context.Context, agentID, workerID string)
 		return err
 	}
 
-	err = c.srv.Publish(ctx, &nats.Msg{
-		Subject: proto.WriteWorkerStdinSubject(agentID, workerID),
-		Data:    b,
-	})
+	err = c.publishMsg(
+		ctx,
+		StreamName(agentID),
+		&nats.Msg{
+			Subject: proto.WriteWorkerStdinSubject(agentID, workerID),
+			Data:    b,
+		},
+	)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (c *Client) ListAgentIDs(ctx context.Context) ([]string, error) {
-	streams, err := c.srv.ListStreams(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var agentIDs []string
-	for _, stream := range streams {
-		if !strings.HasPrefix(stream, StreamPrefix) {
-			continue
-		}
-		agentID := strings.TrimPrefix(stream, StreamPrefix)
-		agentIDs = append(agentIDs, agentID)
-	}
-
-	return agentIDs, nil
-}
-
-func (c *Client) CreateConsumer(ctx context.Context, agentID string, subjects []string) (jetstream.Consumer, error) {
-	consumer, err := c.srv.CreateConsumer(ctx, StreamName(agentID), subjects)
-	if err != nil {
-		return nil, &errorApi{err}
-	}
-	return consumer, nil
 }
 
 func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, error) {
@@ -342,7 +328,7 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 }
 
 func (c *Client) ListAllJobs(ctx context.Context) (map[string]Job, error) {
-	agentIDs, err := c.ListAgentIDs(ctx)
+	agentIDs, err := c.listAgentIDs(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -368,33 +354,70 @@ func (c *Client) GetJob(ctx context.Context, jobID string) (Job, error) {
 
 	job, ok := jobs[jobID]
 	if !ok {
-		return Job{}, errors.New("job not found")
+		return Job{}, ErrJobNotFound
 	}
 
 	return job, nil
 }
 
-type Message struct {
-	msg      jetstream.Msg
-	ID       string
-	Subject  string
-	AgentID  string
-	Sent     time.Time
-	Received time.Time
+func (c *Client) CreateStorage(ctx context.Context, name, description string) error {
+	_, err := c.srv.CreateObjectStore(ctx, jetstream.ObjectStoreConfig{
+		Bucket:      name,
+		Description: description,
+	})
+	if err != nil {
+		return &errorApi{err}
+	}
+	return nil
 }
 
-func (m *Message) Data() []byte {
-	return m.msg.Data()
+func (c *Client) DeleteStorage(ctx context.Context, name string) error {
+	err := c.srv.DeleteObjectStore(ctx, name)
+	if err != nil {
+		return &errorApi{err}
+	}
+	return nil
+}
+
+func (c *Client) ListStorage(ctx context.Context) ([]*Storage, error) {
+	var result []*Storage
+	for name := range c.srv.ObjectStoreNames(ctx).Name() {
+		store, err := c.srv.ObjectStore(ctx, name)
+		if err != nil {
+			return nil, &errorApi{err}
+		}
+
+		s, err := NewStorage(ctx, store)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, s)
+	}
+	return result, nil
+}
+
+func (c *Client) GetStorage(ctx context.Context, name string) (*Storage, error) {
+	store, err := c.srv.ObjectStore(ctx, name)
+	if err != nil {
+		return nil, &errorApi{err}
+	}
+
+	s, err := NewStorage(ctx, store)
+	if err != nil {
+		return nil, err
+	}
+
+	return s, nil
 }
 
 func (c *Client) ListMessages(ctx context.Context, agentID string, subjects []string) ([]Message, error) {
-	consumer, err := c.CreateConsumer(ctx, agentID, subjects)
+	consumer, err := c.createConsumer(ctx, agentID, subjects)
 	if err != nil {
 		return nil, err
 	}
 
 	var msgs []Message
-
 	for {
 		batch, err := consumer.FetchNoWait(350)
 		if err != nil {
@@ -462,28 +485,76 @@ func (c *Client) ListMessages(ctx context.Context, agentID string, subjects []st
 	return msgs, nil
 }
 
-type Job struct {
-	ID      string
-	AgentID string
-	Command string
-	Args    string
-	Status  string
-	Error   error
+func (c *Client) publishMsg(ctx context.Context, stream string, msg *nats.Msg) error {
+	if msg.Header == nil {
+		msg.Header = make(nats.Header)
+	}
+	msg.Header.Set(nats.MsgIdHdr, nuid.Next())
+	_, err := c.srv.PublishMsg(
+		ctx,
+		msg,
+		jetstream.WithExpectStream(stream),
+	)
+	if err != nil {
+		return &errorApi{err}
+	}
+	return nil
 }
 
-const (
-	JobStatusPending    = "Pending"
-	JobStatusRunning    = "Running"
-	JobStatusCancelling = "Cancelling"
-	JobStatusCancelled  = "Cancelled"
-	JobStatusFinished   = "Finished"
-	JobStatusFailed     = "Failed"
-)
+func (c *Client) listStreams(ctx context.Context) ([]string, error) {
+	var names []string
+	for stream := range c.srv.ListStreams(ctx).Info() {
+		if stream == nil {
+			break
+		}
+		names = append(names, stream.Config.Name)
+	}
+	return names, nil
+}
 
-const StreamPrefix = "FJ_"
+func (c *Client) createConsumer(ctx context.Context, agentID string, subjects []string) (jetstream.Consumer, error) {
+	consumer, err := c.srv.CreateConsumer(ctx, StreamName(agentID), jetstream.ConsumerConfig{
+		DeliverPolicy:  jetstream.DeliverAllPolicy,
+		AckPolicy:      jetstream.AckExplicitPolicy,
+		MaxAckPending:  1,
+		FilterSubjects: subjects,
+	})
+	if err != nil {
+		return nil, &errorApi{err}
+	}
+	return consumer, nil
+}
+
+func (c *Client) listAgentIDs(ctx context.Context) ([]string, error) {
+	streams, err := c.listStreams(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var agentIDs []string
+	for _, stream := range streams {
+		if !hasStreamPrefix(stream) {
+			continue
+		}
+		agentID := trimStreamPrefix(stream)
+		agentIDs = append(agentIDs, agentID)
+	}
+
+	return agentIDs, nil
+}
+
+const streamPrefix = "FJ_"
 
 func StreamName(name string) string {
-	return StreamPrefix + name
+	return streamPrefix + name
+}
+
+func trimStreamPrefix(name string) string {
+	return strings.TrimPrefix(name, streamPrefix)
+}
+
+func hasStreamPrefix(name string) bool {
+	return strings.HasPrefix(name, streamPrefix)
 }
 
 const InboxPrefix = "_INBOX_"
