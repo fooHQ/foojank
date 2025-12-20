@@ -63,7 +63,7 @@ USAGE:
    foojank [global options] [command [command options]]
 
 VERSION:
-   0.4.0
+   0.4.2
 
 COMMANDS:
    account  Manage accounts
@@ -74,7 +74,7 @@ COMMANDS:
    storage  Manage storage
 
 GLOBAL OPTIONS:
-   --no-color     disable color output (default: false)
+   --no-color     disable color output
    --help, -h     show help
    --version, -v  print the version
 ```
