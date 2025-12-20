@@ -244,6 +244,10 @@ func (c *Client) WriteWorkerStdin(ctx context.Context, agentID, workerID string)
 	return nil
 }
 
+type contextKey string
+
+var messageKey contextKey = "foojank:message"
+
 func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, error) {
 	jobs := make(map[string]Job)
 	jobsMsgIDRef := make(map[string]string)
@@ -260,12 +264,16 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 				return nil
 			}
 
+			msg := ctx.Value(messageKey).(Message)
+
 			return Job{
 				ID:      workerID,
 				AgentID: agentID,
 				Command: v.Command,
 				Args:    strings.Join(v.Args, " "),
 				Status:  JobStatusPending,
+				Created: msg.Received,
+				Updated: msg.Received,
 			}
 		},
 		proto.StopWorkerSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {
@@ -284,7 +292,10 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 				return nil
 			}
 
+			msg := ctx.Value(messageKey).(Message)
+
 			job.Status = JobStatusCancelling
+			job.Updated = msg.Received
 
 			return job
 		},
@@ -304,6 +315,8 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 				return nil
 			}
 
+			msg := ctx.Value(messageKey).(Message)
+
 			switch v.Status {
 			case 0:
 				job.Status = JobStatusFinished
@@ -312,6 +325,8 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 			default:
 				job.Status = JobStatusFailed
 			}
+
+			job.Updated = msg.Received
 
 			return job
 		},
@@ -331,6 +346,8 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 				return nil
 			}
 
+			msg := ctx.Value(messageKey).(Message)
+
 			switch v := data.(type) {
 			case proto.StartWorkerResponse:
 				if v.Error != nil {
@@ -339,7 +356,6 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 				} else {
 					job.Status = JobStatusRunning
 				}
-				return job
 
 			case proto.StopWorkerResponse:
 				if v.Error != nil {
@@ -348,10 +364,14 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 				} else {
 					job.Status = JobStatusCancelled
 				}
-				return job
+
+			default:
+				return nil
 			}
 
-			return nil
+			job.Updated = msg.Received
+
+			return job
 		},
 	}
 
@@ -376,7 +396,7 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 			continue
 		}
 
-		res := handler(ctx, params, data)
+		res := handler(context.WithValue(ctx, messageKey, msg), params, data)
 		if res == nil {
 			continue
 		}
