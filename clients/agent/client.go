@@ -28,6 +28,71 @@ func New(srv *server.Client) *Client {
 	}
 }
 
+func (c *Client) Register(ctx context.Context, agentID string) (err error) {
+	streamName := StreamName(agentID)
+	_, err = c.srv.CreateStream(ctx, jetstream.StreamConfig{
+		Name: streamName,
+		Subjects: []string{
+			proto.StartWorkerSubject(agentID, "*"),
+			proto.StopWorkerSubject(agentID, "*"),
+			proto.WriteWorkerStdinSubject(agentID, "*"),
+			proto.WriteWorkerStdoutSubject(agentID, "*"),
+			proto.UpdateWorkerStatusSubject(agentID, "*"),
+			proto.ReplyMessageSubject(agentID, "*"),
+			proto.UpdateClientInfoSubject(agentID),
+		},
+	})
+	if err != nil {
+		return &errorApi{err}
+	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		_ = c.srv.DeleteStream(ctx, streamName)
+	}()
+
+	consumerName := agentID
+	_, err = c.srv.CreateConsumer(ctx, streamName, jetstream.ConsumerConfig{
+		Durable:       consumerName,
+		DeliverPolicy: jetstream.DeliverLastPolicy,
+		AckPolicy:     jetstream.AckExplicitPolicy,
+		MaxAckPending: 1,
+		FilterSubjects: []string{
+			proto.StartWorkerSubject(agentID, "*"),
+			proto.StopWorkerSubject(agentID, "*"),
+			proto.WriteWorkerStdinSubject(agentID, "*"),
+		},
+	})
+	if err != nil {
+		return &errorApi{err}
+	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		_ = c.srv.DeleteConsumer(ctx, streamName, consumerName)
+	}()
+
+	storeName := agentID
+	storeDesc := fmt.Sprintf("Agent %s storage", agentID)
+	_, err = c.srv.CreateObjectStore(ctx, jetstream.ObjectStoreConfig{
+		Bucket:      storeName,
+		Description: storeDesc,
+	})
+	if err != nil {
+		return &errorApi{err}
+	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		_ = c.srv.DeleteObjectStore(ctx, storeName)
+	}()
+
+	return nil
+}
+
 type DiscoverResult struct {
 	AgentID  string
 	Username string
