@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"slices"
@@ -357,6 +358,20 @@ func (c *Client) ListAllJobs(ctx context.Context) (map[string]Job, error) {
 	}
 
 	return result, nil
+}
+
+func (c *Client) GetJob(ctx context.Context, jobID string) (Job, error) {
+	jobs, err := c.ListAllJobs(ctx)
+	if err != nil {
+		return Job{}, err
+	}
+
+	job, ok := jobs[jobID]
+	if !ok {
+		return Job{}, errors.New("job not found")
+	}
+
+	return job, nil
 }
 
 type Message struct {
