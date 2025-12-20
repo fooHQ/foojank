@@ -89,15 +89,9 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	jobID := c.Args().First()
 
-	jobs, err := client.ListAllJobs(ctx)
+	job, err := client.GetJob(ctx, jobID)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get a list of jobs: %v", err)
-		return err
-	}
-
-	job, ok := jobs[jobID]
-	if !ok {
-		logger.ErrorContext(ctx, "Job %q not found", jobID)
+		logger.ErrorContext(ctx, "Cannot cancel job: %v", err)
 		return err
 	}
 
