@@ -99,7 +99,6 @@ type DiscoverResult struct {
 	Hostname string
 	System   string
 	Address  string
-	Created  time.Time
 	LastSeen time.Time
 }
 
@@ -143,7 +142,6 @@ func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error
 		if len(msgs) == 0 {
 			results[agentID] = DiscoverResult{
 				AgentID: agentID,
-				Created: time.Time{}, // TODO: grab timestamp from the stream!
 			}
 			continue
 		}
@@ -171,7 +169,6 @@ func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error
 				Hostname: result.Hostname,
 				System:   result.System,
 				Address:  result.Address,
-				Created:  time.Time{}, // TODO: grab timestamp from the stream!
 				LastSeen: msg.Received,
 			}
 		}
