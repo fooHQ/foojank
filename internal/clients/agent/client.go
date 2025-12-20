@@ -13,7 +13,7 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nats-io/nuid"
 
-	"github.com/foohq/foojank/clients/server"
+	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/router"
 	"github.com/foohq/foojank/proto"
 )
