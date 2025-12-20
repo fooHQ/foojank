@@ -11,11 +11,11 @@ import (
 	petname "github.com/dustinkirkland/golang-petname"
 	"github.com/urfave/cli/v3"
 
-	"github.com/foohq/foojank/clients/agent"
-	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/builder"
+	"github.com/foohq/foojank/internal/clients/agent"
+	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
 	"github.com/foohq/foojank/internal/profile"
