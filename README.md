@@ -1,8 +1,11 @@
 # Foojank
 
-Foojank is a prototype of a command and control framework written in Go.
+Foojank is a prototype command-and-control (C2) framework that uses NATS for C2 communications.
 
-Foojank uses NATS as a command-and-control server. NATS, a widely used message broker, is commonly used in IoT and cloud systems to facilitate communication between distributed services. NATS offers a persistence layer known as JetStream, enabling it to store messages on the server even when the receiver is offline. Additionally, NATS provides an object store that can be utilized for storing files.
+NATS is a widely used message broker in IoT and cloud systems to facilitate communication between geographically
+distributed services. NATS allows passing messages between connected services and offers a persistence layer known as
+JetStream, enabling it to store messages on the server even when the receiver is offline. Additionally, NATS provides an
+object store that can be utilized for storing files.
 
 Foojank leverages the NATS features to offer:
 
@@ -12,38 +15,41 @@ Foojank leverages the NATS features to offer:
 * Full observability.
 * Extensibility.
 
-Foojank is currently compatible only with our prototype agent, [Vessel](https://github.com/foohq/vessel). However, we plan to implement support for integrating custom agents into the framework in the future.
+Foojank is currently compatible only with our prototype agent, [Vessel](https://github.com/foohq/vessel). However, we
+plan to implement support for integrating custom agents into the framework in the future.
+
+#### Platform Compatibility
+
+|                | Linux | macOS | Windows |
+|----------------|:-----:|:-----:|:-------:|
+| Vessel (Agent) |   ✅   |   ✅   |    ✅    |
+| Client         |   ✅   |   ✅   |    ❌    |
+| Server         |   ✅   |   ✅   |    ✅    |
+
+**Note:** Client is not supported on Windows due to being incompatible with Devbox.
 
 ## Installation
 
-> [!NOTE]
-> These steps are only suitable for a quick evaluation of the framework's capabilities or for developers. For an actual installation guide, please refer to Foojank [manual](https://foojank.com).
+### Server
 
-### Requirements
+```
+$ curl -fsSL https://github.com/fooHQ/foojank/releases/latest/download/server.sh | sh
+```
 
-* [Devbox](https://www.jetify.com/devbox)
+### Client
 
-### Compatibility
+```
+$ curl -fsSL https://github.com/fooHQ/foojank/releases/latest/download/client.sh | sh
+```
 
-* macOS
-* Linux
-* ~~Windows~~ is currently not supported by Devbox. This affects only the client's compatibility, not the agent's.
-
-Build Foojank client:
+### Installation from Source
 
 ```
 $ git clone https://github.com/foohq/foojank
 $ cd foojank/
-$ devbox run build build-foojank-prod
+$ devbox run build-foojank-prod
+# install ./build/foojank /usr/local/bin/foojank
 ```
-
-Run Foojank client:
-
-```
-$ ./build/foojank
-```
-
-To set up a testing NATS server, follow the steps outlined in the server [README](./server/README.md).
 
 ## Usage
 
