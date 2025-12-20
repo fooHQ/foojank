@@ -10,6 +10,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/foohq/foojank/clients/agent"
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/auth"
@@ -84,6 +85,8 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
+	client := agent.New(srv)
+
 	if c.Args().Len() != 2 {
 		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
 		return errors.New("not enough arguments")
@@ -123,7 +126,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	// Copy local file to a remote storage
 	if srcPath.IsLocal() {
-		err := copyLocalFile(ctx, srv, srcPath.FilePath, dstPath.Storage, destPath)
+		err := copyLocalFile(ctx, client, srcPath.FilePath, dstPath.Storage, destPath)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot copy file %q to %q: %v", srcPath.String(), dstPath.String(), err)
 			return err
@@ -133,7 +136,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	// Copy file from a remote storage to a local directory
 	if !srcPath.IsLocal() {
-		err := copyRemoteFile(ctx, srv, srcPath.Storage, srcPath.FilePath, destPath)
+		err := copyRemoteFile(ctx, client, srcPath.Storage, srcPath.FilePath, destPath)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot copy file %q to %q: %v", srcPath.String(), dstPath.String(), err)
 			return err
@@ -143,7 +146,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	return nil
 }
 
-func copyLocalFile(ctx context.Context, srv *server.Client, src string, storageName, dst string) error {
+func copyLocalFile(ctx context.Context, client *agent.Client, src string, storageName, dst string) error {
 	srcFile, err := os.Open(src)
 	if err != nil {
 		return err
@@ -161,7 +164,7 @@ func copyLocalFile(ctx context.Context, srv *server.Client, src string, storageN
 		return fmt.Errorf("source file is a directory")
 	}
 
-	storage, err := srv.GetObjectStore(ctx, storageName)
+	storage, err := client.GetStorage(ctx, storageName)
 	if err != nil {
 		return fmt.Errorf("cannot open storage: %w", err)
 	}
@@ -195,8 +198,8 @@ func copyLocalFile(ctx context.Context, srv *server.Client, src string, storageN
 	return nil
 }
 
-func copyRemoteFile(ctx context.Context, srv *server.Client, storageName, src string, dst string) error {
-	storage, err := srv.GetObjectStore(ctx, storageName)
+func copyRemoteFile(ctx context.Context, client *agent.Client, storageName, src string, dst string) error {
+	storage, err := client.GetStorage(ctx, storageName)
 	if err != nil {
 		return fmt.Errorf("cannot open storage: %w", err)
 	}

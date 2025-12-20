@@ -11,6 +11,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/foohq/foojank/clients/agent"
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/auth"
@@ -93,8 +94,10 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
+	client := agent.New(srv)
+
 	if c.NArg() == 0 {
-		err := listStorages(ctx, srv, format)
+		err := listStorages(ctx, client, format)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get a list of storages: %v", err)
 			return err
@@ -109,7 +112,7 @@ func action(ctx context.Context, c *cli.Command) error {
 			return err
 		}
 
-		err = listStorage(ctx, srv, format, result.Storage, result.FilePath)
+		err = listStorage(ctx, client, format, result.Storage, result.FilePath)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot list storage %q: %v", result.Storage, err)
 			return err
@@ -119,8 +122,8 @@ func action(ctx context.Context, c *cli.Command) error {
 	return nil
 }
 
-func listStorages(ctx context.Context, srv *server.Client, format string) error {
-	stores, err := srv.ListObjectStores(ctx)
+func listStorages(ctx context.Context, client *agent.Client, format string) error {
+	stores, err := client.ListStorage(ctx)
 	if err != nil {
 		return err
 	}
@@ -144,8 +147,8 @@ func listStorages(ctx context.Context, srv *server.Client, format string) error 
 	return formatOutput(os.Stdout, format, table)
 }
 
-func listStorage(ctx context.Context, srv *server.Client, format, storage, pth string) error {
-	store, err := srv.GetObjectStore(ctx, storage)
+func listStorage(ctx context.Context, client *agent.Client, format, storage, pth string) error {
+	store, err := client.GetStorage(ctx, storage)
 	if err != nil {
 		return fmt.Errorf("cannot open storage: %w", err)
 	}

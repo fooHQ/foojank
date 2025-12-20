@@ -8,6 +8,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/foohq/foojank/clients/agent"
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/auth"
@@ -82,6 +83,8 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
+	client := agent.New(srv)
+
 	if c.Args().Len() == 0 {
 		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
 		return errors.New("not enough arguments")
@@ -99,7 +102,7 @@ func action(ctx context.Context, c *cli.Command) error {
 			continue
 		}
 
-		err = removeFile(ctx, srv, filePath.Storage, filePath.FilePath)
+		err = removeFile(ctx, client, filePath.Storage, filePath.FilePath)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot delete file %q from a storage %q: %v.", filePath.FilePath, filePath.Storage, err)
 			continue
@@ -110,8 +113,8 @@ func action(ctx context.Context, c *cli.Command) error {
 
 }
 
-func removeFile(ctx context.Context, srv *server.Client, name, file string) error {
-	storage, err := srv.GetObjectStore(ctx, name)
+func removeFile(ctx context.Context, client *agent.Client, name, file string) error {
+	storage, err := client.GetStorage(ctx, name)
 	if err != nil {
 		return fmt.Errorf("cannot open storage: %w", err)
 	}
