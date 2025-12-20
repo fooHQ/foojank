@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
+	"time"
 
 	"github.com/urfave/cli/v3"
 
@@ -111,9 +113,16 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	// TODO: sort data!
+	data := make([]agent.Job, 0, len(jobs))
+	for _, job := range jobs {
+		data = append(data, job)
+	}
 
-	err = formatOutput(os.Stdout, format, jobs)
+	sort.SliceStable(data, func(i, j int) bool {
+		return data[i].Updated.Before(data[j].Updated)
+	})
+
+	err = formatOutput(os.Stdout, format, data)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
@@ -122,12 +131,14 @@ func action(ctx context.Context, c *cli.Command) error {
 	return nil
 }
 
-func formatOutput(w io.Writer, format string, data map[string]agent.Job) error {
+func formatOutput(w io.Writer, format string, data []agent.Job) error {
 	table := formatter.NewTable([]string{
 		"job_id",
 		"agent_id",
 		"command",
 		"status",
+		"created_at",
+		"updated_at",
 	})
 	for _, job := range data {
 		table.AddRow([]string{
@@ -135,6 +146,8 @@ func formatOutput(w io.Writer, format string, data map[string]agent.Job) error {
 			job.AgentID,
 			fmt.Sprintf("%s %s", job.Command, job.Args),
 			job.Status,
+			formatTime(job.Created),
+			formatTime(job.Updated),
 		})
 	}
 
@@ -154,6 +167,10 @@ func formatOutput(w io.Writer, format string, data map[string]agent.Job) error {
 	}
 
 	return nil
+}
+
+func formatTime(t time.Time) string {
+	return t.Format("2006-01-02 15:04:05")
 }
 
 func validateConfiguration(conf *config.Config) error {
