@@ -65,6 +65,11 @@ func action(ctx context.Context, c *cli.Command) error {
 	format, _ := conf.String(flags.Format)
 	noColor, _ := conf.String(flags.NoColor)
 
+	if len(setOptions) == 0 && len(unsetOptions) == 0 {
+		logger.ErrorContext(ctx, "Nothing to do.")
+		return errors.New("nothing to do")
+	}
+
 	opts := map[string]string{
 		config.FlagToOption(flags.ServerURL):         serverURL,
 		config.FlagToOption(flags.ServerCertificate): serverCert,
