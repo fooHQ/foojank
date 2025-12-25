@@ -99,7 +99,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	agentID := c.Args().First()
 
-	msgs, err := client.ListMessages(ctx, agentID, nil)
+	msgs, err := client.ListMessages(ctx, agentID, nil, 1, -1)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot get a list of messages: %v", err)
 		return err
