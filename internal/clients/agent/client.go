@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"maps"
-	"slices"
 	"strings"
 	"time"
 
@@ -134,7 +133,7 @@ func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error
 	for _, agentID := range agentIDs {
 		msgs, err := c.ListMessages(ctx, agentID, []string{
 			proto.UpdateClientInfoSubject(agentID),
-		})
+		}, 1, -1)
 		if err != nil {
 			return nil, err
 		}
@@ -380,7 +379,7 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 		proto.StopWorkerSubject(agentID, "*"),
 		proto.UpdateWorkerStatusSubject(agentID, "*"),
 		proto.ReplyMessageSubject(agentID, "*"),
-	})
+	}, 1, -1)
 	if err != nil {
 		return nil, err
 	}
@@ -493,29 +492,39 @@ func (c *Client) GetStorage(ctx context.Context, name string) (*Storage, error) 
 	return s, nil
 }
 
-func (c *Client) ListMessages(ctx context.Context, agentID string, subjects []string) ([]Message, error) {
-	consumer, err := c.createConsumer(ctx, agentID, subjects)
+func (c *Client) ListMessages(
+	ctx context.Context,
+	agentID string,
+	subjects []string,
+	startSeq uint64,
+	limit int,
+) ([]Message, error) {
+	consumer, err := c.srv.CreateConsumer(ctx, StreamName(agentID), jetstream.ConsumerConfig{
+		DeliverPolicy:  jetstream.DeliverByStartSequencePolicy,
+		AckPolicy:      jetstream.AckNonePolicy,
+		MaxAckPending:  1,
+		FilterSubjects: subjects,
+		OptStartSeq:    startSeq,
+	})
 	if err != nil {
-		return nil, err
+		return nil, &errorApi{err}
+	}
+
+	if limit <= 0 {
+		limit = 50
 	}
 
 	var msgs []Message
 	for {
-		batch, err := consumer.FetchNoWait(350)
+		batch, err := consumer.FetchNoWait(limit - len(msgs))
 		if err != nil {
 			return nil, err
 		}
 
-		var cnt int
+		cnt := 0
 		for msg := range batch.Messages() {
 			if msg == nil {
 				break
-			}
-			cnt++
-
-			err := msg.Ack()
-			if err != nil {
-				return nil, err
 			}
 
 			meta, err := msg.Metadata()
@@ -524,15 +533,16 @@ func (c *Client) ListMessages(ctx context.Context, agentID string, subjects []st
 			}
 
 			msgID := msg.Headers().Get(nats.MsgIdHdr)
-
 			msgs = append(msgs, Message{
 				ID:       msgID,
+				Seq:      meta.Sequence.Stream,
 				Subject:  msg.Subject(),
 				AgentID:  agentID,
 				Sent:     time.Time{}, // TODO: extract from the message headers!
 				Received: meta.Timestamp,
 				msg:      msg,
 			})
+			cnt++
 		}
 
 		err = batch.Error()
@@ -540,29 +550,10 @@ func (c *Client) ListMessages(ctx context.Context, agentID string, subjects []st
 			return nil, err
 		}
 
-		if cnt == 0 {
+		if cnt == 0 || len(msgs) == limit {
 			break
 		}
 	}
-
-	msgs = slices.SortedFunc(slices.Values(msgs), func(v1, v2 Message) int {
-		if !v1.Sent.IsZero() && !v2.Sent.IsZero() {
-			if v1.Sent.Before(v2.Sent) {
-				return -1
-			}
-			if v1.Sent.After(v2.Sent) {
-				return 1
-			}
-			return 0
-		}
-		if v1.Received.Before(v2.Received) {
-			return -1
-		}
-		if v1.Received.After(v2.Received) {
-			return 1
-		}
-		return 0
-	})
 
 	return msgs, nil
 }
@@ -592,19 +583,6 @@ func (c *Client) listStreams(ctx context.Context) ([]string, error) {
 		names = append(names, stream.Config.Name)
 	}
 	return names, nil
-}
-
-func (c *Client) createConsumer(ctx context.Context, agentID string, subjects []string) (jetstream.Consumer, error) {
-	consumer, err := c.srv.CreateConsumer(ctx, StreamName(agentID), jetstream.ConsumerConfig{
-		DeliverPolicy:  jetstream.DeliverAllPolicy,
-		AckPolicy:      jetstream.AckExplicitPolicy,
-		MaxAckPending:  1,
-		FilterSubjects: subjects,
-	})
-	if err != nil {
-		return nil, &errorApi{err}
-	}
-	return consumer, nil
 }
 
 func (c *Client) listAgentIDs(ctx context.Context) ([]string, error) {
