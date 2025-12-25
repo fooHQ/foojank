@@ -1,0 +1,163 @@
+package logs
+
+import (
+	"context"
+	"errors"
+	"os"
+
+	"github.com/urfave/cli/v3"
+
+	"github.com/foohq/foojank/internal/actions"
+	"github.com/foohq/foojank/internal/auth"
+	"github.com/foohq/foojank/internal/clients/agent"
+	"github.com/foohq/foojank/internal/clients/server"
+	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/flags"
+	"github.com/foohq/foojank/internal/router"
+	"github.com/foohq/foojank/proto"
+)
+
+func NewCommand() *cli.Command {
+	return &cli.Command{
+		Name:      "logs",
+		ArgsUsage: "<job-id>",
+		Usage:     "Print job's output log",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  flags.ServerURL,
+				Usage: "set server URL",
+			},
+			&cli.StringFlag{
+				Name:      flags.ServerCertificate,
+				Usage:     "set path to server's certificate",
+				TakesFile: true,
+			},
+			&cli.StringFlag{
+				Name:  flags.Account,
+				Usage: "set server account",
+			},
+			&cli.StringFlag{
+				Name:  flags.ConfigDir,
+				Usage: "set path to a configuration directory",
+			},
+		},
+		Before:          before,
+		Action:          action,
+		OnUsageError:    actions.UsageError,
+		HideHelpCommand: true,
+	}
+}
+
+func before(ctx context.Context, c *cli.Command) (context.Context, error) {
+	ctx, err := actions.LoadConfig(os.Stderr, validateConfiguration)(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
+	ctx, err = actions.SetupLogger(os.Stderr)(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
+	return ctx, nil
+}
+
+func action(ctx context.Context, c *cli.Command) error {
+	conf := actions.GetConfigFromContext(ctx)
+	logger := actions.GetLoggerFromContext(ctx)
+
+	serverURL, _ := conf.String(flags.ServerURL)
+	serverCert, _ := conf.String(flags.ServerCertificate)
+	accountName, _ := conf.String(flags.Account)
+
+	userJWT, userSeed, err := auth.ReadUser(accountName)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot read user %q: %v", accountName, err)
+		return err
+	}
+
+	srv, err := server.New([]string{serverURL}, userJWT, string(userSeed), serverCert)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot connect to the server: %v", err)
+		return err
+	}
+
+	if c.Args().Len() < 1 {
+		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
+		return errors.New("not enough arguments")
+	}
+
+	client := agent.New(srv)
+
+	jobID := c.Args().First()
+
+	job, err := client.GetJob(ctx, jobID)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot cancel job: %v", err)
+		return err
+	}
+
+	agentID := job.AgentID
+	api := router.Handlers{
+		proto.WriteWorkerStdoutSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {
+			v, ok := data.(proto.UpdateWorkerStdio)
+			if !ok {
+				return nil
+			}
+			_, _ = os.Stdout.Write(v.Data)
+			return nil
+		},
+	}
+
+	seq := uint64(1)
+	for {
+		msgs, err := client.ListMessages(ctx, agentID, []string{
+			proto.WriteWorkerStdoutSubject(agentID, jobID),
+		}, seq, -1)
+		if err != nil {
+			return err
+		}
+
+		if len(msgs) == 0 {
+			break
+		}
+
+		for _, msg := range msgs {
+			handler, params, ok := api.Match(msg.Subject)
+			if !ok {
+				continue
+			}
+
+			data, err := proto.Unmarshal(msg.Data())
+			if err != nil {
+				continue
+			}
+
+			_ = handler(ctx, params, data)
+			seq = msg.Seq + 1
+		}
+	}
+
+	return nil
+}
+
+func validateConfiguration(conf *config.Config) error {
+	for _, opt := range []string{
+		flags.ServerURL,
+		flags.Account,
+	} {
+		switch opt {
+		case flags.ServerURL:
+			v, ok := conf.String(opt)
+			if !ok || v == "" {
+				return errors.New("server URL not configured")
+			}
+		case flags.Account:
+			v, ok := conf.String(opt)
+			if !ok || v == "" {
+				return errors.New("account not configured")
+			}
+		}
+	}
+	return nil
+}
