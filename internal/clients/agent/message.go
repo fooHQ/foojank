@@ -9,6 +9,7 @@ import (
 type Message struct {
 	msg      jetstream.Msg
 	ID       string
+	Seq      uint64
 	Subject  string
 	AgentID  string
 	Sent     time.Time
