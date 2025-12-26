@@ -6,6 +6,7 @@ import (
 	"github.com/foohq/foojank/proto/capnp"
 )
 
+// StopWorkerResponse is a response to a StopWorkerRequest.
 type StopWorkerResponse struct {
 	Error error
 }

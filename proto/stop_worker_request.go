@@ -2,6 +2,7 @@ package proto
 
 import "github.com/foohq/foojank/proto/capnp"
 
+// StopWorkerRequest is a request to stop a running worker.
 type StopWorkerRequest struct{}
 
 func marshalStopWorkerRequest(_ StopWorkerRequest) ([]byte, error) {

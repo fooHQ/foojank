@@ -2,6 +2,7 @@ package proto
 
 import "github.com/foohq/foojank/proto/capnp"
 
+// UpdateWorkerStdio contains data from a worker's stdout or stdin.
 type UpdateWorkerStdio struct {
 	Data []byte
 }

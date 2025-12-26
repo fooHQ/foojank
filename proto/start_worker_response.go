@@ -6,6 +6,7 @@ import (
 	"github.com/foohq/foojank/proto/capnp"
 )
 
+// StartWorkerResponse is a response to a StartWorkerRequest.
 type StartWorkerResponse struct {
 	Error error
 }

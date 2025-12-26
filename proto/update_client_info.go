@@ -2,6 +2,7 @@ package proto
 
 import "github.com/foohq/foojank/proto/capnp"
 
+// UpdateClientInfo contains information about a client.
 type UpdateClientInfo struct {
 	Username string
 	Hostname string
