@@ -2,6 +2,7 @@ package proto
 
 import "github.com/foohq/foojank/proto/capnp"
 
+// StartWorkerRequest is a request to start a new worker.
 type StartWorkerRequest struct {
 	Command string
 	Args    []string

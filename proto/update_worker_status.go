@@ -2,6 +2,7 @@ package proto
 
 import "github.com/foohq/foojank/proto/capnp"
 
+// UpdateWorkerStatus is used to update the status of a worker.
 type UpdateWorkerStatus struct {
 	Status int64
 }

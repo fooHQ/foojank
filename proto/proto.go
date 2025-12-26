@@ -1,3 +1,5 @@
+// Package proto provides functions for marshaling and unmarshaling messages
+// and generating NATS subjects for communication.
 package proto
 
 import (
@@ -12,6 +14,8 @@ var (
 	ErrUnknownMessage = errors.New("unknown message")
 )
 
+// Marshal serializes the given data into a byte slice.
+// It supports various request and response types defined in the proto package.
 func Marshal(data any) ([]byte, error) {
 	switch v := data.(type) {
 	case StartWorkerRequest:
@@ -32,6 +36,8 @@ func Marshal(data any) ([]byte, error) {
 	return nil, ErrUnknownMessage
 }
 
+// Unmarshal deserializes the given byte slice into a message object.
+// It returns an interface{} which can be type-asserted to the specific message type.
 func Unmarshal(b []byte) (any, error) {
 	message, err := parseMessage(b)
 	if err != nil {
@@ -65,30 +71,37 @@ func Unmarshal(b []byte) (any, error) {
 	return nil, ErrUnknownMessage
 }
 
+// StartWorkerSubject returns the NATS subject for starting a worker.
 func StartWorkerSubject(agentID, workerID string) string {
 	return replaceStringPlaceholders(capnp.StartWorkerT, agentID, workerID)
 }
 
+// StopWorkerSubject returns the NATS subject for stopping a worker.
 func StopWorkerSubject(agentID, workerID string) string {
 	return replaceStringPlaceholders(capnp.StopWorkerT, agentID, workerID)
 }
 
+// WriteWorkerStdinSubject returns the NATS subject for writing to a worker's stdin.
 func WriteWorkerStdinSubject(agentID, workerID string) string {
 	return replaceStringPlaceholders(capnp.WriteWorkerStdinT, agentID, workerID)
 }
 
+// WriteWorkerStdoutSubject returns the NATS subject for a worker's stdout stream.
 func WriteWorkerStdoutSubject(agentID, workerID string) string {
 	return replaceStringPlaceholders(capnp.WriteWorkerStdoutT, agentID, workerID)
 }
 
+// UpdateWorkerStatusSubject returns the NATS subject for updating a worker's status.
 func UpdateWorkerStatusSubject(agentID, workerID string) string {
 	return replaceStringPlaceholders(capnp.UpdateWorkerStatusT, agentID, workerID)
 }
 
+// UpdateClientInfoSubject returns the NATS subject for updating client information.
 func UpdateClientInfoSubject(agentID string) string {
 	return replaceStringPlaceholders(capnp.UpdateClientInfoT, agentID)
 }
 
+// ReplyMessageSubject returns the NATS subject for replying to a message.
 func ReplyMessageSubject(agentID, msgID string) string {
 	return replaceStringPlaceholders(capnp.ReplyMessageT, agentID, msgID)
 }
