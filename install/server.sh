@@ -24,17 +24,17 @@ port: 4222
 #}
 
 # For more information visit: https://docs.nats.io/running-a-nats-service/configuration/websocket/websocket_conf
-websocket {
-    host: 0.0.0.0
-    port: 8443
-    compression: true
+#websocket {
+#    host: 0.0.0.0
+#    port: 8443
+#    compression: true
 
     #tls {
         # Uncomment and change according to your configuration.
         # cert_file: "/etc/letsencrypt/live/example.com/fullchain.pem"
         # key_file: "/etc/letsencrypt/live/example.com/privkey.pem"
     #}
-}
+#}
 
 jetstream {
     store_dir: $NATS_PATH
