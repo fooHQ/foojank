@@ -111,6 +111,10 @@ configure_nats() {
     $(command -v sudo || true) chown nats:nats "$NATS_PATH"
 }
 
+start_nats() {
+    $(command -v sudo || true) systemctl start nats-server.service
+}
+
 install_nats
 install_nsc
 install_nats_systemd
@@ -118,9 +122,10 @@ install_nats_group
 install_nats_user
 configure_nats_operator
 configure_nats
+start_nats
 
 echo
 echo "[*] Installation was successful!"
-echo "[*] Default configuration has been created in $NATS_CONFIG_PATH. You must now generate a TLS certificate for the server and enable it in $NATS_CONFIG_PATH/server.conf."
-echo "[*] For more information please visit NATS official documentation https://docs.nats.io/running-a-nats-service/configuration."
-echo "[*] To start NATS server run: systemctl start nats-server.service"
+echo "[*] Default configuration has been created in $NATS_CONFIG_PATH."
+echo "[*] IMPORTANT: The server is not using TLS! Please configure the server's TLS certificate and enable it in $NATS_CONFIG_PATH."
+echo "[*] For more information visit https://foojank.com or https://docs.nats.io."
