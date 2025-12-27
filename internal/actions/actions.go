@@ -23,7 +23,7 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 		})
 		if err != nil {
 			_, _ = fmt.Fprintf(w, "%s: cannot parse command options: %v\n", c.FullName(), err)
-			return nil, err
+			return ctx, err
 		}
 
 		configDir, isSet := confFlags.String(flags.ConfigDir)
@@ -32,7 +32,7 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 			if err != nil {
 				err = errors.New("configuration directory not found in the current directory (or any of the parent directories)")
 				_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
-				return nil, err
+				return ctx, err
 			}
 
 			configDir = dir
@@ -42,7 +42,7 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 		if err != nil || !isConfigDir {
 			err = fmt.Errorf("configuration directory not found in %q", configDir)
 			_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
-			return nil, err
+			return ctx, err
 		}
 
 		confFile, err := configdir.ParseConfigJson(configDir)
@@ -53,7 +53,7 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 				err = fmt.Errorf("cannot parse config file: %w", err)
 			}
 			_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
-			return nil, err
+			return ctx, err
 		}
 
 		confDefs := config.NewWithOptions(map[string]string{
