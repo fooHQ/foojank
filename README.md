@@ -33,13 +33,13 @@ plan to implement support for integrating custom agents into the framework in th
 ### Server
 
 ```
-$ curl -fsSL https://github.com/fooHQ/foojank/releases/latest/download/server.sh | sh
+$ curl -fsSL https://github.com/fooHQ/foojank/releases/latest/download/server.sh | bash
 ```
 
 ### Client
 
 ```
-$ curl -fsSL https://github.com/fooHQ/foojank/releases/latest/download/client.sh | sh
+$ curl -fsSL https://github.com/fooHQ/foojank/releases/latest/download/client.sh | bash
 ```
 
 ### Installation from Source
