@@ -139,6 +139,26 @@ func ParseKVPairs(pairs []string) map[string]string {
 	return env
 }
 
+func ParseKVPairsJSON(pairs []string) map[string]any {
+	env := make(map[string]any, len(pairs))
+	for _, pair := range pairs {
+		parts := strings.SplitN(pair, "=", 2)
+		var v string
+		if len(parts) > 1 {
+			v = parts[1]
+		} else {
+			v = ""
+		}
+		var vv any
+		err := json.Unmarshal([]byte(v), &vv)
+		if err != nil {
+			vv = v
+		}
+		env[strings.TrimSpace(parts[0])] = vv
+	}
+	return env
+}
+
 func toString(v any) string {
 	switch vv := v.(type) {
 	case string:

@@ -228,6 +228,63 @@ func TestMerge(t *testing.T) {
 	}
 }
 
+func TestParseKVPairsJSON(t *testing.T) {
+	tests := []struct {
+		name  string
+		pairs []string
+		want  map[string]any
+	}{
+		{
+			name:  "simple string",
+			pairs: []string{"key1=value1"},
+			want:  map[string]any{"key1": "value1"},
+		},
+		{
+			name:  "number",
+			pairs: []string{"key1=123"},
+			want:  map[string]any{"key1": 123.0},
+		},
+		{
+			name:  "boolean",
+			pairs: []string{"key1=true"},
+			want:  map[string]any{"key1": true},
+		},
+		{
+			name:  "json array",
+			pairs: []string{"key1=[1, 2, 3]"},
+			want:  map[string]any{"key1": []any{1.0, 2.0, 3.0}},
+		},
+		{
+			name:  "json object",
+			pairs: []string{`key1={"a": 1, "b": "c"}`},
+			want:  map[string]any{"key1": map[string]any{"a": 1.0, "b": "c"}},
+		},
+		{
+			name:  "multiple values",
+			pairs: []string{"key1=value1", "key2=123", "key3=true", "key4=[1, 2, 3]", `key5={"a": 1}`},
+			want: map[string]any{
+				"key1": "value1",
+				"key2": 123.0,
+				"key3": true,
+				"key4": []any{1.0, 2.0, 3.0},
+				"key5": map[string]any{"a": 1.0},
+			},
+		},
+		{
+			name:  "invalid json falls back to string",
+			pairs: []string{"key1={invalid"},
+			want:  map[string]any{"key1": "{invalid"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := config.ParseKVPairsJSON(tt.pairs)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestFlagToOption(t *testing.T) {
 	tests := []struct {
 		name string
