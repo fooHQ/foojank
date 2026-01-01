@@ -18,4 +18,5 @@ const (
 	Server            = "server"
 	Certificate       = "certificate"
 	NoColor           = "no-color"
+	User              = "user"
 )
