@@ -228,6 +228,47 @@ func TestMerge(t *testing.T) {
 	}
 }
 
+func TestParseKVPairs(t *testing.T) {
+	tests := []struct {
+		name  string
+		pairs []string
+		want  map[string]string
+	}{
+		{
+			name:  "simple key value",
+			pairs: []string{"key1=value1", "key2=value2"},
+			want:  map[string]string{"key1": "value1", "key2": "value2"},
+		},
+		{
+			name:  "key with no equals",
+			pairs: []string{"key1"},
+			want:  map[string]string{"key1": ""},
+		},
+		{
+			name:  "key with empty value",
+			pairs: []string{"key1="},
+			want:  map[string]string{"key1": ""},
+		},
+		{
+			name:  "key with multiple equals",
+			pairs: []string{"key1=value1=value2"},
+			want:  map[string]string{"key1": "value1=value2"},
+		},
+		{
+			name:  "trimmed key",
+			pairs: []string{"  key1  =value1"},
+			want:  map[string]string{"key1": "value1"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := config.ParseKVPairs(tt.pairs)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestParseKVPairsJSON(t *testing.T) {
 	tests := []struct {
 		name  string
