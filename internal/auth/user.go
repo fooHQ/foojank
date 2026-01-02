@@ -108,11 +108,6 @@ func NewUser(name string, accountSeed []byte, perms jwt.Permissions) (string, []
 		return "", nil, fmt.Errorf("cannot decode account seed: %w", err)
 	}
 
-	accountPublicKey, err := account.PublicKey()
-	if err != nil {
-		return "", nil, fmt.Errorf("cannot get account public key: %w", err)
-	}
-
 	user, err := nkeys.CreateUser()
 	if err != nil {
 		return "", nil, fmt.Errorf("cannot generate key pair: %w", err)
@@ -125,7 +120,6 @@ func NewUser(name string, accountSeed []byte, perms jwt.Permissions) (string, []
 
 	claims := jwt.NewUserClaims(userPublicKey)
 	claims.Name = name
-	claims.IssuerAccount = accountPublicKey
 	claims.Permissions = perms
 
 	userJWT, err := claims.Encode(account)
