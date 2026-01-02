@@ -16,9 +16,9 @@ func NewCommand() *cli.Command {
 		Usage: "Manage accounts",
 		Commands: []*cli.Command{
 			create.NewCommand(),
+			list.NewCommand(),
 			edit.NewCommand(),
 			export.NewCommand(),
-			list.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		OnUsageError:    actions.UsageError,
