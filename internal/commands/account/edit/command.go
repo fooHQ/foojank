@@ -84,7 +84,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		err = editAccountJWT(name, setOptions, unsetOptions)
 	}
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot edit account %q: %v", name, err)
+		logger.ErrorContext(ctx, "Cannot edit JWT: %v", err)
 		return err
 	}
 
@@ -92,16 +92,6 @@ func action(ctx context.Context, c *cli.Command) error {
 }
 
 func editUserJWT(name string, setOptions, unsetOptions []string) error {
-	_, accountSeed, err := auth.ReadAccount(name)
-	if err != nil {
-		return err
-	}
-
-	account, err := nkeys.FromSeed(accountSeed)
-	if err != nil {
-		return err
-	}
-
 	userJWT, userSeed, err := auth.ReadUser(name)
 	if err != nil {
 		return err
@@ -118,6 +108,16 @@ func editUserJWT(name string, setOptions, unsetOptions []string) error {
 	}
 
 	err = json.Unmarshal([]byte(s), &claims)
+	if err != nil {
+		return err
+	}
+
+	_, accountSeed, err := auth.ReadAccount(name)
+	if err != nil {
+		return err
+	}
+
+	account, err := nkeys.FromSeed(accountSeed)
 	if err != nil {
 		return err
 	}
