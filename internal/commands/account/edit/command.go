@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
+	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"github.com/urfave/cli/v3"
 
@@ -22,20 +23,24 @@ import (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "edit",
-		ArgsUsage: "<account-name>",
-		Usage:     "Edit JWT",
+		ArgsUsage: "<name>",
+		Usage:     "Edit account",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
-				Name:  flags.Set,
-				Usage: "set option (format: key=value)",
+				Name:  flags.LinkAccount,
+				Usage: "link the specified account to this account and enable shared access to this account's resources",
+			},
+			&cli.StringFlag{
+				Name:  flags.AcceptLinkFrom,
+				Usage: "accept a link from the specified account and enable shared access to the specified account’s resources",
 			},
 			&cli.StringSliceFlag{
-				Name:  flags.Unset,
-				Usage: "unset option (format: key)",
+				Name:  flags.UnlinkAccount,
+				Usage: "remove the link to the specified account and stop shared access to this account’s resources",
 			},
 			&cli.BoolFlag{
-				Name:  flags.User,
-				Usage: "edit user JWT",
+				Name:  flags.RemoveLink,
+				Usage: "remove the existing link and stop shared access to the other account’s resources",
 			},
 		},
 		Before:          before,
@@ -66,9 +71,10 @@ func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
-	setOptions, _ := conf.StringSlice(flags.Set)
-	unsetOptions, _ := conf.StringSlice(flags.Unset)
-	userJWT, _ := conf.Bool(flags.User)
+	linkAccount, _ := conf.StringSlice(flags.LinkAccount)
+	unlinkAccount, _ := conf.StringSlice(flags.UnlinkAccount)
+	acceptLinkFrom, _ := conf.String(flags.AcceptLinkFrom)
+	removeLink, _ := conf.Bool(flags.RemoveLink)
 
 	if c.Args().Len() != 1 {
 		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
@@ -77,119 +83,181 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	name := c.Args().First()
 
-	var err error
-	if userJWT {
-		err = editUserJWT(name, setOptions, unsetOptions)
-	} else {
-		err = editAccountJWT(name, setOptions, unsetOptions)
-	}
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot edit JWT: %v", err)
-		return err
-	}
-
-	return nil
-}
-
-func editUserJWT(name string, setOptions, unsetOptions []string) error {
-	userJWT, userSeed, err := auth.ReadUser(name)
-	if err != nil {
-		return err
-	}
-
-	claims, err := jwt.DecodeUserClaims(userJWT)
-	if err != nil {
-		return err
-	}
-
-	s, err := updateJWTClaims(claims.String(), setOptions, unsetOptions)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal([]byte(s), &claims)
-	if err != nil {
-		return err
-	}
-
-	_, accountSeed, err := auth.ReadAccount(name)
-	if err != nil {
-		return err
-	}
-
-	account, err := nkeys.FromSeed(accountSeed)
-	if err != nil {
-		return err
-	}
-
-	userJWT, err = claims.Encode(account)
-	if err != nil {
-		return err
-	}
-
-	err = auth.WriteUser(name, userJWT, userSeed)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func editAccountJWT(name string, setOptions, unsetOptions []string) error {
-	accountJWT, accountSeed, err := auth.ReadAccount(name)
-	if err != nil {
-		return err
-	}
-
-	claims, err := jwt.DecodeAccountClaims(accountJWT)
-	if err != nil {
-		return err
-	}
-
-	account, err := nkeys.FromSeed(accountSeed)
-	if err != nil {
-		return err
-	}
-
-	s, err := updateJWTClaims(claims.String(), setOptions, unsetOptions)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal([]byte(s), &claims)
-	if err != nil {
-		return err
-	}
-
-	accountJWT, err = claims.Encode(account)
-	if err != nil {
-		return err
-	}
-
-	err = auth.WriteAccount(name, accountJWT, accountSeed)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func updateJWTClaims(s string, setOptions, unsetOptions []string) (string, error) {
-	var err error
-	for k, v := range config.ParseKVPairsJSON(setOptions) {
-		k = strings.Join([]string{"nats", k}, ".")
-		s, err = sjson.Set(s, k, v)
+	{
+		accountJWT, accountSeed, err := auth.ReadAccount(name)
 		if err != nil {
-			return "", err
+			logger.ErrorContext(ctx, "Cannot edit account: %v", err)
+			return err
+		}
+
+		claims, err := jwt.DecodeAccountClaims(accountJWT)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot decode account claims: %v", err)
+			return err
+		}
+
+		account, err := nkeys.FromSeed(accountSeed)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot decode account seed: %v", err)
+			return err
+		}
+
+		s := claims.String()
+		for _, v := range linkAccount {
+			s, err = updateJWTClaims(s, operation{
+				action: actionSet,
+				path:   "nats.signing_keys.-1",
+				value:  v,
+			})
+			if err != nil {
+				logger.ErrorContext(ctx, "Cannot link account %q: %v", v, err)
+				return err
+			}
+		}
+
+		for _, v := range unlinkAccount {
+			s, err = updateJWTClaims(s, operation{
+				action: actionDelete,
+				path:   fmt.Sprintf("nats.signing_keys.#(==%q)", v),
+			})
+			if err != nil {
+				logger.ErrorContext(ctx, "Cannot unlink account %q: %v", v, err)
+				return err
+			}
+		}
+
+		claims = &jwt.AccountClaims{}
+		err = json.Unmarshal([]byte(s), &claims)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot decode account claims: %v", err)
+			return err
+		}
+
+		accountJWT, err = claims.Encode(account)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot encode JWT: %v", err)
+			return err
+		}
+
+		err = auth.WriteAccount(name, accountJWT, accountSeed)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot edit account: %v", err)
+			return err
 		}
 	}
 
-	for k := range config.ParseKVPairs(unsetOptions) {
-		k = strings.Join([]string{"nats", k}, ".")
-		s, err = sjson.Delete(s, k)
+	{
+		userJWT, userSeed, err := auth.ReadUser(name)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot edit account: %v", err)
+			return err
+		}
+
+		claims, err := jwt.DecodeUserClaims(userJWT)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot decode user claims: %v", err)
+			return err
+		}
+
+		s := claims.String()
+		if acceptLinkFrom != "" {
+			s, err = updateJWTClaims(s, operation{
+				action: actionSet,
+				path:   "nats.issuer_account",
+				value:  acceptLinkFrom,
+			})
+			if err != nil {
+				logger.ErrorContext(ctx, "Cannot accept link from %q: %v", acceptLinkFrom, err)
+				return err
+			}
+		}
+
+		if removeLink {
+			s, err = updateJWTClaims(s, operation{
+				action: actionDelete,
+				path:   "nats.issuer_account",
+			})
+			if err != nil {
+				logger.ErrorContext(ctx, "Cannot remove link: %v", err)
+				return err
+			}
+		}
+
+		claims = &jwt.UserClaims{}
+		err = json.Unmarshal([]byte(s), &claims)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot decode user claims: %v", err)
+			return err
+		}
+
+		_, accountSeed, err := auth.ReadAccount(name)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot edit account: %v", err)
+			return err
+		}
+
+		account, err := nkeys.FromSeed(accountSeed)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot decode account seed: %v", err)
+			return err
+		}
+
+		userJWT, err = claims.Encode(account)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot encode JWT: %v", err)
+			return err
+		}
+
+		err = auth.WriteUser(name, userJWT, userSeed)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot edit account: %v", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+const (
+	actionSet = iota
+	actionDelete
+)
+
+type operation struct {
+	action int
+	path   string
+	value  any
+}
+
+var errJWTClaimNotFound = errors.New("not found")
+
+func updateJWTClaims(s string, op operation) (string, error) {
+	var err error
+	res := gjson.Get(s, op.path)
+	pth := op.path
+	exists := res.Exists()
+	if exists {
+		pth = res.Path(s)
+	}
+
+	switch op.action {
+	case actionSet:
+		s, err = sjson.Set(s, pth, op.value)
 		if err != nil {
 			return "", err
 		}
+
+	case actionDelete:
+		s, err = sjson.Delete(s, pth)
+		if err != nil {
+			if !exists {
+				return "", errJWTClaimNotFound
+			}
+			return "", err
+		}
+
+	default:
+		return "", errors.New("unknown operation")
 	}
 
 	return s, nil
