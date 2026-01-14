@@ -18,7 +18,7 @@ import (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "export",
-		ArgsUsage: "<account-name>",
+		ArgsUsage: "<name>",
 		Usage:     "Export JWT",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
