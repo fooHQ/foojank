@@ -68,8 +68,8 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	table := formatter.NewTable([]string{
 		"name",
-		"public_key",
-		"created_at",
+		"account_id",
+		"issued_at",
 	})
 	for _, account := range accounts {
 		accountJWT, _, err := auth.ReadAccount(account)
