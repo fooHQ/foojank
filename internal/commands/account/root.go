@@ -5,6 +5,7 @@ import (
 
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/commands/account/create"
+	"github.com/foohq/foojank/internal/commands/account/describe"
 	"github.com/foohq/foojank/internal/commands/account/edit"
 	"github.com/foohq/foojank/internal/commands/account/export"
 	"github.com/foohq/foojank/internal/commands/account/list"
@@ -16,9 +17,10 @@ func NewCommand() *cli.Command {
 		Usage: "Manage accounts",
 		Commands: []*cli.Command{
 			create.NewCommand(),
-			list.NewCommand(),
+			describe.NewCommand(),
 			edit.NewCommand(),
 			export.NewCommand(),
+			list.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		OnUsageError:    actions.UsageError,
