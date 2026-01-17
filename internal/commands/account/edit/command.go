@@ -92,7 +92,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 		claims, err := jwt.DecodeAccountClaims(accountJWT)
 		if err != nil {
-			logger.ErrorContext(ctx, "Cannot decode account claims: %v", err)
+			logger.ErrorContext(ctx, "Cannot decode JWT: %v", err)
 			return err
 		}
 
