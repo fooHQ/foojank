@@ -18,7 +18,6 @@ const (
 	Server            = "server"
 	Certificate       = "certificate"
 	NoColor           = "no-color"
-	User              = "user"
 	LinkAccount       = "link-account"
 	UnlinkAccount     = "unlink-account"
 	AcceptLinkFrom    = "accept-link-from"
