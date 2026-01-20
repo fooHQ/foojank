@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	petname "github.com/dustinkirkland/golang-petname"
+	"github.com/nats-io/jwt/v2"
+	"github.com/nats-io/nkeys"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/actions"
@@ -24,7 +26,7 @@ import (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "build",
-		Usage: "Build an agent",
+		Usage: "Build an agent and create resources on the server",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  flags.Profile,
@@ -159,6 +161,12 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 		return err
 	}
 
+	agentJWT, err = setIssuerAccount(userJWT, agentJWT, accountSeed)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot set issuer account: %v", err)
+		return err
+	}
+
 	pwd, err := filepath.Abs(".")
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot get current directory: %v", err)
@@ -276,6 +284,32 @@ func createUser(
 		return "", "", err
 	}
 	return userJWT, string(userSeed), nil
+}
+
+// setIssuerAccount sets the issuer account of the agent JWT to the issuer account of the client JWT.
+func setIssuerAccount(clientJWT, agentJWT string, accountSeed []byte) (string, error) {
+	clientClaims, err := jwt.DecodeUserClaims(clientJWT)
+	if err != nil {
+		return "", err
+	}
+
+	if clientClaims.IssuerAccount == "" {
+		return agentJWT, nil
+	}
+
+	agentClaims, err := jwt.DecodeUserClaims(agentJWT)
+	if err != nil {
+		return "", err
+	}
+
+	agentClaims.IssuerAccount = clientClaims.IssuerAccount
+
+	account, err := nkeys.FromSeed(accountSeed)
+	if err != nil {
+		return "", err
+	}
+
+	return agentClaims.Encode(account)
 }
 
 func validateConfiguration(conf *config.Config) error {
