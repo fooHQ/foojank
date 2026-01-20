@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/nats-io/jwt/v2"
@@ -74,15 +75,27 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	claims, err := jwt.DecodeAccountClaims(accountJWT)
+	accountClaims, err := jwt.DecodeAccountClaims(accountJWT)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot decode JWT: %v", err)
 		return err
 	}
 
-	accountID := claims.Issuer
-	issued := time.Unix(claims.IssuedAt, 0)
-	expires := time.Unix(claims.Expires, 0)
+	userJWT, _, err := auth.ReadUser(name)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot read user %q: %v", name, err)
+		return err
+	}
+
+	userClaims, err := jwt.DecodeUserClaims(userJWT)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot decode JWT: %v", err)
+		return err
+	}
+
+	accountID := accountClaims.Issuer
+	issued := time.Unix(accountClaims.IssuedAt, 0)
+	expires := time.Unix(accountClaims.Expires, 0)
 
 	table := formatter.NewTable(nil)
 	table.AddRow([]string{"ID", accountID})
@@ -95,6 +108,13 @@ func action(ctx context.Context, c *cli.Command) error {
 		expiresAt = formatTime(expires)
 	}
 	table.AddRow([]string{"Expires at", expiresAt})
+	if len(accountClaims.SigningKeys) > 0 {
+		keys := accountClaims.SigningKeys.Keys()
+		table.AddRow([]string{"Dependent accounts", strings.Join(keys, "\n")})
+	}
+	if userClaims.IssuerAccount != "" {
+		table.AddRow([]string{"Linked account", userClaims.IssuerAccount})
+	}
 
 	err = formatOutput(os.Stdout, format, table)
 	if err != nil {
