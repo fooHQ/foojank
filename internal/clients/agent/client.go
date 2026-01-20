@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"strings"
@@ -88,6 +89,28 @@ func (c *Client) Register(ctx context.Context, agentID string) (err error) {
 		}
 		_ = c.srv.DeleteObjectStore(ctx, storeName)
 	}()
+
+	return nil
+}
+
+func (c *Client) Unregister(ctx context.Context, agentID string) error {
+	storeName := agentID
+	err := c.srv.DeleteObjectStore(ctx, storeName)
+	if err != nil && !errors.Is(err, nats.ErrBucketNotFound) {
+		return &errorApi{err}
+	}
+
+	streamName := StreamName(agentID)
+	consumerName := agentID
+	err = c.srv.DeleteConsumer(ctx, streamName, consumerName)
+	if err != nil && !errors.Is(err, nats.ErrConsumerNotFound) {
+		return &errorApi{err}
+	}
+
+	err = c.srv.DeleteStream(ctx, streamName)
+	if err != nil && !errors.Is(err, nats.ErrStreamNotFound) {
+		return &errorApi{err}
+	}
 
 	return nil
 }
