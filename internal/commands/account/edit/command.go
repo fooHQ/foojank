@@ -32,15 +32,15 @@ func NewCommand() *cli.Command {
 			},
 			&cli.StringFlag{
 				Name:  flags.AcceptLinkFrom,
-				Usage: "accept a link from the specified account and enable shared access to the specified account’s resources",
+				Usage: "accept a link from the specified account and enable shared access to the specified account's resources",
 			},
 			&cli.StringSliceFlag{
 				Name:  flags.UnlinkAccount,
-				Usage: "remove the link to the specified account and stop shared access to this account’s resources",
+				Usage: "remove the link to the specified account and stop shared access to this account's resources",
 			},
 			&cli.BoolFlag{
 				Name:  flags.RemoveLink,
-				Usage: "remove the existing link and stop shared access to the other account’s resources",
+				Usage: "remove the existing link and stop shared access to the other account's resources",
 			},
 		},
 		Before:          before,
