@@ -1,19 +1,13 @@
 # Foojank
 
-Foojank is a prototype command-and-control (C2) framework that uses NATS for C2 communications.
+Foojank is an open-source command-and-control (C2) framework built on NATS, designed for ethical hackers conducting red team and purple team engagements. It provides a scalable, observable, and extensible C2 platform for adversary simulation and security testing.
 
-NATS is a widely used message broker in IoT and cloud systems to facilitate communication between geographically
-distributed services. NATS allows passing messages between connected services and offers a persistence layer known as
-JetStream, enabling it to store messages on the server even when the receiver is offline. Additionally, NATS provides an
-object store that can be utilized for storing files.
+**Features**
 
-Foojank leverages the NATS features to offer:
-
-* Asynchronous or real-time communication with Agents over TCP or WebSockets.
-* Server-based storage for file sharing and data exfiltration.
-* JWT-based authentication and authorization.
-* Full observability.
-* Extensibility.
+* Customizable C2 transport over TCP and WebSockets.
+* Built-in file storage for payload distribution and data exfiltration.
+* Extensible support for custom and third-party agents.
+* Observability, including visibility into agent activity and C2 messaging.
 
 Foojank is currently compatible only with our prototype agent, [Vessel](https://github.com/foohq/vessel). However, we
 plan to implement support for integrating custom agents into the framework in the future.
