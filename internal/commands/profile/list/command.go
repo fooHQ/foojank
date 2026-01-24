@@ -88,6 +88,9 @@ func action(ctx context.Context, c *cli.Command) error {
 }
 
 func listProfiles(profs *profile.Profiles, format string) error {
+	profiles := profs.List()
+	sort.Strings(profiles)
+
 	table := formatter.NewTable([]string{
 		"name",
 		"source_dir",
@@ -95,7 +98,7 @@ func listProfiles(profs *profile.Profiles, format string) error {
 		"arch",
 		"features",
 	})
-	for _, name := range profs.List() {
+	for _, name := range profiles {
 		prof, err := profs.Get(name)
 		if err != nil {
 			return err
