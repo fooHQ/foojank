@@ -581,6 +581,64 @@ func (c *Client) ListMessages(
 	return msgs, nil
 }
 
+func (c *Client) StreamMessages(
+	ctx context.Context,
+	agentID string,
+	subjects []string,
+	startSeq uint64,
+	outputCh chan<- Message,
+) error {
+	consumer, err := c.srv.CreateConsumer(ctx, StreamName(agentID), jetstream.ConsumerConfig{
+		DeliverPolicy:  jetstream.DeliverByStartSequencePolicy,
+		AckPolicy:      jetstream.AckNonePolicy,
+		MaxAckPending:  1,
+		FilterSubjects: subjects,
+		OptStartSeq:    startSeq,
+	})
+	if err != nil {
+		return &errorApi{err}
+	}
+
+	msgs, err := consumer.Messages()
+	if err != nil {
+		return err
+	}
+
+	for {
+		msg, err := msgs.Next(jetstream.NextContext(ctx))
+		if err != nil {
+			if errors.Is(err, jetstream.ErrMsgIteratorClosed) {
+				return nil
+			}
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				return nil
+			}
+			return err
+		}
+
+		meta, err := msg.Metadata()
+		if err != nil {
+			return err
+		}
+
+		msgID := msg.Headers().Get(nats.MsgIdHdr)
+
+		select {
+		case outputCh <- Message{
+			ID:       msgID,
+			Seq:      meta.Sequence.Stream,
+			Subject:  msg.Subject(),
+			AgentID:  agentID,
+			Sent:     time.Time{}, // TODO: extract from the message headers!
+			Received: meta.Timestamp,
+			msg:      msg,
+		}:
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
 func (c *Client) publishMsg(ctx context.Context, stream string, msg *nats.Msg) error {
 	if msg.Header == nil {
 		msg.Header = make(nats.Header)
