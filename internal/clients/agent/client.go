@@ -639,6 +639,49 @@ func (c *Client) StreamMessages(
 	}
 }
 
+func (c *Client) StreamWorkerStdio(
+	ctx context.Context,
+	agentID string,
+	workerID string,
+	startSeq uint64,
+	outputCh chan<- []byte,
+) error {
+	var msgCh = make(chan Message)
+	var errCh = make(chan error, 1)
+	go func() {
+		err := c.StreamMessages(
+			ctx,
+			agentID,
+			[]string{
+				proto.WriteWorkerStdinSubject(agentID, workerID),
+				proto.WriteWorkerStdoutSubject(agentID, workerID),
+			},
+			startSeq,
+			msgCh,
+		)
+		errCh <- err
+	}()
+
+	for {
+		// Select does not need to monitor ctx.
+		// The loop is terminated when errCh emits a value.
+		// This ensures that the go routine has stopped and so cannot leak.
+		select {
+		case msg := <-msgCh:
+			data, err := proto.Unmarshal(msg.Data())
+			if err != nil {
+				continue
+			}
+
+			v := data.(proto.UpdateWorkerStdio)
+			outputCh <- v.Data
+
+		case err := <-errCh:
+			return err
+		}
+	}
+}
+
 func (c *Client) publishMsg(ctx context.Context, stream string, msg *nats.Msg) error {
 	if msg.Header == nil {
 		msg.Header = make(nats.Header)
