@@ -60,6 +60,45 @@ func WriteUser(name string, userJWT string, userSeed []byte) error {
 	return nil
 }
 
+func getUserData(name string) ([]byte, error) {
+	pth, err := UserPath(name)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := os.ReadFile(pth)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func GetUserKey(name string) (nkeys.KeyPair, error) {
+	data, err := getUserData(name)
+	if err != nil {
+		return nil, err
+	}
+	return jwt.ParseDecoratedNKey(data)
+}
+
+func GetUserJWT(name string) (*jwt.UserClaims, error) {
+	data, err := getUserData(name)
+	if err != nil {
+		return nil, err
+	}
+
+	userJWT, err := jwt.ParseDecoratedJWT(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return jwt.DecodeUserClaims(userJWT)
+}
+
 func ReadUser(name string) (string, []byte, error) {
 	pth, err := UserPath(name)
 	if err != nil {
