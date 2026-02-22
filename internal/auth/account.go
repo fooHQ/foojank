@@ -61,6 +61,45 @@ func WriteAccount(name string, accountJWT string, accountSeed []byte) error {
 	return nil
 }
 
+func getAccountData(name string) ([]byte, error) {
+	pth, err := AccountPath(name)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := os.ReadFile(pth)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, ErrAccountNotFound
+		}
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func GetAccountKey(name string) (nkeys.KeyPair, error) {
+	data, err := getAccountData(name)
+	if err != nil {
+		return nil, err
+	}
+	return jwt.ParseDecoratedNKey(data)
+}
+
+func GetAccountJWT(name string) (*jwt.AccountClaims, error) {
+	data, err := getAccountData(name)
+	if err != nil {
+		return nil, err
+	}
+
+	accountJWT, err := jwt.ParseDecoratedJWT(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return jwt.DecodeAccountClaims(accountJWT)
+}
+
 func ReadAccount(name string) (string, []byte, error) {
 	pth, err := AccountPath(name)
 	if err != nil {
