@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/nats-io/jwt/v2"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/actions"
@@ -72,15 +71,9 @@ func action(ctx context.Context, c *cli.Command) error {
 		"issued_at",
 	})
 	for _, account := range accounts {
-		accountJWT, _, err := auth.ReadAccount(account)
+		claims, err := auth.GetAccountJWT(account)
 		if err != nil {
-			logger.ErrorContext(ctx, "Cannot read account %q: %v", account, err)
-			return err
-		}
-
-		claims, err := jwt.DecodeAccountClaims(accountJWT)
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot decode JWT: %v", err)
+			logger.ErrorContext(ctx, "Cannot get account %q JWT: %v", account, err)
 			return err
 		}
 
