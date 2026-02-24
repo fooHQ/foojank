@@ -9,8 +9,6 @@ import (
 	"strings"
 
 	petname "github.com/dustinkirkland/golang-petname"
-	"github.com/nats-io/jwt/v2"
-	"github.com/nats-io/nkeys"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/actions"
@@ -133,12 +131,6 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 	targetCert, _ := conf.String(flags.Certificate)
 	profName, _ := conf.String(flags.Profile)
 
-	_, accountSeed, err := auth.ReadAccount(accountName)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot read account %q: %v", accountName, err)
-		return err
-	}
-
 	userJWT, userSeed, err := auth.ReadUser(accountName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot read user %q: %v", accountName, err)
@@ -153,17 +145,54 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 
 	client := agent.New(srv)
 
-	agentID := petname.Generate(2, "-")
+	agentName := petname.Generate(2, "-")
 
-	agentJWT, agentSeed, err := createUser(agentID, string(accountSeed))
+	user, err := auth.NewUserKey()
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot create a user: %v", err)
+		logger.ErrorContext(ctx, "Cannot generate a user key: %v", err)
 		return err
 	}
 
-	agentJWT, err = setIssuerAccount(userJWT, agentJWT, accountSeed)
+	agentID, err := user.PublicKey()
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot set issuer account: %v", err)
+		logger.ErrorContext(ctx, "Cannot get agent ID: %v", err)
+		return err
+	}
+
+	agentPerms := agent.NewAgentPermissions(agentID)
+	agentClaims, err := auth.NewUserJWT(agentName, agentPerms, user)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
+		return err
+	}
+
+	// Get the client's user JWT.
+	userClaims, err := auth.GetUserJWT(accountName)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot get user JWT: %v", err)
+		return err
+	}
+
+	if userClaims.IssuerAccount != "" {
+		agentClaims.IssuerAccount = userClaims.IssuerAccount
+	}
+
+	// Get the client's account key.
+	account, err := auth.GetAccountKey(accountName)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot get account key: %v", err)
+		return err
+	}
+
+	agentJWT, err := agentClaims.Encode(account)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
+		return err
+	}
+
+	agentSeed, err := user.Seed()
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot encode user seed: %v", err)
 		return err
 	}
 
@@ -179,14 +208,14 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 	profDefault.Set(profile.VarServerURL, profile.NewVar(serverURL))
 	profDefault.Set(profile.VarServerCertificate, profile.NewVar(serverCert))
 	profDefault.Set(profile.VarUserJWT, profile.NewVar(agentJWT))
-	profDefault.Set(profile.VarUserKey, profile.NewVar(agentSeed))
+	profDefault.Set(profile.VarUserKey, profile.NewVar(string(agentSeed)))
 	profDefault.Set(profile.VarStream, profile.NewVar(agent.StreamName(agentID)))
 	profDefault.Set(profile.VarConsumer, profile.NewVar(agentID))
 	profDefault.Set(profile.VarInboxPrefix, profile.NewVar(agent.InboxName(agentID)))
 	profDefault.Set(profile.VarObjectStore, profile.NewVar(agentID))
 	profDefault.Set(profile.VarOS, profile.NewVar(runtime.GOOS))
 	profDefault.Set(profile.VarArch, profile.NewVar(runtime.GOARCH))
-	profDefault.Set(profile.VarTarget, profile.NewVar(filepath.Join(pwd, agentID)))
+	profDefault.Set(profile.VarTarget, profile.NewVar(filepath.Join(pwd, agentName)))
 	profDefault.Set(profile.VarFeatures, profile.NewVar(""))
 
 	// Parse profile profName defined in the config dir.
@@ -269,47 +298,9 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 		return err
 	}
 
-	logger.InfoContext(ctx, "Agent %q has been built!", agentID)
+	logger.InfoContext(ctx, "Agent %q has been built!", agentName)
 
 	return nil
-}
-
-func createUser(
-	agentID,
-	accountSeed string,
-) (string, string, error) {
-	perms := agent.NewAgentPermissions(agentID)
-	userJWT, userSeed, err := auth.NewUser(agentID, []byte(accountSeed), perms)
-	if err != nil {
-		return "", "", err
-	}
-	return userJWT, string(userSeed), nil
-}
-
-// setIssuerAccount sets the issuer account of the agent JWT to the issuer account of the client JWT.
-func setIssuerAccount(clientJWT, agentJWT string, accountSeed []byte) (string, error) {
-	clientClaims, err := jwt.DecodeUserClaims(clientJWT)
-	if err != nil {
-		return "", err
-	}
-
-	if clientClaims.IssuerAccount == "" {
-		return agentJWT, nil
-	}
-
-	agentClaims, err := jwt.DecodeUserClaims(agentJWT)
-	if err != nil {
-		return "", err
-	}
-
-	agentClaims.IssuerAccount = clientClaims.IssuerAccount
-
-	account, err := nkeys.FromSeed(accountSeed)
-	if err != nil {
-		return "", err
-	}
-
-	return agentClaims.Encode(account)
 }
 
 func validateConfiguration(conf *config.Config) error {
