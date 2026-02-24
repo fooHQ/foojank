@@ -59,15 +59,27 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 		name = petname.Generate(2, "_")
 	}
 
-	accountJWT, accountKey, err := auth.NewAccount(name)
+	account, err := auth.NewAccountKey()
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot generate an account: %v", err)
+		logger.ErrorContext(ctx, "Cannot generate an account key: %v", err)
 		return err
 	}
 
-	userJWT, userKey, err := auth.NewUser(name, accountKey, jwt.Permissions{})
+	accountClaims, err := auth.NewAccountJWT(name, account)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot generate a user: %v", err)
+		logger.ErrorContext(ctx, "Cannot generate an account JWT: %v", err)
+		return err
+	}
+
+	user, err := auth.NewUserKey()
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot generate a user key: %v", err)
+		return err
+	}
+
+	userClaims, err := auth.NewUserJWT(name, jwt.Permissions{}, user)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
 		return err
 	}
 
@@ -75,6 +87,18 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 	if !errors.Is(err, auth.ErrAccountNotFound) {
 		err = errors.New("account already exists")
 		logger.ErrorContext(ctx, "Cannot create account %q: %v", name, err)
+		return err
+	}
+
+	accountJWT, err := accountClaims.Encode(account)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot encode account JWT: %v", err)
+		return err
+	}
+
+	accountKey, err := account.Seed()
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot encode account seed: %v", err)
 		return err
 	}
 
@@ -92,6 +116,18 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 			logger.WarnContext(ctx, "Cannot delete account %q: %v", name, err)
 		}
 	}()
+
+	userJWT, err := userClaims.Encode(account)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
+		return err
+	}
+
+	userKey, err := user.Seed()
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot encode user seed: %v", err)
+		return err
+	}
 
 	err = auth.WriteUser(name, userJWT, userKey)
 	if err != nil {
