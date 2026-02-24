@@ -59,6 +59,13 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 		name = petname.Generate(2, "_")
 	}
 
+	_, _, err = auth.ReadAccount(name)
+	if err == nil {
+		err = errors.New("account already exists")
+		logger.ErrorContext(ctx, "Cannot create account %q: %v", name, err)
+		return err
+	}
+
 	account, err := auth.NewAccountKey()
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot generate an account key: %v", err)
@@ -80,13 +87,6 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 	userClaims, err := auth.NewUserJWT(name, jwt.Permissions{}, user)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
-		return err
-	}
-
-	_, _, err = auth.ReadAccount(name)
-	if !errors.Is(err, auth.ErrAccountNotFound) {
-		err = errors.New("account already exists")
-		logger.ErrorContext(ctx, "Cannot create account %q: %v", name, err)
 		return err
 	}
 
