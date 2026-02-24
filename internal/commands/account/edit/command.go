@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/nats-io/jwt/v2"
-	"github.com/nats-io/nkeys"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"github.com/urfave/cli/v3"
@@ -84,21 +83,15 @@ func action(ctx context.Context, c *cli.Command) error {
 	name := c.Args().First()
 
 	{
-		accountJWT, accountSeed, err := auth.ReadAccount(name)
+		claims, err := auth.GetAccountJWT(name)
 		if err != nil {
-			logger.ErrorContext(ctx, "Cannot edit account: %v", err)
+			logger.ErrorContext(ctx, "Cannot get account JWT: %v", err)
 			return err
 		}
 
-		claims, err := jwt.DecodeAccountClaims(accountJWT)
+		account, err := auth.GetAccountKey(name)
 		if err != nil {
-			logger.ErrorContext(ctx, "Cannot decode JWT: %v", err)
-			return err
-		}
-
-		account, err := nkeys.FromSeed(accountSeed)
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot decode account seed: %v", err)
+			logger.ErrorContext(ctx, "Cannot get account key: %v", err)
 			return err
 		}
 
@@ -133,9 +126,15 @@ func action(ctx context.Context, c *cli.Command) error {
 			return err
 		}
 
-		accountJWT, err = claims.Encode(account)
+		accountJWT, err := claims.Encode(account)
 		if err != nil {
-			logger.ErrorContext(ctx, "Cannot encode JWT: %v", err)
+			logger.ErrorContext(ctx, "Cannot encode account JWT: %v", err)
+			return err
+		}
+
+		accountSeed, err := account.Seed()
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot encode account seed: %v", err)
 			return err
 		}
 
@@ -147,15 +146,9 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	{
-		userJWT, userSeed, err := auth.ReadUser(name)
+		claims, err := auth.GetUserJWT(name)
 		if err != nil {
-			logger.ErrorContext(ctx, "Cannot edit account: %v", err)
-			return err
-		}
-
-		claims, err := jwt.DecodeUserClaims(userJWT)
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot decode user claims: %v", err)
+			logger.ErrorContext(ctx, "Cannot get user JWT: %v", err)
 			return err
 		}
 
@@ -190,21 +183,27 @@ func action(ctx context.Context, c *cli.Command) error {
 			return err
 		}
 
-		_, accountSeed, err := auth.ReadAccount(name)
+		account, err := auth.GetAccountKey(name)
 		if err != nil {
-			logger.ErrorContext(ctx, "Cannot edit account: %v", err)
+			logger.ErrorContext(ctx, "Cannot get account key: %v", err)
 			return err
 		}
 
-		account, err := nkeys.FromSeed(accountSeed)
+		userJWT, err := claims.Encode(account)
 		if err != nil {
-			logger.ErrorContext(ctx, "Cannot decode account seed: %v", err)
+			logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
 			return err
 		}
 
-		userJWT, err = claims.Encode(account)
+		user, err := auth.GetUserKey(name)
 		if err != nil {
-			logger.ErrorContext(ctx, "Cannot encode JWT: %v", err)
+			logger.ErrorContext(ctx, "Cannot get user key: %v", err)
+			return err
+		}
+
+		userSeed, err := user.Seed()
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot encode user seed: %v", err)
 			return err
 		}
 
