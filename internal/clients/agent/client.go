@@ -130,6 +130,21 @@ func (c *Client) Unregister(ctx context.Context, agentID string) error {
 		return &errorApi{err}
 	}
 
+	petNames, err := c.srv.KeyValue(ctx, KVStorePetnames)
+	if err != nil {
+		// If the bucket does not exist, return an empty result.
+		// Bucket does not exist only before the first agent is registered.
+		if errors.Is(err, jetstream.ErrBucketNotFound) {
+			return nil
+		}
+		return &errorApi{err}
+	}
+
+	err = petNames.Delete(ctx, agentID)
+	if err != nil && !errors.Is(err, jetstream.ErrKeyNotFound) {
+		return &errorApi{err}
+	}
+
 	return nil
 }
 
