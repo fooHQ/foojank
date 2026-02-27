@@ -122,7 +122,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 func formatOutput(w io.Writer, format string, data []agent.DiscoverResult) error {
 	table := formatter.NewTable([]string{
-		"agent_id",
+		"name",
 		"userhost",
 		"system",
 		"address",
@@ -130,7 +130,7 @@ func formatOutput(w io.Writer, format string, data []agent.DiscoverResult) error
 	})
 	for _, service := range data {
 		table.AddRow([]string{
-			service.AgentID,
+			service.Name,
 			fmt.Sprintf("%s@%s", service.Username, service.Hostname),
 			service.System,
 			service.Address,
