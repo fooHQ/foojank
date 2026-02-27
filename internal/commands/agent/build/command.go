@@ -292,7 +292,7 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 		}
 	}()
 
-	err = client.Register(ctx, agentID)
+	err = client.Register(ctx, agentID, agentName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot register agent: %v", err)
 		return err
