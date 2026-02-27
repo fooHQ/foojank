@@ -150,6 +150,7 @@ func (c *Client) Unregister(ctx context.Context, agentID string) error {
 
 type DiscoverResult struct {
 	AgentID  string
+	Name     string
 	Username string
 	Hostname string
 	System   string
@@ -180,6 +181,16 @@ func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error
 		},
 	}
 
+	petNames, err := c.srv.KeyValue(ctx, KVStorePetnames)
+	if err != nil {
+		// If the bucket does not exist, return an empty result.
+		// Bucket does not exist only before the first agent is registered.
+		if errors.Is(err, jetstream.ErrBucketNotFound) {
+			return nil, nil
+		}
+		return nil, &errorApi{err}
+	}
+
 	agentIDs, err := c.listAgentIDs(ctx)
 	if err != nil {
 		return nil, err
@@ -187,6 +198,14 @@ func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error
 
 	results := make(map[string]DiscoverResult)
 	for _, agentID := range agentIDs {
+		agentName := agentID
+		kv, err := petNames.Get(ctx, agentID)
+		if err == nil {
+			agentName = string(kv.Value())
+		} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
+			return nil, &errorApi{err}
+		}
+
 		msgs, err := c.ListMessages(ctx, agentID, []string{
 			proto.UpdateClientInfoSubject(agentID),
 		}, 1, -1)
@@ -197,6 +216,7 @@ func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error
 		if len(msgs) == 0 {
 			results[agentID] = DiscoverResult{
 				AgentID: agentID,
+				Name:    agentName,
 			}
 			continue
 		}
@@ -220,6 +240,7 @@ func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error
 			result := res.(DiscoverResult)
 			results[agentID] = DiscoverResult{
 				AgentID:  result.AgentID,
+				Name:     agentName,
 				Username: result.Username,
 				Hostname: result.Hostname,
 				System:   result.System,
