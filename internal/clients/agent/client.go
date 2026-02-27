@@ -28,7 +28,7 @@ func New(srv *server.Client) *Client {
 	}
 }
 
-func (c *Client) Register(ctx context.Context, agentID string) (err error) {
+func (c *Client) Register(ctx context.Context, agentID, name string) (err error) {
 	streamName := StreamName(agentID)
 	_, err = c.srv.CreateStream(ctx, jetstream.StreamConfig{
 		Name: streamName,
@@ -75,7 +75,7 @@ func (c *Client) Register(ctx context.Context, agentID string) (err error) {
 	}()
 
 	storeName := agentID
-	storeDesc := fmt.Sprintf("Agent %s storage", agentID)
+	storeDesc := fmt.Sprintf("Agent %s storage", name)
 	_, err = c.srv.CreateObjectStore(ctx, jetstream.ObjectStoreConfig{
 		Bucket:      storeName,
 		Description: storeDesc,
@@ -88,6 +88,24 @@ func (c *Client) Register(ctx context.Context, agentID string) (err error) {
 			return
 		}
 		_ = c.srv.DeleteObjectStore(ctx, storeName)
+	}()
+
+	petNames, err := c.srv.CreateKeyValue(ctx, jetstream.KeyValueConfig{
+		Bucket: KVStorePetnames,
+	})
+	if err != nil && !errors.Is(err, jetstream.ErrBucketExists) {
+		return &errorApi{err}
+	}
+
+	_, err = petNames.Create(ctx, agentID, []byte(name))
+	if err != nil {
+		return &errorApi{err}
+	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		_ = petNames.Delete(ctx, agentID)
 	}()
 
 	return nil
