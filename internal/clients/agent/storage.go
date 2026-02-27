@@ -7,6 +7,10 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 )
 
+const (
+	KVStorePetnames = "petnames"
+)
+
 type Storage struct {
 	*natsfs.FS
 	name        string
