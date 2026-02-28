@@ -11,6 +11,7 @@ import (
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
+	"github.com/nats-io/nkeys"
 	"github.com/nats-io/nuid"
 
 	"github.com/foohq/foojank/internal/clients/server"
@@ -658,6 +659,36 @@ func (c *Client) ListMessages(
 	}
 
 	return msgs, nil
+}
+
+func (c *Client) IsAgentID(agentID string) bool {
+	return nkeys.IsValidPublicUserKey(agentID)
+}
+
+func (c *Client) GetAgentID(ctx context.Context, name string) (string, error) {
+	if c.IsAgentID(name) {
+		return name, nil
+	}
+
+	petNames, err := c.srv.KeyValue(ctx, KVStorePetnames)
+	if err != nil {
+		// If the bucket does not exist, return an empty result.
+		// Bucket does not exist only before the first agent is registered.
+		if errors.Is(err, jetstream.ErrBucketNotFound) {
+			return "", ErrAgentNotFound
+		}
+		return "", &errorApi{err}
+	}
+
+	kv, err := petNames.Get(ctx, name)
+	if err != nil {
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			return "", ErrAgentNotFound
+		}
+		return "", &errorApi{err}
+	}
+
+	return string(kv.Value()), nil
 }
 
 func (c *Client) publishMsg(ctx context.Context, stream string, msg *nats.Msg) error {
