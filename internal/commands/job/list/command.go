@@ -141,7 +141,7 @@ func action(ctx context.Context, c *cli.Command) error {
 func formatOutput(w io.Writer, format string, data []agent.Job) error {
 	table := formatter.NewTable([]string{
 		"job_id",
-		"agent_id",
+		"agent",
 		"command",
 		"status",
 		"created_at",
