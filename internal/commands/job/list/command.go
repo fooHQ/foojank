@@ -100,10 +100,17 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	client := agent.New(srv)
 
-	agentID := c.Args().First()
+	agentName := c.Args().First()
 
 	var jobs map[string]agent.Job
-	if agentID != "" {
+	if agentName != "" {
+		var agentID string
+		agentID, err = client.GetAgentID(ctx, agentName)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot get a list of jobs: %v", err)
+			return err
+		}
+
 		jobs, err = client.ListJobs(ctx, agentID)
 	} else {
 		jobs, err = client.ListAllJobs(ctx)
