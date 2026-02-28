@@ -150,7 +150,7 @@ func formatOutput(w io.Writer, format string, data []agent.Job) error {
 	for _, job := range data {
 		table.AddRow([]string{
 			job.ID,
-			job.AgentID,
+			job.AgentName,
 			fmt.Sprintf("%s %s", job.Command, job.Args),
 			job.Status,
 			formatTime(job.Created),
