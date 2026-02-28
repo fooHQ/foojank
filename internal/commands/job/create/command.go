@@ -88,13 +88,18 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	client := agent.New(srv)
 
-	agentID := c.Args().First()
+	agentName := c.Args().First()
 	cmdArgs := c.Args().Tail()
-
 	command := cmdArgs[0]
 	var args []string
 	if len(cmdArgs) > 1 {
 		args = cmdArgs[1:]
+	}
+
+	agentID, err := client.GetAgentID(ctx, agentName)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot create job: %v", err)
+		return err
 	}
 
 	workerID := nuid.Next()
