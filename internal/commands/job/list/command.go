@@ -25,7 +25,7 @@ import (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "list",
-		ArgsUsage: "[agent-id]",
+		ArgsUsage: "[name]",
 		Usage:     "List jobs",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
