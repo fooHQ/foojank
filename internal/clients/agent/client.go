@@ -351,6 +351,24 @@ type contextKey string
 var messageKey contextKey = "foojank:message"
 
 func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, error) {
+	petNames, err := c.srv.KeyValue(ctx, KVStorePetnames)
+	if err != nil {
+		// If the bucket does not exist, return an empty result.
+		// Bucket does not exist only before the first agent is registered.
+		if errors.Is(err, jetstream.ErrBucketNotFound) {
+			return nil, nil
+		}
+		return nil, &errorApi{err}
+	}
+
+	agentName := agentID
+	kv, err := petNames.Get(ctx, agentID)
+	if err == nil {
+		agentName = string(kv.Value())
+	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
+		return nil, &errorApi{err}
+	}
+
 	jobs := make(map[string]Job)
 	jobsMsgIDRef := make(map[string]string)
 
@@ -369,13 +387,14 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 			msg := ctx.Value(messageKey).(Message)
 
 			return Job{
-				ID:      workerID,
-				AgentID: agentID,
-				Command: v.Command,
-				Args:    strings.Join(v.Args, " "),
-				Status:  JobStatusPending,
-				Created: msg.Received,
-				Updated: msg.Received,
+				ID:        workerID,
+				AgentID:   agentID,
+				AgentName: agentName,
+				Command:   v.Command,
+				Args:      strings.Join(v.Args, " "),
+				Status:    JobStatusPending,
+				Created:   msg.Received,
+				Updated:   msg.Received,
 			}
 		},
 		proto.StopWorkerSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {

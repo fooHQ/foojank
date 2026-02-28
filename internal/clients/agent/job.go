@@ -12,12 +12,13 @@ const (
 )
 
 type Job struct {
-	ID      string
-	AgentID string
-	Command string
-	Args    string
-	Status  string
-	Error   error
-	Created time.Time
-	Updated time.Time
+	ID        string
+	AgentID   string
+	AgentName string
+	Command   string
+	Args      string
+	Status    string
+	Error     error
+	Created   time.Time
+	Updated   time.Time
 }
