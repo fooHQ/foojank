@@ -19,7 +19,7 @@ import (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "create",
-		ArgsUsage: "<agent-id> <command> [args]",
+		ArgsUsage: "<name> <command> [args]",
 		Usage:     "Create a job",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
