@@ -18,7 +18,7 @@ import (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "remove",
-		ArgsUsage: "<agent-id>",
+		ArgsUsage: "<name>",
 		Usage:     "Remove agent resources from the server",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
