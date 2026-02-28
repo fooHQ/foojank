@@ -108,6 +108,17 @@ func (c *Client) Register(ctx context.Context, agentID, name string) (err error)
 		_ = petNames.Delete(ctx, agentID)
 	}()
 
+	_, err = petNames.Create(ctx, name, []byte(agentID))
+	if err != nil {
+		return &errorApi{err}
+	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		_ = petNames.Delete(ctx, name)
+	}()
+
 	return nil
 }
 
@@ -137,6 +148,20 @@ func (c *Client) Unregister(ctx context.Context, agentID string) error {
 		if errors.Is(err, jetstream.ErrBucketNotFound) {
 			return nil
 		}
+		return &errorApi{err}
+	}
+
+	// Retrieve a petname so the reverse reference can be deleted as well.
+	petName, err := petNames.Get(ctx, agentID)
+	if err != nil {
+		if !errors.Is(err, jetstream.ErrKeyNotFound) {
+			return &errorApi{err}
+		}
+		return nil
+	}
+
+	err = petNames.Delete(ctx, string(petName.Value()))
+	if err != nil && !errors.Is(err, jetstream.ErrKeyNotFound) {
 		return &errorApi{err}
 	}
 
