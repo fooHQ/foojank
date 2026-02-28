@@ -23,7 +23,7 @@ import (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "logs",
-		ArgsUsage: "<agent-id>",
+		ArgsUsage: "<name>",
 		Usage:     "Display all messages in agent's stream",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -97,7 +97,13 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	client := agent.New(srv)
 
-	agentID := c.Args().First()
+	agentName := c.Args().First()
+
+	agentID, err := client.GetAgentID(ctx, agentName)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot get a list of messages: %v", err)
+		return err
+	}
 
 	msgs, err := client.ListMessages(ctx, agentID, nil, 1, -1)
 	if err != nil {
