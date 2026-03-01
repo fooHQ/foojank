@@ -22,4 +22,5 @@ const (
 	UnlinkAccount     = "unlink-account"
 	AcceptLinkFrom    = "accept-link-from"
 	RemoveLink        = "remove-link"
+	Agent             = "agent"
 )
