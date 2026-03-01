@@ -24,10 +24,13 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:      "list",
-		ArgsUsage: "[name]",
-		Usage:     "List jobs",
+		Name:  "list",
+		Usage: "List jobs",
 		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  flags.Agent,
+				Usage: "filter jobs by agent",
+			},
 			&cli.StringFlag{
 				Name:  flags.Format,
 				Usage: "set output format",
@@ -79,6 +82,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	serverURL, _ := conf.String(flags.ServerURL)
 	serverCert, _ := conf.String(flags.ServerCertificate)
 	accountName, _ := conf.String(flags.Account)
+	agentName, _ := conf.String(flags.Agent)
 	format, _ := conf.String(flags.Format)
 
 	userJWT, userSeed, err := auth.ReadUser(accountName)
@@ -93,14 +97,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	if c.Args().Len() > 1 {
-		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
-		return errors.New("not enough arguments")
-	}
-
 	client := agent.New(srv)
-
-	agentName := c.Args().First()
 
 	var jobs map[string]agent.Job
 	if agentName != "" {
