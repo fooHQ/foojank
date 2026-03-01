@@ -88,7 +88,13 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	client := agent.New(srv)
 
-	agentID := c.Args().First()
+	agentName := c.Args().First()
+
+	agentID, err := client.GetAgentID(ctx, agentName)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot remove agent: %v", err)
+		return err
+	}
 
 	err = client.Unregister(ctx, agentID)
 	if err != nil {
