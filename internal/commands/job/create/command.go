@@ -19,9 +19,14 @@ import (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "create",
-		ArgsUsage: "<name> <command> [args]",
+		ArgsUsage: "<command> [args]",
 		Usage:     "Create a job",
 		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:     flags.Agent,
+				Usage:    "assign the job to the specified agent",
+				Required: true,
+			},
 			&cli.StringFlag{
 				Name:  flags.ServerURL,
 				Usage: "set server URL",
@@ -68,6 +73,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	serverURL, _ := conf.String(flags.ServerURL)
 	serverCert, _ := conf.String(flags.ServerCertificate)
 	accountName, _ := conf.String(flags.Account)
+	agentName, _ := conf.String(flags.Agent)
 
 	userJWT, userSeed, err := auth.ReadUser(accountName)
 	if err != nil {
@@ -81,20 +87,15 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	if c.Args().Len() < 2 {
+	if c.Args().Len() < 1 {
 		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
 		return errors.New("not enough arguments")
 	}
 
 	client := agent.New(srv)
 
-	agentName := c.Args().First()
-	cmdArgs := c.Args().Tail()
-	command := cmdArgs[0]
-	var args []string
-	if len(cmdArgs) > 1 {
-		args = cmdArgs[1:]
-	}
+	command := c.Args().First()
+	commandArgs := c.Args().Tail()
 
 	agentID, err := client.GetAgentID(ctx, agentName)
 	if err != nil {
@@ -104,7 +105,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	workerID := nuid.Next()
 	// TODO: env variables
-	err = client.StartWorker(ctx, agentID, workerID, command, args, nil)
+	err = client.StartWorker(ctx, agentID, workerID, command, commandArgs, nil)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create job: %v", err)
 		return err
