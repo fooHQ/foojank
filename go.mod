@@ -1,10 +1,11 @@
 module github.com/foohq/foojank
 
-go 1.25.0
+go 1.25.7
 
 require (
 	capnproto.org/go/capnp/v3 v3.1.0-alpha.2
 	github.com/dustinkirkland/golang-petname v0.0.0-20240428194347-eebcea082ee0
+	github.com/foohq/foojank-proto/go/agent v0.0.0-20260311173352-6c7fbe02069f
 	github.com/foohq/ren-natsfs v0.0.0-20250715161259-1f76eedb0ef2
 	github.com/lmittmann/tint v1.1.2
 	github.com/nats-io/jwt/v2 v2.8.0
