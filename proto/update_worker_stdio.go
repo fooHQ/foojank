@@ -1,6 +1,6 @@
 package proto
 
-import "github.com/foohq/foojank/proto/capnp"
+import capnp "github.com/foohq/foojank-proto/go/agent"
 
 // UpdateWorkerStdio contains data from a worker's stdout or stdin.
 type UpdateWorkerStdio struct {

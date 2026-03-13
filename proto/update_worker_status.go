@@ -1,6 +1,6 @@
 package proto
 
-import "github.com/foohq/foojank/proto/capnp"
+import capnp "github.com/foohq/foojank-proto/go/agent"
 
 // UpdateWorkerStatus is used to update the status of a worker.
 type UpdateWorkerStatus struct {
