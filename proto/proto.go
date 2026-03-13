@@ -7,7 +7,7 @@ import (
 
 	capnplib "capnproto.org/go/capnp/v3"
 
-	"github.com/foohq/foojank/proto/capnp"
+	capnp "github.com/foohq/foojank-proto/go/agent"
 )
 
 var (

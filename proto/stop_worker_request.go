@@ -1,6 +1,6 @@
 package proto
 
-import "github.com/foohq/foojank/proto/capnp"
+import capnp "github.com/foohq/foojank-proto/go/agent"
 
 // StopWorkerRequest is a request to stop a running worker.
 type StopWorkerRequest struct{}

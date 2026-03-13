@@ -1,6 +1,6 @@
 package proto
 
-import "github.com/foohq/foojank/proto/capnp"
+import capnp "github.com/foohq/foojank-proto/go/agent"
 
 // UpdateClientInfo contains information about a client.
 type UpdateClientInfo struct {

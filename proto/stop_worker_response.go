@@ -3,7 +3,7 @@ package proto
 import (
 	"errors"
 
-	"github.com/foohq/foojank/proto/capnp"
+	capnp "github.com/foohq/foojank-proto/go/agent"
 )
 
 // StopWorkerResponse is a response to a StopWorkerRequest.
