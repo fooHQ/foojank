@@ -13,8 +13,8 @@ import (
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
+	"github.com/foohq/foojank/internal/proto"
 	"github.com/foohq/foojank/internal/router"
-	"github.com/foohq/foojank/proto"
 )
 
 func NewCommand() *cli.Command {

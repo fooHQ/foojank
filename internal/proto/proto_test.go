@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/foohq/foojank/proto"
+	"github.com/foohq/foojank/internal/proto"
 )
 
 func TestMarshalUnmarshal(t *testing.T) {

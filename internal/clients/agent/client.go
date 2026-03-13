@@ -15,8 +15,8 @@ import (
 	"github.com/nats-io/nuid"
 
 	"github.com/foohq/foojank/internal/clients/server"
+	"github.com/foohq/foojank/internal/proto"
 	"github.com/foohq/foojank/internal/router"
-	"github.com/foohq/foojank/proto"
 )
 
 type Client struct {
