@@ -21,9 +21,6 @@
       "lint": [
         "./devbox.sh lint"
       ],
-      "generate-proto": [
-        "./devbox.sh generate_proto"
-      ],
       "build-foojank-dev": [
         "./devbox.sh build_foojank_dev"
       ],
