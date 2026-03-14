@@ -247,238 +247,42 @@ func TestUnmarshalInvalidData(t *testing.T) {
 	}
 }
 
-func TestStartWorkerSubject(t *testing.T) {
-	tests := []struct {
-		name     string
-		agentID  string
-		workerID string
-		want     string
-	}{
-		{
-			name:     "basic replacement",
-			agentID:  "agent1",
-			workerID: "worker1",
-			want:     "FJ.API.WORKER.START.agent1.worker1",
-		},
-		{
-			name:     "empty agent ID",
-			agentID:  "",
-			workerID: "worker1",
-			want:     "FJ.API.WORKER.START..worker1",
-		},
-		{
-			name:     "empty worker ID",
-			agentID:  "agent1",
-			workerID: "",
-			want:     "FJ.API.WORKER.START.agent1.",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := proto.StartWorkerSubject(tt.agentID, tt.workerID)
-			require.Equal(t, tt.want, got)
-		})
-	}
+func TestCmdStartWorkerSubject(t *testing.T) {
+	got := proto.CmdStartWorkerSubject("agent1", "worker1")
+	require.Equal(t, "FJ.AGENT.agent1.CMD.WORKER.worker1.START", got)
 }
 
-func TestStopWorkerSubject(t *testing.T) {
-	tests := []struct {
-		name     string
-		agentID  string
-		workerID string
-		want     string
-	}{
-		{
-			name:     "basic replacement",
-			agentID:  "agent1",
-			workerID: "worker1",
-			want:     "FJ.API.WORKER.STOP.agent1.worker1",
-		},
-		{
-			name:     "empty agent ID",
-			agentID:  "",
-			workerID: "worker1",
-			want:     "FJ.API.WORKER.STOP..worker1",
-		},
-		{
-			name:     "empty worker ID",
-			agentID:  "agent1",
-			workerID: "",
-			want:     "FJ.API.WORKER.STOP.agent1.",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := proto.StopWorkerSubject(tt.agentID, tt.workerID)
-			require.Equal(t, tt.want, got)
-		})
-	}
+func TestCmdStopWorkerSubject(t *testing.T) {
+	got := proto.CmdStopWorkerSubject("agent1", "worker1")
+	require.Equal(t, "FJ.AGENT.agent1.CMD.WORKER.worker1.STOP", got)
 }
 
-func TestWriteWorkerStdinSubject(t *testing.T) {
-	tests := []struct {
-		name     string
-		agentID  string
-		workerID string
-		want     string
-	}{
-		{
-			name:     "basic replacement",
-			agentID:  "agent1",
-			workerID: "worker1",
-			want:     "FJ.API.WORKER.WRITE.STDIN.agent1.worker1",
-		},
-		{
-			name:     "empty agent ID",
-			agentID:  "",
-			workerID: "worker1",
-			want:     "FJ.API.WORKER.WRITE.STDIN..worker1",
-		},
-		{
-			name:     "empty worker ID",
-			agentID:  "agent1",
-			workerID: "",
-			want:     "FJ.API.WORKER.WRITE.STDIN.agent1.",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := proto.WriteWorkerStdinSubject(tt.agentID, tt.workerID)
-			require.Equal(t, tt.want, got)
-		})
-	}
+func TestCmdWriteStdinSubject(t *testing.T) {
+	got := proto.CmdWriteStdinSubject("agent1", "worker1")
+	require.Equal(t, "FJ.AGENT.agent1.CMD.WORKER.worker1.STDIN", got)
 }
 
-func TestWriteWorkerStdoutSubject(t *testing.T) {
-	tests := []struct {
-		name     string
-		agentID  string
-		workerID string
-		want     string
-	}{
-		{
-			name:     "basic replacement",
-			agentID:  "agent1",
-			workerID: "worker1",
-			want:     "FJ.API.WORKER.WRITE.STDOUT.agent1.worker1",
-		},
-		{
-			name:     "empty agent ID",
-			agentID:  "",
-			workerID: "worker1",
-			want:     "FJ.API.WORKER.WRITE.STDOUT..worker1",
-		},
-		{
-			name:     "empty worker ID",
-			agentID:  "agent1",
-			workerID: "",
-			want:     "FJ.API.WORKER.WRITE.STDOUT.agent1.",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := proto.WriteWorkerStdoutSubject(tt.agentID, tt.workerID)
-			require.Equal(t, tt.want, got)
-		})
-	}
+func TestEvtStartWorkerSubject(t *testing.T) {
+	got := proto.EvtStartWorkerSubject("agent1", "worker1")
+	require.Equal(t, "FJ.AGENT.agent1.EVT.WORKER.worker1.START", got)
 }
 
-func TestUpdateWorkerStatusSubject(t *testing.T) {
-	tests := []struct {
-		name     string
-		agentID  string
-		workerID string
-		want     string
-	}{
-		{
-			name:     "basic replacement",
-			agentID:  "agent1",
-			workerID: "worker1",
-			want:     "FJ.API.WORKER.UPDATE.STATUS.agent1.worker1",
-		},
-		{
-			name:     "empty agent ID",
-			agentID:  "",
-			workerID: "worker1",
-			want:     "FJ.API.WORKER.UPDATE.STATUS..worker1",
-		},
-		{
-			name:     "empty worker ID",
-			agentID:  "agent1",
-			workerID: "",
-			want:     "FJ.API.WORKER.UPDATE.STATUS.agent1.",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := proto.UpdateWorkerStatusSubject(tt.agentID, tt.workerID)
-			require.Equal(t, tt.want, got)
-		})
-	}
+func TestEvtStopWorkerSubject(t *testing.T) {
+	got := proto.EvtStopWorkerSubject("agent1", "worker1")
+	require.Equal(t, "FJ.AGENT.agent1.EVT.WORKER.worker1.STOP", got)
 }
 
-func TestUpdateClientInfoSubject(t *testing.T) {
-	tests := []struct {
-		name    string
-		agentID string
-		want    string
-	}{
-		{
-			name:    "basic replacement",
-			agentID: "agent1",
-			want:    "FJ.API.CLIENT.UPDATE.INFO.agent1",
-		},
-		{
-			name:    "empty agent ID",
-			agentID: "",
-			want:    "FJ.API.CLIENT.UPDATE.INFO.",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := proto.UpdateClientInfoSubject(tt.agentID)
-			require.Equal(t, tt.want, got)
-		})
-	}
+func TestEvtWorkerStatusSubject(t *testing.T) {
+	got := proto.EvtWorkerStatusSubject("agent1", "worker1")
+	require.Equal(t, "FJ.AGENT.agent1.EVT.WORKER.worker1.STATUS", got)
 }
 
-func TestReplyMessageSubject(t *testing.T) {
-	tests := []struct {
-		name    string
-		agentID string
-		msgID   string
-		want    string
-	}{
-		{
-			name:    "basic replacement",
-			agentID: "agent1",
-			msgID:   "msg1",
-			want:    "FJ.API.MESSAGE.REPLY.agent1.msg1",
-		},
-		{
-			name:    "empty agent ID",
-			agentID: "",
-			msgID:   "msg1",
-			want:    "FJ.API.MESSAGE.REPLY..msg1",
-		},
-		{
-			name:    "empty message ID",
-			agentID: "agent1",
-			msgID:   "",
-			want:    "FJ.API.MESSAGE.REPLY.agent1.",
-		},
-	}
+func TestEvtWorkerStdoutSubject(t *testing.T) {
+	got := proto.EvtWorkerStdoutSubject("agent1", "worker1")
+	require.Equal(t, "FJ.AGENT.agent1.EVT.WORKER.worker1.STDOUT", got)
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := proto.ReplyMessageSubject(tt.agentID, tt.msgID)
-			require.Equal(t, tt.want, got)
-		})
-	}
+func TestEvtAgentInfoSubject(t *testing.T) {
+	got := proto.EvtAgentInfoSubject("agent1")
+	require.Equal(t, "FJ.AGENT.agent1.EVT.INFO", got)
 }
