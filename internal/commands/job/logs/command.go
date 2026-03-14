@@ -99,7 +99,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	agentID := job.AgentID
 	api := router.Handlers{
-		proto.WriteWorkerStdoutSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {
+		proto.EvtWorkerStdoutSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {
 			v, ok := data.(proto.UpdateWorkerStdio)
 			if !ok {
 				return nil
@@ -112,7 +112,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	seq := uint64(1)
 	for {
 		msgs, err := client.ListMessages(ctx, agentID, []string{
-			proto.WriteWorkerStdoutSubject(agentID, jobID),
+			proto.EvtWorkerStdoutSubject(agentID, jobID),
 		}, seq, -1)
 		if err != nil {
 			return err
