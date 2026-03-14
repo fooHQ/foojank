@@ -71,39 +71,44 @@ func Unmarshal(b []byte) (any, error) {
 	return nil, ErrUnknownMessage
 }
 
-// StartWorkerSubject returns the NATS subject for starting a worker.
-func StartWorkerSubject(agentID, workerID string) string {
-	return replaceStringPlaceholders(capnp.StartWorkerT, agentID, workerID)
+// CmdStartWorkerSubject returns the NATS subject for sending a start worker command to an agent.
+func CmdStartWorkerSubject(agentID, workerID string) string {
+	return replaceStringPlaceholders(capnp.CmdStartWorkerT, agentID, workerID)
 }
 
-// StopWorkerSubject returns the NATS subject for stopping a worker.
-func StopWorkerSubject(agentID, workerID string) string {
-	return replaceStringPlaceholders(capnp.StopWorkerT, agentID, workerID)
+// CmdStopWorkerSubject returns the NATS subject for sending a stop worker command to an agent.
+func CmdStopWorkerSubject(agentID, workerID string) string {
+	return replaceStringPlaceholders(capnp.CmdStopWorkerT, agentID, workerID)
 }
 
-// WriteWorkerStdinSubject returns the NATS subject for writing to a worker's stdin.
-func WriteWorkerStdinSubject(agentID, workerID string) string {
-	return replaceStringPlaceholders(capnp.WriteWorkerStdinT, agentID, workerID)
+// CmdWriteStdinSubject returns the NATS subject for sending stdin to a worker via an agent.
+func CmdWriteStdinSubject(agentID, workerID string) string {
+	return replaceStringPlaceholders(capnp.CmdWriteStdinT, agentID, workerID)
 }
 
-// WriteWorkerStdoutSubject returns the NATS subject for a worker's stdout stream.
-func WriteWorkerStdoutSubject(agentID, workerID string) string {
-	return replaceStringPlaceholders(capnp.WriteWorkerStdoutT, agentID, workerID)
+// EvtStartWorkerSubject returns the NATS subject for a worker start event.
+func EvtStartWorkerSubject(agentID, workerID string) string {
+	return replaceStringPlaceholders(capnp.EvtStartWorkerT, agentID, workerID)
 }
 
-// UpdateWorkerStatusSubject returns the NATS subject for updating a worker's status.
-func UpdateWorkerStatusSubject(agentID, workerID string) string {
-	return replaceStringPlaceholders(capnp.UpdateWorkerStatusT, agentID, workerID)
+// EvtStopWorkerSubject returns the NATS subject for a worker stop event.
+func EvtStopWorkerSubject(agentID, workerID string) string {
+	return replaceStringPlaceholders(capnp.EvtStopWorkerT, agentID, workerID)
 }
 
-// UpdateClientInfoSubject returns the NATS subject for updating client information.
-func UpdateClientInfoSubject(agentID string) string {
-	return replaceStringPlaceholders(capnp.UpdateClientInfoT, agentID)
+// EvtWorkerStatusSubject returns the NATS subject for a worker status event.
+func EvtWorkerStatusSubject(agentID, workerID string) string {
+	return replaceStringPlaceholders(capnp.EvtWorkerStatusT, agentID, workerID)
 }
 
-// ReplyMessageSubject returns the NATS subject for replying to a message.
-func ReplyMessageSubject(agentID, msgID string) string {
-	return replaceStringPlaceholders(capnp.ReplyMessageT, agentID, msgID)
+// EvtWorkerStdoutSubject returns the NATS subject for a worker stdout event.
+func EvtWorkerStdoutSubject(agentID, workerID string) string {
+	return replaceStringPlaceholders(capnp.EvtWorkerStdoutT, agentID, workerID)
+}
+
+// EvtAgentInfoSubject returns the NATS subject for an agent info event.
+func EvtAgentInfoSubject(agentID string) string {
+	return replaceStringPlaceholders(capnp.EvtAgentInfoT, agentID)
 }
 
 func replaceStringPlaceholders(s string, values ...string) string {
