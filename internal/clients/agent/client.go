@@ -34,13 +34,12 @@ func (c *Client) Register(ctx context.Context, agentID, name string) (err error)
 	_, err = c.srv.CreateStream(ctx, jetstream.StreamConfig{
 		Name: streamName,
 		Subjects: []string{
-			proto.StartWorkerSubject(agentID, "*"),
-			proto.StopWorkerSubject(agentID, "*"),
-			proto.WriteWorkerStdinSubject(agentID, "*"),
-			proto.WriteWorkerStdoutSubject(agentID, "*"),
-			proto.UpdateWorkerStatusSubject(agentID, "*"),
-			proto.ReplyMessageSubject(agentID, "*"),
-			proto.UpdateClientInfoSubject(agentID),
+			proto.CmdStartWorkerSubject(agentID, "*"),
+			proto.CmdStopWorkerSubject(agentID, "*"),
+			proto.CmdWriteStdinSubject(agentID, "*"),
+			proto.EvtWorkerStdoutSubject(agentID, "*"),
+			proto.EvtWorkerStatusSubject(agentID, "*"),
+			proto.EvtAgentInfoSubject(agentID),
 		},
 	})
 	if err != nil {
@@ -60,9 +59,9 @@ func (c *Client) Register(ctx context.Context, agentID, name string) (err error)
 		AckPolicy:     jetstream.AckExplicitPolicy,
 		MaxAckPending: 1,
 		FilterSubjects: []string{
-			proto.StartWorkerSubject(agentID, "*"),
-			proto.StopWorkerSubject(agentID, "*"),
-			proto.WriteWorkerStdinSubject(agentID, "*"),
+			proto.CmdStartWorkerSubject(agentID, "*"),
+			proto.CmdStopWorkerSubject(agentID, "*"),
+			proto.CmdWriteStdinSubject(agentID, "*"),
 		},
 	})
 	if err != nil {
@@ -186,7 +185,7 @@ type DiscoverResult struct {
 
 func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error) {
 	api := router.Handlers{
-		proto.UpdateClientInfoSubject("<agent>"): func(ctx context.Context, params router.Params, data any) any {
+		proto.EvtAgentInfoSubject("<agent>"): func(ctx context.Context, params router.Params, data any) any {
 			agentID, ok := params["agent"]
 			if !ok {
 				return nil
@@ -233,7 +232,7 @@ func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error
 		}
 
 		msgs, err := c.ListMessages(ctx, agentID, []string{
-			proto.UpdateClientInfoSubject(agentID),
+			proto.EvtAgentInfoSubject(agentID),
 		}, 1, -1)
 		if err != nil {
 			return nil, err
@@ -293,7 +292,7 @@ func (c *Client) StartWorker(ctx context.Context, agentID, workerID, command str
 		ctx,
 		StreamName(agentID),
 		&nats.Msg{
-			Subject: proto.StartWorkerSubject(agentID, workerID),
+			Subject: proto.CmdStartWorkerSubject(agentID, workerID),
 			Data:    b,
 		},
 	)
@@ -314,7 +313,7 @@ func (c *Client) StopWorker(ctx context.Context, agentID, workerID string) error
 		ctx,
 		StreamName(agentID),
 		&nats.Msg{
-			Subject: proto.StopWorkerSubject(agentID, workerID),
+			Subject: proto.CmdStopWorkerSubject(agentID, workerID),
 			Data:    b,
 		},
 	)
@@ -335,7 +334,7 @@ func (c *Client) WriteWorkerStdin(ctx context.Context, agentID, workerID string)
 		ctx,
 		StreamName(agentID),
 		&nats.Msg{
-			Subject: proto.WriteWorkerStdinSubject(agentID, workerID),
+			Subject: proto.CmdWriteStdinSubject(agentID, workerID),
 			Data:    b,
 		},
 	)
@@ -370,10 +369,9 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 	}
 
 	jobs := make(map[string]Job)
-	jobsMsgIDRef := make(map[string]string)
 
 	api := router.Handlers{
-		proto.StartWorkerSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {
+		proto.CmdStartWorkerSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {
 			workerID, ok := params["worker"]
 			if !ok {
 				return nil
@@ -386,7 +384,7 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 
 			msg := ctx.Value(messageKey).(Message)
 
-			return Job{
+			jobs[workerID] = Job{
 				ID:        workerID,
 				AgentID:   agentID,
 				AgentName: agentName,
@@ -396,8 +394,10 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 				Created:   msg.Received,
 				Updated:   msg.Received,
 			}
+
+			return nil
 		},
-		proto.StopWorkerSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {
+		proto.EvtStartWorkerSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {
 			workerID, ok := params["worker"]
 			if !ok {
 				return nil
@@ -408,19 +408,80 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 				return nil
 			}
 
-			_, ok = data.(proto.StopWorkerRequest)
+			v, ok := data.(proto.StartWorkerResponse)
 			if !ok {
 				return nil
 			}
 
 			msg := ctx.Value(messageKey).(Message)
 
+			if v.Error != nil {
+				job.Error = v.Error
+				job.Status = JobStatusFailed
+			} else {
+				job.Status = JobStatusRunning
+			}
+
+			job.Updated = msg.Received
+			jobs[workerID] = job
+
+			return nil
+		},
+		proto.CmdStopWorkerSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {
+			workerID, ok := params["worker"]
+			if !ok {
+				return nil
+			}
+
+			job, ok := jobs[workerID]
+			if !ok {
+				return nil
+			}
+
+			msg := ctx.Value(messageKey).(Message)
+
+			_, ok = data.(proto.StopWorkerRequest)
+			if !ok {
+				return nil
+			}
+
 			job.Status = JobStatusCancelling
 			job.Updated = msg.Received
+			jobs[workerID] = job
 
-			return job
+			return nil
 		},
-		proto.UpdateWorkerStatusSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {
+		proto.EvtStopWorkerSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {
+			workerID, ok := params["worker"]
+			if !ok {
+				return nil
+			}
+
+			job, ok := jobs[workerID]
+			if !ok {
+				return nil
+			}
+
+			v, ok := data.(proto.StopWorkerResponse)
+			if !ok {
+				return nil
+			}
+
+			msg := ctx.Value(messageKey).(Message)
+
+			if v.Error != nil {
+				job.Error = v.Error
+				job.Status = JobStatusFailed
+			} else {
+				job.Status = JobStatusCancelled
+			}
+
+			job.Updated = msg.Received
+			jobs[workerID] = job
+
+			return nil
+		},
+		proto.EvtWorkerStatusSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {
 			workerID, ok := params["worker"]
 			if !ok {
 				return nil
@@ -448,59 +509,18 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 			}
 
 			job.Updated = msg.Received
+			jobs[workerID] = job
 
-			return job
-		},
-		proto.ReplyMessageSubject("<agent>", "<message>"): func(ctx context.Context, params router.Params, data any) any {
-			msgID, ok := params["message"]
-			if !ok {
-				return nil
-			}
-
-			jobRef, ok := jobsMsgIDRef[msgID]
-			if !ok {
-				return nil
-			}
-
-			job, ok := jobs[jobRef]
-			if !ok {
-				return nil
-			}
-
-			msg := ctx.Value(messageKey).(Message)
-
-			switch v := data.(type) {
-			case proto.StartWorkerResponse:
-				if v.Error != nil {
-					job.Error = v.Error
-					job.Status = JobStatusFailed
-				} else {
-					job.Status = JobStatusRunning
-				}
-
-			case proto.StopWorkerResponse:
-				if v.Error != nil {
-					job.Error = v.Error
-					job.Status = JobStatusFailed
-				} else {
-					job.Status = JobStatusCancelled
-				}
-
-			default:
-				return nil
-			}
-
-			job.Updated = msg.Received
-
-			return job
+			return nil
 		},
 	}
 
 	msgs, err := c.ListMessages(ctx, agentID, []string{
-		proto.StartWorkerSubject(agentID, "*"),
-		proto.StopWorkerSubject(agentID, "*"),
-		proto.UpdateWorkerStatusSubject(agentID, "*"),
-		proto.ReplyMessageSubject(agentID, "*"),
+		proto.CmdStartWorkerSubject(agentID, "*"),
+		proto.CmdStopWorkerSubject(agentID, "*"),
+		proto.EvtWorkerStatusSubject(agentID, "*"),
+		proto.EvtStartWorkerSubject(agentID, "*"),
+		proto.EvtStopWorkerSubject(agentID, "*"),
 	}, 1, -1)
 	if err != nil {
 		return nil, err
@@ -517,14 +537,7 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 			continue
 		}
 
-		res := handler(context.WithValue(ctx, messageKey, msg), params, data)
-		if res == nil {
-			continue
-		}
-
-		job := res.(Job)
-		jobs[job.ID] = job
-		jobsMsgIDRef[msg.ID] = job.ID
+		_ = handler(context.WithValue(ctx, messageKey, msg), params, data)
 	}
 
 	return jobs, nil
@@ -779,10 +792,11 @@ func NewAgentPermissions(agentID string) jwt.Permissions {
 	return jwt.Permissions{
 		Pub: jwt.Permission{
 			Allow: []string{
-				proto.WriteWorkerStdoutSubject(agentID, "*"),
-				proto.UpdateWorkerStatusSubject(agentID, "*"),
-				proto.ReplyMessageSubject(agentID, "*"),
-				proto.UpdateClientInfoSubject(agentID),
+				proto.EvtStartWorkerSubject(agentID, "*"),
+				proto.EvtStopWorkerSubject(agentID, "*"),
+				proto.EvtWorkerStatusSubject(agentID, "*"),
+				proto.EvtWorkerStdoutSubject(agentID, "*"),
+				proto.EvtAgentInfoSubject(agentID),
 
 				fmt.Sprintf("$JS.ACK.FJ_%s.>", agentID),
 				fmt.Sprintf("$JS.API.STREAM.INFO.FJ_%s", agentID),
