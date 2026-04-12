@@ -121,8 +121,7 @@ func New() *Profile {
 }
 
 func (p *Profile) SetSourceDir(dir string) {
-	s := dir
-	p.data.SourceDir = &s
+	p.data.SourceDir = new(dir)
 }
 
 func (p *Profile) SourceDir() string {
