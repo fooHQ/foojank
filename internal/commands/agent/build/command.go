@@ -203,7 +203,10 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 	}
 
 	// Default profile.
-	profDefault := profile.New()
+	profDefault := profile.NewProfile()
+	profDefault.SetOS(runtime.GOOS)
+	profDefault.SetArch(runtime.GOARCH)
+	profDefault.SetTarget(filepath.Join(pwd, agentName))
 	profDefault.Set(profile.VarAgentID, profile.NewVar(agentID))
 	profDefault.Set(profile.VarServerURL, profile.NewVar(serverURL))
 	profDefault.Set(profile.VarServerCertificate, profile.NewVar(serverCert))
@@ -213,10 +216,6 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 	profDefault.Set(profile.VarConsumer, profile.NewVar(agentID))
 	profDefault.Set(profile.VarInboxPrefix, profile.NewVar(agent.InboxName(agentID)))
 	profDefault.Set(profile.VarObjectStore, profile.NewVar(agentID))
-	profDefault.Set(profile.VarOS, profile.NewVar(runtime.GOOS))
-	profDefault.Set(profile.VarArch, profile.NewVar(runtime.GOARCH))
-	profDefault.Set(profile.VarTarget, profile.NewVar(filepath.Join(pwd, agentName)))
-	profDefault.Set(profile.VarFeatures, profile.NewVar(""))
 
 	// Parse profile profName defined in the config dir.
 	var profFile *profile.Profile
@@ -229,7 +228,7 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 	}
 
 	// Parse profile flags.
-	profFlags := profile.New()
+	profFlags := profile.NewProfile()
 	if sourceDir != "" {
 		profFlags.SetSourceDir(sourceDir)
 	}
@@ -240,16 +239,16 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 		profFlags.Set(profile.VarServerCertificate, profile.NewVar(targetCert))
 	}
 	if targetOS != "" {
-		profFlags.Set(profile.VarOS, profile.NewVar(targetOS))
+		profFlags.SetOS(targetOS)
 	}
 	if targetArch != "" {
-		profFlags.Set(profile.VarArch, profile.NewVar(targetArch))
+		profFlags.SetArch(targetArch)
 	}
 	if outputName != "" {
-		profFlags.Set(profile.VarTarget, profile.NewVar(filepath.Join(pwd, outputName)))
+		profFlags.SetTarget(filepath.Join(pwd, outputName))
 	}
 	if len(features) > 0 {
-		profFlags.Set(profile.VarFeatures, profile.NewVar(strings.Join(features, ",")))
+		profFlags.SetFeatures(features)
 	}
 
 	for k, v := range profile.ParseKVPairs(setVars) {
@@ -265,10 +264,10 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 	}
 
 	sourceDir = prof.SourceDir()
-	outputName = prof.Get(profile.VarTarget).Value()
+	outputName = prof.Target()
 	agentID = prof.Get(profile.VarAgentID).Value()
 
-	output, err := builder.Run(ctx, sourceDir, prof.List())
+	output, err := builder.Run(ctx, sourceDir, prof.ToEnv())
 	if err != nil {
 		lines := strings.Split(output, "\n")
 		for _, line := range lines {
