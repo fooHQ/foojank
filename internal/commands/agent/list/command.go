@@ -126,7 +126,7 @@ func formatOutput(w io.Writer, format string, data []agent.DiscoverResult) error
 		"userhost",
 		"system",
 		"address",
-		"updated",
+		"last_seen",
 	})
 	for _, service := range data {
 		table.AddRow([]string{
