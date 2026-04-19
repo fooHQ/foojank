@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/urfave/cli/v3"
@@ -140,8 +141,7 @@ func formatOutput(w io.Writer, format string, data []agent.Job) error {
 		"job_id",
 		"agent",
 		"command",
-		"created_at",
-		"updated_at",
+		"last_update",
 		"status",
 	})
 	for _, job := range data {
@@ -149,9 +149,8 @@ func formatOutput(w io.Writer, format string, data []agent.Job) error {
 			job.ID,
 			job.AgentName,
 			fmt.Sprintf("%s %s", job.Command, job.Args),
-			formatTime(job.Created),
 			formatTime(job.Updated),
-			job.Status,
+			strings.ToUpper(job.Status),
 		})
 	}
 
@@ -174,7 +173,37 @@ func formatOutput(w io.Writer, format string, data []agent.Job) error {
 }
 
 func formatTime(t time.Time) string {
-	return t.Format("2006-01-02 15:04:05")
+	if t.IsZero() {
+		return "never"
+	}
+
+	now := time.Now()
+	diff := now.Sub(t)
+
+	// Handle future dates
+	if diff < 0 {
+		diff = -diff
+		if diff < 24*time.Hour {
+			if diff < time.Hour {
+				return fmt.Sprintf("in %d minutes", int(diff.Minutes()))
+			}
+			return fmt.Sprintf("in %d hours", int(diff.Hours()))
+		}
+		return fmt.Sprintf("in %d days", int(diff.Hours()/24))
+	}
+
+	// Handle past dates
+	if diff < 24*time.Hour {
+		if diff < 2*time.Minute {
+			return "now"
+		}
+		if diff < time.Hour {
+			return fmt.Sprintf("%d minutes ago", int(diff.Minutes()))
+		}
+		return fmt.Sprintf("%d hours ago", int(diff.Hours()))
+	}
+
+	return fmt.Sprintf("%d days ago", int(diff.Hours()/24))
 }
 
 func validateConfiguration(conf *config.Config) error {
