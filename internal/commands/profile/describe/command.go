@@ -75,6 +75,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	prof, err := profs.Get(name)
 	if err != nil {
+		logger.ErrorContext(ctx, "Cannot get profile %q: %v", name, err)
 		return err
 	}
 
