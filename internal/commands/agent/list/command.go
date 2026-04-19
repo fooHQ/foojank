@@ -131,7 +131,7 @@ func formatOutput(w io.Writer, format string, data []agent.DiscoverResult) error
 	for _, service := range data {
 		table.AddRow([]string{
 			service.Name,
-			fmt.Sprintf("%s@%s", service.Username, service.Hostname),
+			formatUserHost(service.Username, service.Hostname),
 			service.System,
 			service.Address,
 			formatTime(service.LastSeen),
@@ -154,6 +154,13 @@ func formatOutput(w io.Writer, format string, data []agent.DiscoverResult) error
 	}
 
 	return nil
+}
+
+func formatUserHost(user, host string) string {
+	if user == "" && host == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s@%s", user, host)
 }
 
 func formatTime(t time.Time) string {
