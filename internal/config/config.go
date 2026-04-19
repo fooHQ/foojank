@@ -42,7 +42,7 @@ func (c *Config) StringSlice(name string) ([]string, bool) {
 }
 
 func (c *Config) get(name string) (string, bool) {
-	v, ok := c.data[FlagToOption(name)]
+	v, ok := c.data[name]
 	return v, ok
 }
 
@@ -53,7 +53,7 @@ func (c *Config) MarshalJSON() ([]byte, error) {
 func NewWithOptions(opts map[string]string) *Config {
 	data := make(config, len(opts))
 	for k, v := range opts {
-		data[FlagToOption(k)] = v
+		data[k] = v
 	}
 	return &Config{
 		data: data,
@@ -85,7 +85,7 @@ func ParseFlags(flags []string, fn func(string) (any, bool)) (*Config, error) {
 			continue
 		}
 
-		mdata[FlagToOption(flag)] = toString(v)
+		mdata[flag] = toString(v)
 	}
 
 	b, err := json.Marshal(mdata)
@@ -118,10 +118,6 @@ func Merge(confs ...*Config) *Config {
 		}
 	}
 	return result
-}
-
-func FlagToOption(flag string) string {
-	return strings.ReplaceAll(flag, "-", "_")
 }
 
 func ParseKVPairs(pairs []string) map[string]string {

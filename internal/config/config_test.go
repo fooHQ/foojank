@@ -28,8 +28,8 @@ func TestNewWithOptions(t *testing.T) {
 				"flag-1":   "true",
 			},
 			want: map[string]string{
-				"test_key": "test-value",
-				"flag_1":   "true",
+				"test-key": "test-value",
+				"flag-1":   "true",
 			},
 		},
 	}
@@ -321,37 +321,6 @@ func TestParseKVPairsJSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := config.ParseKVPairsJSON(tt.pairs)
-			require.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func TestFlagToOption(t *testing.T) {
-	tests := []struct {
-		name string
-		flag string
-		want string
-	}{
-		{
-			name: "simple flag",
-			flag: "flag",
-			want: "flag",
-		},
-		{
-			name: "flag with single dash",
-			flag: "flag-name",
-			want: "flag_name",
-		},
-		{
-			name: "flag with multiple dashes",
-			flag: "flag-with-multiple-dashes",
-			want: "flag_with_multiple_dashes",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := config.FlagToOption(tt.flag)
 			require.Equal(t, tt.want, got)
 		})
 	}
