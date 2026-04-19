@@ -106,7 +106,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		}
 
 		table.AddRow([]string{
-			config.FlagToOption(name),
+			name,
 			value,
 			description,
 		})
