@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/actions"
@@ -81,16 +82,16 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	envs := make([]string, 0, len(prof.Env()))
 	for k, v := range prof.Env() {
-		envs = append(envs, fmt.Sprintf("%s=%s", k, v))
+		envs = append(envs, fmt.Sprintf("%s = %s", k, v))
 	}
 
 	table := formatter.NewTable(nil)
-	table.AddRow([]string{"NAME", name})
-	table.AddRow([]string{"OS", prof.OS()})
-	table.AddRow([]string{"ARCH", prof.Arch()})
-	table.AddRow([]string{"FEATURES", strings.Join(prof.Features(), ", ")})
-	table.AddRow([]string{"SOURCE DIR", prof.SourceDir()})
-	table.AddRow([]string{"ENVIRONMENT", strings.Join(envs, "\n")})
+	table.AddRow([]string{color.New(color.Bold).Sprint("NAME"), name})
+	table.AddRow([]string{color.New(color.Bold).Sprint("OS"), prof.OS()})
+	table.AddRow([]string{color.New(color.Bold).Sprint("ARCH"), prof.Arch()})
+	table.AddRow([]string{color.New(color.Bold).Sprint("FEATURES"), strings.Join(prof.Features(), ", ")})
+	table.AddRow([]string{color.New(color.Bold).Sprint("SOURCE DIR"), prof.SourceDir()})
+	table.AddRow([]string{color.New(color.Bold).Sprint("ENVIRONMENT"), strings.Join(envs, "\n")})
 
 	err = formatOutput(os.Stdout, format, table)
 	if err != nil {
