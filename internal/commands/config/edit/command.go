@@ -71,24 +71,22 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	opts := map[string]string{
-		config.FlagToOption(flags.ServerURL):         serverURL,
-		config.FlagToOption(flags.ServerCertificate): serverCert,
-		config.FlagToOption(flags.Account):           accountName,
-		config.FlagToOption(flags.Format):            format,
-		config.FlagToOption(flags.NoColor):           noColor,
+		flags.ServerURL:         serverURL,
+		flags.ServerCertificate: serverCert,
+		flags.Account:           accountName,
+		flags.Format:            format,
+		flags.NoColor:           noColor,
 	}
 	for k, v := range config.ParseKVPairs(setOptions) {
-		key := config.FlagToOption(k)
-		_, ok := opts[key]
+		_, ok := opts[k]
 		if !ok {
 			logger.ErrorContext(ctx, "Cannot set option %s: option not found", k)
 			return errors.New("option not found")
 		}
-		opts[key] = v
+		opts[k] = v
 	}
 	for _, k := range unsetOptions {
-		key := config.FlagToOption(k)
-		delete(opts, key)
+		delete(opts, k)
 	}
 
 	err := configdir.UpdateConfigJson(configDir, config.NewWithOptions(opts))
