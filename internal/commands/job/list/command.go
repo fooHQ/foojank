@@ -140,18 +140,18 @@ func formatOutput(w io.Writer, format string, data []agent.Job) error {
 		"job_id",
 		"agent",
 		"command",
-		"status",
 		"created_at",
 		"updated_at",
+		"status",
 	})
 	for _, job := range data {
 		table.AddRow([]string{
 			job.ID,
 			job.AgentName,
 			fmt.Sprintf("%s %s", job.Command, job.Args),
-			job.Status,
 			formatTime(job.Created),
 			formatTime(job.Updated),
+			job.Status,
 		})
 	}
 
