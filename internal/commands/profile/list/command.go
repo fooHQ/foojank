@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"sort"
-	"strings"
 
 	"github.com/urfave/cli/v3"
 
@@ -16,14 +15,12 @@ import (
 	"github.com/foohq/foojank/internal/formatter"
 	jsonformatter "github.com/foohq/foojank/internal/formatter/json"
 	tableformatter "github.com/foohq/foojank/internal/formatter/table"
-	"github.com/foohq/foojank/internal/profile"
 )
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:      "list",
-		ArgsUsage: "[name]",
-		Usage:     "List profiles or their details",
+		Name:  "list",
+		Usage: "List profiles or their details",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  flags.Format,
@@ -68,26 +65,6 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	format, _ := conf.String(flags.Format)
 
-	name := c.Args().First()
-	if name != "" {
-		err := listProfile(profs, name, format)
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get profile %q: %v", name, err)
-			return err
-		}
-		return nil
-	}
-
-	err := listProfiles(profs, format)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get a list of profiles: %v", err)
-		return err
-	}
-
-	return nil
-}
-
-func listProfiles(profs *profile.Profiles, format string) error {
 	profiles := profs.List()
 	sort.Strings(profiles)
 
@@ -111,36 +88,13 @@ func listProfiles(profs *profile.Profiles, format string) error {
 		})
 	}
 
-	return formatOutput(os.Stdout, format, table)
-}
-
-func listProfile(profs *profile.Profiles, name, format string) error {
-	prof, err := profs.Get(name)
+	err := formatOutput(os.Stdout, format, table)
 	if err != nil {
+		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
 	}
 
-	var env []string
-	for k, v := range prof.ToEnv() {
-		env = append(env, fmt.Sprintf("%s=%s", k, v))
-	}
-
-	sort.Strings(env)
-
-	row := []string{
-		name,
-		prof.SourceDir(),
-		strings.Join(env, "\n"),
-	}
-
-	table := formatter.NewTable([]string{
-		"name",
-		"source_dir",
-		"env",
-	})
-	table.AddRow(row)
-
-	return formatOutput(os.Stdout, format, table)
+	return nil
 }
 
 func formatOutput(w io.Writer, format string, table *formatter.Table) error {
