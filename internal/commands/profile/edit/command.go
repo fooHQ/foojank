@@ -5,7 +5,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/urfave/cli/v3"
 
@@ -88,9 +87,9 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	configDir, _ := conf.String(flags.ConfigDir)
 	sourceDir, _ := conf.String(flags.SourceDir)
-	osVar, _ := conf.String(flags.Os)
-	archVar, _ := conf.String(flags.Arch)
-	featureVars, _ := conf.StringSlice(flags.Feature)
+	targetOS, _ := conf.String(flags.Os)
+	targetArch, _ := conf.String(flags.Arch)
+	features, _ := conf.StringSlice(flags.Feature)
 	setVars, _ := conf.StringSlice(flags.Set)
 	unsetVars, _ := conf.StringSlice(flags.Unset)
 	newName, _ := conf.String(flags.Name)
@@ -119,16 +118,16 @@ func action(ctx context.Context, c *cli.Command) error {
 		prof.SetSourceDir(sourceDir)
 	}
 
-	if osVar != "" {
-		prof.Set(profile.VarOS, profile.NewVar(osVar))
+	if targetOS != "" {
+		prof.SetOS(targetOS)
 	}
 
-	if archVar != "" {
-		prof.Set(profile.VarArch, profile.NewVar(archVar))
+	if targetArch != "" {
+		prof.SetArch(targetArch)
 	}
 
-	if len(featureVars) > 0 {
-		prof.Set(profile.VarFeatures, profile.NewVar(strings.Join(featureVars, ",")))
+	if len(features) > 0 {
+		prof.SetFeatures(features)
 	}
 
 	for k, v := range profile.ParseKVPairs(setVars) {

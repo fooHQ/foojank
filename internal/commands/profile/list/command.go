@@ -93,10 +93,9 @@ func listProfiles(profs *profile.Profiles, format string) error {
 
 	table := formatter.NewTable([]string{
 		"name",
-		"source_dir",
 		"os",
 		"arch",
-		"features",
+		"source_dir",
 	})
 	for _, name := range profiles {
 		prof, err := profs.Get(name)
@@ -106,10 +105,9 @@ func listProfiles(profs *profile.Profiles, format string) error {
 
 		table.AddRow([]string{
 			name,
+			prof.OS(),
+			prof.Arch(),
 			prof.SourceDir(),
-			prof.Get(profile.VarOS).Value(),
-			prof.Get(profile.VarArch).Value(),
-			prof.Get(profile.VarFeatures).Value(),
 		})
 	}
 
@@ -123,7 +121,7 @@ func listProfile(profs *profile.Profiles, name, format string) error {
 	}
 
 	var env []string
-	for k, v := range prof.List() {
+	for k, v := range prof.ToEnv() {
 		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
 
