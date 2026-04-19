@@ -174,6 +174,14 @@ func (p *Profile) SetSourceDir(dir string) {
 	p.data.SourceDir = new(dir)
 }
 
+func (p *Profile) Env() map[string]string {
+	result := make(map[string]string, len(p.data.Environment))
+	for k, v := range p.data.Environment {
+		result[k] = v.Value
+	}
+	return result
+}
+
 func (p *Profile) SourceDir() string {
 	if p.data.SourceDir == nil {
 		return ""
