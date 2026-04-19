@@ -31,19 +31,20 @@ func TestVar(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "test-val", v2.Value())
 	})
-}
 
-func TestProfile_SourceDir(t *testing.T) {
-	p := profile.New()
-	require.Empty(t, p.SourceDir())
+	t.Run("Description", func(t *testing.T) {
+		v := profile.NewVar("foo")
+		require.Empty(t, v.Description())
 
-	expected := "/path/to/source"
-	p.SetSourceDir(expected)
-	require.Equal(t, expected, p.SourceDir())
+		v2 := profile.NewVar("bar")
+		err := json.Unmarshal([]byte(`{"value":"bar", "description":"test desc"}`), &v2)
+		require.NoError(t, err)
+		require.Equal(t, "test desc", v2.Description())
+	})
 }
 
 func TestProfile_Environment(t *testing.T) {
-	p := profile.New()
+	p := profile.NewProfile()
 	key := "TEST_VAR"
 	val := "test_value"
 
@@ -58,19 +59,33 @@ func TestProfile_Environment(t *testing.T) {
 	require.Empty(t, missing.Value())
 
 	// Test List
-	list := p.List()
-	require.Len(t, list, 1)
+	list := p.ToEnv()
 	require.Equal(t, val, list[key])
 
 	// Test Delete
 	p.Delete(key)
 	require.Empty(t, p.Get(key).Value())
-	require.Empty(t, p.List())
+}
+
+func TestProfile_Attributes(t *testing.T) {
+	p := profile.NewProfile()
+
+	require.Empty(t, p.OS())
+	require.Empty(t, p.Arch())
+	require.Empty(t, p.Target())
+	require.Nil(t, p.Features())
+
+	err := json.Unmarshal([]byte(`{"os":"linux", "arch":"amd64", "target":"prod", "features":["f1", "f2"]}`), &p)
+	require.NoError(t, err)
+
+	require.Equal(t, "linux", p.OS())
+	require.Equal(t, "amd64", p.Arch())
+	require.Equal(t, "prod", p.Target())
+	require.Equal(t, []string{"f1", "f2"}, p.Features())
 }
 
 func TestProfile_JSON(t *testing.T) {
-	p := profile.New()
-	p.SetSourceDir("/src")
+	p := profile.NewProfile()
 	p.Set("FOO", profile.NewVar("bar"))
 
 	data, err := json.Marshal(p)
@@ -80,7 +95,6 @@ func TestProfile_JSON(t *testing.T) {
 	err = json.Unmarshal(data, &p2)
 	require.NoError(t, err)
 
-	require.Equal(t, "/src", p2.SourceDir())
 	require.Equal(t, "bar", p2.Get("FOO").Value())
 }
 
@@ -90,8 +104,7 @@ func TestProfiles_CRUD(t *testing.T) {
 	require.NoError(t, err)
 
 	profName := "dev"
-	prof := profile.New()
-	prof.SetSourceDir("/dev/src")
+	prof := profile.NewProfile()
 
 	t.Run("Add Profile", func(t *testing.T) {
 		err = profiles.Add(profName, prof)
@@ -106,7 +119,7 @@ func TestProfiles_CRUD(t *testing.T) {
 	t.Run("Get Profile", func(t *testing.T) {
 		got, err := profiles.Get(profName)
 		require.NoError(t, err)
-		require.Equal(t, "/dev/src", got.SourceDir())
+		require.NotNil(t, got)
 	})
 
 	t.Run("Get Non-existent Profile", func(t *testing.T) {
@@ -115,17 +128,16 @@ func TestProfiles_CRUD(t *testing.T) {
 	})
 
 	t.Run("Update Profile", func(t *testing.T) {
-		profUpdate := profile.New()
-		profUpdate.SetSourceDir("/new/src")
+		profUpdate := profile.NewProfile()
 		err = profiles.Update(profName, profUpdate)
 		require.NoError(t, err)
 
 		gotUpdated, _ := profiles.Get(profName)
-		require.Equal(t, "/new/src", gotUpdated.SourceDir())
+		require.NotNil(t, gotUpdated)
 	})
 
 	t.Run("Update Non-existent Profile", func(t *testing.T) {
-		profUpdate := profile.New()
+		profUpdate := profile.NewProfile()
 		err = profiles.Update("missing", profUpdate)
 		require.ErrorIs(t, err, profile.ErrProfileNotFound)
 	})
@@ -150,19 +162,16 @@ func TestProfiles_CRUD(t *testing.T) {
 }
 
 func TestMerge(t *testing.T) {
-	prof1 := profile.New()
-	prof1.SetSourceDir("dir1")
+	prof1 := profile.NewProfile()
 	prof1.Set("VAR1", profile.NewVar("val1"))
 	prof1.Set("VAR2", profile.NewVar("val2_base"))
 
-	prof2 := profile.New()
-	prof2.SetSourceDir("dir2") // Should override
+	prof2 := profile.NewProfile()
 	prof2.Set("VAR2", profile.NewVar("val2_override"))
 	prof2.Set("VAR3", profile.NewVar("val3"))
 
 	merged := profile.Merge(prof1, prof2)
 
-	require.Equal(t, "dir2", merged.SourceDir())
 	require.Equal(t, "val1", merged.Get("VAR1").Value())
 	require.Equal(t, "val2_override", merged.Get("VAR2").Value())
 	require.Equal(t, "val3", merged.Get("VAR3").Value())
