@@ -5,6 +5,7 @@ import (
 
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/commands/profile/create"
+	"github.com/foohq/foojank/internal/commands/profile/describe"
 	"github.com/foohq/foojank/internal/commands/profile/edit"
 	_import "github.com/foohq/foojank/internal/commands/profile/import"
 	"github.com/foohq/foojank/internal/commands/profile/list"
@@ -17,6 +18,7 @@ func NewCommand() *cli.Command {
 		Usage: "Manage profiles",
 		Commands: []*cli.Command{
 			create.NewCommand(),
+			describe.NewCommand(),
 			edit.NewCommand(),
 			list.NewCommand(),
 			remove.NewCommand(),
