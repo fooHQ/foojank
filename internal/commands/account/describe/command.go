@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/actions"
@@ -85,22 +86,22 @@ func action(ctx context.Context, c *cli.Command) error {
 	expires := time.Unix(accountClaims.Expires, 0)
 
 	table := formatter.NewTable(nil)
-	table.AddRow([]string{"ID", accountID})
-	table.AddRow([]string{"Name", name})
-	table.AddRow([]string{"Issued at", formatTime(issued)})
+	table.AddRow([]string{color.New(color.Bold).Sprint("ID"), accountID})
+	table.AddRow([]string{color.New(color.Bold).Sprint("NAME"), name})
+	table.AddRow([]string{color.New(color.Bold).Sprint("ISSUED AT"), formatTime(issued)})
 	expiresAt := ""
 	if isZeroUnixTime(expires) {
 		expiresAt = "never"
 	} else {
 		expiresAt = formatTime(expires)
 	}
-	table.AddRow([]string{"Expires at", expiresAt})
+	table.AddRow([]string{color.New(color.Bold).Sprint("EXPIRES AT"), expiresAt})
 	if len(accountClaims.SigningKeys) > 0 {
 		keys := accountClaims.SigningKeys.Keys()
-		table.AddRow([]string{"Dependent accounts", strings.Join(keys, "\n")})
+		table.AddRow([]string{color.New(color.Bold).Sprint("DEPENDENT ACCOUNTS"), strings.Join(keys, "\n")})
 	}
 	if userClaims.IssuerAccount != "" {
-		table.AddRow([]string{"Linked account", userClaims.IssuerAccount})
+		table.AddRow([]string{color.New(color.Bold).Sprint("LINKED ACCOUNT"), userClaims.IssuerAccount})
 	}
 
 	err = formatOutput(os.Stdout, format, table)
