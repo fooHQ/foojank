@@ -5,6 +5,7 @@ go 1.26
 require (
 	capnproto.org/go/capnp/v3 v3.1.0-alpha.2
 	github.com/dustinkirkland/golang-petname v0.0.0-20260215035315-f0c533e9ce9b
+	github.com/fatih/color v1.18.0
 	github.com/foohq/foojank-proto/go/agent v0.0.0-20260320075034-4f07002586ba
 	github.com/foohq/ren-natsfs v0.0.0-20250715161259-1f76eedb0ef2
 	github.com/lmittmann/tint v1.1.3
@@ -27,7 +28,6 @@ require (
 	github.com/clipperhouse/uax29/v2 v2.6.0 // indirect
 	github.com/colega/zeropool v0.0.0-20230505084239-6fb4a4f75381 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/fatih/color v1.18.0 // indirect
 	github.com/foohq/ren-memfs v0.0.0-20250715160535-c78572faed51 // indirect
 	github.com/google/go-tpm v0.9.8 // indirect
 	github.com/klauspost/compress v1.18.5 // indirect
