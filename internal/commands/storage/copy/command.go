@@ -164,9 +164,14 @@ func copyLocalFile(ctx context.Context, client *agent.Client, src string, storag
 		return fmt.Errorf("source file is a directory")
 	}
 
+	storageName, err = client.GetStorageName(ctx, storageName)
+	if err != nil {
+		return err
+	}
+
 	storage, err := client.GetStorage(ctx, storageName)
 	if err != nil {
-		return fmt.Errorf("cannot open storage: %w", err)
+		return err
 	}
 	defer func() {
 		_ = storage.Close()
@@ -174,7 +179,7 @@ func copyLocalFile(ctx context.Context, client *agent.Client, src string, storag
 
 	err = storage.Wait(ctx)
 	if err != nil {
-		return fmt.Errorf("cannot synchronize storage: %w", err)
+		return err
 	}
 
 	err = storage.MkdirAll(stdpath.Dir(dst), 0755)
@@ -199,9 +204,14 @@ func copyLocalFile(ctx context.Context, client *agent.Client, src string, storag
 }
 
 func copyRemoteFile(ctx context.Context, client *agent.Client, storageName, src string, dst string) error {
+	storageName, err := client.GetStorageName(ctx, storageName)
+	if err != nil {
+		return err
+	}
+
 	storage, err := client.GetStorage(ctx, storageName)
 	if err != nil {
-		return fmt.Errorf("cannot open storage: %w", err)
+		return err
 	}
 	defer func() {
 		_ = storage.Close()
@@ -209,7 +219,7 @@ func copyRemoteFile(ctx context.Context, client *agent.Client, storageName, src 
 
 	err = storage.Wait(ctx)
 	if err != nil {
-		return fmt.Errorf("cannot synchronize storage: %w", err)
+		return err
 	}
 
 	srcFile, err := storage.Open(src)
