@@ -123,7 +123,7 @@ func action(ctx context.Context, c *cli.Command) error {
 }
 
 func listStorages(ctx context.Context, client *agent.Client, format string) error {
-	stores, err := client.ListStorage(ctx)
+	storages, err := client.ListStorage(ctx)
 	if err != nil {
 		return err
 	}
@@ -133,10 +133,15 @@ func listStorages(ctx context.Context, client *agent.Client, format string) erro
 		"size",
 		"description",
 	})
-	for _, storage := range stores {
-		name := storage.Name()
-		size := formatBytes(storage.Size())
-		description := storage.Description()
+	for _, storage := range storages {
+		status, err := storage.Status(ctx)
+		if err != nil {
+			return err
+		}
+
+		name := status.Name
+		size := formatBytes(status.Size)
+		description := status.Description
 		table.AddRow([]string{
 			name,
 			size,
