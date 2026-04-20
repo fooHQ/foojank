@@ -727,6 +727,10 @@ func (c *Client) GetAgentID(ctx context.Context, name string) (string, error) {
 	return string(kv.Value()), nil
 }
 
+func (c *Client) GetStorageName(ctx context.Context, name string) (string, error) {
+	return c.GetAgentID(ctx, name)
+}
+
 func (c *Client) publishMsg(ctx context.Context, stream string, msg *nats.Msg) error {
 	if msg.Header == nil {
 		msg.Header = make(nats.Header)
