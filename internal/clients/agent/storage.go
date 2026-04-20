@@ -9,6 +9,7 @@ import (
 
 type Storage struct {
 	*natsfs.FS
+	name  string
 	store jetstream.ObjectStore
 }
 
@@ -18,13 +19,14 @@ type StorageStatus struct {
 	Size        uint64
 }
 
-func NewStorage(ctx context.Context, store jetstream.ObjectStore) (*Storage, error) {
+func NewStorage(ctx context.Context, name string, store jetstream.ObjectStore) (*Storage, error) {
 	fs, err := natsfs.NewFS(ctx, store)
 	if err != nil {
 		return nil, err
 	}
 	return &Storage{
 		FS:    fs,
+		name:  name,
 		store: store,
 	}, nil
 }
@@ -34,8 +36,12 @@ func (o *Storage) Status(ctx context.Context) (*StorageStatus, error) {
 	if err != nil {
 		return nil, err
 	}
+	name := o.name
+	if name == "" {
+		name = status.Bucket()
+	}
 	return &StorageStatus{
-		Name:        status.Bucket(),
+		Name:        name,
 		Description: status.Description(),
 		Size:        status.Size(),
 	}, nil
