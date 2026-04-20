@@ -1,4 +1,4 @@
-package list
+package describe
 
 import (
 	"context"
@@ -19,8 +19,8 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:  "list",
-		Usage: "List configuration options",
+		Name:  "describe",
+		Usage: "Describe configuration",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  flags.Format,
@@ -33,7 +33,6 @@ func NewCommand() *cli.Command {
 		},
 		Before:          before,
 		Action:          action,
-		Aliases:         []string{"ls"},
 		OnUsageError:    actions.UsageError,
 		HideHelpCommand: true,
 	}
