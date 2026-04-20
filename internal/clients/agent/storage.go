@@ -7,15 +7,15 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 )
 
-const (
-	KVStorePetnames = "petnames"
-)
-
 type Storage struct {
 	*natsfs.FS
-	name        string
-	description string
-	size        uint64
+	store jetstream.ObjectStore
+}
+
+type StorageStatus struct {
+	Name        string
+	Description string
+	Size        uint64
 }
 
 func NewStorage(ctx context.Context, store jetstream.ObjectStore) (*Storage, error) {
@@ -23,30 +23,22 @@ func NewStorage(ctx context.Context, store jetstream.ObjectStore) (*Storage, err
 	if err != nil {
 		return nil, err
 	}
-
-	status, err := store.Status(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	return &Storage{
-		FS:          fs,
-		name:        status.Bucket(),
-		description: status.Description(),
-		size:        status.Size(),
+		FS:    fs,
+		store: store,
 	}, nil
 }
 
-func (o *Storage) Name() string {
-	return o.name
-}
-
-func (o *Storage) Description() string {
-	return o.description
-}
-
-func (o *Storage) Size() uint64 {
-	return o.size
+func (o *Storage) Status(ctx context.Context) (*StorageStatus, error) {
+	status, err := o.store.Status(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &StorageStatus{
+		Name:        status.Bucket(),
+		Description: status.Description(),
+		Size:        status.Size(),
+	}, nil
 }
 
 func (o *Storage) Close() error {
