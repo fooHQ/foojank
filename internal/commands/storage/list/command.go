@@ -152,15 +152,20 @@ func listStorages(ctx context.Context, client *agent.Client, format string) erro
 	return formatOutput(os.Stdout, format, table)
 }
 
-func listStorage(ctx context.Context, client *agent.Client, format, storage, pth string) error {
-	store, err := client.GetStorage(ctx, storage)
+func listStorage(ctx context.Context, client *agent.Client, format, name, pth string) error {
+	storageName, err := client.GetStorageName(ctx, name)
 	if err != nil {
-		return fmt.Errorf("cannot open storage: %w", err)
+		return err
+	}
+
+	store, err := client.GetStorage(ctx, storageName)
+	if err != nil {
+		return err
 	}
 
 	err = store.Wait(ctx)
 	if err != nil {
-		return fmt.Errorf("cannot synchronize storage: %w", err)
+		return err
 	}
 
 	info, err := store.Stat(pth)

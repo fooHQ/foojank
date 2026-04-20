@@ -114,9 +114,14 @@ func action(ctx context.Context, c *cli.Command) error {
 }
 
 func removeFile(ctx context.Context, client *agent.Client, name, file string) error {
-	storage, err := client.GetStorage(ctx, name)
+	storageName, err := client.GetStorageName(ctx, name)
 	if err != nil {
-		return fmt.Errorf("cannot open storage: %w", err)
+		return err
+	}
+
+	storage, err := client.GetStorage(ctx, storageName)
+	if err != nil {
+		return err
 	}
 	defer func() {
 		_ = storage.Close()
@@ -124,7 +129,7 @@ func removeFile(ctx context.Context, client *agent.Client, name, file string) er
 
 	err = storage.Wait(ctx)
 	if err != nil {
-		return fmt.Errorf("cannot synchronize storage: %w", err)
+		return err
 	}
 
 	info, err := storage.Stat(file)
