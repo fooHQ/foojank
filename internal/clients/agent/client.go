@@ -602,28 +602,40 @@ func (c *Client) DeleteStorage(ctx context.Context, name string) error {
 func (c *Client) ListStorage(ctx context.Context) ([]*Storage, error) {
 	var result []*Storage
 	for name := range c.srv.ObjectStoreNames(ctx).Name() {
-		store, err := c.srv.ObjectStore(ctx, name)
-		if err != nil {
-			return nil, &errorApi{err}
-		}
-
-		s, err := NewStorage(ctx, store)
+		s, err := c.GetStorage(ctx, name)
 		if err != nil {
 			return nil, err
 		}
-
 		result = append(result, s)
 	}
 	return result, nil
 }
 
 func (c *Client) GetStorage(ctx context.Context, name string) (*Storage, error) {
+	petNames, err := c.srv.KeyValue(ctx, KVStorePetnames)
+	if err != nil {
+		// If the bucket does not exist, return an empty result.
+		// Bucket does not exist only before the first agent is registered.
+		if errors.Is(err, jetstream.ErrBucketNotFound) {
+			return nil, nil
+		}
+		return nil, &errorApi{err}
+	}
+
 	store, err := c.srv.ObjectStore(ctx, name)
 	if err != nil {
 		return nil, &errorApi{err}
 	}
 
-	s, err := NewStorage(ctx, store)
+	var storageName string
+	kv, err := petNames.Get(ctx, name)
+	if err == nil {
+		storageName = string(kv.Value())
+	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
+		return nil, &errorApi{err}
+	}
+
+	s, err := NewStorage(ctx, storageName, store)
 	if err != nil {
 		return nil, err
 	}
