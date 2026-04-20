@@ -19,6 +19,10 @@ import (
 	"github.com/foohq/foojank/internal/router"
 )
 
+const (
+	KVStorePetnames = "petnames"
+)
+
 type Client struct {
 	srv *server.Client
 }
