@@ -182,7 +182,6 @@ func listStorage(ctx context.Context, client *agent.Client, format, name, pth st
 		})
 		table.AddRow([]string{
 			formatTypeIndicator(info.IsDir()),
-			info.Mode().String(),
 			info.Name(),
 			formatBytes(uint64(info.Size())),
 			formatTime(info.ModTime()),
