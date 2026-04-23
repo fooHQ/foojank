@@ -1,23 +1,17 @@
-package table
+package formatter
 
 import (
 	"io"
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
-
-	"github.com/foohq/foojank/internal/formatter"
 )
 
-var _ formatter.Formatter = &Formatter{}
+var _ Formatter = (*ASCIIFormatter)(nil)
 
-type Formatter struct{}
+type ASCIIFormatter struct{}
 
-func New() *Formatter {
-	return &Formatter{}
-}
-
-func (f *Formatter) Write(o io.Writer, table *formatter.Table) error {
+func (f *ASCIIFormatter) Write(o io.Writer, table *Table) error {
 	w := tablewriter.NewTable(
 		o,
 		tablewriter.WithRowConfig(tw.CellConfig{
@@ -46,9 +40,17 @@ func (f *Formatter) Write(o io.Writer, table *formatter.Table) error {
 	defer func() {
 		_ = w.Close()
 	}()
-	w.Header(table.Columns())
 
-	err := w.Bulk(table.Rows())
+	var rows [][]string
+	for _, row := range table.Rows() {
+		var newRow []string
+		for _, cell := range row {
+			newRow = append(newRow, cell.String())
+		}
+		rows = append(rows, newRow)
+	}
+
+	err := w.Bulk(rows)
 	if err != nil {
 		return err
 	}
