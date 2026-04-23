@@ -21,6 +21,10 @@ func NewCommand() *cli.Command {
 		ArgsUsage: "<file>",
 		Usage:     "Import profiles from a file",
 		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  flags.Force,
+				Usage: "overwrite existing profiles",
+			},
 			&cli.StringFlag{
 				Name:  flags.ConfigDir,
 				Usage: "set path to a configuration directory",
@@ -57,6 +61,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	profs := actions.GetProfilesFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
+	force, _ := conf.Bool(flags.Force)
 	configDir, _ := conf.String(flags.ConfigDir)
 
 	if c.Args().Len() != 1 {
@@ -87,7 +92,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 		profImport.SetSourceDir(sourceDir)
 
-		err = profs.Add(profName, profImport)
+		err = profs.Add(profName, profImport, profile.WithOverwrite(force))
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot import profile %q: %v", profName, err)
 			return err
