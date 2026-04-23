@@ -81,13 +81,18 @@ func (p *Profiles) Get(name string) (*Profile, error) {
 	}, nil
 }
 
-func (p *Profiles) Add(name string, profile *Profile) error {
+func (p *Profiles) Add(name string, profile *Profile, opt ...AddOption) error {
+	var opts options
+	for _, o := range opt {
+		o(&opts)
+	}
+
 	if p.data.Profiles == nil {
 		p.data.Profiles = make(map[string]profileData)
 	}
 
 	_, ok := p.data.Profiles[name]
-	if ok {
+	if ok && !opts.Overwrite {
 		return ErrProfileExists
 	}
 
@@ -366,4 +371,16 @@ func merge(profs ...profileData) profileData {
 		}
 	}
 	return result
+}
+
+type options struct {
+	Overwrite bool
+}
+
+type AddOption func(*options)
+
+func WithOverwrite(overwrite bool) AddOption {
+	return func(opts *options) {
+		opts.Overwrite = overwrite
+	}
 }
