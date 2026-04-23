@@ -23,4 +23,5 @@ const (
 	AcceptLinkFrom    = "accept-link-from"
 	RemoveLink        = "remove-link"
 	Agent             = "agent"
+	Force             = "force"
 )
