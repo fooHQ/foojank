@@ -3,11 +3,8 @@ package list
 import (
 	"context"
 	"errors"
-	"fmt"
-	"io"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/urfave/cli/v3"
 
@@ -18,8 +15,6 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
 	"github.com/foohq/foojank/internal/formatter"
-	jsonformatter "github.com/foohq/foojank/internal/formatter/json"
-	tableformatter "github.com/foohq/foojank/internal/formatter/table"
 	"github.com/foohq/foojank/internal/path"
 )
 
@@ -128,10 +123,11 @@ func listStorages(ctx context.Context, client *agent.Client, format string) erro
 		return err
 	}
 
-	table := formatter.NewTable([]string{
-		"name",
-		"size",
-		"description",
+	table := formatter.NewTable()
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("NAME").WithBold(),
+		formatter.NewStringCell("SIZE").WithBold(),
+		formatter.NewStringCell("DESCRIPTION").WithBold(),
 	})
 	for _, storage := range storages {
 		status, err := storage.Status(ctx)
@@ -139,17 +135,19 @@ func listStorages(ctx context.Context, client *agent.Client, format string) erro
 			return err
 		}
 
-		name := status.Name
-		size := formatBytes(status.Size)
-		description := status.Description
-		table.AddRow([]string{
-			name,
-			size,
-			description,
+		table.AddRow([]formatter.Cell{
+			formatter.NewStringCell(status.Name),
+			formatter.NewSizeCell(status.Size),
+			formatter.NewStringCell(status.Description),
 		})
 	}
 
-	return formatOutput(os.Stdout, format, table)
+	err = formatter.NewFormatter(format).Write(os.Stdout, table)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func listStorage(ctx context.Context, client *agent.Client, format, name, pth string) error {
@@ -173,64 +171,45 @@ func listStorage(ctx context.Context, client *agent.Client, format, name, pth st
 		return err
 	}
 
-	if !info.IsDir() {
-		table := formatter.NewTable([]string{
-			"type",
-			"name",
-			"size",
-			"modified",
-		})
-		table.AddRow([]string{
-			formatTypeIndicator(info.IsDir()),
-			info.Name(),
-			formatBytes(uint64(info.Size())),
-			formatTime(info.ModTime()),
-		})
-		return formatOutput(os.Stdout, format, table)
-	}
-
-	files, err := store.ReadDir(pth)
-	if err != nil {
-		return err
-	}
-
-	table := formatter.NewTable([]string{
-		"type",
-		"name",
-		"size",
-		"modified",
+	table := formatter.NewTable()
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("TYPE").WithBold(),
+		formatter.NewStringCell("NAME").WithBold(),
+		formatter.NewStringCell("SIZE").WithBold(),
+		formatter.NewStringCell("MODIFIED").WithBold(),
 	})
-	for _, file := range files {
-		info, err := file.Info()
+
+	if info.IsDir() {
+		files, err := store.ReadDir(pth)
 		if err != nil {
 			return err
 		}
 
-		table.AddRow([]string{
-			formatTypeIndicator(info.IsDir()),
-			info.Name(),
-			formatBytes(uint64(info.Size())),
-			formatTime(info.ModTime()),
+		for _, file := range files {
+			info, err := file.Info()
+			if err != nil {
+				return err
+			}
+
+			table.AddRow([]formatter.Cell{
+				formatter.NewStringCell(formatTypeIndicator(info.IsDir())),
+				formatter.NewStringCell(info.Name()),
+				formatter.NewSizeCell(uint64(info.Size())),
+				formatter.NewTimeCell(info.ModTime()),
+			})
+		}
+	} else {
+		table.AddRow([]formatter.Cell{
+			formatter.NewStringCell(formatTypeIndicator(info.IsDir())),
+			formatter.NewStringCell(info.Name()),
+			formatter.NewSizeCell(uint64(info.Size())),
+			formatter.NewTimeCell(info.ModTime()),
 		})
 	}
 
-	return formatOutput(os.Stdout, format, table)
-}
-
-func formatOutput(w io.Writer, format string, table *formatter.Table) error {
-	var f formatter.Formatter
-	switch format {
-	case "json":
-		f = jsonformatter.New()
-	case "table":
-		f = tableformatter.New()
-	default:
-		f = tableformatter.New()
-	}
-
-	err := f.Write(w, table)
+	err = formatter.NewFormatter(format).Write(os.Stdout, table)
 	if err != nil {
-		return fmt.Errorf("cannot write formatted output: %w", err)
+		return err
 	}
 
 	return nil
@@ -244,43 +223,6 @@ func parsePath(pth string) (path.Path, error) {
 		}, nil
 	}
 	return path.Parse(pth)
-}
-
-func formatBytes(size uint64) string {
-	const (
-		_  = iota
-		KB = 1 << (10 * iota) // 1 << 10 = 1024
-		MB
-		GB
-		TB
-	)
-
-	var unit string
-	var value float64
-
-	switch {
-	case size >= TB:
-		value = float64(size) / TB
-		unit = "TB"
-	case size >= GB:
-		value = float64(size) / GB
-		unit = "GB"
-	case size >= MB:
-		value = float64(size) / MB
-		unit = "MB"
-	case size >= KB:
-		value = float64(size) / KB
-		unit = "kB"
-	default:
-		value = float64(size)
-		unit = "B"
-	}
-
-	return fmt.Sprintf("%.2f %s", value, unit)
-}
-
-func formatTime(t time.Time) string {
-	return t.Format("2006-01-02 15:04:05")
 }
 
 func formatTypeIndicator(isDir bool) string {

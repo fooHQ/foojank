@@ -3,13 +3,11 @@ package describe
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/actions"
@@ -17,8 +15,6 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
 	"github.com/foohq/foojank/internal/formatter"
-	jsonformatter "github.com/foohq/foojank/internal/formatter/json"
-	tableformatter "github.com/foohq/foojank/internal/formatter/table"
 )
 
 func NewCommand() *cli.Command {
@@ -85,59 +81,44 @@ func action(ctx context.Context, c *cli.Command) error {
 	issued := time.Unix(accountClaims.IssuedAt, 0)
 	expires := time.Unix(accountClaims.Expires, 0)
 
-	table := formatter.NewTable(nil)
-	table.AddRow([]string{color.New(color.Bold).Sprint("ID"), accountID})
-	table.AddRow([]string{color.New(color.Bold).Sprint("NAME"), name})
-	table.AddRow([]string{color.New(color.Bold).Sprint("ISSUED AT"), formatTime(issued)})
-	expiresAt := ""
-	if isZeroUnixTime(expires) {
-		expiresAt = "never"
-	} else {
-		expiresAt = formatTime(expires)
-	}
-	table.AddRow([]string{color.New(color.Bold).Sprint("EXPIRES AT"), expiresAt})
+	table := formatter.NewTable()
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("ID").WithBold(),
+		formatter.NewStringCell(accountID),
+	})
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("NAME").WithBold(),
+		formatter.NewStringCell(name),
+	})
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("ISSUED AT").WithBold(),
+		formatter.NewTimeCell(issued),
+	})
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("EXPIRES AT").WithBold(),
+		formatter.NewTimeCell(expires).WithEmptyValue("never"),
+	})
 	if len(accountClaims.SigningKeys) > 0 {
 		keys := accountClaims.SigningKeys.Keys()
-		table.AddRow([]string{color.New(color.Bold).Sprint("DEPENDENT ACCOUNTS"), strings.Join(keys, "\n")})
+		table.AddRow([]formatter.Cell{
+			formatter.NewStringCell("DEPENDENT ACCOUNTS").WithBold(),
+			formatter.NewStringCell(strings.Join(keys, "\n")),
+		})
 	}
 	if userClaims.IssuerAccount != "" {
-		table.AddRow([]string{color.New(color.Bold).Sprint("LINKED ACCOUNT"), userClaims.IssuerAccount})
+		table.AddRow([]formatter.Cell{
+			formatter.NewStringCell("LINKED ACCOUNTS").WithBold(),
+			formatter.NewStringCell(userClaims.IssuerAccount),
+		})
 	}
 
-	err = formatOutput(os.Stdout, format, table)
+	err = formatter.NewFormatter(format).Write(os.Stdout, table)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
 	}
 
 	return nil
-}
-
-func formatOutput(w io.Writer, format string, table *formatter.Table) error {
-	var f formatter.Formatter
-	switch format {
-	case "json":
-		f = jsonformatter.New()
-	case "table":
-		f = tableformatter.New()
-	default:
-		f = tableformatter.New()
-	}
-
-	err := f.Write(w, table)
-	if err != nil {
-		return fmt.Errorf("cannot write formatted output: %w", err)
-	}
-
-	return nil
-}
-
-func formatTime(t time.Time) string {
-	return t.Format("2006-01-02 15:04:05")
-}
-
-func isZeroUnixTime(t time.Time) bool {
-	return t.Equal(time.Unix(0, 0))
 }
 
 func validateConfiguration(conf *config.Config) error {

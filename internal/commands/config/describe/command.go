@@ -2,10 +2,7 @@ package describe
 
 import (
 	"context"
-	"fmt"
-	"io"
 	"os"
-	"strconv"
 
 	"github.com/urfave/cli/v3"
 
@@ -13,8 +10,6 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
 	"github.com/foohq/foojank/internal/formatter"
-	jsonformatter "github.com/foohq/foojank/internal/formatter/json"
-	tableformatter "github.com/foohq/foojank/internal/formatter/table"
 )
 
 func NewCommand() *cli.Command {
@@ -73,7 +68,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		},
 		&cli.StringFlag{
 			Name:  flags.Format,
-			Usage: "Output format: table or json",
+			Usage: "Output format (ascii, json)",
 		},
 		&cli.BoolFlag{
 			Name:  flags.NoColor,
@@ -81,59 +76,37 @@ func action(ctx context.Context, c *cli.Command) error {
 		},
 	}
 
-	table := formatter.NewTable([]string{
-		"option",
-		"value",
-		"description",
+	table := formatter.NewTable()
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("OPTION").WithBold(),
+		formatter.NewStringCell("VALUE").WithBold(),
+		formatter.NewStringCell("DESCRIPTION").WithBold(),
 	})
 	for _, opt := range opts {
-		var name string
-		var value string
-		var description string
-
+		var row []formatter.Cell
 		switch v := opt.(type) {
 		case *cli.StringFlag:
 			vv, _ := conf.String(v.Name)
-			name = v.Name
-			value = vv
-			description = v.Usage
+			row = append(row,
+				formatter.NewStringCell(v.Name),
+				formatter.NewStringCell(vv),
+				formatter.NewStringCell(v.Usage),
+			)
 		case *cli.BoolFlag:
 			vv, _ := conf.Bool(v.Name)
-			name = v.Name
-			value = strconv.FormatBool(vv)
-			description = v.Usage
+			row = append(row,
+				formatter.NewStringCell(v.Name),
+				formatter.NewBoolCell(vv),
+				formatter.NewStringCell(v.Usage),
+			)
 		}
-
-		table.AddRow([]string{
-			name,
-			value,
-			description,
-		})
+		table.AddRow(row)
 	}
 
-	err := formatOutput(os.Stdout, format, table)
+	err := formatter.NewFormatter(format).Write(os.Stdout, table)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
-	}
-
-	return nil
-}
-
-func formatOutput(w io.Writer, format string, table *formatter.Table) error {
-	var f formatter.Formatter
-	switch format {
-	case "json":
-		f = jsonformatter.New()
-	case "table":
-		f = tableformatter.New()
-	default:
-		f = tableformatter.New()
-	}
-
-	err := f.Write(w, table)
-	if err != nil {
-		return fmt.Errorf("cannot write formatted output: %w", err)
 	}
 
 	return nil

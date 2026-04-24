@@ -2,7 +2,6 @@ package list
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"time"
@@ -14,8 +13,6 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
 	"github.com/foohq/foojank/internal/formatter"
-	jsonformatter "github.com/foohq/foojank/internal/formatter/json"
-	tableformatter "github.com/foohq/foojank/internal/formatter/table"
 )
 
 func NewCommand() *cli.Command {
@@ -65,10 +62,11 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	table := formatter.NewTable([]string{
-		"name",
-		"account_id",
-		"issued_at",
+	table := formatter.NewTable()
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("NAME").WithBold(),
+		formatter.NewStringCell("ACCOUNT ID").WithBold(),
+		formatter.NewStringCell("ISSUED AT").WithBold(),
 	})
 	for _, account := range accounts {
 		claims, err := auth.GetAccountJWT(account)
@@ -78,44 +76,20 @@ func action(ctx context.Context, c *cli.Command) error {
 		}
 
 		ts := time.Unix(claims.IssuedAt, 0)
-
-		table.AddRow([]string{
-			claims.Name,
-			claims.Subject,
-			formatTime(ts),
+		table.AddRow([]formatter.Cell{
+			formatter.NewStringCell(claims.Name),
+			formatter.NewStringCell(claims.Subject),
+			formatter.NewTimeCell(ts),
 		})
 	}
 
-	err = formatOutput(os.Stdout, format, table)
+	err = formatter.NewFormatter(format).Write(os.Stdout, table)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
 	}
 
 	return nil
-}
-
-func formatOutput(w io.Writer, format string, table *formatter.Table) error {
-	var f formatter.Formatter
-	switch format {
-	case "json":
-		f = jsonformatter.New()
-	case "table":
-		f = tableformatter.New()
-	default:
-		f = tableformatter.New()
-	}
-
-	err := f.Write(w, table)
-	if err != nil {
-		return fmt.Errorf("cannot write formatted output: %w", err)
-	}
-
-	return nil
-}
-
-func formatTime(t time.Time) string {
-	return t.Format("2006-01-02 15:04:05")
 }
 
 func validateConfiguration(conf *config.Config) error {
