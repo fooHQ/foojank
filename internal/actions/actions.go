@@ -58,7 +58,7 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 
 		confDefs := config.NewWithOptions(map[string]string{
 			flags.ConfigDir: configDir,
-			flags.Format:    "table",
+			flags.Format:    "ascii",
 			flags.NoColor:   "false",
 		})
 
