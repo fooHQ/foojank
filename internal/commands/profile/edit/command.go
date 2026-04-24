@@ -19,7 +19,7 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "edit",
 		ArgsUsage: "<name>",
-		Usage:     "Edit a profile",
+		Usage:     "Edit profile",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  flags.Name,

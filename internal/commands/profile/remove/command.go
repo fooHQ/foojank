@@ -17,7 +17,7 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "remove",
 		ArgsUsage: "<name>",
-		Usage:     "Remove a profile",
+		Usage:     "Remove profile",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  flags.ConfigDir,

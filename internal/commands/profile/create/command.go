@@ -19,7 +19,7 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "create",
 		ArgsUsage: "<name>",
-		Usage:     "Create a new profile",
+		Usage:     "Create profile",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  flags.Os,

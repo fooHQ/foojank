@@ -20,7 +20,7 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "create",
 		ArgsUsage: "<command> [args]",
-		Usage:     "Create a job",
+		Usage:     "Create job",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:     flags.Agent,

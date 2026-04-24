@@ -19,7 +19,7 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "cancel",
 		ArgsUsage: "<job-id>",
-		Usage:     "Cancel a job",
+		Usage:     "Cancel job",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  flags.ServerURL,

@@ -19,7 +19,7 @@ import (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "create",
-		Usage: "Create a new account",
+		Usage: "Create account",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  flags.Name,
