@@ -3,9 +3,7 @@ package logs
 import (
 	"context"
 	"errors"
-	"io"
 	"os"
-	"time"
 
 	"github.com/urfave/cli/v3"
 
@@ -16,8 +14,6 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
 	"github.com/foohq/foojank/internal/formatter"
-	jsonformatter "github.com/foohq/foojank/internal/formatter/json"
-	tableformatter "github.com/foohq/foojank/internal/formatter/table"
 )
 
 func NewCommand() *cli.Command {
@@ -111,49 +107,27 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	err = formatOutput(os.Stdout, format, msgs)
+	table := formatter.NewTable()
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("MESSAGE ID").WithBold(),
+		formatter.NewStringCell("SUBJECT").WithBold(),
+		formatter.NewStringCell("RECEIVED").WithBold(),
+	})
+	for _, msg := range msgs {
+		table.AddRow([]formatter.Cell{
+			formatter.NewStringCell(msg.ID),
+			formatter.NewStringCell(msg.Subject),
+			formatter.NewTimeCell(msg.Received),
+		})
+	}
+
+	err = formatter.NewFormatter(format).Write(os.Stdout, table)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
 	}
 
 	return nil
-}
-
-func formatOutput(w io.Writer, format string, data []agent.Message) error {
-	table := formatter.NewTable([]string{
-		"message_id",
-		"subject",
-		"received",
-	})
-	for _, msg := range data {
-		table.AddRow([]string{
-			msg.ID,
-			msg.Subject,
-			formatTime(msg.Received),
-		})
-	}
-
-	var f formatter.Formatter
-	switch format {
-	case "json":
-		f = jsonformatter.New()
-	case "table":
-		f = tableformatter.New()
-	default:
-		f = tableformatter.New()
-	}
-
-	err := f.Write(w, table)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func formatTime(t time.Time) string {
-	return t.Format("2006-01-02 15:04:05")
 }
 
 func validateConfiguration(conf *config.Config) error {

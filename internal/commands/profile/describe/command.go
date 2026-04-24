@@ -4,19 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
 	"github.com/foohq/foojank/internal/formatter"
-	jsonformatter "github.com/foohq/foojank/internal/formatter/json"
-	tableformatter "github.com/foohq/foojank/internal/formatter/table"
 )
 
 func NewCommand() *cli.Command {
@@ -85,37 +81,36 @@ func action(ctx context.Context, c *cli.Command) error {
 		envs = append(envs, fmt.Sprintf("%s = %s", k, v))
 	}
 
-	table := formatter.NewTable(nil)
-	table.AddRow([]string{color.New(color.Bold).Sprint("NAME"), name})
-	table.AddRow([]string{color.New(color.Bold).Sprint("OS"), prof.OS()})
-	table.AddRow([]string{color.New(color.Bold).Sprint("ARCH"), prof.Arch()})
-	table.AddRow([]string{color.New(color.Bold).Sprint("FEATURES"), strings.Join(prof.Features(), ", ")})
-	table.AddRow([]string{color.New(color.Bold).Sprint("SOURCE DIR"), prof.SourceDir()})
-	table.AddRow([]string{color.New(color.Bold).Sprint("ENVIRONMENT"), strings.Join(envs, "\n")})
+	table := formatter.NewTable()
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("NAME").WithBold(),
+		formatter.NewStringCell(name),
+	})
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("OS").WithBold(),
+		formatter.NewStringCell(prof.OS()),
+	})
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("ARCH").WithBold(),
+		formatter.NewStringCell(prof.Arch()),
+	})
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("FEATURES").WithBold(),
+		formatter.NewStringCell(strings.Join(prof.Features(), ", ")),
+	})
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("SOURCE DIR").WithBold(),
+		formatter.NewStringCell(prof.SourceDir()),
+	})
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("ENVIRONMENT").WithBold(),
+		formatter.NewStringCell(strings.Join(envs, "\n")),
+	})
 
-	err = formatOutput(os.Stdout, format, table)
+	err = formatter.NewFormatter(format).Write(os.Stdout, table)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
-	}
-
-	return nil
-}
-
-func formatOutput(w io.Writer, format string, table *formatter.Table) error {
-	var f formatter.Formatter
-	switch format {
-	case "json":
-		f = jsonformatter.New()
-	case "table":
-		f = tableformatter.New()
-	default:
-		f = tableformatter.New()
-	}
-
-	err := f.Write(w, table)
-	if err != nil {
-		return fmt.Errorf("cannot write formatted output: %w", err)
 	}
 
 	return nil

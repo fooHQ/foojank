@@ -3,12 +3,9 @@ package list
 import (
 	"context"
 	"errors"
-	"fmt"
-	"io"
 	"os"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/urfave/cli/v3"
 
@@ -19,8 +16,6 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
 	"github.com/foohq/foojank/internal/formatter"
-	jsonformatter "github.com/foohq/foojank/internal/formatter/json"
-	tableformatter "github.com/foohq/foojank/internal/formatter/table"
 )
 
 func NewCommand() *cli.Command {
@@ -127,83 +122,31 @@ func action(ctx context.Context, c *cli.Command) error {
 		return data[i].Updated.Before(data[j].Updated)
 	})
 
-	err = formatOutput(os.Stdout, format, data)
+	table := formatter.NewTable()
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("ID").WithBold(),
+		formatter.NewStringCell("AGENT").WithBold(),
+		formatter.NewStringCell("COMMAND").WithBold(),
+		formatter.NewStringCell("LAST UPDATE").WithBold(),
+		formatter.NewStringCell("STATUS").WithBold(),
+	})
+	for _, job := range data {
+		table.AddRow([]formatter.Cell{
+			formatter.NewStringCell(job.ID),
+			formatter.NewStringCell(job.AgentName),
+			formatter.NewStringCell(strings.Join([]string{job.Command, job.Args}, " ")),
+			formatter.NewTimeCell(job.Updated).WithFormat("relative"),
+			formatter.NewStringCell(strings.ToUpper(job.Status)).WithBold(),
+		})
+	}
+
+	err = formatter.NewFormatter(format).Write(os.Stdout, table)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
 	}
 
 	return nil
-}
-
-func formatOutput(w io.Writer, format string, data []agent.Job) error {
-	table := formatter.NewTable([]string{
-		"job_id",
-		"agent",
-		"command",
-		"last_update",
-		"status",
-	})
-	for _, job := range data {
-		table.AddRow([]string{
-			job.ID,
-			job.AgentName,
-			fmt.Sprintf("%s %s", job.Command, job.Args),
-			formatTime(job.Updated),
-			strings.ToUpper(job.Status),
-		})
-	}
-
-	var f formatter.Formatter
-	switch format {
-	case "json":
-		f = jsonformatter.New()
-	case "table":
-		f = tableformatter.New()
-	default:
-		f = tableformatter.New()
-	}
-
-	err := f.Write(w, table)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func formatTime(t time.Time) string {
-	if t.IsZero() {
-		return "never"
-	}
-
-	now := time.Now()
-	diff := now.Sub(t)
-
-	// Handle future dates
-	if diff < 0 {
-		diff = -diff
-		if diff < 24*time.Hour {
-			if diff < time.Hour {
-				return fmt.Sprintf("in %d minutes", int(diff.Minutes()))
-			}
-			return fmt.Sprintf("in %d hours", int(diff.Hours()))
-		}
-		return fmt.Sprintf("in %d days", int(diff.Hours()/24))
-	}
-
-	// Handle past dates
-	if diff < 24*time.Hour {
-		if diff < 2*time.Minute {
-			return "now"
-		}
-		if diff < time.Hour {
-			return fmt.Sprintf("%d minutes ago", int(diff.Minutes()))
-		}
-		return fmt.Sprintf("%d hours ago", int(diff.Hours()))
-	}
-
-	return fmt.Sprintf("%d days ago", int(diff.Hours()/24))
 }
 
 func validateConfiguration(conf *config.Config) error {

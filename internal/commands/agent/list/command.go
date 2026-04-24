@@ -4,11 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"maps"
 	"os"
 	"slices"
-	"time"
 
 	"github.com/urfave/cli/v3"
 
@@ -19,8 +17,6 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
 	"github.com/foohq/foojank/internal/formatter"
-	jsonformatter "github.com/foohq/foojank/internal/formatter/json"
-	tableformatter "github.com/foohq/foojank/internal/formatter/table"
 )
 
 func NewCommand() *cli.Command {
@@ -111,45 +107,27 @@ func action(ctx context.Context, c *cli.Command) error {
 		return 0
 	})
 
-	err = formatOutput(os.Stdout, format, sortedResults)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
-		return err
-	}
-
-	return nil
-}
-
-func formatOutput(w io.Writer, format string, data []agent.DiscoverResult) error {
-	table := formatter.NewTable([]string{
-		"name",
-		"userhost",
-		"system",
-		"address",
-		"last_seen",
+	table := formatter.NewTable()
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("NAME").WithBold(),
+		formatter.NewStringCell("USERHOST").WithBold(),
+		formatter.NewStringCell("SYSTEM").WithBold(),
+		formatter.NewStringCell("ADDRESS").WithBold(),
+		formatter.NewStringCell("LAST SEEN").WithBold(),
 	})
-	for _, service := range data {
-		table.AddRow([]string{
-			service.Name,
-			formatUserHost(service.Username, service.Hostname),
-			service.System,
-			service.Address,
-			formatTime(service.LastSeen),
+	for _, service := range sortedResults {
+		table.AddRow([]formatter.Cell{
+			formatter.NewStringCell(service.Name),
+			formatter.NewStringCell(formatUserHost(service.Username, service.Hostname)),
+			formatter.NewStringCell(service.System),
+			formatter.NewStringCell(service.Address),
+			formatter.NewTimeCell(service.LastSeen).WithFormat("relative").WithEmptyValue("never"),
 		})
 	}
 
-	var f formatter.Formatter
-	switch format {
-	case "json":
-		f = jsonformatter.New()
-	case "table":
-		f = tableformatter.New()
-	default:
-		f = tableformatter.New()
-	}
-
-	err := f.Write(w, table)
+	err = formatter.NewFormatter(format).Write(os.Stdout, table)
 	if err != nil {
+		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
 	}
 
@@ -161,40 +139,6 @@ func formatUserHost(user, host string) string {
 		return ""
 	}
 	return fmt.Sprintf("%s@%s", user, host)
-}
-
-func formatTime(t time.Time) string {
-	if t.IsZero() {
-		return "never"
-	}
-
-	now := time.Now()
-	diff := now.Sub(t)
-
-	// Handle future dates
-	if diff < 0 {
-		diff = -diff
-		if diff < 24*time.Hour {
-			if diff < time.Hour {
-				return fmt.Sprintf("in %d minutes", int(diff.Minutes()))
-			}
-			return fmt.Sprintf("in %d hours", int(diff.Hours()))
-		}
-		return fmt.Sprintf("in %d days", int(diff.Hours()/24))
-	}
-
-	// Handle past dates
-	if diff < 24*time.Hour {
-		if diff < 2*time.Minute {
-			return "now"
-		}
-		if diff < time.Hour {
-			return fmt.Sprintf("%d minutes ago", int(diff.Minutes()))
-		}
-		return fmt.Sprintf("%d hours ago", int(diff.Hours()))
-	}
-
-	return fmt.Sprintf("%d days ago", int(diff.Hours()/24))
 }
 
 func validateConfiguration(conf *config.Config) error {

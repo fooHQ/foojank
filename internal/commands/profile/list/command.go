@@ -2,8 +2,6 @@ package list
 
 import (
 	"context"
-	"fmt"
-	"io"
 	"os"
 	"sort"
 
@@ -13,8 +11,6 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
 	"github.com/foohq/foojank/internal/formatter"
-	jsonformatter "github.com/foohq/foojank/internal/formatter/json"
-	tableformatter "github.com/foohq/foojank/internal/formatter/table"
 )
 
 func NewCommand() *cli.Command {
@@ -68,11 +64,12 @@ func action(ctx context.Context, c *cli.Command) error {
 	profiles := profs.List()
 	sort.Strings(profiles)
 
-	table := formatter.NewTable([]string{
-		"name",
-		"os",
-		"arch",
-		"source_dir",
+	table := formatter.NewTable()
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("NAME").WithBold(),
+		formatter.NewStringCell("OS").WithBold(),
+		formatter.NewStringCell("ARCH").WithBold(),
+		formatter.NewStringCell("SOURCE DIR").WithBold(),
 	})
 	for _, name := range profiles {
 		prof, err := profs.Get(name)
@@ -80,37 +77,18 @@ func action(ctx context.Context, c *cli.Command) error {
 			return err
 		}
 
-		table.AddRow([]string{
-			name,
-			prof.OS(),
-			prof.Arch(),
-			prof.SourceDir(),
+		table.AddRow([]formatter.Cell{
+			formatter.NewStringCell(name),
+			formatter.NewStringCell(prof.OS()),
+			formatter.NewStringCell(prof.Arch()),
+			formatter.NewStringCell(prof.SourceDir()),
 		})
 	}
 
-	err := formatOutput(os.Stdout, format, table)
+	err := formatter.NewFormatter(format).Write(os.Stdout, table)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
-	}
-
-	return nil
-}
-
-func formatOutput(w io.Writer, format string, table *formatter.Table) error {
-	var f formatter.Formatter
-	switch format {
-	case "json":
-		f = jsonformatter.New()
-	case "table":
-		f = tableformatter.New()
-	default:
-		f = tableformatter.New()
-	}
-
-	err := f.Write(w, table)
-	if err != nil {
-		return fmt.Errorf("cannot write formatted output: %w", err)
 	}
 
 	return nil
