@@ -6,6 +6,7 @@ import (
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/commands/job/cancel"
 	"github.com/foohq/foojank/internal/commands/job/create"
+	"github.com/foohq/foojank/internal/commands/job/describe"
 	"github.com/foohq/foojank/internal/commands/job/list"
 	"github.com/foohq/foojank/internal/commands/job/logs"
 )
@@ -16,6 +17,7 @@ func NewCommand() *cli.Command {
 		Usage: "Manage jobs",
 		Commands: []*cli.Command{
 			create.NewCommand(),
+			describe.NewCommand(),
 			cancel.NewCommand(),
 			list.NewCommand(),
 			logs.NewCommand(),
