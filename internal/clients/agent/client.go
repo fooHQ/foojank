@@ -505,14 +505,15 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 			msg := ctx.Value(messageKey).(Message)
 
 			switch v.Status {
-			case 0:
+			case proto.ExitSuccess:
 				job.Status = JobStatusFinished
-			case 130:
+			case proto.ExitInterrupted:
 				job.Status = JobStatusCancelled
 			default:
 				job.Status = JobStatusFailed
 			}
 
+			job.Error = v.Error
 			job.Updated = msg.Received
 			jobs[workerID] = job
 
