@@ -76,6 +76,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	serverCert, _ := conf.String(flags.ServerCertificate)
 	accountName, _ := conf.String(flags.Account)
 	format, _ := conf.String(flags.Format)
+	noColor, _ := conf.Bool(flags.NoColor)
 
 	userJWT, userSeed, err := auth.ReadUser(accountName)
 	if err != nil {
@@ -92,7 +93,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	client := agent.New(srv)
 
 	if c.NArg() == 0 {
-		err := listStorages(ctx, client, format)
+		err := listStorages(ctx, client, format, noColor)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get a list of storages: %v", err)
 			return err
@@ -107,7 +108,7 @@ func action(ctx context.Context, c *cli.Command) error {
 			return err
 		}
 
-		err = listStorage(ctx, client, format, result.Storage, result.FilePath)
+		err = listStorage(ctx, client, format, noColor, result.Storage, result.FilePath)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot list storage %q: %v", result.Storage, err)
 			return err
@@ -117,7 +118,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	return nil
 }
 
-func listStorages(ctx context.Context, client *agent.Client, format string) error {
+func listStorages(ctx context.Context, client *agent.Client, format string, noColor bool) error {
 	storages, err := client.ListStorage(ctx)
 	if err != nil {
 		return err
@@ -142,7 +143,7 @@ func listStorages(ctx context.Context, client *agent.Client, format string) erro
 		})
 	}
 
-	err = formatter.NewFormatter(format).Write(os.Stdout, table)
+	err = formatter.NewFormatter(format, formatter.WithNoColor(noColor)).Write(os.Stdout, table)
 	if err != nil {
 		return err
 	}
@@ -150,7 +151,7 @@ func listStorages(ctx context.Context, client *agent.Client, format string) erro
 	return nil
 }
 
-func listStorage(ctx context.Context, client *agent.Client, format, name, pth string) error {
+func listStorage(ctx context.Context, client *agent.Client, format string, noColor bool, name, pth string) error {
 	storageName, err := client.GetStorageName(ctx, name)
 	if err != nil {
 		return err
@@ -207,7 +208,7 @@ func listStorage(ctx context.Context, client *agent.Client, format, name, pth st
 		})
 	}
 
-	err = formatter.NewFormatter(format).Write(os.Stdout, table)
+	err = formatter.NewFormatter(format, formatter.WithNoColor(noColor)).Write(os.Stdout, table)
 	if err != nil {
 		return err
 	}

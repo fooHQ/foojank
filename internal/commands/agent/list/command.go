@@ -76,6 +76,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	serverCert, _ := conf.String(flags.ServerCertificate)
 	accountName, _ := conf.String(flags.Account)
 	format, _ := conf.String(flags.Format)
+	noColor, _ := conf.Bool(flags.NoColor)
 
 	userJWT, userSeed, err := auth.ReadUser(accountName)
 	if err != nil {
@@ -125,7 +126,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		})
 	}
 
-	err = formatter.NewFormatter(format).Write(os.Stdout, table)
+	err = formatter.NewFormatter(format, formatter.WithNoColor(noColor)).Write(os.Stdout, table)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
