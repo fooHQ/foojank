@@ -30,13 +30,35 @@ type Formatter interface {
 	Write(io.Writer, *Table) error
 }
 
-func NewFormatter(format string) Formatter {
+func NewFormatter(format string, opt ...Option) Formatter {
+	var opts options
+	for _, o := range opt {
+		o(&opts)
+	}
 	switch format {
 	case FormatJSON:
-		return &JSONFormatter{}
+		return &JSONFormatter{
+			opts: opts,
+		}
 	case FormatASCII:
-		return &ASCIIFormatter{}
+		return &ASCIIFormatter{
+			opts: opts,
+		}
 	default:
-		return &ASCIIFormatter{}
+		return &ASCIIFormatter{
+			opts: opts,
+		}
+	}
+}
+
+type options struct {
+	NoColor bool
+}
+
+type Option func(*options)
+
+func WithNoColor(noColor bool) Option {
+	return func(opts *options) {
+		opts.NoColor = noColor
 	}
 }

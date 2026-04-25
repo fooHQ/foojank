@@ -7,7 +7,9 @@ import (
 
 var _ Formatter = (*JSONFormatter)(nil)
 
-type JSONFormatter struct{}
+type JSONFormatter struct {
+	opts options
+}
 
 func (f *JSONFormatter) Write(o io.Writer, table *Table) error {
 	var data [][]any

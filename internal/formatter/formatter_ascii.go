@@ -3,13 +3,16 @@ package formatter
 import (
 	"io"
 
+	"github.com/deepnoodle-ai/wonton/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
 )
 
 var _ Formatter = (*ASCIIFormatter)(nil)
 
-type ASCIIFormatter struct{}
+type ASCIIFormatter struct {
+	opts options
+}
 
 func (f *ASCIIFormatter) Write(o io.Writer, table *Table) error {
 	w := tablewriter.NewTable(
@@ -45,7 +48,7 @@ func (f *ASCIIFormatter) Write(o io.Writer, table *Table) error {
 	for _, row := range table.Rows() {
 		var newRow []string
 		for _, cell := range row {
-			newRow = append(newRow, cell.String())
+			newRow = append(newRow, f.formatCell(cell))
 		}
 		rows = append(rows, newRow)
 	}
@@ -56,4 +59,18 @@ func (f *ASCIIFormatter) Write(o io.Writer, table *Table) error {
 	}
 
 	return w.Render()
+}
+
+func (f *ASCIIFormatter) formatCell(cell Cell) string {
+	v := cell.String()
+	if v == "" || f.opts.NoColor {
+		return v
+	}
+
+	v = color.Colorize(cell.Color(), v)
+	if cell.Bold() {
+		v = color.ApplyBold(v)
+	}
+
+	return v
 }

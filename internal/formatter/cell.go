@@ -58,14 +58,7 @@ func (c StringCell) Bold() bool {
 }
 
 func (c StringCell) String() string {
-	val := c.Value()
-	if val != "" {
-		val = color.Colorize(c.Color(), val)
-		if c.Bold() {
-			val = color.ApplyBold(val)
-		}
-	}
-	return val
+	return c.value
 }
 
 type UintCell struct {
