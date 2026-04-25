@@ -187,7 +187,7 @@ func copyLocalFile(ctx context.Context, client *agent.Client, src string, storag
 		return err
 	}
 
-	dstFile, err := storage.Create(dst)
+	dstFile, err := storage.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func copyRemoteFile(ctx context.Context, client *agent.Client, storageName, src 
 		return err
 	}
 
-	srcFile, err := storage.Open(src)
+	srcFile, err := storage.OpenFile(src, os.O_RDONLY, 0644)
 	if err != nil {
 		return err
 	}
