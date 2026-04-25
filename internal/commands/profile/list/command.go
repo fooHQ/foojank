@@ -60,6 +60,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	logger := actions.GetLoggerFromContext(ctx)
 
 	format, _ := conf.String(flags.Format)
+	noColor, _ := conf.Bool(flags.NoColor)
 
 	profiles := profs.List()
 	sort.Strings(profiles)
@@ -85,7 +86,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		})
 	}
 
-	err := formatter.NewFormatter(format).Write(os.Stdout, table)
+	err := formatter.NewFormatter(format, formatter.WithNoColor(noColor)).Write(os.Stdout, table)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
