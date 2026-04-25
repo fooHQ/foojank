@@ -7,13 +7,14 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	proto "github.com/foohq/foojank-proto/go"
+
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/clients/agent"
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
-	"github.com/foohq/foojank/internal/proto"
 	"github.com/foohq/foojank/internal/router"
 )
 
