@@ -20,11 +20,8 @@
       "lint": [
         "./devbox.sh lint"
       ],
-      "build-foojank-dev": [
-        "./devbox.sh build_foojank_dev"
-      ],
-      "build-foojank-prod": [
-        "./devbox.sh build_foojank_prod"
+      "build": [
+        "./devbox.sh build"
       ]
     }
   }

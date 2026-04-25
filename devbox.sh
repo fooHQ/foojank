@@ -2,15 +2,9 @@
 
 set -euo pipefail
 
-build_foojank_dev() {
+build() {
     OUTPUT="${OUTPUT:-build/foojank}"
-    export CGO_ENABLED=1
-    go build -race -tags dev -o "$OUTPUT" ./cmd/foojank
-}
-
-build_foojank_prod() {
-    OUTPUT="${OUTPUT:-build/foojank}"
-    go build -tags prod -o "$OUTPUT" ./cmd/foojank
+    go build -o "$OUTPUT" ./cmd/foojank
 }
 
 test() {
