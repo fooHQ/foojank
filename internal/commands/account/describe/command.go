@@ -92,6 +92,10 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell(name),
 	})
 	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("DESCRIPTION").WithBold(),
+		formatter.NewStringCell(accountClaims.Description),
+	})
+	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell("ISSUED AT").WithBold(),
 		formatter.NewTimeCell(issued),
 	})
@@ -99,17 +103,15 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell("EXPIRES AT").WithBold(),
 		formatter.NewTimeCell(expires).WithEmptyValue("never"),
 	})
+	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell("LINKED ACCOUNT").WithBold(),
+		formatter.NewStringCell(userClaims.IssuerAccount),
+	})
 	if len(accountClaims.SigningKeys) > 0 {
 		keys := accountClaims.SigningKeys.Keys()
 		table.AddRow([]formatter.Cell{
 			formatter.NewStringCell("DEPENDENT ACCOUNTS").WithBold(),
 			formatter.NewStringCell(strings.Join(keys, "\n")),
-		})
-	}
-	if userClaims.IssuerAccount != "" {
-		table.AddRow([]formatter.Cell{
-			formatter.NewStringCell("LINKED ACCOUNTS").WithBold(),
-			formatter.NewStringCell(userClaims.IssuerAccount),
 		})
 	}
 
