@@ -135,7 +135,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		table.AddRow([]formatter.Cell{
 			formatter.NewStringCell(job.ID),
 			formatter.NewStringCell(job.AgentName),
-			formatter.NewStringCell(strings.Join([]string{job.Command, job.Args}, " ")),
+			formatter.NewStringSliceCell([]string{job.Command, job.Args}).WithSeparator(" "),
 			formatter.NewTimeCell(job.Updated).WithFormat("relative"),
 			formatter.NewStringCell(strings.ToUpper(job.Status)).WithBold(),
 		})
