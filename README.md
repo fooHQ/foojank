@@ -41,7 +41,7 @@ $ curl -fsSL https://github.com/fooHQ/foojank/releases/latest/download/client.sh
 ```
 $ git clone https://github.com/foohq/foojank
 $ cd foojank/
-$ devbox run build-foojank-prod
+$ devbox run build
 # install ./build/foojank /usr/local/bin/foojank
 ```
 
