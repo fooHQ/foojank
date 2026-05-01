@@ -28,6 +28,8 @@ func (f *JSONFormatter) Write(o io.Writer, table *Table) error {
 				v = c.Value()
 			case TimeCell:
 				v = c.Value()
+			case BoolCell:
+				v = c.Value()
 			}
 			rowData = append(rowData, v)
 		}
