@@ -3,6 +3,7 @@ package formatter
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/deepnoodle-ai/wonton/color"
@@ -59,6 +60,31 @@ func (c StringCell) Bold() bool {
 
 func (c StringCell) String() string {
 	return c.value
+}
+
+type StringSliceCell struct {
+	StringCell
+	sep    string
+	values []string
+}
+
+func NewStringSliceCell(values []string) StringSliceCell {
+	return StringSliceCell{
+		values: values,
+	}
+}
+
+func (c StringSliceCell) WithSeparator(sep string) StringSliceCell {
+	c.sep = sep
+	return c
+}
+
+func (c StringSliceCell) Value() []string {
+	return c.values
+}
+
+func (c StringSliceCell) String() string {
+	return strings.Join(c.values, c.sep)
 }
 
 type UintCell struct {
