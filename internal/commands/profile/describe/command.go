@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/urfave/cli/v3"
 
@@ -97,7 +96,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	})
 	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell("FEATURES").WithBold(),
-		formatter.NewStringCell(strings.Join(prof.Features(), ", ")),
+		formatter.NewStringSliceCell(prof.Features()).WithSeparator(", "),
 	})
 	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell("SOURCE DIR").WithBold(),
@@ -105,7 +104,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	})
 	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell("ENVIRONMENT").WithBold(),
-		formatter.NewStringCell(strings.Join(envs, "\n")),
+		formatter.NewStringSliceCell(envs).WithSeparator("\n"),
 	})
 
 	err = formatter.NewFormatter(format, formatter.WithNoColor(noColor)).Write(os.Stdout, table)
