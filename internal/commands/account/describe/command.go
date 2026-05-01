@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/urfave/cli/v3"
@@ -111,7 +110,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		keys := accountClaims.SigningKeys.Keys()
 		table.AddRow([]formatter.Cell{
 			formatter.NewStringCell("DEPENDENT ACCOUNTS").WithBold(),
-			formatter.NewStringCell(strings.Join(keys, "\n")),
+			formatter.NewStringSliceCell(keys).WithSeparator("\n"),
 		})
 	}
 
