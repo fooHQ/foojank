@@ -20,6 +20,8 @@ func (f *JSONFormatter) Write(o io.Writer, table *Table) error {
 			switch c := cell.(type) {
 			case StringCell:
 				v = c.Value()
+			case StringSliceCell:
+				v = c.Value()
 			case IntCell:
 				v = c.Value()
 			case UintCell:
