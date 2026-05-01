@@ -114,7 +114,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	})
 	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell("COMMAND").WithBold(),
-		formatter.NewStringCell(strings.Join([]string{job.Command, job.Args}, " ")),
+		formatter.NewStringSliceCell([]string{job.Command, job.Args}).WithSeparator(" "),
 	})
 	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell("STATUS").WithBold(),
