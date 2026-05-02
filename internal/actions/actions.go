@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/deepnoodle-ai/wonton/tty"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/config"
@@ -62,7 +63,20 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 			flags.NoColor:   "false",
 		})
 
-		conf := config.Merge(confDefs, confFile, confFlags)
+		confs := []*config.Config{
+			confDefs,
+			confFile,
+			confFlags,
+		}
+
+		// If the output is not a TTY, disable color output.
+		if !tty.IsTerminal(os.Stdout) {
+			confs = append(confs, config.NewWithOptions(map[string]string{
+				flags.NoColor: "true",
+			}))
+		}
+
+		conf := config.Merge(confs...)
 
 		err = validateFn(conf)
 		if err != nil {
