@@ -42,6 +42,8 @@ func (c *Client) Register(ctx context.Context, agentID, name string) (err error)
 			proto.CmdStartWorkerSubject(agentID, "*"),
 			proto.CmdStopWorkerSubject(agentID, "*"),
 			proto.CmdWriteStdinSubject(agentID, "*"),
+			proto.EvtStartWorkerSubject(agentID, "*"),
+			proto.EvtStopWorkerSubject(agentID, "*"),
 			proto.EvtWorkerStdoutSubject(agentID, "*"),
 			proto.EvtWorkerStatusSubject(agentID, "*"),
 			proto.EvtAgentInfoSubject(agentID),
