@@ -806,7 +806,7 @@ func NewAgentPermissions(agentID string) jwt.Permissions {
 		},
 		Sub: jwt.Permission{
 			Allow: []string{
-				fmt.Sprintf("_INBOX_%s.>", agentID),
+				fmt.Sprintf("%s.>", InboxName(agentID)),
 			},
 		},
 	}
