@@ -910,3 +910,29 @@ func NewAgentPermissions(agentID string) jwt.Permissions {
 		},
 	}
 }
+
+func NewGatewayPermissions(gatewayID string) jwt.Permissions {
+	return jwt.Permissions{
+		Pub: jwt.Permission{
+			Allow: []string{
+				fmt.Sprintf("$JS.ACK.%s.>", gatewayID),
+				fmt.Sprintf("$JS.API.STREAM.INFO.%s", gatewayID),
+				fmt.Sprintf("$JS.API.STREAM.INFO.OBJ_%s", gatewayID),
+				fmt.Sprintf("$JS.API.STREAM.PURGE.OBJ_%s", gatewayID),
+				fmt.Sprintf("$JS.API.CONSUMER.INFO.%s.*", gatewayID),
+				fmt.Sprintf("$JS.API.CONSUMER.MSG.NEXT.%s.*", gatewayID),
+				fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.*.$O.%s.M.*", gatewayID, gatewayID),
+				fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.>", gatewayID),
+				fmt.Sprintf("$JS.API.CONSUMER.DELETE.OBJ_%s.*", gatewayID),
+				fmt.Sprintf("$JS.API.DIRECT.GET.OBJ_%s.>", gatewayID),
+				fmt.Sprintf("$O.%s.M.*", gatewayID),
+				fmt.Sprintf("$O.%s.C.*", gatewayID),
+			},
+		},
+		Sub: jwt.Permission{
+			Allow: []string{
+				fmt.Sprintf("%s.>", InboxName(gatewayID)),
+			},
+		},
+	}
+}
