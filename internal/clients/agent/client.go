@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	KVStorePetnames = "petnames"
+	agentDirectoryName = "agent-directory"
 )
 
 const (
@@ -105,14 +105,12 @@ func (c *Client) Register(ctx context.Context, agentID, name string) (err error)
 		_ = c.srv.DeleteObjectStore(ctx, storeName)
 	}()
 
-	petNames, err := c.srv.CreateKeyValue(ctx, jetstream.KeyValueConfig{
-		Bucket: KVStorePetnames,
-	})
-	if err != nil && !errors.Is(err, jetstream.ErrBucketExists) {
+	agentDir, err := c.openDirectory(ctx, agentDirectoryName)
+	if err != nil {
 		return &errorApi{err}
 	}
 
-	_, err = petNames.Create(ctx, agentID, []byte(name))
+	err = agentDir.Create(ctx, agentID, name)
 	if err != nil {
 		return &errorApi{err}
 	}
@@ -120,18 +118,7 @@ func (c *Client) Register(ctx context.Context, agentID, name string) (err error)
 		if err == nil {
 			return
 		}
-		_ = petNames.Delete(ctx, agentID)
-	}()
-
-	_, err = petNames.Create(ctx, name, []byte(agentID))
-	if err != nil {
-		return &errorApi{err}
-	}
-	defer func() {
-		if err == nil {
-			return
-		}
-		_ = petNames.Delete(ctx, name)
+		_ = agentDir.Delete(ctx, agentID)
 	}()
 
 	return nil
@@ -156,7 +143,7 @@ func (c *Client) Unregister(ctx context.Context, agentID string) error {
 		return &errorApi{err}
 	}
 
-	petNames, err := c.srv.KeyValue(ctx, KVStorePetnames)
+	agentDir, err := c.openDirectory(ctx, agentDirectoryName)
 	if err != nil {
 		// If the bucket does not exist, return an empty result.
 		// Bucket does not exist only before the first agent is registered.
@@ -166,21 +153,7 @@ func (c *Client) Unregister(ctx context.Context, agentID string) error {
 		return &errorApi{err}
 	}
 
-	// Retrieve a petname so the reverse reference can be deleted as well.
-	petName, err := petNames.Get(ctx, agentID)
-	if err != nil {
-		if !errors.Is(err, jetstream.ErrKeyNotFound) {
-			return &errorApi{err}
-		}
-		return nil
-	}
-
-	err = petNames.Delete(ctx, string(petName.Value()))
-	if err != nil && !errors.Is(err, jetstream.ErrKeyNotFound) {
-		return &errorApi{err}
-	}
-
-	err = petNames.Delete(ctx, agentID)
+	err = agentDir.Delete(ctx, agentID)
 	if err != nil && !errors.Is(err, jetstream.ErrKeyNotFound) {
 		return &errorApi{err}
 	}
@@ -221,7 +194,7 @@ func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error
 		},
 	}
 
-	petNames, err := c.srv.KeyValue(ctx, KVStorePetnames)
+	agentDir, err := c.openDirectory(ctx, agentDirectoryName)
 	if err != nil {
 		// If the bucket does not exist, return an empty result.
 		// Bucket does not exist only before the first agent is registered.
@@ -239,9 +212,9 @@ func (c *Client) Discover(ctx context.Context) (map[string]DiscoverResult, error
 	results := make(map[string]DiscoverResult)
 	for _, agentID := range agentIDs {
 		agentName := agentID
-		kv, err := petNames.Get(ctx, agentID)
+		v, err := agentDir.Get(ctx, agentID)
 		if err == nil {
-			agentName = string(kv.Value())
+			agentName = v
 		} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
 			return nil, &errorApi{err}
 		}
@@ -365,7 +338,7 @@ type contextKey string
 var messageKey contextKey = "foojank:message"
 
 func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, error) {
-	petNames, err := c.srv.KeyValue(ctx, KVStorePetnames)
+	agentDir, err := c.openDirectory(ctx, agentDirectoryName)
 	if err != nil {
 		// If the bucket does not exist, return an empty result.
 		// Bucket does not exist only before the first agent is registered.
@@ -376,9 +349,9 @@ func (c *Client) ListJobs(ctx context.Context, agentID string) (map[string]Job, 
 	}
 
 	agentName := agentID
-	kv, err := petNames.Get(ctx, agentID)
+	v, err := agentDir.Get(ctx, agentID)
 	if err == nil {
-		agentName = string(kv.Value())
+		agentName = v
 	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
 		return nil, &errorApi{err}
 	}
@@ -624,7 +597,7 @@ func (c *Client) ListStorage(ctx context.Context) ([]*Storage, error) {
 }
 
 func (c *Client) GetStorage(ctx context.Context, name string) (*Storage, error) {
-	petNames, err := c.srv.KeyValue(ctx, KVStorePetnames)
+	agentDir, err := c.openDirectory(ctx, agentDirectoryName)
 	if err != nil {
 		// If the bucket does not exist, return an empty result.
 		// Bucket does not exist only before the first agent is registered.
@@ -640,9 +613,9 @@ func (c *Client) GetStorage(ctx context.Context, name string) (*Storage, error) 
 	}
 
 	var storageName string
-	kv, err := petNames.Get(ctx, name)
+	v, err := agentDir.Get(ctx, name)
 	if err == nil {
-		storageName = string(kv.Value())
+		storageName = v
 	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
 		return nil, &errorApi{err}
 	}
@@ -730,7 +703,7 @@ func (c *Client) GetAgentID(ctx context.Context, name string) (string, error) {
 		return name, nil
 	}
 
-	petNames, err := c.srv.KeyValue(ctx, KVStorePetnames)
+	agentDir, err := c.openDirectory(ctx, agentDirectoryName)
 	if err != nil {
 		// If the bucket does not exist, return an empty result.
 		// Bucket does not exist only before the first agent is registered.
@@ -740,7 +713,7 @@ func (c *Client) GetAgentID(ctx context.Context, name string) (string, error) {
 		return "", &errorApi{err}
 	}
 
-	kv, err := petNames.Get(ctx, name)
+	v, err := agentDir.Get(ctx, name)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
 			return "", ErrAgentNotFound
@@ -748,11 +721,23 @@ func (c *Client) GetAgentID(ctx context.Context, name string) (string, error) {
 		return "", &errorApi{err}
 	}
 
-	return string(kv.Value()), nil
+	return v, nil
 }
 
 func (c *Client) GetStorageName(ctx context.Context, name string) (string, error) {
 	return c.GetAgentID(ctx, name)
+}
+
+func (c *Client) openDirectory(ctx context.Context, name string) (*AgentDirectory, error) {
+	dir, err := c.srv.CreateKeyValue(ctx, jetstream.KeyValueConfig{
+		Bucket: name,
+	})
+	if err != nil && !errors.Is(err, jetstream.ErrBucketExists) {
+		return nil, err
+	}
+	return &AgentDirectory{
+		store: dir,
+	}, nil
 }
 
 func (c *Client) publishMsg(ctx context.Context, stream string, msg *nats.Msg) error {
