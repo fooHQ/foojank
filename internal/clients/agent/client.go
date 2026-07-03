@@ -21,12 +21,14 @@ import (
 )
 
 const (
-	agentDirectoryName = "agent-directory"
+	agentDirectoryName   = "agent-directory"
+	gatewayDirectoryName = "gateway-directory"
 )
 
 const (
-	StreamType      = "Foojank-Stream-Type"
-	StreamTypeAgent = "agent"
+	StreamType        = "Foojank-Stream-Type"
+	StreamTypeAgent   = "agent"
+	StreamTypeGateway = "gateway"
 )
 
 type Client struct {
@@ -154,6 +156,103 @@ func (c *Client) Unregister(ctx context.Context, agentID string) error {
 	}
 
 	err = agentDir.Delete(ctx, agentID)
+	if err != nil && !errors.Is(err, jetstream.ErrKeyNotFound) {
+		return &errorApi{err}
+	}
+
+	return nil
+}
+
+func (c *Client) RegisterGateway(ctx context.Context, gatewayID, name string) (err error) {
+	streamName := gatewayID
+	_, err = c.srv.CreateStream(ctx, jetstream.StreamConfig{
+		Name: streamName,
+		Subjects: []string{
+			proto.CmdStartWorkerSubject(gatewayID, "*"),
+			proto.CmdStopWorkerSubject(gatewayID, "*"),
+			proto.CmdWriteStdinSubject(gatewayID, "*"),
+			// TODO: add gateway subjects!
+		},
+		Metadata: map[string]string{
+			StreamType: StreamTypeGateway,
+		},
+	})
+	if err != nil {
+		return &errorApi{err}
+	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		_ = c.srv.DeleteStream(ctx, streamName)
+	}()
+
+	consumerName := gatewayID
+	_, err = c.srv.CreateConsumer(ctx, streamName, jetstream.ConsumerConfig{
+		Durable:       consumerName,
+		DeliverPolicy: jetstream.DeliverLastPolicy,
+		AckPolicy:     jetstream.AckExplicitPolicy,
+		MaxAckPending: 1,
+		FilterSubjects: []string{
+			proto.CmdStartWorkerSubject(gatewayID, "*"),
+			proto.CmdStopWorkerSubject(gatewayID, "*"),
+			proto.CmdWriteStdinSubject(gatewayID, "*"),
+			// TODO: add gateway subjects!
+		},
+	})
+	if err != nil {
+		return &errorApi{err}
+	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		_ = c.srv.DeleteConsumer(ctx, streamName, consumerName)
+	}()
+
+	agentDir, err := c.openDirectory(ctx, gatewayDirectoryName)
+	if err != nil {
+		return &errorApi{err}
+	}
+
+	err = agentDir.Create(ctx, gatewayID, name)
+	if err != nil {
+		return &errorApi{err}
+	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		_ = agentDir.Delete(ctx, gatewayID)
+	}()
+
+	return nil
+}
+
+func (c *Client) UnregisterGateway(ctx context.Context, gatewayID string) error {
+	streamName := gatewayID
+	consumerName := gatewayID
+	err := c.srv.DeleteConsumer(ctx, streamName, consumerName)
+	if err != nil && !errors.Is(err, nats.ErrConsumerNotFound) {
+		return &errorApi{err}
+	}
+
+	err = c.srv.DeleteStream(ctx, streamName)
+	if err != nil && !errors.Is(err, nats.ErrStreamNotFound) {
+		return &errorApi{err}
+	}
+
+	agentDir, err := c.openDirectory(ctx, gatewayDirectoryName)
+	if err != nil {
+		// If the bucket does not exist, return an empty result.
+		// Bucket does not exist only before the first agent is registered.
+		if errors.Is(err, jetstream.ErrBucketNotFound) {
+			return nil
+		}
+		return &errorApi{err}
+	}
+
+	err = agentDir.Delete(ctx, gatewayID)
 	if err != nil && !errors.Is(err, jetstream.ErrKeyNotFound) {
 		return &errorApi{err}
 	}
