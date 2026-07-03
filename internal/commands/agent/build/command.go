@@ -212,7 +212,7 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 	profDefault.Set(profile.VarServerCertificate, profile.NewVar(serverCert))
 	profDefault.Set(profile.VarUserJWT, profile.NewVar(agentJWT))
 	profDefault.Set(profile.VarUserKey, profile.NewVar(string(agentSeed)))
-	profDefault.Set(profile.VarStream, profile.NewVar(agent.StreamName(agentID)))
+	profDefault.Set(profile.VarStream, profile.NewVar(agentID))
 	profDefault.Set(profile.VarConsumer, profile.NewVar(agentID))
 	profDefault.Set(profile.VarInboxPrefix, profile.NewVar(agent.InboxName(agentID)))
 	profDefault.Set(profile.VarObjectStore, profile.NewVar(agentID))
