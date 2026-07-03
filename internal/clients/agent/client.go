@@ -24,6 +24,11 @@ const (
 	KVStorePetnames = "petnames"
 )
 
+const (
+	StreamType      = "Foojank-Stream-Type"
+	StreamTypeAgent = "agent"
+)
+
 type Client struct {
 	srv *server.Client
 }
@@ -35,7 +40,7 @@ func New(srv *server.Client) *Client {
 }
 
 func (c *Client) Register(ctx context.Context, agentID, name string) (err error) {
-	streamName := StreamName(agentID)
+	streamName := agentID
 	_, err = c.srv.CreateStream(ctx, jetstream.StreamConfig{
 		Name: streamName,
 		Subjects: []string{
@@ -47,6 +52,9 @@ func (c *Client) Register(ctx context.Context, agentID, name string) (err error)
 			proto.EvtWorkerStdoutSubject(agentID, "*"),
 			proto.EvtWorkerStatusSubject(agentID, "*"),
 			proto.EvtAgentInfoSubject(agentID),
+		},
+		Metadata: map[string]string{
+			StreamType: StreamTypeAgent,
 		},
 	})
 	if err != nil {
@@ -136,7 +144,7 @@ func (c *Client) Unregister(ctx context.Context, agentID string) error {
 		return &errorApi{err}
 	}
 
-	streamName := StreamName(agentID)
+	streamName := agentID
 	consumerName := agentID
 	err = c.srv.DeleteConsumer(ctx, streamName, consumerName)
 	if err != nil && !errors.Is(err, nats.ErrConsumerNotFound) {
@@ -297,7 +305,7 @@ func (c *Client) StartWorker(ctx context.Context, agentID, workerID, command str
 
 	err = c.publishMsg(
 		ctx,
-		StreamName(agentID),
+		agentID,
 		&nats.Msg{
 			Subject: proto.CmdStartWorkerSubject(agentID, workerID),
 			Data:    b,
@@ -318,7 +326,7 @@ func (c *Client) StopWorker(ctx context.Context, agentID, workerID string) error
 
 	err = c.publishMsg(
 		ctx,
-		StreamName(agentID),
+		agentID,
 		&nats.Msg{
 			Subject: proto.CmdStopWorkerSubject(agentID, workerID),
 			Data:    b,
@@ -339,7 +347,7 @@ func (c *Client) WriteWorkerStdin(ctx context.Context, agentID, workerID string)
 
 	err = c.publishMsg(
 		ctx,
-		StreamName(agentID),
+		agentID,
 		&nats.Msg{
 			Subject: proto.CmdWriteStdinSubject(agentID, workerID),
 			Data:    b,
@@ -654,7 +662,7 @@ func (c *Client) ListMessages(
 	startSeq uint64,
 	limit int,
 ) ([]Message, error) {
-	consumer, err := c.srv.CreateConsumer(ctx, StreamName(agentID), jetstream.ConsumerConfig{
+	consumer, err := c.srv.CreateConsumer(ctx, agentID, jetstream.ConsumerConfig{
 		DeliverPolicy:  jetstream.DeliverByStartSequencePolicy,
 		AckPolicy:      jetstream.AckNonePolicy,
 		MaxAckPending:  1,
@@ -763,47 +771,22 @@ func (c *Client) publishMsg(ctx context.Context, stream string, msg *nats.Msg) e
 	return nil
 }
 
-func (c *Client) listStreams(ctx context.Context) ([]string, error) {
-	var names []string
+func (c *Client) listAgentIDs(ctx context.Context) ([]string, error) {
+	var agentIDs []string
 	for stream := range c.srv.ListStreams(ctx).Info() {
 		if stream == nil {
 			break
 		}
-		names = append(names, stream.Config.Name)
-	}
-	return names, nil
-}
 
-func (c *Client) listAgentIDs(ctx context.Context) ([]string, error) {
-	streams, err := c.listStreams(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var agentIDs []string
-	for _, stream := range streams {
-		if !hasStreamPrefix(stream) {
+		v, ok := stream.Config.Metadata[StreamType]
+		if !ok || v != StreamTypeAgent {
 			continue
 		}
-		agentID := trimStreamPrefix(stream)
-		agentIDs = append(agentIDs, agentID)
+
+		agentIDs = append(agentIDs, stream.Config.Name)
 	}
 
 	return agentIDs, nil
-}
-
-const streamPrefix = "FJ_"
-
-func StreamName(name string) string {
-	return streamPrefix + name
-}
-
-func trimStreamPrefix(name string) string {
-	return strings.TrimPrefix(name, streamPrefix)
-}
-
-func hasStreamPrefix(name string) bool {
-	return strings.HasPrefix(name, streamPrefix)
 }
 
 const InboxPrefix = "_INBOX_"
