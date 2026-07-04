@@ -2,71 +2,38 @@ package build
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
+	"maps"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
-	petname "github.com/dustinkirkland/golang-petname"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/builder"
-	"github.com/foohq/foojank/internal/clients/agent"
+	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
-	"github.com/foohq/foojank/internal/profile"
 )
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:  "build",
-		Usage: "Build an agent and create resources on the server",
+		Name:      "build",
+		ArgsUsage: "<name>",
+		Usage:     "Build an agent",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  flags.Profile,
-				Usage: "set profile",
-			},
-			&cli.StringFlag{
-				Name:  flags.Os,
-				Usage: "set target operating system",
-			},
-			&cli.StringFlag{
-				Name:  flags.Arch,
-				Usage: "set target architecture",
-			},
-			&cli.StringSliceFlag{
-				Name:  flags.Feature,
-				Usage: "enable build features",
-			},
-			&cli.StringFlag{
-				Name:  flags.Server,
-				Usage: "set agent's server URL",
-			},
-			&cli.StringFlag{
-				Name:      flags.Certificate,
-				Usage:     "set path to agent's server certificate",
-				TakesFile: true,
+				Name:  flags.SourceDir,
+				Usage: "set path to a source code directory",
 			},
 			&cli.StringFlag{
 				Name:    flags.Output,
 				Usage:   "set path to an output file",
 				Aliases: []string{"o"},
-			},
-			&cli.StringFlag{
-				Name:  flags.SourceDir,
-				Usage: "set path to a source code directory",
-			},
-			&cli.StringSliceFlag{
-				Name:  flags.Set,
-				Usage: "set environment variable (format: key=value)",
-			},
-			&cli.StringSliceFlag{
-				Name:  flags.Unset,
-				Usage: "unset environment variable (format: key)",
 			},
 			&cli.StringFlag{
 				Name:  flags.ServerURL,
@@ -99,11 +66,6 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 		return ctx, err
 	}
 
-	ctx, err = actions.LoadProfiles(os.Stderr)(ctx, c)
-	if err != nil {
-		return ctx, err
-	}
-
 	ctx, err = actions.SetupLogger(os.Stderr)(ctx, c)
 	if err != nil {
 		return ctx, err
@@ -114,22 +76,13 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 
 func action(ctx context.Context, c *cli.Command) (err error) {
 	conf := actions.GetConfigFromContext(ctx)
-	profs := actions.GetProfilesFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
 	serverURL, _ := conf.String(flags.ServerURL)
 	serverCert, _ := conf.String(flags.ServerCertificate)
 	accountName, _ := conf.String(flags.Account)
 	outputName, _ := conf.String(flags.Output)
-	targetOS, _ := conf.String(flags.Os)
-	targetArch, _ := conf.String(flags.Arch)
 	sourceDir, _ := conf.String(flags.SourceDir)
-	setVars, _ := conf.StringSlice(flags.Set)
-	unsetVars, _ := conf.StringSlice(flags.Unset)
-	features, _ := conf.StringSlice(flags.Feature)
-	targetServer, _ := conf.String(flags.Server)
-	targetCert, _ := conf.String(flags.Certificate)
-	profName, _ := conf.String(flags.Profile)
 
 	userJWT, userSeed, err := auth.ReadUser(accountName)
 	if err != nil {
@@ -143,134 +96,40 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 		return err
 	}
 
-	client := agent.New(srv)
+	if c.Args().Len() < 1 {
+		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
+		return errors.New("not enough arguments")
+	}
 
-	agentName := petname.Generate(2, "-")
+	client := daemon.New(srv)
 
-	user, err := auth.NewUserKey()
+	agentName := c.Args().First()
+
+	agent, err := client.GetAgent(ctx, agentName)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot generate a user key: %v", err)
+		logger.ErrorContext(ctx, "Cannot get agent %q: %v", agentName, err)
 		return err
 	}
 
-	agentID, err := user.PublicKey()
+	// Prepare builder environment.
+	// IMPORTANT: make sure mandatory variables such as OS, Arch, etc. are copied as last to prevent being overwritten
+	// by variables from .Extra.
+	env := make(map[string]string)
+	maps.Copy(env, agent.Config.Extra)
+	maps.Copy(env, map[string]string{
+		builder.OS:                agent.Config.OS,
+		builder.Arch:              agent.Config.Arch,
+		builder.Target:            createTargetPath(agent.Config.OS, outputName),
+		builder.AgentID:           agent.ID,
+		builder.AgentName:         agent.Name,
+		builder.ServerURL:         agent.Config.ServerURL,
+		builder.ServerCertificate: base64.StdEncoding.EncodeToString(agent.Config.ServerCertificate),
+	})
+
+	output, err := builder.Run(ctx, sourceDir, env)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get agent ID: %v", err)
-		return err
-	}
-
-	agentPerms := agent.NewAgentPermissions(agentID)
-	agentClaims, err := auth.NewUserJWT(agentName, agentPerms, user)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
-		return err
-	}
-
-	// Get the client's user JWT.
-	userClaims, err := auth.GetUserJWT(accountName)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get user JWT: %v", err)
-		return err
-	}
-
-	if userClaims.IssuerAccount != "" {
-		agentClaims.IssuerAccount = userClaims.IssuerAccount
-	}
-
-	// Get the client's account key.
-	account, err := auth.GetAccountKey(accountName)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get account key: %v", err)
-		return err
-	}
-
-	agentJWT, err := agentClaims.Encode(account)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
-		return err
-	}
-
-	agentSeed, err := user.Seed()
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot encode user seed: %v", err)
-		return err
-	}
-
-	pwd, err := filepath.Abs(".")
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get current directory: %v", err)
-		return err
-	}
-
-	// Default profile.
-	profDefault := profile.NewProfile()
-	profDefault.SetOS(runtime.GOOS)
-	profDefault.SetArch(runtime.GOARCH)
-	profDefault.SetTarget(filepath.Join(pwd, agentName))
-	profDefault.Set(profile.VarAgentID, profile.NewVar(agentID))
-	profDefault.Set(profile.VarServerURL, profile.NewVar(serverURL))
-	profDefault.Set(profile.VarServerCertificate, profile.NewVar(serverCert))
-	profDefault.Set(profile.VarUserJWT, profile.NewVar(agentJWT))
-	profDefault.Set(profile.VarUserKey, profile.NewVar(string(agentSeed)))
-	profDefault.Set(profile.VarStream, profile.NewVar(agentID))
-	profDefault.Set(profile.VarConsumer, profile.NewVar(agentID))
-	profDefault.Set(profile.VarInboxPrefix, profile.NewVar(agent.InboxName(agentID)))
-	profDefault.Set(profile.VarObjectStore, profile.NewVar(agentID))
-
-	// Parse profile profName defined in the config dir.
-	var profFile *profile.Profile
-	if profName != "" {
-		profFile, err = profs.Get(profName)
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get profile %q: %v", profName, err)
-			return err
-		}
-	}
-
-	// Parse profile flags.
-	profFlags := profile.NewProfile()
-	if sourceDir != "" {
-		profFlags.SetSourceDir(sourceDir)
-	}
-	if targetServer != "" {
-		profFlags.Set(profile.VarServerURL, profile.NewVar(targetServer))
-	}
-	if targetCert != "" {
-		profFlags.Set(profile.VarServerCertificate, profile.NewVar(targetCert))
-	}
-	if targetOS != "" {
-		profFlags.SetOS(targetOS)
-	}
-	if targetArch != "" {
-		profFlags.SetArch(targetArch)
-	}
-	if outputName != "" {
-		profFlags.SetTarget(filepath.Join(pwd, outputName))
-	}
-	if len(features) > 0 {
-		profFlags.SetFeatures(features)
-	}
-
-	for k, v := range profile.ParseKVPairs(setVars) {
-		profFlags.Set(k, v)
-	}
-
-	// Merge all profiles to create a final profile.
-	prof := profile.Merge(profDefault, profFile, profFlags)
-
-	// Remove unset variables.
-	for _, v := range unsetVars {
-		prof.Delete(v)
-	}
-
-	sourceDir = prof.SourceDir()
-	outputName = prof.Target()
-	agentID = prof.Get(profile.VarAgentID).Value()
-
-	output, err := builder.Run(ctx, sourceDir, prof.ToEnv())
-	if err != nil {
-		lines := strings.Split(output, "\n")
-		for _, line := range lines {
+		lines := strings.SplitSeq(output, "\n")
+		for line := range lines {
 			if line == "" {
 				continue
 			}
@@ -291,23 +150,34 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 		}
 	}()
 
-	err = client.Register(ctx, agentID, agentName)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot register agent: %v", err)
-		return err
-	}
-
 	logger.InfoContext(ctx, "Agent %q has been built!", agentName)
 
 	return nil
 }
 
+func createTargetPath(os, name string) string {
+	if os == "windows" && filepath.Ext(name) != ".exe" {
+		name += ".exe"
+	}
+	pwd, err := filepath.Abs(".")
+	if err != nil {
+		return name
+	}
+	return filepath.Join(pwd, name)
+}
+
 func validateConfiguration(conf *config.Config) error {
 	for _, opt := range []string{
+		flags.SourceDir,
 		flags.ServerURL,
 		flags.Account,
 	} {
 		switch opt {
+		case flags.SourceDir:
+			v, ok := conf.String(opt)
+			if !ok || v == "" {
+				return errors.New("source directory not configured")
+			}
 		case flags.ServerURL:
 			v, ok := conf.String(opt)
 			if !ok || v == "" {
