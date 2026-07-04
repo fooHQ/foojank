@@ -15,7 +15,7 @@ const (
 	Os                = "os"
 	Arch              = "arch"
 	Feature           = "feature"
-	Server            = "server"
+	Gateway           = "gateway"
 	Certificate       = "certificate"
 	NoColor           = "no-color"
 	LinkAccount       = "link-account"
