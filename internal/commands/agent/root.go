@@ -5,6 +5,7 @@ import (
 
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/commands/agent/build"
+	"github.com/foohq/foojank/internal/commands/agent/create"
 	"github.com/foohq/foojank/internal/commands/agent/list"
 	"github.com/foohq/foojank/internal/commands/agent/logs"
 	"github.com/foohq/foojank/internal/commands/agent/remove"
@@ -15,6 +16,7 @@ func NewCommand() *cli.Command {
 		Name:  "agent",
 		Usage: "Manage agents",
 		Commands: []*cli.Command{
+			create.NewCommand(),
 			build.NewCommand(),
 			list.NewCommand(),
 			remove.NewCommand(),
