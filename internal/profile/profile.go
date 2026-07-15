@@ -14,14 +14,9 @@ const (
 	varTarget            = "TARGET"
 	varFeatures          = "FEATURES"
 	VarAgentID           = "FJ_AGENT_ID"
+	VarAgentName         = "FJ_AGENT_NAME"
 	VarServerURL         = "FJ_SERVER_URL"
 	VarServerCertificate = "FJ_SERVER_CERTIFICATE"
-	VarUserJWT           = "FJ_USER_JWT"
-	VarUserKey           = "FJ_USER_KEY"
-	VarStream            = "FJ_STREAM"
-	VarConsumer          = "FJ_CONSUMER"
-	VarInboxPrefix       = "FJ_INBOX_PREFIX"
-	VarObjectStore       = "FJ_OBJECT_STORE"
 )
 
 var (
