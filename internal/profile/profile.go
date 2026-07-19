@@ -4,19 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
-	"slices"
 	"strings"
-)
-
-const (
-	varOS                = "OS"
-	varArch              = "ARCH"
-	varTarget            = "TARGET"
-	varFeatures          = "FEATURES"
-	VarAgentID           = "FJ_AGENT_ID"
-	VarAgentName         = "FJ_AGENT_NAME"
-	VarServerURL         = "FJ_SERVER_URL"
-	VarServerCertificate = "FJ_SERVER_CERTIFICATE"
 )
 
 var (
@@ -159,34 +147,12 @@ func (p *Profile) Arch() string {
 	return *p.data.Arch
 }
 
-func (p *Profile) Target() string {
-	if p.data.Target == nil {
-		return ""
-	}
-	return *p.data.Target
-}
-
-func (p *Profile) Features() []string {
-	return p.data.Features
-}
-
-func (p *Profile) SetSourceDir(dir string) {
-	p.data.SourceDir = new(dir)
-}
-
 func (p *Profile) Env() map[string]string {
 	result := make(map[string]string, len(p.data.Environment))
 	for k, v := range p.data.Environment {
 		result[k] = v.Value
 	}
 	return result
-}
-
-func (p *Profile) SourceDir() string {
-	if p.data.SourceDir == nil {
-		return ""
-	}
-	return *p.data.SourceDir
 }
 
 func (p *Profile) Get(name string) *Var {
@@ -207,41 +173,12 @@ func (p *Profile) SetArch(arch string) {
 	p.data.Arch = new(arch)
 }
 
-func (p *Profile) SetTarget(target string) {
-	p.data.Target = new(target)
-}
-
-func (p *Profile) SetFeatures(features []string) {
-	p.data.Features = slices.Clone(features)
-}
-
 func (p *Profile) Set(name string, v *Var) {
 	p.data.Environment[name] = v.data
 }
 
 func (p *Profile) Delete(name string) {
 	delete(p.data.Environment, name)
-}
-
-func (p *Profile) ToEnv() map[string]string {
-	result := make(map[string]string, len(p.data.Environment))
-	result[varOS] = ""
-	if p.data.OS != nil {
-		result[varOS] = *p.data.OS
-	}
-	result[varArch] = ""
-	if p.data.Arch != nil {
-		result[varArch] = *p.data.Arch
-	}
-	result[varTarget] = ""
-	if p.data.Target != nil {
-		result[varTarget] = *p.data.Target
-	}
-	result[varFeatures] = strings.Join(p.data.Features, ",")
-	for k, v := range p.data.Environment {
-		result[k] = v.Value
-	}
-	return result
 }
 
 func (p *Profile) UnmarshalJSON(b []byte) error {
@@ -325,9 +262,6 @@ type profilesData struct {
 type profileData struct {
 	OS          *string            `json:"os,omitempty"`
 	Arch        *string            `json:"arch,omitempty"`
-	Features    []string           `json:"features,omitempty"`
-	Target      *string            `json:"target,omitempty"`
-	SourceDir   *string            `json:"source_dir,omitempty"`
 	Environment map[string]varData `json:"environment,omitempty"`
 }
 
@@ -347,15 +281,6 @@ func merge(profs ...profileData) profileData {
 		}
 		if prof.Arch != nil {
 			result.Arch = prof.Arch
-		}
-		if len(prof.Features) > 0 {
-			result.Features = prof.Features
-		}
-		if prof.Target != nil {
-			result.Target = prof.Target
-		}
-		if prof.SourceDir != nil {
-			result.SourceDir = prof.SourceDir
 		}
 		for k, v := range prof.Environment {
 			result.Environment[k] = varData{
