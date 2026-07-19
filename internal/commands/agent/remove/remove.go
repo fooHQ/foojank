@@ -9,7 +9,7 @@ import (
 
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/auth"
-	"github.com/foohq/foojank/internal/clients/agent"
+	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
@@ -19,7 +19,7 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "remove",
 		ArgsUsage: "<name>",
-		Usage:     "Remove agent resources from the server",
+		Usage:     "Remove an agent",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  flags.ServerURL,
@@ -86,17 +86,23 @@ func action(ctx context.Context, c *cli.Command) error {
 		return errors.New("not enough arguments")
 	}
 
-	client := agent.New(srv)
+	client := daemon.New(srv)
 
 	agentName := c.Args().First()
 
-	agentID, err := client.GetAgentID(ctx, agentName)
+	agent, err := client.GetAgent(ctx, agentName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot remove agent: %v", err)
 		return err
 	}
 
-	err = client.Unregister(ctx, agentID)
+	err = client.RequestUnregisterAgent(ctx, agent)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot unregister agent: %v", err)
+		return err
+	}
+
+	err = client.RemoveAgent(ctx, agent)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot remove agent: %v", err)
 		return err
