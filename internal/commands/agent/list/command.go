@@ -3,16 +3,14 @@ package list
 import (
 	"context"
 	"errors"
-	"fmt"
-	"maps"
 	"os"
-	"slices"
+	"strings"
 
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/auth"
-	"github.com/foohq/foojank/internal/clients/agent"
+	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
@@ -90,43 +88,51 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	client := agent.New(srv)
+	client := daemon.New(srv)
 
-	results, err := client.Discover(ctx)
+	agents, err := client.ListAgents(ctx)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot get a list of agents: %v", err)
 		return err
 	}
 
-	sortedResults := slices.SortedFunc(maps.Values(results), func(v1, v2 agent.DiscoverResult) int {
-		if v1.LastSeen.Before(v2.LastSeen) {
-			return -1
-		}
-		if v1.LastSeen.After(v2.LastSeen) {
-			return 1
-		}
-		return 0
-	})
+	agentHosts, err := client.ListAgentHosts(ctx)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot get a list of agent hosts: %v", err)
+		return err
+	}
 
 	table := formatter.NewTable()
-	table.AddRow([]formatter.Cell{
+	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("NAME").WithBold(),
 		formatter.NewStringCell("USERHOST").WithBold(),
-		formatter.NewStringCell("SYSTEM").WithBold(),
 		formatter.NewStringCell("ADDRESS").WithBold(),
+		formatter.NewStringCell("PLATFORM").WithBold(),
 		formatter.NewStringCell("LAST SEEN").WithBold(),
 	})
-	for _, service := range sortedResults {
+
+	for _, agent := range agents {
+		var host daemon.AgentHostDirectoryEntry
+		for i := range agentHosts {
+			if agent.ID == agentHosts[i].AgentID {
+				host = agentHosts[i]
+			}
+		}
+
 		table.AddRow([]formatter.Cell{
-			formatter.NewStringCell(service.Name),
-			formatter.NewStringCell(formatUserHost(service.Username, service.Hostname)),
-			formatter.NewStringCell(service.System),
-			formatter.NewStringCell(service.Address),
-			formatter.NewTimeCell(service.LastSeen).WithFormat("relative").WithEmptyValue("never"),
+			formatter.NewStringCell(agent.Name),
+			formatter.NewStringCell(formatUserHost(host.Username, host.Hostname)),
+			formatter.NewStringCell(host.Address),
+			formatter.NewStringCell(formatPlatform(agent.Config.OS, agent.Config.Arch)),
+			formatter.NewTimeCell(host.LastUpdate).WithFormat("relative").WithEmptyValue("never"),
 		})
 	}
 
-	err = formatter.NewFormatter(format, formatter.WithNoColor(noColor)).Write(os.Stdout, table)
+	err = formatter.NewFormatter(
+		format,
+		formatter.WithNoColor(noColor),
+		formatter.WithSortByColumn(4, 0),
+	).Write(os.Stdout, table)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
@@ -139,7 +145,14 @@ func formatUserHost(user, host string) string {
 	if user == "" && host == "" {
 		return ""
 	}
-	return fmt.Sprintf("%s@%s", user, host)
+	return strings.Join([]string{user, host}, "@")
+}
+
+func formatPlatform(agentOS, agentArch string) string {
+	if agentOS == "" && agentArch == "" {
+		return ""
+	}
+	return strings.Join([]string{agentOS, agentArch}, "/")
 }
 
 func validateConfiguration(conf *config.Config) error {
