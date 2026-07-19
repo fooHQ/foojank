@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"os"
-	"path/filepath"
 
 	"github.com/urfave/cli/v3"
 
@@ -30,16 +29,8 @@ func NewCommand() *cli.Command {
 				Usage: "set ARCH environment variable",
 			},
 			&cli.StringSliceFlag{
-				Name:  flags.Feature,
-				Usage: "set FEATURE environment variable",
-			},
-			&cli.StringSliceFlag{
 				Name:  flags.Set,
 				Usage: "set environment variable (format: key=value)",
-			},
-			&cli.StringFlag{
-				Name:  flags.SourceDir,
-				Usage: "set path to a source code directory",
 			},
 			&cli.StringFlag{
 				Name:  flags.ConfigDir,
@@ -78,10 +69,8 @@ func action(ctx context.Context, c *cli.Command) error {
 	logger := actions.GetLoggerFromContext(ctx)
 
 	configDir, _ := conf.String(flags.ConfigDir)
-	sourceDir, _ := conf.String(flags.SourceDir)
 	targetOS, _ := conf.String(flags.Os)
 	targetArch, _ := conf.String(flags.Arch)
-	features, _ := conf.StringSlice(flags.Feature)
 	setVars, _ := conf.StringSlice(flags.Set)
 
 	if c.Args().Len() != 1 {
@@ -91,28 +80,13 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	name := c.Args().First()
 
-	if sourceDir != "" {
-		var err error
-		sourceDir, err = filepath.Abs(sourceDir)
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get absolute path to source directory: %v", err)
-			return err
-		}
-	}
-
 	prof := profile.NewProfile()
-	prof.SetSourceDir(sourceDir)
-
 	if targetOS != "" {
 		prof.SetOS(targetOS)
 	}
 
 	if targetArch != "" {
 		prof.SetArch(targetArch)
-	}
-
-	if len(features) > 0 {
-		prof.SetFeatures(features)
 	}
 
 	for k, v := range profile.ParseKVPairs(setVars) {
