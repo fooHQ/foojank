@@ -59,7 +59,7 @@ func TestProfile_Environment(t *testing.T) {
 	require.Empty(t, missing.Value())
 
 	// Test List
-	list := p.ToEnv()
+	list := p.Env()
 	require.Equal(t, val, list[key])
 
 	// Test Delete
@@ -72,16 +72,12 @@ func TestProfile_Attributes(t *testing.T) {
 
 	require.Empty(t, p.OS())
 	require.Empty(t, p.Arch())
-	require.Empty(t, p.Target())
-	require.Nil(t, p.Features())
 
-	err := json.Unmarshal([]byte(`{"os":"linux", "arch":"amd64", "target":"prod", "features":["f1", "f2"]}`), &p)
+	err := json.Unmarshal([]byte(`{"os":"linux", "arch":"amd64"}`), &p)
 	require.NoError(t, err)
 
 	require.Equal(t, "linux", p.OS())
 	require.Equal(t, "amd64", p.Arch())
-	require.Equal(t, "prod", p.Target())
-	require.Equal(t, []string{"f1", "f2"}, p.Features())
 }
 
 func TestProfile_JSON(t *testing.T) {
