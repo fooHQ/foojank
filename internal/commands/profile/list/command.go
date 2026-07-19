@@ -68,7 +68,6 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell("NAME").WithBold(),
 		formatter.NewStringCell("OS").WithBold(),
 		formatter.NewStringCell("ARCH").WithBold(),
-		formatter.NewStringCell("SOURCE DIR").WithBold(),
 	})
 	for _, name := range profiles {
 		prof, err := profs.Get(name)
@@ -80,7 +79,6 @@ func action(ctx context.Context, c *cli.Command) error {
 			formatter.NewStringCell(name),
 			formatter.NewStringCell(prof.OS()),
 			formatter.NewStringCell(prof.Arch()),
-			formatter.NewStringCell(prof.SourceDir()),
 		})
 	}
 
