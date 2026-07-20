@@ -7,6 +7,7 @@ const (
 	Account           = "account"
 	Format            = "format"
 	Name              = "name"
+	Description       = "description"
 	Set               = "set"
 	Unset             = "unset"
 	Profile           = "profile"
