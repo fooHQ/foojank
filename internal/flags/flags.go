@@ -16,6 +16,7 @@ const (
 	Arch              = "arch"
 	Feature           = "feature"
 	Gateway           = "gateway"
+	URL               = "url"
 	Certificate       = "certificate"
 	NoColor           = "no-color"
 	LinkAccount       = "link-account"
