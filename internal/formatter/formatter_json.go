@@ -13,7 +13,7 @@ type JSONFormatter struct {
 
 func (f *JSONFormatter) Write(o io.Writer, table *Table) error {
 	var data [][]any
-	for _, row := range table.Rows() {
+	for _, row := range sortedRows(table, f.opts) {
 		var rowData []any
 		for _, cell := range row {
 			var v any

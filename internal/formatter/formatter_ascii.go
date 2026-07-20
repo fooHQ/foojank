@@ -44,8 +44,14 @@ func (f *ASCIIFormatter) Write(o io.Writer, table *Table) error {
 		_ = w.Close()
 	}()
 
+	var dataRows [][]Cell
+	if header := table.Header(); header != nil {
+		dataRows = append(dataRows, header)
+	}
+	dataRows = append(dataRows, sortedRows(table, f.opts)...)
+
 	var rows [][]string
-	for _, row := range table.Rows() {
+	for _, row := range dataRows {
 		var newRow []string
 		for _, cell := range row {
 			newRow = append(newRow, f.formatCell(cell))
