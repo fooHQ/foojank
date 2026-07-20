@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"os"
-	"sort"
 	"strings"
 
 	"github.com/urfave/cli/v3"
@@ -119,10 +118,6 @@ func action(ctx context.Context, c *cli.Command) error {
 		data = append(data, job)
 	}
 
-	sort.SliceStable(data, func(i, j int) bool {
-		return data[i].Updated.Before(data[j].Updated)
-	})
-
 	table := formatter.NewTable()
 	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell("ID").WithBold(),
@@ -141,7 +136,11 @@ func action(ctx context.Context, c *cli.Command) error {
 		})
 	}
 
-	err = formatter.NewFormatter(format, formatter.WithNoColor(noColor)).Write(os.Stdout, table)
+	err = formatter.NewFormatter(
+		format,
+		formatter.WithNoColor(noColor),
+		formatter.WithSortByColumn(3, 1),
+	).Write(os.Stdout, table)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
