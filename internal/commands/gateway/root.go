@@ -7,6 +7,7 @@ import (
 	"github.com/foohq/foojank/internal/commands/gateway/create"
 	"github.com/foohq/foojank/internal/commands/gateway/describe"
 	"github.com/foohq/foojank/internal/commands/gateway/list"
+	"github.com/foohq/foojank/internal/commands/gateway/remove"
 )
 
 func NewCommand() *cli.Command {
@@ -17,6 +18,7 @@ func NewCommand() *cli.Command {
 			create.NewCommand(),
 			describe.NewCommand(),
 			list.NewCommand(),
+			remove.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		OnUsageError:    actions.UsageError,
