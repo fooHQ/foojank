@@ -26,4 +26,5 @@ const (
 	RemoveLink        = "remove-link"
 	Agent             = "agent"
 	Force             = "force"
+	Extra             = "extra"
 )
