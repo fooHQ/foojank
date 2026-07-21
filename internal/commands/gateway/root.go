@@ -5,6 +5,7 @@ import (
 
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/commands/gateway/create"
+	"github.com/foohq/foojank/internal/commands/gateway/describe"
 	"github.com/foohq/foojank/internal/commands/gateway/list"
 )
 
@@ -14,6 +15,7 @@ func NewCommand() *cli.Command {
 		Usage: "Manage gateway configurations",
 		Commands: []*cli.Command{
 			create.NewCommand(),
+			describe.NewCommand(),
 			list.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
