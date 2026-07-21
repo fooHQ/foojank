@@ -18,6 +18,12 @@ func (f *ASCIIFormatter) Write(o io.Writer, table *Table) error {
 	w := tablewriter.NewTable(
 		o,
 		tablewriter.WithRowConfig(tw.CellConfig{
+			Formatting: tw.CellFormatting{
+				AutoWrap: tw.WrapBreak,
+			},
+			ColMaxWidths: tw.CellWidth{
+				Global: 80,
+			},
 			Padding: tw.CellPadding{
 				Global: tw.PaddingDefault,
 			},
