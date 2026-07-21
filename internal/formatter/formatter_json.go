@@ -22,6 +22,8 @@ func (f *JSONFormatter) Write(o io.Writer, table *Table) error {
 				v = c.Value()
 			case StringSliceCell:
 				v = c.Value()
+			case StringMapCell:
+				v = c.Value()
 			case IntCell:
 				v = c.Value()
 			case UintCell:
