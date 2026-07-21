@@ -65,12 +65,40 @@ func (f *ASCIIFormatter) Write(o io.Writer, table *Table) error {
 		rows = append(rows, newRow)
 	}
 
+	if f.opts.Orientation == OrientationHorizontal {
+		rows = transpose(rows)
+	}
+
 	err := w.Bulk(rows)
 	if err != nil {
 		return err
 	}
 
 	return w.Render()
+}
+
+// transpose rotates a row-major matrix so that column c becomes row c. The
+// header (the first row) ends up as the leftmost column and each record's
+// values are laid out next to it. Ragged rows are padded with empty cells.
+func transpose(rows [][]string) [][]string {
+	var cols int
+	for _, row := range rows {
+		if len(row) > cols {
+			cols = len(row)
+		}
+	}
+
+	out := make([][]string, cols)
+	for c := 0; c < cols; c++ {
+		col := make([]string, len(rows))
+		for r, row := range rows {
+			if c < len(row) {
+				col[r] = row[c]
+			}
+		}
+		out[c] = col
+	}
+	return out
 }
 
 func (f *ASCIIFormatter) formatCell(cell Cell) string {
