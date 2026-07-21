@@ -61,9 +61,22 @@ func NewFormatter(format string, opt ...Option) Formatter {
 	}
 }
 
+// Orientation controls how a table is laid out when rendered.
+type Orientation int
+
+const (
+	// OrientationVertical is the default layout: the header is the top row and
+	// each record is a row beneath it.
+	OrientationVertical Orientation = iota
+	// OrientationHorizontal rotates the table to the left: the header is placed
+	// in the leftmost column and each record's values are laid out next to it.
+	OrientationHorizontal
+)
+
 type options struct {
 	NoColor       bool
 	SortByColumns []int
+	Orientation   Orientation
 }
 
 type Option func(*options)
@@ -71,6 +84,12 @@ type Option func(*options)
 func WithNoColor(noColor bool) Option {
 	return func(opts *options) {
 		opts.NoColor = noColor
+	}
+}
+
+func WithOrientation(orientation Orientation) Option {
+	return func(opts *options) {
+		opts.Orientation = orientation
 	}
 }
 
