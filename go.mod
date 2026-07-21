@@ -5,7 +5,7 @@ go 1.26
 require (
 	github.com/deepnoodle-ai/wonton v0.0.32
 	github.com/dustinkirkland/golang-petname v0.0.0-20260215035315-f0c533e9ce9b
-	github.com/foohq/foojank-proto/go v0.0.0-20260425124254-6ae9d7914485
+	github.com/foohq/foojank-proto/go v0.0.0-20260721170629-3cacd095ce50
 	github.com/foohq/ren-natsfs v0.0.0-20260414063815-487081cc8ffc
 	github.com/lmittmann/tint v1.1.3
 	github.com/nats-io/jwt/v2 v2.8.1
@@ -30,6 +30,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/deepnoodle-ai/risor/v2 v2.1.0 // indirect
 	github.com/fatih/color v1.18.0 // indirect
+	github.com/foohq/foojank-proto v0.0.2-0.20260721170629-3cacd095ce50 // indirect
 	github.com/foohq/ren v0.2.0-rc1 // indirect
 	github.com/foohq/ren-memfs v0.0.0-20260414063427-182fdf01cc45 // indirect
 	github.com/foohq/urlpath v0.2.0 // indirect
