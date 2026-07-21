@@ -2,6 +2,7 @@ package formatter
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -85,6 +86,47 @@ func (c StringSliceCell) Value() []string {
 
 func (c StringSliceCell) String() string {
 	return strings.Join(c.values, c.sep)
+}
+
+type StringMapCell struct {
+	StringCell
+	sep    string
+	kvSep  string
+	values map[string]string
+}
+
+func NewStringMapCell(values map[string]string) StringMapCell {
+	return StringMapCell{
+		values: values,
+	}
+}
+
+func (c StringMapCell) WithSeparator(sep string) StringMapCell {
+	c.sep = sep
+	return c
+}
+
+func (c StringMapCell) WithKeyValueSeparator(kvSep string) StringMapCell {
+	c.kvSep = kvSep
+	return c
+}
+
+func (c StringMapCell) Value() map[string]string {
+	return c.values
+}
+
+func (c StringMapCell) String() string {
+	keys := make([]string, 0, len(c.values))
+	for k := range c.values {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	pairs := make([]string, 0, len(keys))
+	for _, k := range keys {
+		pairs = append(pairs, k+c.kvSep+c.values[k])
+	}
+	return strings.Join(pairs, c.sep)
 }
 
 type UintCell struct {
