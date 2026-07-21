@@ -20,8 +20,14 @@ github.com/dustinkirkland/golang-petname v0.0.0-20260215035315-f0c533e9ce9b h1:q
 github.com/dustinkirkland/golang-petname v0.0.0-20260215035315-f0c533e9ce9b/go.mod h1:8AuBTZBRSFqEYBPYULd+NN474/zZBLP+6WeT5S9xlAc=
 github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=
 github.com/fatih/color v1.18.0/go.mod h1:4FelSpRwEGDpQ12mAdzqdOukCy4u8WUtOY6lkT/6HfU=
+github.com/foohq/foojank-proto v0.0.1 h1:fxQZ5uwQcqUdlrPWvZ1DhdQd2R9PldLVT5Be14lEnTQ=
+github.com/foohq/foojank-proto v0.0.1/go.mod h1:ph8LlcqgJYpfaVyO7eMwf5bLqIkDxDnUW8LprpB5tmw=
+github.com/foohq/foojank-proto v0.0.2-0.20260721170629-3cacd095ce50 h1:OfGg9rx1eUkNbBGBH3ET+LxQB7dBa9x+zlNPZM6RPdI=
+github.com/foohq/foojank-proto v0.0.2-0.20260721170629-3cacd095ce50/go.mod h1:ph8LlcqgJYpfaVyO7eMwf5bLqIkDxDnUW8LprpB5tmw=
 github.com/foohq/foojank-proto/go v0.0.0-20260425124254-6ae9d7914485 h1:6cQnSA5NFJ2B0FuarP88oefoYgbNMQlzj/Tkc/rUW7M=
 github.com/foohq/foojank-proto/go v0.0.0-20260425124254-6ae9d7914485/go.mod h1:/ewmylpPY1g2MHL5leFO9wDCMf6ZmKCtTgyQZpT1BoI=
+github.com/foohq/foojank-proto/go v0.0.0-20260721170629-3cacd095ce50 h1:/5I/DvtVra/dSyic6tkHUUpMovE03nTIVWGvA1ssco8=
+github.com/foohq/foojank-proto/go v0.0.0-20260721170629-3cacd095ce50/go.mod h1:/ewmylpPY1g2MHL5leFO9wDCMf6ZmKCtTgyQZpT1BoI=
 github.com/foohq/ren v0.2.0-rc1 h1:BUPVJuUIuA4vQI6XFbOMGRclGfLeJ3FLvxhIfC9MffY=
 github.com/foohq/ren v0.2.0-rc1/go.mod h1:ah+dbKUgJy8X7EG/QuMq5Kbsn7tqR8CiYtHfCvcURk8=
 github.com/foohq/ren-memfs v0.0.0-20260414063427-182fdf01cc45 h1:vZ+la0OOxGytfcc7h8grasz+qwpNSlZNvailG5n8FBo=
