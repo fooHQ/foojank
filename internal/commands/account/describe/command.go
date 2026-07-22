@@ -82,39 +82,30 @@ func action(ctx context.Context, c *cli.Command) error {
 	expires := time.Unix(accountClaims.Expires, 0)
 
 	table := formatter.NewTable()
-	table.AddRow([]formatter.Cell{
+	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("ID").WithBold(),
-		formatter.NewStringCell(accountID),
-	})
-	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell("NAME").WithBold(),
-		formatter.NewStringCell(name),
-	})
-	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell("DESCRIPTION").WithBold(),
-		formatter.NewStringCell(accountClaims.Description),
-	})
-	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell("ISSUED AT").WithBold(),
-		formatter.NewTimeCell(issued),
-	})
-	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell("EXPIRES AT").WithBold(),
-		formatter.NewTimeCell(expires).WithEmptyValue("never"),
+		formatter.NewStringCell("LINKED ACCOUNT").WithBold(),
+		formatter.NewStringCell("DEPENDENT ACCOUNTS").WithBold(),
 	})
 	table.AddRow([]formatter.Cell{
-		formatter.NewStringCell("LINKED ACCOUNT").WithBold(),
+		formatter.NewStringCell(accountID),
+		formatter.NewStringCell(name),
+		formatter.NewStringCell(accountClaims.Description),
+		formatter.NewTimeCell(issued),
+		formatter.NewTimeCell(expires).WithEmptyValue("never"),
 		formatter.NewStringCell(userClaims.IssuerAccount),
+		formatter.NewStringSliceCell(accountClaims.SigningKeys.Keys()).WithSeparator("\n"),
 	})
-	if len(accountClaims.SigningKeys) > 0 {
-		keys := accountClaims.SigningKeys.Keys()
-		table.AddRow([]formatter.Cell{
-			formatter.NewStringCell("DEPENDENT ACCOUNTS").WithBold(),
-			formatter.NewStringSliceCell(keys).WithSeparator("\n"),
-		})
-	}
 
-	err = formatter.NewFormatter(format, formatter.WithNoColor(noColor)).Write(os.Stdout, table)
+	err = formatter.NewFormatter(
+		format,
+		formatter.WithNoColor(noColor),
+		formatter.WithOrientation(formatter.OrientationHorizontal),
+	).Write(os.Stdout, table)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
