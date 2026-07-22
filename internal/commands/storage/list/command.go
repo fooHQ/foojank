@@ -125,7 +125,7 @@ func listStorages(ctx context.Context, client *agent.Client, format string, noCo
 	}
 
 	table := formatter.NewTable()
-	table.AddRow([]formatter.Cell{
+	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("NAME").WithBold(),
 		formatter.NewStringCell("SIZE").WithBold(),
 		formatter.NewStringCell("DESCRIPTION").WithBold(),
@@ -143,7 +143,10 @@ func listStorages(ctx context.Context, client *agent.Client, format string, noCo
 		})
 	}
 
-	err = formatter.NewFormatter(format, formatter.WithNoColor(noColor)).Write(os.Stdout, table)
+	err = formatter.NewFormatter(
+		format,
+		formatter.WithNoColor(noColor),
+	).Write(os.Stdout, table)
 	if err != nil {
 		return err
 	}
