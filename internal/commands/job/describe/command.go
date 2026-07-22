@@ -10,7 +10,7 @@ import (
 
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/auth"
-	"github.com/foohq/foojank/internal/clients/agent"
+	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
@@ -21,7 +21,7 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "describe",
 		ArgsUsage: "<job-id>",
-		Usage:     "Describe job",
+		Usage:     "Describe a job",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  flags.Format,
@@ -93,55 +93,57 @@ func action(ctx context.Context, c *cli.Command) error {
 		return errors.New("not enough arguments")
 	}
 
-	client := agent.New(srv)
+	client := daemon.New(srv)
 
 	jobID := c.Args().First()
 
 	job, err := client.GetJob(ctx, jobID)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot describe job: %v", err)
+		logger.ErrorContext(ctx, "Cannot get job: %v", err)
 		return err
 	}
 
-	table := formatter.NewTable()
-	table.AddRow([]formatter.Cell{
-		formatter.NewStringCell("ID").WithBold(),
-		formatter.NewStringCell(job.ID),
-	})
-	table.AddRow([]formatter.Cell{
-		formatter.NewStringCell("AGENT").WithBold(),
-		formatter.NewStringCell(job.AgentName),
-	})
-	table.AddRow([]formatter.Cell{
-		formatter.NewStringCell("COMMAND").WithBold(),
-		formatter.NewStringSliceCell([]string{job.Command, job.Args}).WithSeparator(" "),
-	})
-	table.AddRow([]formatter.Cell{
-		formatter.NewStringCell("STATUS").WithBold(),
-		formatter.NewStringCell(strings.ToUpper(job.Status)),
-	})
-	if job.Error != nil {
-		table.AddRow([]formatter.Cell{
-			formatter.NewStringCell("ERROR").WithBold(),
-			formatter.NewStringCell(job.Error.Error()),
-		})
+	agentName := job.AgentID
+	agent, err := client.GetAgent(ctx, job.AgentID)
+	if err == nil {
+		agentName = agent.Name
 	}
-	table.AddRow([]formatter.Cell{
+
+	table := formatter.NewTable()
+	table.SetHeader([]formatter.Cell{
+		formatter.NewStringCell("ID").WithBold(),
+		formatter.NewStringCell("AGENT").WithBold(),
+		formatter.NewStringCell("COMMAND").WithBold(),
+		formatter.NewStringCell("STATUS").WithBold(),
+		formatter.NewStringCell("ERROR").WithBold(),
 		formatter.NewStringCell("CREATED").WithBold(),
-		formatter.NewTimeCell(job.Created),
+		formatter.NewStringCell("UPDATED").WithBold(),
 	})
 	table.AddRow([]formatter.Cell{
-		formatter.NewStringCell("UPDATED").WithBold(),
-		formatter.NewTimeCell(job.Updated),
+		formatter.NewStringCell(job.ID),
+		formatter.NewStringCell(agentName),
+		formatter.NewStringCell(formatArgs(job.Config.Command, job.Config.Args)),
+		formatter.NewStringCell(job.State.Status),
+		formatter.NewStringCell(job.State.Error),
+		formatter.NewTimeCell(job.CreatedAt),
+		formatter.NewTimeCell(job.State.UpdatedAt),
 	})
 
-	err = formatter.NewFormatter(format, formatter.WithNoColor(noColor)).Write(os.Stdout, table)
+	err = formatter.NewFormatter(
+		format,
+		formatter.WithNoColor(noColor),
+		formatter.WithOrientation(formatter.OrientationHorizontal),
+	).Write(os.Stdout, table)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
 	}
 
 	return nil
+}
+
+func formatArgs(command string, args []string) string {
+	return strings.Join(append([]string{command}, args...), " ")
 }
 
 func validateConfiguration(conf *config.Config) error {
