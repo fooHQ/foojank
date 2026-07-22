@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"os"
+	"time"
 
 	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/auth"
-	"github.com/foohq/foojank/internal/clients/agent"
+	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
@@ -20,12 +21,11 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "create",
 		ArgsUsage: "<command> [args]",
-		Usage:     "Create job",
+		Usage:     "Create a job",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:     flags.Agent,
-				Usage:    "assign the job to the specified agent",
-				Required: true,
+				Name:  flags.Agent,
+				Usage: "assign the job to the specified agent",
 			},
 			&cli.StringFlag{
 				Name:  flags.ServerURL,
@@ -92,36 +92,58 @@ func action(ctx context.Context, c *cli.Command) error {
 		return errors.New("not enough arguments")
 	}
 
-	client := agent.New(srv)
+	client := daemon.New(srv)
 
 	command := c.Args().First()
 	commandArgs := c.Args().Tail()
 
-	agentID, err := client.GetAgentID(ctx, agentName)
+	agent, err := client.GetAgent(ctx, agentName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create job: %v", err)
 		return err
 	}
 
-	workerID := nuid.Next()
-	// TODO: env variables
-	err = client.StartWorker(ctx, agentID, workerID, command, commandArgs, nil)
+	job := daemon.JobDirectoryEntry{
+		ID:        nuid.Next(),
+		AgentID:   agent.ID,
+		WorkerID:  nuid.Next(),
+		GatewayID: agent.GatewayID,
+		Config: daemon.JobConfig{
+			Command: command,
+			Args:    commandArgs,
+		},
+		CreatedAt: time.Now().UTC(),
+	}
+
+	err = client.PublishStartWorkerRequest(ctx, job)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot publish start worker request: %v", err)
+		return err
+	}
+
+	err = client.CreateJob(ctx, job)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create job: %v", err)
 		return err
 	}
 
-	logger.InfoContext(ctx, "Job %q has been created!", workerID)
+	logger.InfoContext(ctx, "Job %q has been created!", job.ID)
 
 	return nil
 }
 
 func validateConfiguration(conf *config.Config) error {
 	for _, opt := range []string{
+		flags.Agent,
 		flags.ServerURL,
 		flags.Account,
 	} {
 		switch opt {
+		case flags.Agent:
+			v, ok := conf.String(opt)
+			if !ok || v == "" {
+				return errors.New("agent not configured")
+			}
 		case flags.ServerURL:
 			v, ok := conf.String(opt)
 			if !ok || v == "" {
