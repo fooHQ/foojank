@@ -9,7 +9,7 @@ import (
 
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/auth"
-	"github.com/foohq/foojank/internal/clients/agent"
+	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
@@ -19,7 +19,7 @@ func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "cancel",
 		ArgsUsage: "<job-id>",
-		Usage:     "Cancel job",
+		Usage:     "Cancel a job",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  flags.ServerURL,
@@ -85,17 +85,17 @@ func action(ctx context.Context, c *cli.Command) error {
 		return errors.New("not enough arguments")
 	}
 
-	client := agent.New(srv)
+	client := daemon.New(srv)
 
 	jobID := c.Args().First()
 
 	job, err := client.GetJob(ctx, jobID)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot cancel job: %v", err)
+		logger.ErrorContext(ctx, "Cannot get job: %v", err)
 		return err
 	}
 
-	err = client.StopWorker(ctx, job.AgentID, jobID)
+	err = client.PublishStopWorkerRequest(ctx, job)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot cancel job: %v", err)
 		return err
