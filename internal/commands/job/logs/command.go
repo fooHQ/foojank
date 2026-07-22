@@ -3,26 +3,24 @@ package logs
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/urfave/cli/v3"
 
-	proto "github.com/foohq/foojank-proto/go"
-
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/auth"
-	"github.com/foohq/foojank/internal/clients/agent"
+	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
-	"github.com/foohq/foojank/internal/router"
 )
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "logs",
 		ArgsUsage: "<job-id>",
-		Usage:     "Print job's output log",
+		Usage:     "Print output of a job",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  flags.ServerURL,
@@ -88,56 +86,24 @@ func action(ctx context.Context, c *cli.Command) error {
 		return errors.New("not enough arguments")
 	}
 
-	client := agent.New(srv)
+	client := daemon.New(srv)
 
 	jobID := c.Args().First()
 
 	job, err := client.GetJob(ctx, jobID)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot cancel job: %v", err)
+		logger.ErrorContext(ctx, "Cannot get job: %v", err)
 		return err
 	}
 
-	agentID := job.AgentID
-	api := router.Handlers{
-		proto.EvtWorkerStdoutSubject("<agent>", "<worker>"): func(ctx context.Context, params router.Params, data any) any {
-			v, ok := data.(proto.UpdateWorkerStdio)
-			if !ok {
-				return nil
-			}
-			_, _ = os.Stdout.Write(v.Data)
-			return nil
-		},
+	// TODO: configure paging!
+	b, err := client.ListJobOutputLines(ctx, job, 100, 0)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot get job output: %v", err)
+		return err
 	}
 
-	seq := uint64(1)
-	for {
-		msgs, err := client.ListMessages(ctx, agentID, []string{
-			proto.EvtWorkerStdoutSubject(agentID, jobID),
-		}, seq, -1)
-		if err != nil {
-			return err
-		}
-
-		if len(msgs) == 0 {
-			break
-		}
-
-		for _, msg := range msgs {
-			handler, params, ok := api.Match(msg.Subject)
-			if !ok {
-				continue
-			}
-
-			data, err := proto.Unmarshal(msg.Data())
-			if err != nil {
-				continue
-			}
-
-			_ = handler(ctx, params, data)
-			seq = msg.Seq + 1
-		}
-	}
+	_, _ = fmt.Fprintf(os.Stdout, "%s", string(b))
 
 	return nil
 }
