@@ -10,7 +10,7 @@ import (
 
 	"github.com/foohq/foojank/internal/actions"
 	"github.com/foohq/foojank/internal/auth"
-	"github.com/foohq/foojank/internal/clients/agent"
+	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/flags"
@@ -93,46 +93,61 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	client := agent.New(srv)
+	client := daemon.New(srv)
 
-	var jobs map[string]agent.Job
+	var jobs []daemon.JobDirectoryEntry
+	var agents []daemon.AgentDirectoryEntry
 	if agentName != "" {
-		var agentID string
-		agentID, err = client.GetAgentID(ctx, agentName)
+		agent, err := client.GetAgent(ctx, agentName)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot get agent %q: %v", agentName, err)
+			return err
+		}
+
+		agents = []daemon.AgentDirectoryEntry{agent}
+
+		jobs, err = client.ListJobsByAgentID(ctx, agent.ID)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot get a list of jobs: %v", err)
+			return err
+		}
+	} else {
+		jobs, err = client.ListJobs(ctx)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get a list of jobs: %v", err)
 			return err
 		}
 
-		jobs, err = client.ListJobs(ctx, agentID)
-	} else {
-		jobs, err = client.ListAllJobs(ctx)
-	}
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get a list of jobs: %v", err)
-		return err
-	}
-
-	data := make([]agent.Job, 0, len(jobs))
-	for _, job := range jobs {
-		data = append(data, job)
+		agents, err = client.ListAgents(ctx)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot get a list of agents: %v", err)
+		}
 	}
 
 	table := formatter.NewTable()
-	table.AddRow([]formatter.Cell{
+	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("ID").WithBold(),
 		formatter.NewStringCell("AGENT").WithBold(),
 		formatter.NewStringCell("COMMAND").WithBold(),
-		formatter.NewStringCell("LAST UPDATE").WithBold(),
+		formatter.NewStringCell("UPDATED").WithBold(),
 		formatter.NewStringCell("STATUS").WithBold(),
 	})
-	for _, job := range data {
+
+	for _, job := range jobs {
+		name := job.AgentID
+		for i := range agents {
+			if job.AgentID != agents[i].ID {
+				continue
+			}
+			name = agents[i].Name
+		}
+
 		table.AddRow([]formatter.Cell{
 			formatter.NewStringCell(job.ID),
-			formatter.NewStringCell(job.AgentName),
-			formatter.NewStringSliceCell([]string{job.Command, job.Args}).WithSeparator(" "),
-			formatter.NewTimeCell(job.Updated).WithFormat("relative"),
-			formatter.NewStringCell(strings.ToUpper(job.Status)).WithBold(),
+			formatter.NewStringCell(name),
+			formatter.NewStringCell(formatArgs(job.Config.Command, job.Config.Args)),
+			formatter.NewTimeCell(job.State.UpdatedAt).WithFormat("relative"),
+			formatter.NewStringCell(strings.ToUpper(job.State.Status)).WithBold(),
 		})
 	}
 
@@ -147,6 +162,10 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	return nil
+}
+
+func formatArgs(command string, args []string) string {
+	return strings.Join(append([]string{command}, args...), " ")
 }
 
 func validateConfiguration(conf *config.Config) error {
