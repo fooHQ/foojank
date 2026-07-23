@@ -4,21 +4,51 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"syscall"
 
-	"github.com/foohq/foojank/internal/commands"
+	"github.com/urfave/cli/v3"
+
+	"github.com/foohq/foojank"
+	"github.com/foohq/foojank/cmd/foojank/actions"
+	"github.com/foohq/foojank/cmd/foojank/commands/account"
+	"github.com/foohq/foojank/cmd/foojank/commands/agent"
+	"github.com/foohq/foojank/cmd/foojank/commands/config"
+	"github.com/foohq/foojank/cmd/foojank/commands/gateway"
+	"github.com/foohq/foojank/cmd/foojank/commands/job"
+	"github.com/foohq/foojank/cmd/foojank/commands/profile"
+	"github.com/foohq/foojank/cmd/foojank/commands/storage"
+	"github.com/foohq/foojank/cmd/foojank/flags"
 )
 
-func run() error {
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
-	return commands.NewCommand().Run(ctx, os.Args)
+var app = &cli.Command{
+	Name:    "foojank",
+	Usage:   "Command and control framework",
+	Version: foojank.Version(),
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:  flags.NoColor,
+			Usage: "disable color output",
+		},
+	},
+	Commands: []*cli.Command{
+		account.NewCommand(),
+		agent.NewCommand(),
+		config.NewCommand(),
+		job.NewCommand(),
+		profile.NewCommand(),
+		storage.NewCommand(),
+		gateway.NewCommand(),
+	},
+	CommandNotFound: actions.CommandNotFound,
+	OnUsageError:    actions.UsageError,
+	HideHelpCommand: true,
 }
 
 func main() {
-	err := run()
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
+	err := app.Run(ctx, os.Args)
 	if err != nil {
-		// Error logging is done inside each command no need to have a logger in this place.
 		os.Exit(1)
 	}
 }
