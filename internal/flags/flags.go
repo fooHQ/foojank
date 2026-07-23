@@ -15,7 +15,6 @@ const (
 	Output            = "output"
 	Os                = "os"
 	Arch              = "arch"
-	Feature           = "feature"
 	Gateway           = "gateway"
 	URL               = "url"
 	Certificate       = "certificate"
