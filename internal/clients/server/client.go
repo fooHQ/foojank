@@ -6,36 +6,38 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 )
 
 type Client struct {
+	userID string
 	jetstream.JetStream
 }
 
-func New(
-	servers []string,
-	userJWT,
-	userSeed,
-	serverCert string,
-) (*Client, error) {
+func New(servers []string, userJWT, userSeed, serverCert string) (*Client, error) {
 	js, err := connect(strings.Join(servers, ","), userJWT, userSeed, serverCert)
+	if err != nil {
+		return nil, err
+	}
+
+	claims, err := jwt.DecodeUserClaims(userJWT)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Client{
 		JetStream: js,
+		userID:    claims.Subject,
 	}, nil
 }
 
-func connect(
-	server,
-	userJWT,
-	userKey,
-	serverCert string,
-) (jetstream.JetStream, error) {
+func (c *Client) UserID() string {
+	return c.userID
+}
+
+func connect(server, userJWT, userKey, serverCert string) (jetstream.JetStream, error) {
 	opts := []nats.Option{
 		nats.MaxReconnects(-1),
 	}
