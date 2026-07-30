@@ -110,6 +110,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
+		formatter.NewStringCell("ID").WithBold(),
 		formatter.NewStringCell("NAME").WithBold(),
 		formatter.NewStringCell("DESCRIPTION").WithBold(),
 		formatter.NewStringCell("URL").WithBold(),
@@ -119,6 +120,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell("EXTRA").WithBold(),
 	})
 	table.AddRow([]formatter.Cell{
+		formatter.NewStringCell(gateway.ID),
 		formatter.NewStringCell(gateway.Name),
 		formatter.NewStringCell(gateway.Description),
 		formatter.NewStringCell(gateway.Config.URL),
