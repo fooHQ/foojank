@@ -3,7 +3,6 @@ package remove
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/urfave/cli/v3"
@@ -94,9 +93,6 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	gateway, err := client.GetGateway(ctx, gatewayName)
 	if err != nil {
-		if errors.Is(err, daemon.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", gatewayName)
-		}
 		logger.ErrorContext(ctx, "Cannot remove gateway: %v", err)
 		return err
 	}
