@@ -49,26 +49,22 @@ func (d *Directory) Create(ctx context.Context, id string, value []byte, keys ..
 	return nil
 }
 
-func (d *Directory) Delete(ctx context.Context, key string) error {
-	key = strings.ToLower(key)
-
-	// Try deleting as an id key.
-	id := idKeyPrefix + key
-	err := d.store.Delete(ctx, id)
-	if err == nil {
-		return nil
-	}
-
-	// Try as a reference key, also clean up the id entry.
-	v, err := d.store.Get(ctx, key)
+func (d *Directory) Delete(ctx context.Context, id string, keys ...string) error {
+	id = idKeyPrefix + strings.ToLower(id)
+	err := d.store.Purge(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	err1 := d.store.Delete(ctx, key)
-	_ = d.store.Delete(ctx, string(v.Value()))
+	for _, key := range keys {
+		key = strings.ToLower(key)
+		err := d.store.Purge(ctx, key)
+		if err != nil {
+			return err
+		}
+	}
 
-	return err1
+	return nil
 }
 
 func (d *Directory) Get(ctx context.Context, key string) ([]byte, error) {
@@ -173,6 +169,10 @@ func (d *AgentDirectory) List(ctx context.Context) ([]AgentDirectoryEntry, error
 	return entries, nil
 }
 
+func (d *AgentDirectory) Delete(ctx context.Context, agent AgentDirectoryEntry) error {
+	return d.Directory.Delete(ctx, agent.ID, agent.Name)
+}
+
 type AgentDirectoryEntry struct {
 	ID        string           `json:"id"`
 	Name      string           `json:"name"`
@@ -240,6 +240,10 @@ func (d *AgentHostDirectory) List(ctx context.Context) ([]AgentHostDirectoryEntr
 	return entries, nil
 }
 
+func (d *AgentHostDirectory) Delete(ctx context.Context, agent AgentHostDirectoryEntry) error {
+	return d.Directory.Delete(ctx, agent.AgentID)
+}
+
 type AgentHostDirectoryEntry struct {
 	AgentID    string    `json:"agent_id"`
 	Username   string    `json:"username"`
@@ -301,6 +305,10 @@ func (d *GatewayDirectory) List(ctx context.Context) ([]GatewayDirectoryEntry, e
 	return entries, nil
 }
 
+func (d *GatewayDirectory) Delete(ctx context.Context, gateway GatewayDirectoryEntry) error {
+	return d.Directory.Delete(ctx, gateway.ID, gateway.Name)
+}
+
 type GatewayDirectoryEntry struct {
 	ID          string        `json:"id"`
 	Name        string        `json:"name"`
@@ -349,6 +357,10 @@ func (d *JobDirectory) List(ctx context.Context) ([]JobDirectoryEntry, error) {
 
 func (d *JobDirectory) ListByAgentID(ctx context.Context, agentID string) ([]JobDirectoryEntry, error) {
 	return d.list(ctx, formatKey(agentID, "*"))
+}
+
+func (d *JobDirectory) Delete(ctx context.Context, job JobDirectoryEntry) error {
+	return d.Directory.Delete(ctx, formatKey(job.AgentID, job.ID), job.ID)
 }
 
 func (d *JobDirectory) list(ctx context.Context, key string) ([]JobDirectoryEntry, error) {

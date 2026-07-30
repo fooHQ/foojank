@@ -95,7 +95,7 @@ func (c *Client) RemoveAgent(ctx context.Context, agent AgentDirectoryEntry) err
 		return translate(err)
 	}
 
-	err = dir.Delete(ctx, agent.ID)
+	err = dir.Delete(ctx, agent)
 	if err != nil && !errors.Is(err, jetstream.ErrKeyNotFound) {
 		return translate(err)
 	}
@@ -165,7 +165,7 @@ func (c *Client) RemoveGateway(ctx context.Context, gateway GatewayDirectoryEntr
 		return translate(err)
 	}
 
-	err = dir.Delete(ctx, gateway.ID)
+	err = dir.Delete(ctx, gateway)
 	if err != nil && !errors.Is(err, jetstream.ErrKeyNotFound) {
 		return translate(err)
 	}
