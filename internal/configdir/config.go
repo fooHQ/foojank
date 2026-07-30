@@ -16,12 +16,12 @@ func Init(dir string) error {
 		return err
 	}
 
-	err = InitConfigJson(dir)
+	err = InitConfigJSON(dir)
 	if err != nil {
 		return err
 	}
 
-	err = InitProfilesJson(dir)
+	err = InitProfilesJSON(dir)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func IsConfigDir(dir string) (bool, error) {
 		return false, nil
 	}
 
-	_, err = ParseConfigJson(dir)
+	_, err = ParseConfigJSON(dir)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return false, nil
@@ -71,7 +71,7 @@ func IsConfigDir(dir string) (bool, error) {
 	return true, nil
 }
 
-func InitConfigJson(dir string) error {
+func InitConfigJSON(dir string) error {
 	pth := filepath.Join(dir, ".foojank", "config.json")
 	_, err := os.Open(pth)
 	if err == nil {
@@ -81,7 +81,7 @@ func InitConfigJson(dir string) error {
 	return os.WriteFile(pth, []byte("{}"), 0644)
 }
 
-func UpdateConfigJson(dir string, conf *config.Config) error {
+func UpdateConfigJSON(dir string, conf *config.Config) error {
 	b, err := json.Marshal(conf)
 	if err != nil {
 		return err
@@ -115,12 +115,12 @@ func UpdateConfigJson(dir string, conf *config.Config) error {
 	return nil
 }
 
-func ParseConfigJson(dir string) (*config.Config, error) {
+func ParseConfigJSON(dir string) (*config.Config, error) {
 	pth := filepath.Join(dir, ".foojank", "config.json")
 	return config.ParseFile(pth)
 }
 
-func InitProfilesJson(dir string) error {
+func InitProfilesJSON(dir string) error {
 	pth := filepath.Join(dir, ".foojank", "profiles.json")
 	_, err := os.Open(pth)
 	if err == nil {
@@ -130,7 +130,7 @@ func InitProfilesJson(dir string) error {
 	return os.WriteFile(pth, []byte("{}"), 0644)
 }
 
-func UpdateProfilesJson(dir string, profs *profile.Profiles) error {
+func UpdateProfilesJSON(dir string, profs *profile.Profiles) error {
 	b, err := json.Marshal(profs)
 	if err != nil {
 		return err
@@ -164,7 +164,7 @@ func UpdateProfilesJson(dir string, profs *profile.Profiles) error {
 	return nil
 }
 
-func ParseProfilesJson(dir string) (*profile.Profiles, error) {
+func ParseProfilesJSON(dir string) (*profile.Profiles, error) {
 	pth := filepath.Join(dir, ".foojank", "profiles.json")
 	return profile.ParseFile(pth)
 }

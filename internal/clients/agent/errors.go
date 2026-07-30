@@ -15,11 +15,11 @@ var (
 	ErrJobNotFound        = errors.New("job not found")
 )
 
-type errorApi struct {
+type errorAPI struct {
 	err error
 }
 
-func (e *errorApi) Error() string {
+func (e *errorAPI) Error() string {
 	switch {
 	case errors.Is(e.err, jetstream.ErrStreamNotFound), errors.Is(e.err, jetstream.ErrNoStreamResponse):
 		return ErrAgentNotFound.Error()

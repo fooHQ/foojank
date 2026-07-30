@@ -614,9 +614,9 @@ func NewGatewayPermissions(gatewayID string) jwt.Permissions {
 		Pub: jwt.Permission{
 			Allow: []string{
 				fmt.Sprintf("$JS.ACK.%s.>", gatewayID),
-				fmt.Sprintf("$JS.API.STREAM.INFO.%s", gatewayID),
-				fmt.Sprintf("$JS.API.STREAM.INFO.OBJ_%s", gatewayID),
-				fmt.Sprintf("$JS.API.STREAM.PURGE.OBJ_%s", gatewayID),
+				"$JS.API.STREAM.INFO." + gatewayID,
+				"$JS.API.STREAM.INFO.OBJ_" + gatewayID,
+				"$JS.API.STREAM.PURGE.OBJ_" + gatewayID,
 				fmt.Sprintf("$JS.API.CONSUMER.INFO.%s.*", gatewayID),
 				fmt.Sprintf("$JS.API.CONSUMER.MSG.NEXT.%s.*", gatewayID),
 				fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.*.$O.%s.M.*", gatewayID, gatewayID),
@@ -629,7 +629,7 @@ func NewGatewayPermissions(gatewayID string) jwt.Permissions {
 		},
 		Sub: jwt.Permission{
 			Allow: []string{
-				fmt.Sprintf("%s.>", InboxName(gatewayID)),
+				InboxName(gatewayID) + ".>",
 			},
 		},
 	}

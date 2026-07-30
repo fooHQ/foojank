@@ -85,7 +85,7 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 	return ctx, nil
 }
 
-func action(ctx context.Context, c *cli.Command) (err error) {
+func action(ctx context.Context, _ *cli.Command) (err error) {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 

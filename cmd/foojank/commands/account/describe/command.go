@@ -115,6 +115,6 @@ func action(ctx context.Context, c *cli.Command) error {
 	return nil
 }
 
-func validateConfiguration(conf *config.Config) error {
+func validateConfiguration(_ *config.Config) error {
 	return nil
 }

@@ -48,12 +48,12 @@ func WriteAccount(name string, accountJWT string, accountSeed []byte) error {
 		return err
 	}
 
-	err = os.MkdirAll(filepath.Dir(pth), 0700)
+	err = os.MkdirAll(filepath.Dir(pth), 0o700)
 	if err != nil {
 		return err
 	}
 
-	err = os.WriteFile(pth, data, 0600)
+	err = os.WriteFile(pth, data, 0o600)
 	if err != nil {
 		return err
 	}

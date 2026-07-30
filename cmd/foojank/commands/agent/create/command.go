@@ -98,7 +98,7 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 	return ctx, nil
 }
 
-func action(ctx context.Context, c *cli.Command) error {
+func action(ctx context.Context, _ *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
 	profs := actions.GetProfilesFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)

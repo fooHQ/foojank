@@ -262,6 +262,6 @@ func updateJWTClaims(s string, op operation) (string, error) {
 	return s, nil
 }
 
-func validateConfiguration(conf *config.Config) error {
+func validateConfiguration(_ *config.Config) error {
 	return nil
 }

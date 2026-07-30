@@ -100,7 +100,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	err = configdir.UpdateProfilesJson(configDir, profs)
+	err = configdir.UpdateProfilesJSON(configDir, profs)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create profile: %v", err)
 		return err
@@ -109,6 +109,6 @@ func action(ctx context.Context, c *cli.Command) error {
 	return nil
 }
 
-func validateConfiguration(conf *config.Config) error {
+func validateConfiguration(_ *config.Config) error {
 	return nil
 }

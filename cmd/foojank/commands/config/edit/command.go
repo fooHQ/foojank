@@ -53,7 +53,7 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 	return ctx, nil
 }
 
-func action(ctx context.Context, c *cli.Command) error {
+func action(ctx context.Context, _ *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
@@ -90,7 +90,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		delete(opts, k)
 	}
 
-	err := configdir.UpdateConfigJson(configDir, config.NewWithOptions(opts))
+	err := configdir.UpdateConfigJSON(configDir, config.NewWithOptions(opts))
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot update configuration: %v", err)
 		return err
@@ -99,6 +99,6 @@ func action(ctx context.Context, c *cli.Command) error {
 	return nil
 }
 
-func validateConfiguration(conf *config.Config) error {
+func validateConfiguration(_ *config.Config) error {
 	return nil
 }

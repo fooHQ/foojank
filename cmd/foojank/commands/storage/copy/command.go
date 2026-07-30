@@ -1,9 +1,9 @@
+//nolint:predeclared // preserve the package name
 package copy
 
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	stdpath "path"
@@ -162,7 +162,7 @@ func copyLocalFile(ctx context.Context, client *agent.Client, src string, storag
 	}
 
 	if srcInfo.IsDir() {
-		return fmt.Errorf("source file is a directory")
+		return errors.New("source file is a directory")
 	}
 
 	storageName, err = client.GetStorageName(ctx, storageName)
@@ -237,7 +237,7 @@ func copyRemoteFile(ctx context.Context, client *agent.Client, storageName, src 
 	}
 
 	if srcInfo.IsDir() {
-		return fmt.Errorf("source file is a directory")
+		return errors.New("source file is a directory")
 	}
 
 	err = os.MkdirAll(stdpath.Dir(dst), 0755)

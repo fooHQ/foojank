@@ -45,10 +45,10 @@ var app = &cli.Command{
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
-
 	err := app.Run(ctx, os.Args)
 	if err != nil {
+		cancel()
 		os.Exit(1)
 	}
+	cancel()
 }

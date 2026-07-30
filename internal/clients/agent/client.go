@@ -39,7 +39,7 @@ func (c *Client) CreateStorage(ctx context.Context, name, description string) er
 		Description: description,
 	})
 	if err != nil {
-		return &errorApi{err}
+		return &errorAPI{err}
 	}
 	return nil
 }
@@ -47,7 +47,7 @@ func (c *Client) CreateStorage(ctx context.Context, name, description string) er
 func (c *Client) DeleteStorage(ctx context.Context, name string) error {
 	err := c.srv.DeleteObjectStore(ctx, name)
 	if err != nil {
-		return &errorApi{err}
+		return &errorAPI{err}
 	}
 	return nil
 }
@@ -72,12 +72,12 @@ func (c *Client) GetStorage(ctx context.Context, name string) (*Storage, error) 
 		if errors.Is(err, jetstream.ErrBucketNotFound) {
 			return nil, nil
 		}
-		return nil, &errorApi{err}
+		return nil, &errorAPI{err}
 	}
 
 	store, err := c.srv.ObjectStore(ctx, name)
 	if err != nil {
-		return nil, &errorApi{err}
+		return nil, &errorAPI{err}
 	}
 
 	var storageName string
@@ -85,7 +85,7 @@ func (c *Client) GetStorage(ctx context.Context, name string) (*Storage, error) 
 	if err == nil {
 		storageName = v
 	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
-		return nil, &errorApi{err}
+		return nil, &errorAPI{err}
 	}
 
 	s, err := NewStorage(ctx, storageName, store)
@@ -111,7 +111,7 @@ func (c *Client) ListMessages(
 		OptStartSeq:    startSeq,
 	})
 	if err != nil {
-		return nil, &errorApi{err}
+		return nil, &errorAPI{err}
 	}
 
 	if limit <= 0 {
@@ -178,7 +178,7 @@ func (c *Client) GetAgentID(ctx context.Context, name string) (string, error) {
 		if errors.Is(err, jetstream.ErrBucketNotFound) {
 			return "", ErrAgentNotFound
 		}
-		return "", &errorApi{err}
+		return "", &errorAPI{err}
 	}
 
 	v, err := agentDir.Get(ctx, name)
@@ -186,7 +186,7 @@ func (c *Client) GetAgentID(ctx context.Context, name string) (string, error) {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
 			return "", ErrAgentNotFound
 		}
-		return "", &errorApi{err}
+		return "", &errorAPI{err}
 	}
 
 	return v, nil

@@ -46,7 +46,7 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 			return ctx, err
 		}
 
-		confFile, err := configdir.ParseConfigJson(configDir)
+		confFile, err := configdir.ParseConfigJSON(configDir)
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				err = fmt.Errorf("configuration directory not found in %q", configDir)
@@ -109,12 +109,12 @@ func LoadProfiles(w io.Writer) cli.BeforeFunc {
 
 		configDir, ok := conf.String(flags.ConfigDir)
 		if !ok {
-			err := fmt.Errorf("cannot load profiles: configuration directory not set")
+			err := errors.New("cannot load profiles: configuration directory not set")
 			_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
 			return ctx, err
 		}
 
-		profiles, err := configdir.ParseProfilesJson(configDir)
+		profiles, err := configdir.ParseProfilesJSON(configDir)
 		if err != nil {
 			err = fmt.Errorf("cannot parse profiles: %w", err)
 			_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
@@ -125,8 +125,8 @@ func LoadProfiles(w io.Writer) cli.BeforeFunc {
 	}
 }
 
-func SetupLogger(w io.Writer) cli.BeforeFunc {
-	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
+func SetupLogger(_ io.Writer) cli.BeforeFunc {
+	return func(ctx context.Context, _ *cli.Command) (context.Context, error) {
 		conf := GetConfigFromContext(ctx)
 
 		noColor, ok := conf.Bool(flags.NoColor)
@@ -139,7 +139,7 @@ func SetupLogger(w io.Writer) cli.BeforeFunc {
 	}
 }
 
-func UsageError(ctx context.Context, c *cli.Command, err error, _ bool) error {
+func UsageError(_ context.Context, c *cli.Command, err error, _ bool) error {
 	_, _ = fmt.Fprintf(os.Stderr, "%s: %v\n", c.FullName(), err.Error())
 	return nil
 }
