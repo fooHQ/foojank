@@ -83,6 +83,9 @@ func (c *Client) CreateAgent(ctx context.Context, agent AgentDirectoryEntry) err
 
 	err = dir.Create(ctx, agent)
 	if err != nil {
+		if errors.Is(err, jetstream.ErrKeyExists) {
+			return fmt.Errorf("%q already exists", agent.Name)
+		}
 		return translate(err)
 	}
 
@@ -112,7 +115,7 @@ func (c *Client) GetAgent(ctx context.Context, key string) (AgentDirectoryEntry,
 	agent, err := dir.Get(ctx, key)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return AgentDirectoryEntry{}, ErrAgentNotFound
+			return AgentDirectoryEntry{}, fmt.Errorf("%q not found", key)
 		}
 		return AgentDirectoryEntry{}, translate(err)
 	}
@@ -185,7 +188,7 @@ func (c *Client) GetGateway(ctx context.Context, key string) (GatewayDirectoryEn
 	gateway, err := dir.Get(ctx, key)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return GatewayDirectoryEntry{}, ErrGatewayNotFound
+			return GatewayDirectoryEntry{}, fmt.Errorf("%q not found", key)
 		}
 		return GatewayDirectoryEntry{}, translate(err)
 	}
