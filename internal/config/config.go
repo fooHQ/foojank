@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"maps"
 	"os"
 	"strconv"
 	"strings"
@@ -52,9 +53,7 @@ func (c *Config) MarshalJSON() ([]byte, error) {
 
 func NewWithOptions(opts map[string]string) *Config {
 	data := make(config, len(opts))
-	for k, v := range opts {
-		data[k] = v
-	}
+	maps.Copy(data, opts)
 	return &Config{
 		data: data,
 	}
@@ -113,9 +112,7 @@ func Merge(confs ...*Config) *Config {
 			continue
 		}
 
-		for k, v := range conf.data {
-			result.data[k] = v
-		}
+		maps.Copy(result.data, conf.data)
 	}
 	return result
 }
