@@ -8,9 +8,6 @@ import (
 )
 
 var (
-	ErrAgentNotFound      = errors.New("agent not found")
-	ErrGatewayNotFound    = errors.New("gateway not found")
-	ErrJobNotFound        = errors.New("job not found")
 	ErrStorageExists      = errors.New("storage already exists")
 	ErrStorageNotFound    = errors.New("storage not found")
 	ErrFileNotFound       = errors.New("file not found")
