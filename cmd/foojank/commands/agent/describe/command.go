@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/urfave/cli/v3"
@@ -100,6 +101,9 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	agent, err := client.GetAgent(ctx, agentName)
 	if err != nil {
+		if errors.Is(err, daemon.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", agentName)
+		}
 		logger.ErrorContext(ctx, "Cannot get agent: %v", err)
 		return err
 	}

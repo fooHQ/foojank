@@ -3,6 +3,7 @@ package describe
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -100,13 +101,23 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	job, err := client.GetJob(ctx, jobID)
 	if err != nil {
+		if errors.Is(err, daemon.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", jobID)
+		}
 		logger.ErrorContext(ctx, "Cannot get job: %v", err)
 		return err
 	}
 
-	agentName := job.AgentID
+	var agentName string
 	agent, err := client.GetAgent(ctx, job.AgentID)
-	if err == nil {
+	if err != nil {
+		if !errors.Is(err, daemon.ErrKeyNotFound) {
+			logger.ErrorContext(ctx, "Cannot get agent: %v", err)
+			return err
+		}
+
+		agentName = job.AgentID
+	} else {
 		agentName = agent.Name
 	}
 

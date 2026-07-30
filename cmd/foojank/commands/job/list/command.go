@@ -3,6 +3,7 @@ package list
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -101,7 +102,10 @@ func action(ctx context.Context, c *cli.Command) error {
 	if agentName != "" {
 		agent, err := client.GetAgent(ctx, agentName)
 		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get agent %q: %v", agentName, err)
+			if errors.Is(err, daemon.ErrKeyNotFound) {
+				err = fmt.Errorf("%q not found", agentName)
+			}
+			logger.ErrorContext(ctx, "Cannot get agent: %v", err)
 			return err
 		}
 

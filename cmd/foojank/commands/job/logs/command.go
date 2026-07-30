@@ -93,6 +93,9 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	job, err := client.GetJob(ctx, jobID)
 	if err != nil {
+		if errors.Is(err, daemon.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", jobID)
+		}
 		logger.ErrorContext(ctx, "Cannot get job: %v", err)
 		return err
 	}
