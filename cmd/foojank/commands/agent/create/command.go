@@ -3,6 +3,7 @@ package create
 import (
 	"context"
 	"errors"
+	"fmt"
 	"maps"
 	"os"
 	"runtime"
@@ -129,7 +130,10 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	gateway, err := client.GetGateway(ctx, gatewayName)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get gateway %q: %v", gatewayName, err)
+		if errors.Is(err, daemon.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", gatewayName)
+		}
+		logger.ErrorContext(ctx, "Cannot get gateway: %v", err)
 		return err
 	}
 
