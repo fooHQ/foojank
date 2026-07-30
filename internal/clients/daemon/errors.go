@@ -15,9 +15,8 @@ var (
 	ErrServiceUnavailable = errors.New("service unavailable")
 	ErrKeyNotFound        = errors.New("key not found")
 	ErrKeyExists          = errors.New("key already exists")
-	ErrKeyInvalid         = errors.New("invalid key")
-	ErrNameInvalid        = errors.New("invalid name")
 	ErrStreamNotFound     = errors.New("stream not found")
+	ErrNameInvalid        = errors.New("invalid name")
 )
 
 func translate(err error) error {
@@ -41,7 +40,7 @@ func translate(err error) error {
 	case errors.Is(err, jetstream.ErrKeyExists):
 		return ErrKeyExists
 	case errors.Is(err, jetstream.ErrInvalidKey):
-		return ErrKeyInvalid
+		return ErrNameInvalid
 	case errors.Is(err, jetstream.ErrStreamNotFound):
 		return ErrStreamNotFound
 	default:

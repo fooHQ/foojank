@@ -3,7 +3,6 @@ package daemon
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"strings"
 	"time"
 
@@ -134,9 +133,6 @@ func (d *AgentDirectory) Create(ctx context.Context, entry AgentDirectoryEntry) 
 
 	err = d.Directory.Create(ctx, entry.ID, b, entry.Name)
 	if err != nil {
-		if errors.Is(err, jetstream.ErrInvalidKey) {
-			return ErrNameInvalid
-		}
 		return err
 	}
 
@@ -204,9 +200,6 @@ func (d *AgentHostDirectory) Create(ctx context.Context, entry AgentHostDirector
 
 	err = d.Directory.Create(ctx, entry.AgentID, b)
 	if err != nil {
-		if errors.Is(err, jetstream.ErrInvalidKey) {
-			return ErrNameInvalid
-		}
 		return err
 	}
 
@@ -268,9 +261,6 @@ func (d *GatewayDirectory) Create(ctx context.Context, entry GatewayDirectoryEnt
 
 	err = d.Directory.Create(ctx, entry.ID, b, entry.Name)
 	if err != nil {
-		if errors.Is(err, jetstream.ErrInvalidKey) {
-			return ErrNameInvalid
-		}
 		return err
 	}
 
