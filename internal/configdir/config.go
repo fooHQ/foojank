@@ -30,7 +30,7 @@ func Init(dir string) error {
 }
 
 func Search(dir string) (string, error) {
-	for i := 0; i < 128; i++ {
+	for range 128 {
 		isConfigDir, err := IsConfigDir(dir)
 		if err != nil {
 			return "", err
