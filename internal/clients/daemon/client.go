@@ -111,9 +111,6 @@ func (c *Client) GetAgent(ctx context.Context, key string) (AgentDirectoryEntry,
 
 	agent, err := dir.Get(ctx, key)
 	if err != nil {
-		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return AgentDirectoryEntry{}, ErrAgentNotFound
-		}
 		return AgentDirectoryEntry{}, translate(err)
 	}
 
@@ -184,9 +181,6 @@ func (c *Client) GetGateway(ctx context.Context, key string) (GatewayDirectoryEn
 
 	gateway, err := dir.Get(ctx, key)
 	if err != nil {
-		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return GatewayDirectoryEntry{}, ErrGatewayNotFound
-		}
 		return GatewayDirectoryEntry{}, translate(err)
 	}
 
@@ -229,9 +223,6 @@ func (c *Client) GetJob(ctx context.Context, key string) (JobDirectoryEntry, err
 
 	job, err := dir.Get(ctx, key)
 	if err != nil {
-		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return JobDirectoryEntry{}, ErrJobNotFound
-		}
 		return JobDirectoryEntry{}, translate(err)
 	}
 
