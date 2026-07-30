@@ -4,6 +4,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
+	"github.com/foohq/foojank/cmd/foojank/commands/agent/describe"
 
 	"github.com/foohq/foojank/cmd/foojank/commands/agent/build"
 	"github.com/foohq/foojank/cmd/foojank/commands/agent/create"
@@ -18,6 +19,7 @@ func NewCommand() *cli.Command {
 		Usage: "Manage agents",
 		Commands: []*cli.Command{
 			create.NewCommand(),
+			describe.NewCommand(),
 			build.NewCommand(),
 			list.NewCommand(),
 			remove.NewCommand(),
