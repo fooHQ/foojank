@@ -101,7 +101,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	err = client.PublishStopWorkerRequest(ctx, job)
+	err = client.PublishStopWorker(ctx, job)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot cancel job: %v", err)
 		return err
