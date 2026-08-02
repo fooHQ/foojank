@@ -124,21 +124,25 @@ func action(ctx context.Context, c *cli.Command) error {
 	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("ID").WithBold(),
 		formatter.NewStringCell("NAME").WithBold(),
-		formatter.NewStringCell("GATEWAY").WithBold(),
 		formatter.NewStringCell("OS").WithBold(),
 		formatter.NewStringCell("ARCH").WithBold(),
-		formatter.NewStringCell("SERVER URL").WithBold(),
-		formatter.NewStringCell("SERVER CERTIFICATE").WithBold(),
+		formatter.NewStringCell("GATEWAY").WithBold(),
+		formatter.NewStringCell("GATEWAY URL").WithBold(),
+		formatter.NewStringCell("GATEWAY CERTIFICATE").WithBold(),
+		formatter.NewStringCell("JWT").WithBold(),
+		formatter.NewStringCell("KEY").WithBold(),
 		formatter.NewStringCell("EXTRA").WithBold(),
 	})
 	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell(agent.ID),
 		formatter.NewStringCell(agent.Name),
-		formatter.NewStringCell(gatewayName),
 		formatter.NewStringCell(agent.Config.OS),
 		formatter.NewStringCell(agent.Config.Arch),
+		formatter.NewStringCell(gatewayName),
 		formatter.NewStringCell(agent.Config.ServerURL),
 		formatter.NewStringCell(formatCertificate(agent.Config.ServerCertificate)),
+		formatter.NewStringCell(agent.Config.UserJWT),
+		formatter.NewStringCell(agent.Config.UserKey),
 		formatter.NewStringMapCell(agent.Config.Extra).WithKeyValueSeparator(" = ").WithSeparator("\n"),
 	})
 
