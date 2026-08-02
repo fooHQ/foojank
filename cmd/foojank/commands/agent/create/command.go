@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	petname "github.com/dustinkirkland/golang-petname"
-	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
@@ -137,9 +136,57 @@ func action(ctx context.Context, _ *cli.Command) error {
 		return err
 	}
 
-	agentID := nuid.Next()
 	if agentName == "" {
 		agentName = petname.Generate(2, "-")
+	}
+
+	user, err := auth.NewUserKey()
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot generate a user key: %v", err)
+		return err
+	}
+
+	agentID, err := user.PublicKey()
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot create agent ID: %v", err)
+		return err
+	}
+
+	agentPerms := daemon.NewAgentPermissions(gateway.ID, agentID)
+	agentClaims, err := auth.NewUserJWT(agentName, agentPerms, user)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
+		return err
+	}
+
+	// Get the client's user JWT.
+	userClaims, err := auth.GetUserJWT(accountName)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot get user JWT: %v", err)
+		return err
+	}
+
+	if userClaims.IssuerAccount != "" {
+		agentClaims.IssuerAccount = userClaims.IssuerAccount
+	}
+
+	// Get the client's account key.
+	account, err := auth.GetAccountKey(accountName)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot get account key: %v", err)
+		return err
+	}
+
+	agentJWT, err := agentClaims.Encode(account)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
+		return err
+	}
+
+	agentSeed, err := user.Seed()
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot encode user seed: %v", err)
+		return err
 	}
 
 	agent := daemon.AgentDirectoryEntry{
@@ -151,6 +198,8 @@ func action(ctx context.Context, _ *cli.Command) error {
 			Arch:              runtime.GOARCH,
 			ServerURL:         gateway.Config.URL,
 			ServerCertificate: gateway.Config.Certificate,
+			UserJWT:           agentJWT,
+			UserKey:           string(agentSeed),
 			Extra:             make(map[string]string),
 		},
 	}
