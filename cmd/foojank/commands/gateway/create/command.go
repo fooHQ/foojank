@@ -111,7 +111,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		return err
 	}
 
-	gatewayPerms := daemon.NewGatewayPermissions(gatewayID)
+	gatewayPerms := client.NewGatewayPermissions(gatewayID)
 	gatewayClaims, err := auth.NewUserJWT(gatewayName, gatewayPerms, user)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
