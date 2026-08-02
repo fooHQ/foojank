@@ -609,6 +609,37 @@ func InboxName(name string) string {
 	return "_INBOX_" + name
 }
 
+func NewAgentPermissions(gatewayID, agentID string) jwt.Permissions {
+	return jwt.Permissions{
+		Pub: jwt.Permission{
+			Allow: []string{
+				protoagent.EvtStartWorkerSubject(gatewayID, agentID, "*"),
+				protoagent.EvtStopWorkerSubject(gatewayID, agentID, "*"),
+				protoagent.EvtWorkerStdoutSubject(gatewayID, agentID, "*"),
+				protoagent.EvtWorkerStatusSubject(gatewayID, agentID, "*"),
+				protoagent.EvtAgentInfoSubject(gatewayID, agentID),
+
+				fmt.Sprintf("$JS.ACK.FJ_%s.>", agentID),
+				fmt.Sprintf("$JS.API.STREAM.INFO.FJ_%s", agentID),
+				fmt.Sprintf("$JS.API.STREAM.INFO.OBJ_%s", agentID),
+				fmt.Sprintf("$JS.API.STREAM.PURGE.OBJ_%s", agentID),
+				fmt.Sprintf("$JS.API.CONSUMER.INFO.FJ_%s.*", agentID),
+				fmt.Sprintf("$JS.API.CONSUMER.MSG.NEXT.FJ_%s.*", agentID),
+				fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.>", agentID),
+				fmt.Sprintf("$JS.API.CONSUMER.DELETE.OBJ_%s.*", agentID),
+				fmt.Sprintf("$JS.API.DIRECT.GET.OBJ_%s.>", agentID),
+				fmt.Sprintf("$O.%s.M.*", agentID),
+				fmt.Sprintf("$O.%s.C.*", agentID),
+			},
+		},
+		Sub: jwt.Permission{
+			Allow: []string{
+				InboxName(gatewayID) + ".>",
+			},
+		},
+	}
+}
+
 func NewGatewayPermissions(gatewayID string) jwt.Permissions {
 	return jwt.Permissions{
 		Pub: jwt.Permission{
