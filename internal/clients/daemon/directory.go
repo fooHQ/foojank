@@ -185,6 +185,8 @@ type AgentBuildConfig struct {
 	Arch              string            `json:"arch"`
 	ServerURL         string            `json:"server_url"`
 	ServerCertificate []byte            `json:"server_certificate"`
+	UserJWT           string            `json:"user_jwt"`
+	UserKey           string            `json:"user_key"`
 	Extra             map[string]string `json:"extra"`
 }
 
