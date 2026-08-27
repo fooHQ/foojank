@@ -131,6 +131,9 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 		builder.Target:    outputPath,
 		builder.AgentID:   agent.ID,
 		builder.AgentName: agent.Name,
+		builder.GatewayID: agent.GatewayID,
+		builder.UserJWT:   agent.Config.UserJWT,
+		builder.UserKey:   agent.Config.UserKey,
 	})
 
 	output, err := builder.Run(ctx, sourceDir, env)
