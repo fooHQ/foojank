@@ -13,6 +13,9 @@ const (
 	Target    = "TARGET"
 	AgentID   = "FJ_AGENT_ID"
 	AgentName = "FJ_AGENT_NAME"
+	GatewayID = "FJ_GATEWAY_ID"
+	UserJWT   = "FJ_USER_JWT"
+	UserKey   = "FJ_USER_KEY"
 )
 
 func Run(ctx context.Context, dir string, env map[string]string) (string, error) {
