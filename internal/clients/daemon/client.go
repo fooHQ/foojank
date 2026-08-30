@@ -437,7 +437,7 @@ func (c *Client) PublishStartWorker(ctx context.Context, job JobDirectoryEntry) 
 	err = c.publishMsgToStream(
 		ctx,
 		&nats.Msg{
-			Subject: protoagent.CmdStartWorkerSubject(job.GatewayID, job.ID, job.WorkerID),
+			Subject: protoagent.CmdStartWorkerSubject(job.GatewayID, job.AgentID, job.WorkerID),
 			Data:    b,
 		},
 	)
@@ -513,12 +513,12 @@ func (c *Client) NewGatewayPermissions(gatewayID string) jwt.Permissions {
 	return jwt.Permissions{
 		Pub: jwt.Permission{
 			Allow: []string{
-				/*fmt.Sprintf("$JS.ACK.%s.>", gatewayID),
-				"$JS.API.STREAM.INFO." + gatewayID,
+				/*"$JS.API.STREAM.INFO." + gatewayID,
 				"$JS.API.STREAM.INFO.OBJ_" + gatewayID,
 				"$JS.API.STREAM.PURGE.OBJ_" + gatewayID,*/
 				fmt.Sprintf("$JS.API.CONSUMER.INFO.%s.%s", c.stream, gatewayID),
 				fmt.Sprintf("$JS.API.CONSUMER.MSG.NEXT.%s.%s", c.stream, gatewayID),
+				fmt.Sprintf("$JS.ACK.%s.%s.>", c.stream, gatewayID),
 				"_INBOX.>",
 				/*fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.>", gatewayID),
 				fmt.Sprintf("$JS.API.CONSUMER.DELETE.OBJ_%s.*", gatewayID),
@@ -530,8 +530,8 @@ func (c *Client) NewGatewayPermissions(gatewayID string) jwt.Permissions {
 		Sub: jwt.Permission{
 			Allow: []string{
 				inboxName(gatewayID) + ".>",
-				fmt.Sprintf("FJ.GATEWAY.%s.CMD.AGENT.*.REGISTER", gatewayID),
-				fmt.Sprintf("FJ.GATEWAY.%s.CMD.AGENT.*.UNREGISTER", gatewayID),
+				protogw.RegisterAgentSubject(gatewayID),
+				protogw.UnregisterAgentSubject(gatewayID),
 			},
 		},
 	}
