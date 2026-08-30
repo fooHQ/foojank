@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"strings"
 
 	"github.com/dtn7/cboring"
 )
@@ -202,6 +203,47 @@ func EvtWorkerStdoutSubject(gatewayID, agentID, workerID string) string {
 // EvtAgentInfoSubject returns the NATS subject for an agent info event.
 func EvtAgentInfoSubject(gatewayID, agentID string) string {
 	return "FJ.GATEWAY." + gatewayID + ".AGENT." + agentID + ".EVT.INFO"
+}
+
+// Subject holds the identifiers encoded in an agent subject. WorkerID is empty
+// for subjects that do not target a specific worker, such as the agent info
+// event.
+type Subject struct {
+	GatewayID string
+	AgentID   string
+	WorkerID  string
+}
+
+// ParseSubject extracts the identifiers from an agent subject. It reports false
+// for subjects that do not match the agent layout, so a foreign or malformed
+// subject yields no identifiers rather than misattributed ones.
+func ParseSubject(subject string) (Subject, bool) {
+	parts := strings.Split(subject, ".")
+	if len(parts) < 7 ||
+		parts[0] != "FJ" ||
+		parts[1] != "GATEWAY" ||
+		parts[3] != "AGENT" {
+		return Subject{}, false
+	}
+
+	category := parts[5]
+	if category != "CMD" && category != "EVT" {
+		return Subject{}, false
+	}
+
+	s := Subject{
+		GatewayID: parts[2],
+		AgentID:   parts[4],
+	}
+
+	if parts[6] == "WORKER" {
+		if len(parts) < 9 {
+			return Subject{}, false
+		}
+		s.WorkerID = parts[7]
+	}
+
+	return s, true
 }
 
 // writeStringSlice writes a slice of strings as a definite-length CBOR array.

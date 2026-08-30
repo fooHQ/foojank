@@ -294,3 +294,79 @@ func TestEvtAgentInfoSubject(t *testing.T) {
 	got := agent.EvtAgentInfoSubject("gateway1", "agent1")
 	require.Equal(t, "FJ.GATEWAY.gateway1.AGENT.agent1.EVT.INFO", got)
 }
+
+func TestParseSubject(t *testing.T) {
+	tests := []struct {
+		name    string
+		subject string
+		want    agent.Subject
+	}{
+		{
+			name:    "command worker subject",
+			subject: agent.CmdStartWorkerSubject("gateway1", "agent1", "worker1"),
+			want:    agent.Subject{GatewayID: "gateway1", AgentID: "agent1", WorkerID: "worker1"},
+		},
+		{
+			name:    "event worker subject",
+			subject: agent.EvtWorkerStdoutSubject("gateway1", "agent1", "worker1"),
+			want:    agent.Subject{GatewayID: "gateway1", AgentID: "agent1", WorkerID: "worker1"},
+		},
+		{
+			name:    "stdin subject",
+			subject: agent.CmdWriteStdinSubject("gateway1", "agent1", "worker1"),
+			want:    agent.Subject{GatewayID: "gateway1", AgentID: "agent1", WorkerID: "worker1"},
+		},
+		{
+			name:    "agent info subject has no worker",
+			subject: agent.EvtAgentInfoSubject("gateway1", "agent1"),
+			want:    agent.Subject{GatewayID: "gateway1", AgentID: "agent1"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := agent.ParseSubject(tt.subject)
+			require.True(t, ok)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestParseSubjectInvalid(t *testing.T) {
+	tests := []struct {
+		name    string
+		subject string
+	}{
+		{
+			name:    "empty",
+			subject: "",
+		},
+		{
+			name:    "too short",
+			subject: "FJ.GATEWAY.gateway1.AGENT.agent1",
+		},
+		{
+			name:    "wrong prefix",
+			subject: "XX.GATEWAY.gateway1.AGENT.agent1.EVT.INFO",
+		},
+		{
+			name:    "not an agent subject",
+			subject: "FJ.GATEWAY.gateway1.RPC.AGENT.REGISTER",
+		},
+		{
+			name:    "unknown category",
+			subject: "FJ.GATEWAY.gateway1.AGENT.agent1.XXX.INFO",
+		},
+		{
+			name:    "worker subject missing worker id",
+			subject: "FJ.GATEWAY.gateway1.AGENT.agent1.EVT.WORKER",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, ok := agent.ParseSubject(tt.subject)
+			require.False(t, ok)
+		})
+	}
+}
