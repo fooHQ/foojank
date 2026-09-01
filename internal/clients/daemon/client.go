@@ -75,18 +75,18 @@ func (c *Client) InitDaemon(ctx context.Context) (err error) {
 	return nil
 }
 
-func (c *Client) CreateAgent(ctx context.Context, agent AgentDirectoryEntry) error {
+func (c *Client) CreateAgent(ctx context.Context, agent AgentDirectoryEntry) (AgentDirectoryEntry, error) {
 	dir, err := c.openAgentDirectory(ctx)
 	if err != nil {
-		return translate(err)
+		return AgentDirectoryEntry{}, translate(err)
 	}
 
-	err = dir.Create(ctx, agent)
+	agent, err = dir.Create(ctx, agent)
 	if err != nil {
-		return translate(err)
+		return AgentDirectoryEntry{}, translate(err)
 	}
 
-	return nil
+	return agent, nil
 }
 
 func (c *Client) RemoveAgent(ctx context.Context, agent AgentDirectoryEntry) error {
@@ -145,18 +145,18 @@ func (c *Client) ListAgentHosts(ctx context.Context) ([]AgentHostDirectoryEntry,
 	return entries, nil
 }
 
-func (c *Client) CreateGateway(ctx context.Context, gateway GatewayDirectoryEntry) error {
+func (c *Client) CreateGateway(ctx context.Context, gateway GatewayDirectoryEntry) (GatewayDirectoryEntry, error) {
 	dir, err := c.openGatewayDirectory(ctx)
 	if err != nil {
-		return translate(err)
+		return GatewayDirectoryEntry{}, translate(err)
 	}
 
-	err = dir.Create(ctx, gateway)
+	gateway, err = dir.Create(ctx, gateway)
 	if err != nil {
-		return translate(err)
+		return GatewayDirectoryEntry{}, translate(err)
 	}
 
-	return nil
+	return gateway, nil
 }
 
 func (c *Client) RemoveGateway(ctx context.Context, gateway GatewayDirectoryEntry) error {
@@ -201,18 +201,18 @@ func (c *Client) ListGateways(ctx context.Context) ([]GatewayDirectoryEntry, err
 	return entries, nil
 }
 
-func (c *Client) CreateJob(ctx context.Context, job JobDirectoryEntry) error {
+func (c *Client) CreateJob(ctx context.Context, job JobDirectoryEntry) (JobDirectoryEntry, error) {
 	dir, err := c.openJobDirectory(ctx)
 	if err != nil {
-		return translate(err)
+		return JobDirectoryEntry{}, translate(err)
 	}
 
-	err = dir.Create(ctx, job)
+	job, err = dir.Create(ctx, job)
 	if err != nil {
-		return translate(err)
+		return JobDirectoryEntry{}, translate(err)
 	}
 
-	return nil
+	return job, nil
 }
 
 func (c *Client) GetJob(ctx context.Context, key string) (JobDirectoryEntry, error) {
