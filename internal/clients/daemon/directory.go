@@ -19,11 +19,11 @@ type Directory struct {
 	store jetstream.KeyValue
 }
 
-func (d *Directory) Create(ctx context.Context, id string, value []byte, keys ...string) (err error) {
+func (d *Directory) Create(ctx context.Context, id string, value []byte, keys ...string) (revision uint64, err error) {
 	id = idKeyPrefix + strings.ToLower(id)
-	_, err = d.store.Create(ctx, id, value)
+	revision, err = d.store.Create(ctx, id, value)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	created := make([]string, 0, len(keys))
@@ -41,12 +41,12 @@ func (d *Directory) Create(ctx context.Context, id string, value []byte, keys ..
 		key = strings.ToLower(key)
 		_, err = d.store.Create(ctx, key, []byte(id))
 		if err != nil {
-			return err
+			return 0, err
 		}
 		created = append(created, key)
 	}
 
-	return nil
+	return revision, nil
 }
 
 func (d *Directory) Delete(ctx context.Context, id string, keys ...string) error {
@@ -67,31 +67,37 @@ func (d *Directory) Delete(ctx context.Context, id string, keys ...string) error
 	return nil
 }
 
-func (d *Directory) Get(ctx context.Context, key string) ([]byte, error) {
+func (d *Directory) Get(ctx context.Context, key string) (DirectoryEntry, error) {
 	key = strings.ToLower(key)
 
 	// Try as a direct id key first.
 	v, err := d.store.Get(ctx, idKeyPrefix+key)
 	if err == nil {
-		return v.Value(), nil
+		return DirectoryEntry{
+			Value:    v.Value(),
+			Revision: v.Revision(),
+		}, nil
 	}
 
 	// Try as a reference key.
 	v, err = d.store.Get(ctx, key)
 	if err != nil {
-		return nil, err
+		return DirectoryEntry{}, err
 	}
 
 	// Resolve reference to id value.
 	v2, err := d.store.Get(ctx, string(v.Value()))
 	if err != nil {
-		return nil, err
+		return DirectoryEntry{}, err
 	}
 
-	return v2.Value(), nil
+	return DirectoryEntry{
+		Value:    v2.Value(),
+		Revision: v2.Revision(),
+	}, nil
 }
 
-func (d *Directory) List(ctx context.Context, key string) ([][]byte, error) {
+func (d *Directory) List(ctx context.Context, key string) ([]DirectoryEntry, error) {
 	list, err := d.store.ListKeysFiltered(ctx, idKeyPrefix+strings.ToLower(key))
 	if err != nil {
 		return nil, err
@@ -105,47 +111,59 @@ func (d *Directory) List(ctx context.Context, key string) ([][]byte, error) {
 		seen[key] = struct{}{}
 	}
 
-	result := make([][]byte, 0, len(seen))
+	result := make([]DirectoryEntry, 0, len(seen))
 	for key := range seen {
 		v, err := d.store.Get(ctx, key)
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, v.Value())
+
+		result = append(result, DirectoryEntry{
+			Value:    v.Value(),
+			Revision: v.Revision(),
+		})
 	}
 
 	return result, nil
+}
+
+type DirectoryEntry struct {
+	Value    []byte
+	Revision uint64
 }
 
 type AgentDirectory struct {
 	Directory
 }
 
-func (d *AgentDirectory) Create(ctx context.Context, entry AgentDirectoryEntry) error {
+func (d *AgentDirectory) Create(ctx context.Context, entry AgentDirectoryEntry) (AgentDirectoryEntry, error) {
 	b, err := json.Marshal(entry)
 	if err != nil {
-		return err
+		return AgentDirectoryEntry{}, err
 	}
 
-	err = d.Directory.Create(ctx, entry.ID, b, entry.Name)
+	rev, err := d.Directory.Create(ctx, entry.ID, b, entry.Name)
 	if err != nil {
-		return err
+		return AgentDirectoryEntry{}, err
 	}
 
-	return nil
+	entry.Revision = rev
+	return entry, nil
 }
 
 func (d *AgentDirectory) Get(ctx context.Context, key string) (AgentDirectoryEntry, error) {
-	b, err := d.Directory.Get(ctx, key)
+	v, err := d.Directory.Get(ctx, key)
 	if err != nil {
 		return AgentDirectoryEntry{}, err
 	}
 
 	var entry AgentDirectoryEntry
-	err = json.Unmarshal(b, &entry)
+	err = json.Unmarshal(v.Value, &entry)
 	if err != nil {
 		return AgentDirectoryEntry{}, err
 	}
+
+	entry.Revision = v.Revision
 
 	return entry, nil
 }
@@ -159,10 +177,12 @@ func (d *AgentDirectory) List(ctx context.Context) ([]AgentDirectoryEntry, error
 	entries := make([]AgentDirectoryEntry, 0, len(blobs))
 	for _, b := range blobs {
 		var entry AgentDirectoryEntry
-		err := json.Unmarshal(b, &entry)
+		err := json.Unmarshal(b.Value, &entry)
 		if err != nil {
 			return nil, err
 		}
+
+		entry.Revision = b.Revision
 		entries = append(entries, entry)
 	}
 
@@ -178,6 +198,7 @@ type AgentDirectoryEntry struct {
 	Name      string           `json:"name"`
 	GatewayID string           `json:"gateway_id"`
 	Config    AgentBuildConfig `json:"config"`
+	Revision  uint64           `json:"-"`
 }
 
 type AgentBuildConfig struct {
@@ -194,31 +215,34 @@ type AgentHostDirectory struct {
 	Directory
 }
 
-func (d *AgentHostDirectory) Create(ctx context.Context, entry AgentHostDirectoryEntry) error {
+func (d *AgentHostDirectory) Create(ctx context.Context, entry AgentHostDirectoryEntry) (AgentHostDirectoryEntry, error) {
 	b, err := json.Marshal(entry)
 	if err != nil {
-		return err
+		return AgentHostDirectoryEntry{}, err
 	}
 
-	err = d.Directory.Create(ctx, entry.AgentID, b)
+	rev, err := d.Directory.Create(ctx, entry.AgentID, b)
 	if err != nil {
-		return err
+		return AgentHostDirectoryEntry{}, err
 	}
 
-	return nil
+	entry.Revision = rev
+	return entry, nil
 }
 
 func (d *AgentHostDirectory) Get(ctx context.Context, key string) (AgentHostDirectoryEntry, error) {
-	b, err := d.Directory.Get(ctx, key)
+	v, err := d.Directory.Get(ctx, key)
 	if err != nil {
 		return AgentHostDirectoryEntry{}, err
 	}
 
 	var entry AgentHostDirectoryEntry
-	err = json.Unmarshal(b, &entry)
+	err = json.Unmarshal(v.Value, &entry)
 	if err != nil {
 		return AgentHostDirectoryEntry{}, err
 	}
+
+	entry.Revision = v.Revision
 
 	return entry, nil
 }
@@ -232,10 +256,12 @@ func (d *AgentHostDirectory) List(ctx context.Context) ([]AgentHostDirectoryEntr
 	entries := make([]AgentHostDirectoryEntry, 0, len(blobs))
 	for _, b := range blobs {
 		var entry AgentHostDirectoryEntry
-		err := json.Unmarshal(b, &entry)
+		err := json.Unmarshal(b.Value, &entry)
 		if err != nil {
 			return nil, err
 		}
+
+		entry.Revision = b.Revision
 		entries = append(entries, entry)
 	}
 
@@ -253,37 +279,41 @@ type AgentHostDirectoryEntry struct {
 	System     string    `json:"system"`
 	Address    string    `json:"address"`
 	LastUpdate time.Time `json:"last_update"`
+	Revision   uint64    `json:"-"`
 }
 
 type GatewayDirectory struct {
 	Directory
 }
 
-func (d *GatewayDirectory) Create(ctx context.Context, entry GatewayDirectoryEntry) error {
+func (d *GatewayDirectory) Create(ctx context.Context, entry GatewayDirectoryEntry) (GatewayDirectoryEntry, error) {
 	b, err := json.Marshal(entry)
 	if err != nil {
-		return err
+		return GatewayDirectoryEntry{}, err
 	}
 
-	err = d.Directory.Create(ctx, entry.ID, b, entry.Name)
+	rev, err := d.Directory.Create(ctx, entry.ID, b, entry.Name)
 	if err != nil {
-		return err
+		return GatewayDirectoryEntry{}, err
 	}
 
-	return nil
+	entry.Revision = rev
+	return entry, nil
 }
 
 func (d *GatewayDirectory) Get(ctx context.Context, key string) (GatewayDirectoryEntry, error) {
-	b, err := d.Directory.Get(ctx, key)
+	v, err := d.Directory.Get(ctx, key)
 	if err != nil {
 		return GatewayDirectoryEntry{}, err
 	}
 
 	var entry GatewayDirectoryEntry
-	err = json.Unmarshal(b, &entry)
+	err = json.Unmarshal(v.Value, &entry)
 	if err != nil {
 		return GatewayDirectoryEntry{}, err
 	}
+
+	entry.Revision = v.Revision
 
 	return entry, nil
 }
@@ -297,10 +327,12 @@ func (d *GatewayDirectory) List(ctx context.Context) ([]GatewayDirectoryEntry, e
 	entries := make([]GatewayDirectoryEntry, 0, len(blobs))
 	for _, b := range blobs {
 		var entry GatewayDirectoryEntry
-		err := json.Unmarshal(b, &entry)
+		err := json.Unmarshal(b.Value, &entry)
 		if err != nil {
 			return nil, err
 		}
+
+		entry.Revision = b.Revision
 		entries = append(entries, entry)
 	}
 
@@ -316,6 +348,7 @@ type GatewayDirectoryEntry struct {
 	Name        string        `json:"name"`
 	Description string        `json:"description"`
 	Config      GatewayConfig `json:"config"`
+	Revision    uint64        `json:"-"`
 }
 
 type GatewayConfig struct {
@@ -330,25 +363,34 @@ type JobDirectory struct {
 	Directory
 }
 
-func (d *JobDirectory) Create(ctx context.Context, entry JobDirectoryEntry) error {
+func (d *JobDirectory) Create(ctx context.Context, entry JobDirectoryEntry) (JobDirectoryEntry, error) {
 	b, err := json.Marshal(entry)
 	if err != nil {
-		return err
+		return JobDirectoryEntry{}, err
 	}
-	return d.Directory.Create(ctx, formatKey(entry.AgentID, entry.ID), b, entry.ID)
+
+	rev, err := d.Directory.Create(ctx, formatKey(entry.AgentID, entry.ID), b, entry.ID)
+	if err != nil {
+		return JobDirectoryEntry{}, err
+	}
+
+	entry.Revision = rev
+	return entry, nil
 }
 
 func (d *JobDirectory) Get(ctx context.Context, key string) (JobDirectoryEntry, error) {
-	b, err := d.Directory.Get(ctx, key)
+	v, err := d.Directory.Get(ctx, key)
 	if err != nil {
 		return JobDirectoryEntry{}, err
 	}
 
 	var entry JobDirectoryEntry
-	err = json.Unmarshal(b, &entry)
+	err = json.Unmarshal(v.Value, &entry)
 	if err != nil {
 		return JobDirectoryEntry{}, err
 	}
+
+	entry.Revision = v.Revision
 
 	return entry, nil
 }
@@ -374,10 +416,12 @@ func (d *JobDirectory) list(ctx context.Context, key string) ([]JobDirectoryEntr
 	entries := make([]JobDirectoryEntry, 0, len(blobs))
 	for _, b := range blobs {
 		var entry JobDirectoryEntry
-		err := json.Unmarshal(b, &entry)
+		err := json.Unmarshal(b.Value, &entry)
 		if err != nil {
 			return nil, err
 		}
+
+		entry.Revision = b.Revision
 		entries = append(entries, entry)
 	}
 
@@ -392,6 +436,7 @@ type JobDirectoryEntry struct {
 	Config    JobConfig `json:"config"`
 	State     JobState  `json:"state"`
 	CreatedAt time.Time `json:"created_at"`
+	Revision  uint64    `json:"-"`
 }
 
 type JobConfig struct {
