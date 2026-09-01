@@ -17,20 +17,18 @@ var ErrInvalidSignature = errors.New("invalid signature")
 // subject. It supplies the routing the receiver cannot otherwise deduce, plus
 // the credential and signature that authenticate the sender.
 type Envelope struct {
-	// JWT is the sender's user JWT, issued by the account key. Its subject is
-	// the agent's public key, against which Signature is verified. The JWT
-	// itself must be validated by the receiver against the account public key.
-	JWT string
-
-	// WorkerID identifies the worker the message concerns. It is the only
-	// routing token that cannot be derived from the JWT (agent) or the
-	// receiver's own identity (gateway).
+	// WorkerID identifies the worker the message concerns.
 	WorkerID string
 
 	// Payload is the opaque output of agent.Marshal. It is not decoded during
 	// transport; the receiver forwards it verbatim once the envelope is
 	// authenticated.
 	Payload []byte
+
+	// JWT is the sender's user JWT, issued by the account key. Its subject is
+	// the sender's public key, against which Signature is verified. The JWT
+	// itself must be validated by the receiver against the account public key.
+	JWT string
 
 	// Signature is an Ed25519 signature over signedBytes, produced by the key
 	// whose public part is the subject of JWT. It does not cover JWT itself:
