@@ -227,13 +227,11 @@ type AgentDirectoryEntry struct {
 }
 
 type AgentBuildConfig struct {
-	OS                string            `json:"os"`
-	Arch              string            `json:"arch"`
-	ServerURL         string            `json:"server_url"`
-	ServerCertificate []byte            `json:"server_certificate"`
-	UserJWT           string            `json:"user_jwt"`
-	UserKey           string            `json:"user_key"`
-	Extra             map[string]string `json:"extra"`
+	OS      string            `json:"os"`
+	Arch    string            `json:"arch"`
+	UserJWT string            `json:"user_jwt"`
+	UserKey string            `json:"user_key"`
+	Extra   map[string]string `json:"extra"`
 }
 
 type AgentHostDirectory struct {
