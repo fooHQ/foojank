@@ -2,11 +2,8 @@ package create
 
 import (
 	"context"
-	"crypto/x509"
-	"encoding/pem"
 	"errors"
 	"fmt"
-	"net/url"
 	"os"
 	"strings"
 
@@ -33,14 +30,6 @@ func NewCommand() *cli.Command {
 			&cli.StringFlag{
 				Name:  flags.Description,
 				Usage: "set gateway description",
-			},
-			&cli.StringFlag{
-				Name:  flags.URL,
-				Usage: "set gateway URL",
-			},
-			&cli.StringFlag{
-				Name:  flags.Certificate,
-				Usage: "set path to gateway's certificate",
 			},
 			&cli.StringSliceFlag{
 				Name:  flags.Extra,
@@ -94,8 +83,6 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	accountName, _ := conf.String(flags.Account)
 	gatewayName, _ := conf.String(flags.Name)
 	gatewayDesc, _ := conf.String(flags.Description)
-	gatewayURL, _ := conf.String(flags.URL)
-	gatewayCert, _ := conf.String(flags.Certificate)
 	gatewayExtra, _ := conf.StringSlice(flags.Extra)
 
 	userJWT, userSeed, err := auth.ReadUser(accountName)
@@ -111,15 +98,6 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	}
 
 	client := daemon.New(srv)
-
-	var cert []byte
-	if gatewayCert != "" {
-		cert, err = readCertificateFile(gatewayCert)
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot read certificate from %q: %v", gatewayCert, err)
-			return err
-		}
-	}
 
 	user, err := auth.NewUserKey()
 	if err != nil {
@@ -175,11 +153,9 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		Name:        gatewayName,
 		Description: gatewayDesc,
 		Config: daemon.GatewayConfig{
-			URL:         gatewayURL,
-			Certificate: cert,
-			UserJWT:     gatewayJWT,
-			UserKey:     string(gatewaySeed),
-			Extra:       parseKVPairs(gatewayExtra),
+			UserJWT: gatewayJWT,
+			UserKey: string(gatewaySeed),
+			Extra:   parseKVPairs(gatewayExtra),
 		},
 	}
 	err = client.RegisterGateway(ctx, gateway)
@@ -202,34 +178,6 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	return nil
 }
 
-func readCertificateFile(pth string) ([]byte, error) {
-	b, err := os.ReadFile(pth)
-	if err != nil {
-		return nil, err
-	}
-
-	for {
-		var block *pem.Block
-		block, b = pem.Decode(b)
-		if block == nil {
-			break
-		}
-
-		if block.Type != "CERTIFICATE" {
-			continue
-		}
-
-		cert, err := x509.ParseCertificate(block.Bytes)
-		if err != nil {
-			return nil, err
-		}
-
-		return cert.Raw, nil
-	}
-
-	return nil, errors.New("no certificate PEM block found")
-}
-
 func parseKVPairs(pairs []string) map[string]string {
 	env := make(map[string]string, len(pairs))
 	for _, pair := range pairs {
@@ -246,7 +194,6 @@ func parseKVPairs(pairs []string) map[string]string {
 func validateConfiguration(conf *config.Config) error {
 	for _, opt := range []string{
 		flags.Name,
-		flags.URL,
 		flags.ServerURL,
 		flags.Account,
 	} {
@@ -255,15 +202,6 @@ func validateConfiguration(conf *config.Config) error {
 			v, ok := conf.String(opt)
 			if !ok || v == "" {
 				return errors.New("gateway name not configured")
-			}
-		case flags.URL:
-			v, ok := conf.String(opt)
-			if !ok || v == "" {
-				return errors.New("gateway URL name not configured")
-			}
-			u, err := url.ParseRequestURI(v)
-			if err != nil || u.Scheme == "" || u.Host == "" {
-				return errors.New("gateway URL format is invalid")
 			}
 		case flags.ServerURL:
 			v, ok := conf.String(opt)
