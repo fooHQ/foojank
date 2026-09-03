@@ -97,7 +97,7 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 	return ctx, nil
 }
 
-func action(ctx context.Context, _ *cli.Command) error {
+func action(ctx context.Context, _ *cli.Command) (err error) {
 	conf := actions.GetConfigFromContext(ctx)
 	profs := actions.GetProfilesFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
@@ -219,10 +219,12 @@ func action(ctx context.Context, _ *cli.Command) error {
 		if v != "" {
 			agent.Config.OS = v
 		}
+
 		v = prof.Arch()
 		if v != "" {
 			agent.Config.Arch = v
 		}
+
 		maps.Copy(agent.Config.Extra, prof.Env())
 	}
 
@@ -230,13 +232,34 @@ func action(ctx context.Context, _ *cli.Command) error {
 	if targetOS != "" {
 		agent.Config.OS = targetOS
 	}
+
 	if targetArch != "" {
 		agent.Config.Arch = targetArch
 	}
+
 	maps.Copy(agent.Config.Extra, parseKVPairs(setVars))
+
 	for _, v := range unsetVars {
 		delete(agent.Config.Extra, v)
 	}
+
+	agent, err = client.CreateAgent(ctx, agent)
+	if err != nil {
+		if errors.Is(err, daemon.ErrKeyExists) {
+			err = fmt.Errorf("%q already exists", gatewayName)
+		}
+		logger.ErrorContext(ctx, "Cannot create agent: %v", err)
+		return err
+	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		err = client.RemoveAgent(ctx, agent)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot remove agent: %v", err)
+		}
+	}()
 
 	props, err := client.RequestRegisterAgent(ctx, agent)
 	if err != nil {
@@ -247,7 +270,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 	// Merge all properties together.
 	maps.Copy(agent.Config.Extra, props)
 
-	_, err = client.CreateAgent(ctx, agent)
+	_, err = client.UpdateAgent(ctx, agent)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create agent: %v", err)
 		return err
