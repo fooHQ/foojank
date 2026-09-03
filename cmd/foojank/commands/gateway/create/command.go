@@ -188,7 +188,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		return err
 	}
 
-	err = client.CreateGateway(ctx, gateway)
+	_, err = client.CreateGateway(ctx, gateway)
 	if err != nil {
 		if errors.Is(err, daemon.ErrKeyExists) {
 			err = fmt.Errorf("%q already exists", gatewayName)
