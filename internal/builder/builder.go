@@ -8,13 +8,11 @@ import (
 )
 
 const (
-	OS                = "OS"
-	Arch              = "ARCH"
-	Target            = "TARGET"
-	AgentID           = "FJ_AGENT_ID"
-	AgentName         = "FJ_AGENT_NAME"
-	ServerURL         = "FJ_SERVER_URL"
-	ServerCertificate = "FJ_SERVER_CERTIFICATE"
+	OS        = "OS"
+	Arch      = "ARCH"
+	Target    = "TARGET"
+	AgentID   = "FJ_AGENT_ID"
+	AgentName = "FJ_AGENT_NAME"
 )
 
 func Run(ctx context.Context, dir string, env map[string]string) (string, error) {
