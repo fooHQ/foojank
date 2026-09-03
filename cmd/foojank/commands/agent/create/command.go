@@ -247,7 +247,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 	// Merge all properties together.
 	maps.Copy(agent.Config.Extra, props)
 
-	err = client.CreateAgent(ctx, agent)
+	_, err = client.CreateAgent(ctx, agent)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create agent: %v", err)
 		return err
