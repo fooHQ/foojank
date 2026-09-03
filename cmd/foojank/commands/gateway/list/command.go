@@ -99,13 +99,11 @@ func action(ctx context.Context, _ *cli.Command) error {
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("NAME").WithBold(),
-		formatter.NewStringCell("URL").WithBold(),
 		formatter.NewStringCell("DESCRIPTION").WithBold(),
 	})
 	for _, gateway := range gateways {
 		table.AddRow([]formatter.Cell{
 			formatter.NewStringCell(gateway.Name),
-			formatter.NewStringCell(gateway.Config.URL),
 			formatter.NewStringCell(gateway.Description),
 		})
 	}
