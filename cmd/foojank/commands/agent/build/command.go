@@ -2,7 +2,6 @@ package build
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"maps"
@@ -121,13 +120,11 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 	env := make(map[string]string)
 	maps.Copy(env, agent.Config.Extra)
 	maps.Copy(env, map[string]string{
-		builder.OS:                agent.Config.OS,
-		builder.Arch:              agent.Config.Arch,
-		builder.Target:            createTargetPath(agent.Config.OS, outputName),
-		builder.AgentID:           agent.ID,
-		builder.AgentName:         agent.Name,
-		builder.ServerURL:         agent.Config.ServerURL,
-		builder.ServerCertificate: base64.StdEncoding.EncodeToString(agent.Config.ServerCertificate),
+		builder.OS:        agent.Config.OS,
+		builder.Arch:      agent.Config.Arch,
+		builder.Target:    createTargetPath(agent.Config.OS, outputName),
+		builder.AgentID:   agent.ID,
+		builder.AgentName: agent.Name,
 	})
 
 	output, err := builder.Run(ctx, sourceDir, env)
