@@ -16,8 +16,6 @@ const (
 	Os                = "os"
 	Arch              = "arch"
 	Gateway           = "gateway"
-	URL               = "url"
-	Certificate       = "certificate"
 	NoColor           = "no-color"
 	LinkAccount       = "link-account"
 	UnlinkAccount     = "unlink-account"
