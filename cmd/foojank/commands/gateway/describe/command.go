@@ -2,7 +2,6 @@ package describe
 
 import (
 	"context"
-	"encoding/pem"
 	"errors"
 	"fmt"
 	"os"
@@ -113,8 +112,6 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell("ID").WithBold(),
 		formatter.NewStringCell("NAME").WithBold(),
 		formatter.NewStringCell("DESCRIPTION").WithBold(),
-		formatter.NewStringCell("URL").WithBold(),
-		formatter.NewStringCell("CERTIFICATE").WithBold(),
 		formatter.NewStringCell("JWT").WithBold(),
 		formatter.NewStringCell("KEY").WithBold(),
 		formatter.NewStringCell("EXTRA").WithBold(),
@@ -123,8 +120,6 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell(gateway.ID),
 		formatter.NewStringCell(gateway.Name),
 		formatter.NewStringCell(gateway.Description),
-		formatter.NewStringCell(gateway.Config.URL),
-		formatter.NewStringCell(formatCertificate(gateway.Config.Certificate)),
 		formatter.NewStringCell(gateway.Config.UserJWT),
 		formatter.NewStringCell(gateway.Config.UserKey),
 		formatter.NewStringMapCell(gateway.Config.Extra).WithKeyValueSeparator(" = ").WithSeparator("\n"),
@@ -141,17 +136,6 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	return nil
-}
-
-func formatCertificate(cert []byte) string {
-	if len(cert) == 0 {
-		return ""
-	}
-	b := pem.EncodeToMemory(&pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: cert,
-	})
-	return string(b)
 }
 
 func validateConfiguration(conf *config.Config) error {
