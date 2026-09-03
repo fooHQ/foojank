@@ -194,13 +194,11 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		Name:      agentName,
 		GatewayID: gateway.ID,
 		Config: daemon.AgentBuildConfig{
-			OS:                runtime.GOOS,
-			Arch:              runtime.GOARCH,
-			ServerURL:         gateway.Config.URL,
-			ServerCertificate: gateway.Config.Certificate,
-			UserJWT:           agentJWT,
-			UserKey:           string(agentSeed),
-			Extra:             make(map[string]string),
+			OS:      runtime.GOOS,
+			Arch:    runtime.GOARCH,
+			UserJWT: agentJWT,
+			UserKey: string(agentSeed),
+			Extra:   make(map[string]string),
 		},
 	}
 
