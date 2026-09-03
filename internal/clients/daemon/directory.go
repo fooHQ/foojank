@@ -405,11 +405,9 @@ type GatewayDirectoryEntry struct {
 }
 
 type GatewayConfig struct {
-	URL         string            `json:"url"`
-	Certificate []byte            `json:"certificate"`
-	UserJWT     string            `json:"user_jwt"`
-	UserKey     string            `json:"user_key"`
-	Extra       map[string]string `json:"extra"`
+	UserJWT string            `json:"user_jwt"`
+	UserKey string            `json:"user_key"`
+	Extra   map[string]string `json:"extra"`
 }
 
 type JobDirectory struct {
