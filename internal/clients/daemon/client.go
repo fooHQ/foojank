@@ -89,6 +89,20 @@ func (c *Client) CreateAgent(ctx context.Context, agent AgentDirectoryEntry) (Ag
 	return agent, nil
 }
 
+func (c *Client) UpdateAgent(ctx context.Context, agent AgentDirectoryEntry) (AgentDirectoryEntry, error) {
+	dir, err := c.openAgentDirectory(ctx)
+	if err != nil {
+		return AgentDirectoryEntry{}, translate(err)
+	}
+
+	agent, err = dir.Update(ctx, agent)
+	if err != nil {
+		return AgentDirectoryEntry{}, translate(err)
+	}
+
+	return agent, nil
+}
+
 func (c *Client) RemoveAgent(ctx context.Context, agent AgentDirectoryEntry) error {
 	dir, err := c.openAgentDirectory(ctx)
 	if err != nil {
@@ -159,6 +173,20 @@ func (c *Client) CreateGateway(ctx context.Context, gateway GatewayDirectoryEntr
 	return gateway, nil
 }
 
+func (c *Client) UpdateGateway(ctx context.Context, gateway GatewayDirectoryEntry) (GatewayDirectoryEntry, error) {
+	dir, err := c.openGatewayDirectory(ctx)
+	if err != nil {
+		return GatewayDirectoryEntry{}, translate(err)
+	}
+
+	gateway, err = dir.Update(ctx, gateway)
+	if err != nil {
+		return GatewayDirectoryEntry{}, translate(err)
+	}
+
+	return gateway, nil
+}
+
 func (c *Client) RemoveGateway(ctx context.Context, gateway GatewayDirectoryEntry) error {
 	dir, err := c.openGatewayDirectory(ctx)
 	if err != nil {
@@ -208,6 +236,20 @@ func (c *Client) CreateJob(ctx context.Context, job JobDirectoryEntry) (JobDirec
 	}
 
 	job, err = dir.Create(ctx, job)
+	if err != nil {
+		return JobDirectoryEntry{}, translate(err)
+	}
+
+	return job, nil
+}
+
+func (c *Client) UpdateJob(ctx context.Context, job JobDirectoryEntry) (JobDirectoryEntry, error) {
+	dir, err := c.openJobDirectory(ctx)
+	if err != nil {
+		return JobDirectoryEntry{}, translate(err)
+	}
+
+	job, err = dir.Update(ctx, job)
 	if err != nil {
 		return JobDirectoryEntry{}, translate(err)
 	}

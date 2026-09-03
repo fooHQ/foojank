@@ -49,6 +49,16 @@ func (d *Directory) Create(ctx context.Context, id string, value []byte, keys ..
 	return revision, nil
 }
 
+func (d *Directory) Update(ctx context.Context, id string, value []byte, revision uint64) (uint64, error) {
+	id = idKeyPrefix + strings.ToLower(id)
+	revision, err := d.store.Update(ctx, id, value, revision)
+	if err != nil {
+		return 0, err
+	}
+
+	return revision, nil
+}
+
 func (d *Directory) Delete(ctx context.Context, id string, keys ...string) error {
 	id = idKeyPrefix + strings.ToLower(id)
 	err := d.store.Purge(ctx, id)
@@ -151,6 +161,21 @@ func (d *AgentDirectory) Create(ctx context.Context, entry AgentDirectoryEntry) 
 	return entry, nil
 }
 
+func (d *AgentDirectory) Update(ctx context.Context, entry AgentDirectoryEntry) (AgentDirectoryEntry, error) {
+	b, err := json.Marshal(entry)
+	if err != nil {
+		return AgentDirectoryEntry{}, err
+	}
+
+	rev, err := d.Directory.Update(ctx, entry.ID, b, entry.Revision)
+	if err != nil {
+		return AgentDirectoryEntry{}, err
+	}
+
+	entry.Revision = rev
+	return entry, nil
+}
+
 func (d *AgentDirectory) Get(ctx context.Context, key string) (AgentDirectoryEntry, error) {
 	v, err := d.Directory.Get(ctx, key)
 	if err != nil {
@@ -230,6 +255,21 @@ func (d *AgentHostDirectory) Create(ctx context.Context, entry AgentHostDirector
 	return entry, nil
 }
 
+func (d *AgentHostDirectory) Update(ctx context.Context, entry AgentHostDirectoryEntry) (AgentHostDirectoryEntry, error) {
+	b, err := json.Marshal(entry)
+	if err != nil {
+		return AgentHostDirectoryEntry{}, err
+	}
+
+	rev, err := d.Directory.Update(ctx, entry.AgentID, b, entry.Revision)
+	if err != nil {
+		return AgentHostDirectoryEntry{}, err
+	}
+
+	entry.Revision = rev
+	return entry, nil
+}
+
 func (d *AgentHostDirectory) Get(ctx context.Context, key string) (AgentHostDirectoryEntry, error) {
 	v, err := d.Directory.Get(ctx, key)
 	if err != nil {
@@ -293,6 +333,21 @@ func (d *GatewayDirectory) Create(ctx context.Context, entry GatewayDirectoryEnt
 	}
 
 	rev, err := d.Directory.Create(ctx, entry.ID, b, entry.Name)
+	if err != nil {
+		return GatewayDirectoryEntry{}, err
+	}
+
+	entry.Revision = rev
+	return entry, nil
+}
+
+func (d *GatewayDirectory) Update(ctx context.Context, entry GatewayDirectoryEntry) (GatewayDirectoryEntry, error) {
+	b, err := json.Marshal(entry)
+	if err != nil {
+		return GatewayDirectoryEntry{}, err
+	}
+
+	rev, err := d.Directory.Update(ctx, entry.ID, b, entry.Revision)
 	if err != nil {
 		return GatewayDirectoryEntry{}, err
 	}
@@ -370,6 +425,21 @@ func (d *JobDirectory) Create(ctx context.Context, entry JobDirectoryEntry) (Job
 	}
 
 	rev, err := d.Directory.Create(ctx, formatKey(entry.AgentID, entry.ID), b, entry.ID)
+	if err != nil {
+		return JobDirectoryEntry{}, err
+	}
+
+	entry.Revision = rev
+	return entry, nil
+}
+
+func (d *JobDirectory) Update(ctx context.Context, entry JobDirectoryEntry) (JobDirectoryEntry, error) {
+	b, err := json.Marshal(entry)
+	if err != nil {
+		return JobDirectoryEntry{}, err
+	}
+
+	rev, err := d.Directory.Update(ctx, formatKey(entry.AgentID, entry.ID), b, entry.Revision)
 	if err != nil {
 		return JobDirectoryEntry{}, err
 	}
