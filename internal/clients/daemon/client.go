@@ -6,12 +6,13 @@ import (
 	"errors"
 	"fmt"
 
-	protoagent "github.com/foohq/foojank-proto/go/agent"
-	protogw "github.com/foohq/foojank-proto/go/gateway"
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nats-io/nuid"
+
+	protoagent "github.com/foohq/foojank/proto/agent"
+	protogw "github.com/foohq/foojank/proto/gateway"
 
 	"github.com/foohq/foojank/internal/clients/server"
 )
@@ -333,8 +334,8 @@ func (c *Client) RegisterGateway(ctx context.Context, gateway GatewayDirectoryEn
 			protoagent.CmdStartWorkerSubject(gateway.ID, "*", "*"),
 			protoagent.CmdStopWorkerSubject(gateway.ID, "*", "*"),
 			protoagent.CmdWriteStdinSubject(gateway.ID, "*", "*"),
-			protogw.CmdRegisterAgentSubject(gateway.ID, "*"),
-			protogw.CmdUnregisterAgentSubject(gateway.ID, "*"),
+			protogw.RegisterAgentSubject(gateway.ID),
+			protogw.UnregisterAgentSubject(gateway.ID),
 		},
 	})
 	if err != nil {
@@ -355,19 +356,18 @@ func (c *Client) UnregisterGateway(ctx context.Context, gateway GatewayDirectory
 }
 
 func (c *Client) RequestRegisterAgent(ctx context.Context, agent AgentDirectoryEntry) (map[string]string, error) {
-	b, err := protogw.Marshal(protogw.Envelope{
-		Subject: protogw.CmdRegisterAgentSubject(agent.GatewayID, agent.ID),
-		Payload: protogw.RegisterAgentRequest{
-			// TODO: add agentID etc
-			Properties: propertiesToList(agent.Config.Extra),
-		},
+	b, err := protogw.Marshal(protogw.RegisterAgentRequest{
+		AgentID: agent.ID,
+		OS:      agent.Config.OS,
+		Arch:    agent.Config.Arch,
+		Env:     agent.Config.Extra,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protogw.CmdRegisterAgentSubject(agent.GatewayID, agent.ID),
+		Subject: protogw.RegisterAgentSubject(agent.GatewayID),
 		Data:    b,
 	})
 	if err != nil {
@@ -379,31 +379,28 @@ func (c *Client) RequestRegisterAgent(ctx context.Context, agent AgentDirectoryE
 		return nil, err
 	}
 
-	v, ok := data.Payload.(protogw.RegisterAgentResponse)
+	v, ok := data.(protogw.RegisterAgentResponse)
 	if !ok {
-		return nil, fmt.Errorf("invalid payload: %T", data.Payload)
+		return nil, fmt.Errorf("invalid response: %T", data)
 	}
 
 	if v.Error != nil {
 		return nil, v.Error
 	}
 
-	return propertiesToMap(v.Properties), nil
+	return v.Env, nil
 }
 
 func (c *Client) RequestUnregisterAgent(ctx context.Context, agent AgentDirectoryEntry) error {
-	b, err := protogw.Marshal(protogw.Envelope{
-		Subject: protogw.CmdUnregisterAgentSubject(agent.GatewayID, agent.ID),
-		Payload: protogw.UnregisterAgentRequest{
-			Properties: propertiesToList(agent.Config.Extra),
-		},
+	b, err := protogw.Marshal(protogw.UnregisterAgentRequest{
+		AgentID: agent.ID,
 	})
 	if err != nil {
 		return err
 	}
 
 	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protogw.CmdUnregisterAgentSubject(agent.GatewayID, agent.ID),
+		Subject: protogw.UnregisterAgentSubject(agent.GatewayID),
 		Data:    b,
 	})
 	if err != nil {
@@ -415,9 +412,9 @@ func (c *Client) RequestUnregisterAgent(ctx context.Context, agent AgentDirector
 		return err
 	}
 
-	v, ok := data.Payload.(protogw.UnregisterAgentResponse)
+	v, ok := data.(protogw.UnregisterAgentResponse)
 	if !ok {
-		return fmt.Errorf("invalid payload: %T", data.Payload)
+		return fmt.Errorf("invalid response: %T", data)
 	}
 
 	if v.Error != nil {
@@ -427,14 +424,11 @@ func (c *Client) RequestUnregisterAgent(ctx context.Context, agent AgentDirector
 	return nil
 }
 
-func (c *Client) PublishStartWorkerRequest(ctx context.Context, job JobDirectoryEntry) error {
-	b, err := protoagent.Marshal(protoagent.Envelope{
-		Subject: "",
-		Payload: protoagent.StartWorkerRequest{
-			Command: job.Config.Command,
-			Args:    job.Config.Args,
-			Env:     job.Config.Env,
-		},
+func (c *Client) PublishStartWorker(ctx context.Context, job JobDirectoryEntry) error {
+	b, err := protoagent.Marshal(protoagent.StartWorker{
+		Command: job.Config.Command,
+		Args:    job.Config.Args,
+		Env:     job.Config.Env,
 	})
 	if err != nil {
 		return err
@@ -443,7 +437,7 @@ func (c *Client) PublishStartWorkerRequest(ctx context.Context, job JobDirectory
 	err = c.publishMsgToStream(
 		ctx,
 		&nats.Msg{
-			Subject: protoagent.CmdStartWorkerSubject(job.GatewayID, job.ID, job.WorkerID),
+			Subject: protoagent.CmdStartWorkerSubject(job.GatewayID, job.AgentID, job.WorkerID),
 			Data:    b,
 		},
 	)
@@ -454,11 +448,8 @@ func (c *Client) PublishStartWorkerRequest(ctx context.Context, job JobDirectory
 	return nil
 }
 
-func (c *Client) PublishStopWorkerRequest(ctx context.Context, job JobDirectoryEntry) error {
-	b, err := protoagent.Marshal(protoagent.Envelope{
-		Subject: "",
-		Payload: protoagent.StopWorkerRequest{},
-	})
+func (c *Client) PublishStopWorker(ctx context.Context, job JobDirectoryEntry) error {
+	b, err := protoagent.Marshal(protoagent.StopWorker{})
 	if err != nil {
 		return err
 	}
@@ -477,10 +468,9 @@ func (c *Client) PublishStopWorkerRequest(ctx context.Context, job JobDirectoryE
 	return nil
 }
 
-func (c *Client) PublishWorkerStdin(ctx context.Context, job JobDirectoryEntry) error {
-	b, err := protoagent.Marshal(protoagent.Envelope{
-		Subject: "",
-		Payload: protoagent.UpdateWorkerStdio{},
+func (c *Client) PublishWorkerInput(ctx context.Context, job JobDirectoryEntry, data []byte) error {
+	b, err := protoagent.Marshal(protoagent.WorkerInput{
+		Data: data,
 	})
 	if err != nil {
 		return err
@@ -498,6 +488,53 @@ func (c *Client) PublishWorkerStdin(ctx context.Context, job JobDirectoryEntry) 
 	}
 
 	return nil
+}
+
+func (c *Client) NewAgentPermissions(gatewayID, agentID string) jwt.Permissions {
+	return jwt.Permissions{
+		Pub: jwt.Permission{
+			Allow: []string{
+				protoagent.EvtStartWorkerSubject(gatewayID, agentID, "*"),
+				protoagent.EvtStopWorkerSubject(gatewayID, agentID, "*"),
+				protoagent.EvtWorkerStdoutSubject(gatewayID, agentID, "*"),
+				protoagent.EvtWorkerStatusSubject(gatewayID, agentID, "*"),
+				protoagent.EvtAgentInfoSubject(gatewayID, agentID),
+			},
+		},
+		Sub: jwt.Permission{
+			Allow: []string{
+				inboxName(gatewayID) + ".>",
+			},
+		},
+	}
+}
+
+func (c *Client) NewGatewayPermissions(gatewayID string) jwt.Permissions {
+	return jwt.Permissions{
+		Pub: jwt.Permission{
+			Allow: []string{
+				/*"$JS.API.STREAM.INFO." + gatewayID,
+				"$JS.API.STREAM.INFO.OBJ_" + gatewayID,
+				"$JS.API.STREAM.PURGE.OBJ_" + gatewayID,*/
+				fmt.Sprintf("$JS.API.CONSUMER.INFO.%s.%s", c.stream, gatewayID),
+				fmt.Sprintf("$JS.API.CONSUMER.MSG.NEXT.%s.%s", c.stream, gatewayID),
+				fmt.Sprintf("$JS.ACK.%s.%s.>", c.stream, gatewayID),
+				"_INBOX.>",
+				/*fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.>", gatewayID),
+				fmt.Sprintf("$JS.API.CONSUMER.DELETE.OBJ_%s.*", gatewayID),
+				fmt.Sprintf("$JS.API.DIRECT.GET.OBJ_%s.>", gatewayID),*/
+				/*fmt.Sprintf("$O.%s.M.*", gatewayID),
+				fmt.Sprintf("$O.%s.C.*", gatewayID),*/
+			},
+		},
+		Sub: jwt.Permission{
+			Allow: []string{
+				inboxName(gatewayID) + ".>",
+				protogw.RegisterAgentSubject(gatewayID),
+				protogw.UnregisterAgentSubject(gatewayID),
+			},
+		},
+	}
 }
 
 func (c *Client) publishMsgToStream(ctx context.Context, msg *nats.Msg) error {
@@ -631,79 +668,6 @@ func (c *Client) listStreamMessages(ctx context.Context, subjects []string, star
 	return nil
 }
 
-func propertiesToList(props map[string]string) []protogw.Property {
-	var list []protogw.Property
-	for k, v := range props {
-		list = append(list, protogw.Property{Key: k, Value: v})
-	}
-	return list
-}
-
-func propertiesToMap(props []protogw.Property) map[string]string {
-	m := make(map[string]string, len(props))
-	for _, p := range props {
-		m[p.Key] = p.Value
-	}
-	return m
-}
-
-func InboxName(name string) string {
+func inboxName(name string) string {
 	return "_INBOX_" + name
-}
-
-func NewAgentPermissions(gatewayID, agentID string) jwt.Permissions {
-	return jwt.Permissions{
-		Pub: jwt.Permission{
-			Allow: []string{
-				protoagent.EvtStartWorkerSubject(gatewayID, agentID, "*"),
-				protoagent.EvtStopWorkerSubject(gatewayID, agentID, "*"),
-				protoagent.EvtWorkerStdoutSubject(gatewayID, agentID, "*"),
-				protoagent.EvtWorkerStatusSubject(gatewayID, agentID, "*"),
-				protoagent.EvtAgentInfoSubject(gatewayID, agentID),
-
-				fmt.Sprintf("$JS.ACK.FJ_%s.>", agentID),
-				fmt.Sprintf("$JS.API.STREAM.INFO.FJ_%s", agentID),
-				fmt.Sprintf("$JS.API.STREAM.INFO.OBJ_%s", agentID),
-				fmt.Sprintf("$JS.API.STREAM.PURGE.OBJ_%s", agentID),
-				fmt.Sprintf("$JS.API.CONSUMER.INFO.FJ_%s.*", agentID),
-				fmt.Sprintf("$JS.API.CONSUMER.MSG.NEXT.FJ_%s.*", agentID),
-				fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.>", agentID),
-				fmt.Sprintf("$JS.API.CONSUMER.DELETE.OBJ_%s.*", agentID),
-				fmt.Sprintf("$JS.API.DIRECT.GET.OBJ_%s.>", agentID),
-				fmt.Sprintf("$O.%s.M.*", agentID),
-				fmt.Sprintf("$O.%s.C.*", agentID),
-			},
-		},
-		Sub: jwt.Permission{
-			Allow: []string{
-				InboxName(gatewayID) + ".>",
-			},
-		},
-	}
-}
-
-func NewGatewayPermissions(gatewayID string) jwt.Permissions {
-	return jwt.Permissions{
-		Pub: jwt.Permission{
-			Allow: []string{
-				fmt.Sprintf("$JS.ACK.%s.>", gatewayID),
-				"$JS.API.STREAM.INFO." + gatewayID,
-				"$JS.API.STREAM.INFO.OBJ_" + gatewayID,
-				"$JS.API.STREAM.PURGE.OBJ_" + gatewayID,
-				fmt.Sprintf("$JS.API.CONSUMER.INFO.%s.*", gatewayID),
-				fmt.Sprintf("$JS.API.CONSUMER.MSG.NEXT.%s.*", gatewayID),
-				fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.*.$O.%s.M.*", gatewayID, gatewayID),
-				fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.>", gatewayID),
-				fmt.Sprintf("$JS.API.CONSUMER.DELETE.OBJ_%s.*", gatewayID),
-				fmt.Sprintf("$JS.API.DIRECT.GET.OBJ_%s.>", gatewayID),
-				fmt.Sprintf("$O.%s.M.*", gatewayID),
-				fmt.Sprintf("$O.%s.C.*", gatewayID),
-			},
-		},
-		Sub: jwt.Permission{
-			Allow: []string{
-				InboxName(gatewayID) + ".>",
-			},
-		},
-	}
 }

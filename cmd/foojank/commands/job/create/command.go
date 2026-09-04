@@ -120,7 +120,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		CreatedAt: time.Now().UTC(),
 	}
 
-	err = client.PublishStartWorkerRequest(ctx, job)
+	err = client.PublishStartWorker(ctx, job)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot publish start worker request: %v", err)
 		return err

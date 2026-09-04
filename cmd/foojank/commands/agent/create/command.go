@@ -152,7 +152,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		return err
 	}
 
-	agentPerms := daemon.NewAgentPermissions(gateway.ID, agentID)
+	agentPerms := client.NewAgentPermissions(gateway.ID, agentID)
 	agentClaims, err := auth.NewUserJWT(agentName, agentPerms, user)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
