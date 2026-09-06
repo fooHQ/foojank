@@ -23,15 +23,15 @@ func NewCommand() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  flags.Os,
-				Usage: "set OS environment variable",
+				Usage: "set OS variable",
 			},
 			&cli.StringFlag{
 				Name:  flags.Arch,
-				Usage: "set ARCH environment variable",
+				Usage: "set ARCH variable",
 			},
 			&cli.StringSliceFlag{
-				Name:  flags.Set,
-				Usage: "set environment variable (format: key=value)",
+				Name:  flags.Variable,
+				Usage: "set config variable (format: key=value)",
 			},
 			&cli.StringFlag{
 				Name:  flags.ConfigDir,
@@ -72,7 +72,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	configDir, _ := conf.String(flags.ConfigDir)
 	targetOS, _ := conf.String(flags.Os)
 	targetArch, _ := conf.String(flags.Arch)
-	setVars, _ := conf.StringSlice(flags.Set)
+	setVars, _ := conf.StringSlice(flags.Variable)
 
 	if c.Args().Len() != 1 {
 		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)

@@ -27,19 +27,19 @@ func NewCommand() *cli.Command {
 			},
 			&cli.StringFlag{
 				Name:  flags.Os,
-				Usage: "set OS environment variable",
+				Usage: "set OS variable",
 			},
 			&cli.StringFlag{
 				Name:  flags.Arch,
-				Usage: "set ARCH environment variable",
+				Usage: "set ARCH variable",
 			},
 			&cli.StringSliceFlag{
-				Name:  flags.Set,
-				Usage: "set environment variable (format: key=value)",
+				Name:  flags.Variable,
+				Usage: "set config variable (format: key=value)",
 			},
 			&cli.StringSliceFlag{
-				Name:  flags.Unset,
-				Usage: "unset environment variable (format: key)",
+				Name:  flags.WithoutVariable,
+				Usage: "unset config variable (format: key)",
 			},
 			&cli.StringFlag{
 				Name:  flags.ConfigDir,
@@ -80,8 +80,8 @@ func action(ctx context.Context, c *cli.Command) error {
 	configDir, _ := conf.String(flags.ConfigDir)
 	targetOS, _ := conf.String(flags.Os)
 	targetArch, _ := conf.String(flags.Arch)
-	setVars, _ := conf.StringSlice(flags.Set)
-	unsetVars, _ := conf.StringSlice(flags.Unset)
+	setVars, _ := conf.StringSlice(flags.Variable)
+	unsetVars, _ := conf.StringSlice(flags.WithoutVariable)
 	newName, _ := conf.String(flags.Name)
 
 	if c.Args().Len() != 1 {

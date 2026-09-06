@@ -20,11 +20,11 @@ func NewCommand() *cli.Command {
 		Usage: "Edit configuration",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
-				Name:  flags.Set,
+				Name:  flags.Variable,
 				Usage: "set configuration option (format: key=value)",
 			},
 			&cli.StringSliceFlag{
-				Name:  flags.Unset,
+				Name:  flags.WithoutVariable,
 				Usage: "unset configuration option (format: key)",
 			},
 			&cli.StringFlag{
@@ -58,15 +58,15 @@ func action(ctx context.Context, _ *cli.Command) error {
 	logger := actions.GetLoggerFromContext(ctx)
 
 	configDir, _ := conf.String(flags.ConfigDir)
-	setOptions, _ := conf.StringSlice(flags.Set)
-	unsetOptions, _ := conf.StringSlice(flags.Unset)
+	setVars, _ := conf.StringSlice(flags.Variable)
+	unsetVars, _ := conf.StringSlice(flags.WithoutVariable)
 	serverURL, _ := conf.String(flags.ServerURL)
 	serverCert, _ := conf.String(flags.ServerCertificate)
 	accountName, _ := conf.String(flags.Account)
 	format, _ := conf.String(flags.Format)
 	noColor, _ := conf.String(flags.NoColor)
 
-	if len(setOptions) == 0 && len(unsetOptions) == 0 {
+	if len(setVars) == 0 && len(unsetVars) == 0 {
 		logger.ErrorContext(ctx, "Nothing to do.")
 		return errors.New("nothing to do")
 	}
@@ -78,7 +78,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 		flags.Format:            format,
 		flags.NoColor:           noColor,
 	}
-	for k, v := range config.ParseKVPairs(setOptions) {
+	for k, v := range config.ParseKVPairs(setVars) {
 		_, ok := opts[k]
 		if !ok {
 			logger.ErrorContext(ctx, "Cannot set option %s: option not found", k)
@@ -86,7 +86,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 		}
 		opts[k] = v
 	}
-	for _, k := range unsetOptions {
+	for _, k := range unsetVars {
 		delete(opts, k)
 	}
 

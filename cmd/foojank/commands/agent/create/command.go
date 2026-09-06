@@ -42,12 +42,12 @@ func NewCommand() *cli.Command {
 				Usage: "set target architecture",
 			},
 			&cli.StringSliceFlag{
-				Name:  flags.Set,
-				Usage: "set environment variable (format: key=value)",
+				Name:  flags.Variable,
+				Usage: "set config variable (format: key=value)",
 			},
 			&cli.StringSliceFlag{
-				Name:  flags.Unset,
-				Usage: "unset environment variable (format: key)",
+				Name:  flags.WithoutVariable,
+				Usage: "unset config variable (format: key)",
 			},
 			&cli.StringFlag{
 				Name:  flags.Name,
@@ -107,8 +107,8 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	accountName, _ := conf.String(flags.Account)
 	targetOS, _ := conf.String(flags.Os)
 	targetArch, _ := conf.String(flags.Arch)
-	setVars, _ := conf.StringSlice(flags.Set)
-	unsetVars, _ := conf.StringSlice(flags.Unset)
+	setVars, _ := conf.StringSlice(flags.Variable)
+	unsetVars, _ := conf.StringSlice(flags.WithoutVariable)
 	gatewayName, _ := conf.String(flags.Gateway)
 	agentName, _ := conf.String(flags.Name)
 	profName, _ := conf.String(flags.Profile)

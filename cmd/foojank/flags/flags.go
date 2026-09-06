@@ -8,8 +8,8 @@ const (
 	Format            = "format"
 	Name              = "name"
 	Description       = "description"
-	Set               = "set"
-	Unset             = "unset"
+	Variable          = "variable"
+	WithoutVariable   = "without-variable"
 	Profile           = "profile"
 	SourceDir         = "source-dir"
 	Output            = "output"
@@ -23,5 +23,4 @@ const (
 	RemoveLink        = "remove-link"
 	Agent             = "agent"
 	Force             = "force"
-	Extra             = "extra"
 )

@@ -32,8 +32,8 @@ func NewCommand() *cli.Command {
 				Usage: "set gateway description",
 			},
 			&cli.StringSliceFlag{
-				Name:  flags.Extra,
-				Usage: "set extra configuration (format: key=value)",
+				Name:  flags.Variable,
+				Usage: "set configuration variable (format: key=value)",
 			},
 			&cli.StringFlag{
 				Name:  flags.ServerURL,
@@ -83,7 +83,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	accountName, _ := conf.String(flags.Account)
 	gatewayName, _ := conf.String(flags.Name)
 	gatewayDesc, _ := conf.String(flags.Description)
-	gatewayExtra, _ := conf.StringSlice(flags.Extra)
+	setVars, _ := conf.StringSlice(flags.Variable)
 
 	userJWT, userSeed, err := auth.ReadUser(accountName)
 	if err != nil {
@@ -155,7 +155,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		Config: daemon.GatewayConfig{
 			UserJWT: gatewayJWT,
 			UserKey: string(gatewaySeed),
-			Extra:   parseKVPairs(gatewayExtra),
+			Extra:   parseKVPairs(setVars),
 		},
 	}
 	err = client.RegisterGateway(ctx, gateway)
