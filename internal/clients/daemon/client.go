@@ -145,6 +145,20 @@ func (c *Client) ListAgents(ctx context.Context) ([]AgentDirectoryEntry, error) 
 	return entries, nil
 }
 
+func (c *Client) GetAgentHost(ctx context.Context, key string) (AgentHostDirectoryEntry, error) {
+	dir, err := c.openAgentHostDirectory(ctx)
+	if err != nil {
+		return AgentHostDirectoryEntry{}, translate(err)
+	}
+
+	host, err := dir.Get(ctx, key)
+	if err != nil {
+		return AgentHostDirectoryEntry{}, translate(err)
+	}
+
+	return host, nil
+}
+
 func (c *Client) ListAgentHosts(ctx context.Context) ([]AgentHostDirectoryEntry, error) {
 	dir, err := c.openAgentHostDirectory(ctx)
 	if err != nil {
