@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"os"
-	"strings"
 
 	"github.com/urfave/cli/v3"
 
@@ -97,35 +96,39 @@ func action(ctx context.Context, _ *cli.Command) error {
 		return err
 	}
 
-	agentHosts, err := client.ListAgentHosts(ctx)
+	gateways, err := client.ListGateways(ctx)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get a list of agent hosts: %v", err)
+		logger.ErrorContext(ctx, "Cannot get a list of gateways: %v", err)
 		return err
+	}
+
+	gatewayMap := make(map[string]daemon.GatewayDirectoryEntry)
+	for i := range gateways {
+		gatewayMap[gateways[i].ID] = gateways[i]
 	}
 
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("NAME").WithBold(),
-		formatter.NewStringCell("USERHOST").WithBold(),
-		formatter.NewStringCell("ADDRESS").WithBold(),
-		formatter.NewStringCell("PLATFORM").WithBold(),
-		formatter.NewStringCell("LAST SEEN").WithBold(),
+		formatter.NewStringCell("GATEWAY").WithBold(),
+		formatter.NewStringCell("OS").WithBold(),
+		formatter.NewStringCell("ARCH").WithBold(),
 	})
 
 	for _, agent := range agents {
-		var host daemon.AgentHostDirectoryEntry
-		for i := range agentHosts {
-			if agent.ID == agentHosts[i].AgentID {
-				host = agentHosts[i]
-			}
+		var gatewayName string
+		_, ok := gatewayMap[agent.GatewayID]
+		if ok {
+			gatewayName = gatewayMap[agent.GatewayID].Name
+		} else {
+			gatewayName = agent.GatewayID
 		}
 
 		table.AddRow([]formatter.Cell{
 			formatter.NewStringCell(agent.Name),
-			formatter.NewStringCell(formatUserHost(host.Username, host.Hostname)),
-			formatter.NewStringCell(host.Address),
-			formatter.NewStringCell(formatPlatform(agent.Config.OS, agent.Config.Arch)),
-			formatter.NewTimeCell(host.LastUpdate).WithFormat("relative").WithEmptyValue("never"),
+			formatter.NewStringCell(gatewayName),
+			formatter.NewStringCell(agent.Config.OS),
+			formatter.NewStringCell(agent.Config.Arch),
 		})
 	}
 
@@ -140,20 +143,6 @@ func action(ctx context.Context, _ *cli.Command) error {
 	}
 
 	return nil
-}
-
-func formatUserHost(user, host string) string {
-	if user == "" && host == "" {
-		return ""
-	}
-	return strings.Join([]string{user, host}, "@")
-}
-
-func formatPlatform(agentOS, agentArch string) string {
-	if agentOS == "" && agentArch == "" {
-		return ""
-	}
-	return strings.Join([]string{agentOS, agentArch}, "/")
 }
 
 func validateConfiguration(conf *config.Config) error {
