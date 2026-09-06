@@ -17,10 +17,13 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:      "create",
-		ArgsUsage: "<name>",
-		Usage:     "Create profile",
+		Name:  "create",
+		Usage: "Create profile",
 		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  flags.Name,
+				Usage: "set profile name",
+			},
 			&cli.StringFlag{
 				Name:  flags.Os,
 				Usage: "set OS variable",
@@ -64,22 +67,16 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 	return ctx, nil
 }
 
-func action(ctx context.Context, c *cli.Command) error {
+func action(ctx context.Context, _ *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
 	profs := actions.GetProfilesFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
+	name, _ := conf.String(flags.Name)
 	configDir, _ := conf.String(flags.ConfigDir)
 	targetOS, _ := conf.String(flags.Os)
 	targetArch, _ := conf.String(flags.Arch)
 	setVars, _ := conf.StringSlice(flags.Variable)
-
-	if c.Args().Len() != 1 {
-		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
-		return errors.New("not enough arguments")
-	}
-
-	name := c.Args().First()
 
 	prof := profile.NewProfile()
 	if targetOS != "" {
@@ -109,6 +106,17 @@ func action(ctx context.Context, c *cli.Command) error {
 	return nil
 }
 
-func validateConfiguration(_ *config.Config) error {
+func validateConfiguration(conf *config.Config) error {
+	for _, opt := range []string{
+		flags.Name,
+	} {
+		switch opt {
+		case flags.Name:
+			v, ok := conf.String(opt)
+			if !ok || v == "" {
+				return errors.New("profile name not configured")
+			}
+		}
+	}
 	return nil
 }
