@@ -26,6 +26,10 @@ func NewCommand() *cli.Command {
 		Usage: "Create an agent",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
+				Name:  flags.Name,
+				Usage: "set agent name",
+			},
+			&cli.StringFlag{
 				Name:  flags.Gateway,
 				Usage: "set agent's gateway",
 			},
@@ -48,10 +52,6 @@ func NewCommand() *cli.Command {
 			&cli.StringSliceFlag{
 				Name:  flags.WithoutVariable,
 				Usage: "unset config variable (format: key)",
-			},
-			&cli.StringFlag{
-				Name:  flags.Name,
-				Usage: "set agent name",
 			},
 			&cli.StringFlag{
 				Name:  flags.ServerURL,
