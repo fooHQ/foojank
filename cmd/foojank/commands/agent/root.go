@@ -4,6 +4,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
+	"github.com/foohq/foojank/cmd/foojank/commands/agent/check"
 	"github.com/foohq/foojank/cmd/foojank/commands/agent/describe"
 
 	"github.com/foohq/foojank/cmd/foojank/commands/agent/build"
@@ -21,6 +22,7 @@ func NewCommand() *cli.Command {
 			describe.NewCommand(),
 			build.NewCommand(),
 			list.NewCommand(),
+			check.NewCommand(),
 			remove.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
