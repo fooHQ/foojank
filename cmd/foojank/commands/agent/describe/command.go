@@ -128,7 +128,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell("GATEWAY").WithBold(),
 		formatter.NewStringCell("JWT").WithBold(),
 		formatter.NewStringCell("KEY").WithBold(),
-		formatter.NewStringCell("EXTRA").WithBold(),
+		formatter.NewStringCell("CONFIG").WithBold(),
 	})
 	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell(agent.ID),
