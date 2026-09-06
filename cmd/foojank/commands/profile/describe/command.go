@@ -95,7 +95,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell(prof.Arch()),
 	})
 	table.AddRow([]formatter.Cell{
-		formatter.NewStringCell("ENVIRONMENT").WithBold(),
+		formatter.NewStringCell("CONFIG").WithBold(),
 		formatter.NewStringSliceCell(envs).WithSeparator("\n"),
 	})
 
