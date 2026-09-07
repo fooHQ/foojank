@@ -19,6 +19,9 @@ import (
 
 func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.BeforeFunc {
 	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
+		if IsShellCompletion() {
+			w = io.Discard
+		}
 		confFlags, err := config.ParseFlags(c.FlagNames(), func(name string) (any, bool) {
 			return c.Value(name), c.IsSet(name)
 		})
@@ -78,10 +81,12 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 
 		conf := config.Merge(confs...)
 
-		err = validateFn(conf)
-		if err != nil {
-			_, _ = fmt.Fprintf(w, "%s: invalid configuration: %v\n", c.FullName(), err)
-			return ctx, err
+		if !IsShellCompletion() {
+			err = validateFn(conf)
+			if err != nil {
+				_, _ = fmt.Fprintf(w, "%s: invalid configuration: %v\n", c.FullName(), err)
+				return ctx, err
+			}
 		}
 
 		return setConfigToContext(ctx, conf), nil
@@ -90,6 +95,9 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 
 func LoadFlags(w io.Writer) cli.BeforeFunc {
 	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
+		if IsShellCompletion() {
+			w = io.Discard
+		}
 		conf, err := config.ParseFlags(c.FlagNames(), func(name string) (any, bool) {
 			return c.Value(name), c.IsSet(name)
 		})
@@ -105,6 +113,9 @@ func LoadFlags(w io.Writer) cli.BeforeFunc {
 
 func LoadProfiles(w io.Writer) cli.BeforeFunc {
 	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
+		if IsShellCompletion() {
+			w = io.Discard
+		}
 		conf := GetConfigFromContext(ctx)
 
 		configDir, ok := conf.String(flags.ConfigDir)
