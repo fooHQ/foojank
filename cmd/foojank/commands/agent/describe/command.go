@@ -123,6 +123,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("ID").WithBold(),
 		formatter.NewStringCell("NAME").WithBold(),
+		formatter.NewStringCell("DESCRIPTION").WithBold(),
 		formatter.NewStringCell("OS").WithBold(),
 		formatter.NewStringCell("ARCH").WithBold(),
 		formatter.NewStringCell("GATEWAY").WithBold(),
@@ -133,6 +134,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell(agent.ID),
 		formatter.NewStringCell(agent.Name),
+		formatter.NewStringCell(agent.Description),
 		formatter.NewStringCell(agent.Config.OS),
 		formatter.NewStringCell(agent.Config.Arch),
 		formatter.NewStringCell(gatewayName),
