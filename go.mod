@@ -17,7 +17,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
-	github.com/urfave/cli/v3 v3.8.0
+	github.com/urfave/cli/v3 v3.11.0
 )
 
 require (
@@ -30,7 +30,6 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/deepnoodle-ai/risor/v2 v2.1.0 // indirect
 	github.com/fatih/color v1.18.0 // indirect
-	github.com/foohq/foojank-proto v0.0.2-0.20260721170629-3cacd095ce50 // indirect
 	github.com/foohq/ren v0.2.0-rc1 // indirect
 	github.com/foohq/ren-memfs v0.0.0-20260414063427-182fdf01cc45 // indirect
 	github.com/foohq/urlpath v0.2.0 // indirect
