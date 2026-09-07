@@ -114,6 +114,11 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 		return err
 	}
 
+	if outputName == "" {
+		outputName = agent.Name
+	}
+	outputPath := createTargetPath(agent.Config.OS, outputName)
+
 	// Prepare builder environment.
 	// IMPORTANT: make sure mandatory variables such as OS, Arch, etc. are copied as last to prevent being overwritten
 	// by variables from .Extra.
@@ -122,7 +127,7 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 	maps.Copy(env, map[string]string{
 		builder.OS:        agent.Config.OS,
 		builder.Arch:      agent.Config.Arch,
-		builder.Target:    createTargetPath(agent.Config.OS, outputName),
+		builder.Target:    outputPath,
 		builder.AgentID:   agent.ID,
 		builder.AgentName: agent.Name,
 	})
@@ -151,7 +156,7 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 		}
 	}()
 
-	logger.InfoContext(ctx, "Agent %q has been built!", agentName)
+	logger.InfoContext(ctx, "Agent %q has been built - %s!", agentName, outputPath)
 
 	return nil
 }
