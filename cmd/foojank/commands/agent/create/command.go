@@ -30,6 +30,10 @@ func NewCommand() *cli.Command {
 				Usage: "set agent name",
 			},
 			&cli.StringFlag{
+				Name:  flags.Description,
+				Usage: "set agent description",
+			},
+			&cli.StringFlag{
 				Name:  flags.Gateway,
 				Usage: "set agent's gateway",
 			},
@@ -111,6 +115,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	unsetVars, _ := conf.StringSlice(flags.WithoutVariable)
 	gatewayName, _ := conf.String(flags.Gateway)
 	agentName, _ := conf.String(flags.Name)
+	agentDesc, _ := conf.String(flags.Description)
 	profName, _ := conf.String(flags.Profile)
 
 	userJWT, userSeed, err := auth.ReadUser(accountName)
@@ -190,9 +195,10 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	}
 
 	agent := daemon.AgentDirectoryEntry{
-		ID:        agentID,
-		Name:      agentName,
-		GatewayID: gateway.ID,
+		ID:          agentID,
+		Name:        agentName,
+		Description: agentDesc,
+		GatewayID:   gateway.ID,
 		Config: daemon.AgentBuildConfig{
 			OS:      runtime.GOOS,
 			Arch:    runtime.GOARCH,
