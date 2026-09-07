@@ -250,7 +250,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	agent, err = client.CreateAgent(ctx, agent)
 	if err != nil {
 		if errors.Is(err, daemon.ErrKeyExists) {
-			err = fmt.Errorf("%q already exists", gatewayName)
+			err = fmt.Errorf("%q already exists", agentName)
 		}
 		logger.ErrorContext(ctx, "Cannot create agent: %v", err)
 		return err
