@@ -28,6 +28,7 @@ func NewCommand() *cli.Command {
 		Before:          before,
 		Action:          action,
 		Aliases:         []string{"rm"},
+		ShellComplete:   actions.CompleteProfileName,
 		OnUsageError:    actions.UsageError,
 		HideHelpCommand: true,
 	}

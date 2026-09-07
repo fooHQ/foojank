@@ -47,6 +47,7 @@ func NewCommand() *cli.Command {
 		Before:          before,
 		Action:          action,
 		Aliases:         []string{"cp"},
+		ShellComplete:   actions.CompleteFlags,
 		OnUsageError:    actions.UsageError,
 		HideHelpCommand: true,
 	}
