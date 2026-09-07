@@ -38,9 +38,10 @@ var app = &cli.Command{
 		storage.NewCommand(),
 		gateway.NewCommand(),
 	},
-	CommandNotFound: actions.CommandNotFound,
-	OnUsageError:    actions.UsageError,
-	HideHelpCommand: true,
+	CommandNotFound:       actions.CommandNotFound,
+	OnUsageError:          actions.UsageError,
+	HideHelpCommand:       true,
+	EnableShellCompletion: true,
 }
 
 func main() {

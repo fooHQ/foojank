@@ -49,6 +49,7 @@ func NewCommand() *cli.Command {
 		},
 		Before:          before,
 		Action:          action,
+		ShellComplete:   actions.CompleteFlags,
 		OnUsageError:    actions.UsageError,
 		HideHelpCommand: true,
 	}

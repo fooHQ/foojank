@@ -21,6 +21,7 @@ func NewCommand() *cli.Command {
 		Usage:           "Export JWT",
 		Before:          before,
 		Action:          action,
+		ShellComplete:   actions.CompleteFlags,
 		OnUsageError:    actions.UsageError,
 		HideHelpCommand: true,
 	}

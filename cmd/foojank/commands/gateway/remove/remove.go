@@ -44,6 +44,7 @@ func NewCommand() *cli.Command {
 		Before:          before,
 		Action:          action,
 		Aliases:         []string{"rm"},
+		ShellComplete:   actions.CompleteGatewayName,
 		OnUsageError:    actions.UsageError,
 		HideHelpCommand: true,
 	}
