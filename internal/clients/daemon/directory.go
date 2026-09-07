@@ -219,11 +219,12 @@ func (d *AgentDirectory) Delete(ctx context.Context, agent AgentDirectoryEntry) 
 }
 
 type AgentDirectoryEntry struct {
-	ID        string           `json:"id"`
-	Name      string           `json:"name"`
-	GatewayID string           `json:"gateway_id"`
-	Config    AgentBuildConfig `json:"config"`
-	Revision  uint64           `json:"-"`
+	ID          string           `json:"id"`
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	GatewayID   string           `json:"gateway_id"`
+	Config      AgentBuildConfig `json:"config"`
+	Revision    uint64           `json:"-"`
 }
 
 type AgentBuildConfig struct {
