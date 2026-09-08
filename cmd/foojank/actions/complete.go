@@ -13,7 +13,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
-	"github.com/foohq/foojank/internal/auth"
+	"github.com/foohq/foojank/internal/authdir"
 	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/formatter"
@@ -290,7 +290,7 @@ func daemonClient(ctx context.Context) (*daemon.Client, error) {
 	serverCert, _ := conf.String(flags.ServerCertificate)
 	accountName, _ := conf.String(flags.Account)
 
-	userJWT, userSeed, err := auth.ReadUser(accountName)
+	userJWT, userSeed, err := authdir.ReadUser(accountName)
 	if err != nil {
 		return nil, err
 	}

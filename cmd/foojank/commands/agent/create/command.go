@@ -15,6 +15,7 @@ import (
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/cmd/foojank/flags"
 	"github.com/foohq/foojank/internal/auth"
+	"github.com/foohq/foojank/internal/authdir"
 	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
@@ -119,7 +120,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	agentDesc, _ := conf.String(flags.Description)
 	profName, _ := conf.String(flags.Profile)
 
-	userJWT, userSeed, err := auth.ReadUser(accountName)
+	userJWT, userSeed, err := authdir.ReadUser(accountName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot read user %q: %v", accountName, err)
 		return err
@@ -166,7 +167,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	}
 
 	// Get the client's user JWT.
-	userClaims, err := auth.GetUserJWT(accountName)
+	userClaims, err := authdir.GetUserJWT(accountName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot get user JWT: %v", err)
 		return err
@@ -177,7 +178,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	}
 
 	// Get the client's account key.
-	account, err := auth.GetAccountKey(accountName)
+	account, err := authdir.GetAccountKey(accountName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot get account key: %v", err)
 		return err

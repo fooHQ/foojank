@@ -10,9 +10,9 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	"github.com/foohq/foojank/internal/authdir"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
-	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
@@ -84,7 +84,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 	format, _ := conf.String(flags.Format)
 	noColor, _ := conf.Bool(flags.NoColor)
 
-	userJWT, userSeed, err := auth.ReadUser(accountName)
+	userJWT, userSeed, err := authdir.ReadUser(accountName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot read user %q: %v", accountName, err)
 		return err

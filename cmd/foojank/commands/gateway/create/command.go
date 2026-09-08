@@ -10,6 +10,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	"github.com/foohq/foojank/internal/authdir"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/internal/auth"
@@ -86,7 +87,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	gatewayDesc, _ := conf.String(flags.Description)
 	setVars, _ := conf.StringSlice(flags.Variable)
 
-	userJWT, userSeed, err := auth.ReadUser(accountName)
+	userJWT, userSeed, err := authdir.ReadUser(accountName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot read user %q: %v", accountName, err)
 		return err
@@ -120,7 +121,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	}
 
 	// Get the client's user JWT.
-	userClaims, err := auth.GetUserJWT(accountName)
+	userClaims, err := authdir.GetUserJWT(accountName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot get user JWT: %v", err)
 		return err
@@ -131,7 +132,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	}
 
 	// Get the client's account key.
-	account, err := auth.GetAccountKey(accountName)
+	account, err := authdir.GetAccountKey(accountName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot get account key: %v", err)
 		return err

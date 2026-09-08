@@ -10,7 +10,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
-	"github.com/foohq/foojank/internal/auth"
+	"github.com/foohq/foojank/internal/authdir"
 	"github.com/foohq/foojank/internal/config"
 )
 
@@ -54,7 +54,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	name := c.Args().First()
 
-	accountJWT, _, err := auth.ReadAccount(name)
+	accountJWT, _, err := authdir.ReadAccount(name)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot read account %q: %v", name, err)
 		return err

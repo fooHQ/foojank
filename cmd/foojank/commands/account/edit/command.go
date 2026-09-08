@@ -15,7 +15,7 @@ import (
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/cmd/foojank/flags"
-	"github.com/foohq/foojank/internal/auth"
+	"github.com/foohq/foojank/internal/authdir"
 	"github.com/foohq/foojank/internal/config"
 )
 
@@ -84,13 +84,13 @@ func action(ctx context.Context, c *cli.Command) error {
 	name := c.Args().First()
 
 	{
-		claims, err := auth.GetAccountJWT(name)
+		claims, err := authdir.GetAccountJWT(name)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get account JWT: %v", err)
 			return err
 		}
 
-		account, err := auth.GetAccountKey(name)
+		account, err := authdir.GetAccountKey(name)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get account key: %v", err)
 			return err
@@ -139,7 +139,7 @@ func action(ctx context.Context, c *cli.Command) error {
 			return err
 		}
 
-		err = auth.WriteAccount(name, accountJWT, accountSeed)
+		err = authdir.WriteAccount(name, accountJWT, accountSeed)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot edit account: %v", err)
 			return err
@@ -147,7 +147,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	{
-		claims, err := auth.GetUserJWT(name)
+		claims, err := authdir.GetUserJWT(name)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get user JWT: %v", err)
 			return err
@@ -184,7 +184,7 @@ func action(ctx context.Context, c *cli.Command) error {
 			return err
 		}
 
-		account, err := auth.GetAccountKey(name)
+		account, err := authdir.GetAccountKey(name)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get account key: %v", err)
 			return err
@@ -196,7 +196,7 @@ func action(ctx context.Context, c *cli.Command) error {
 			return err
 		}
 
-		user, err := auth.GetUserKey(name)
+		user, err := authdir.GetUserKey(name)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get user key: %v", err)
 			return err
@@ -208,7 +208,7 @@ func action(ctx context.Context, c *cli.Command) error {
 			return err
 		}
 
-		err = auth.WriteUser(name, userJWT, userSeed)
+		err = authdir.WriteUser(name, userJWT, userSeed)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot edit account: %v", err)
 			return err

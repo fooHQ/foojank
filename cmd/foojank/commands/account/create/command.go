@@ -11,6 +11,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	"github.com/foohq/foojank/internal/authdir"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/internal/auth"
@@ -61,7 +62,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		name = petname.Generate(2, "_")
 	}
 
-	_, _, err = auth.ReadAccount(name)
+	_, _, err = authdir.ReadAccount(name)
 	if err == nil {
 		err = errors.New("account already exists")
 		logger.ErrorContext(ctx, "Cannot create account %q: %v", name, err)
@@ -104,7 +105,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		return err
 	}
 
-	err = auth.WriteAccount(name, accountJWT, accountKey)
+	err = authdir.WriteAccount(name, accountJWT, accountKey)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot store account: %v", err)
 		return err
@@ -113,7 +114,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		if err == nil {
 			return
 		}
-		err := auth.DeleteAccount(name)
+		err := authdir.DeleteAccount(name)
 		if err != nil {
 			logger.WarnContext(ctx, "Cannot delete account %q: %v", name, err)
 		}
@@ -131,7 +132,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		return err
 	}
 
-	err = auth.WriteUser(name, userJWT, userKey)
+	err = authdir.WriteUser(name, userJWT, userKey)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot store user: %v", err)
 		return err

@@ -10,9 +10,9 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	"github.com/foohq/foojank/internal/authdir"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
-	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/formatter"
 )
@@ -67,13 +67,13 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	name := c.Args().First()
 
-	accountClaims, err := auth.GetAccountJWT(name)
+	accountClaims, err := authdir.GetAccountJWT(name)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot get account JWT: %v", err)
 		return err
 	}
 
-	userClaims, err := auth.GetUserJWT(name)
+	userClaims, err := authdir.GetUserJWT(name)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot get user JWT: %v", err)
 		return err
