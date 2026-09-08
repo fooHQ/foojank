@@ -1,0 +1,154 @@
+package authdir
+
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/nats-io/jwt/v2"
+	"github.com/nats-io/nkeys"
+)
+
+const (
+	userPathT = accountRootPath + "/%s/user"
+)
+
+var (
+	ErrUserNotFound = errors.New("user not found")
+)
+
+func WriteUser(name string, userJWT string, userSeed []byte) error {
+	// Validate that the JWT is a user JWT.
+	_, err := jwt.DecodeUserClaims(userJWT)
+	if err != nil {
+		return fmt.Errorf("cannot decode JWT: %w", err)
+	}
+
+	if !isUserSeed(userSeed) {
+		return errors.New("invalid user seed")
+	}
+
+	jwtDecorated, err := jwt.DecorateJWT(userJWT)
+	if err != nil {
+		return fmt.Errorf("cannot encode decorated JWT: %w", err)
+	}
+
+	seedDecorated, err := jwt.DecorateSeed(userSeed)
+	if err != nil {
+		return fmt.Errorf("cannot encode decorated seed: %w", err)
+	}
+
+	data := bytes.Join([][]byte{jwtDecorated, seedDecorated}, []byte(""))
+
+	pth, err := UserPath(name)
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll(filepath.Dir(pth), 0o700)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(pth, data, 0o600)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetUserKey(name string) (nkeys.KeyPair, error) {
+	data, err := getUserData(name)
+	if err != nil {
+		return nil, err
+	}
+	return jwt.ParseDecoratedNKey(data)
+}
+
+func GetUserJWT(name string) (*jwt.UserClaims, error) {
+	data, err := getUserData(name)
+	if err != nil {
+		return nil, err
+	}
+
+	userJWT, err := jwt.ParseDecoratedJWT(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return jwt.DecodeUserClaims(userJWT)
+}
+
+func ReadUser(name string) (string, []byte, error) {
+	pth, err := UserPath(name)
+	if err != nil {
+		return "", nil, err
+	}
+
+	data, err := os.ReadFile(pth)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", nil, ErrUserNotFound
+		}
+		return "", nil, err
+	}
+
+	userJWT, err := jwt.ParseDecoratedJWT(data)
+	if err != nil {
+		return "", nil, fmt.Errorf("cannot decode decorated JWT: %w", err)
+	}
+
+	// Validate that the JWT is a user JWT.
+	_, err = jwt.DecodeUserClaims(userJWT)
+	if err != nil {
+		return "", nil, fmt.Errorf("cannot decode JWT: %w", err)
+	}
+
+	user, err := jwt.ParseDecoratedNKey(data)
+	if err != nil {
+		return "", nil, fmt.Errorf("cannot decode decorated seed: %w", err)
+	}
+
+	userSeed, err := user.Seed()
+	if err != nil {
+		return "", nil, fmt.Errorf("cannot encode seed: %w", err)
+	}
+
+	if !isUserSeed(userSeed) {
+		return "", nil, errors.New("invalid user seed")
+	}
+
+	return userJWT, userSeed, nil
+}
+
+func UserPath(name string) (string, error) {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(configDir, fmt.Sprintf(userPathT, filepath.Clean(name))), nil
+}
+
+func getUserData(name string) ([]byte, error) {
+	pth, err := UserPath(name)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := os.ReadFile(pth)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func isUserSeed(key []byte) bool {
+	return bytes.HasPrefix(key, []byte("SU"))
+}

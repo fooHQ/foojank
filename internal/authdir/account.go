@@ -1,0 +1,200 @@
+package authdir
+
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/nats-io/jwt/v2"
+	"github.com/nats-io/nkeys"
+)
+
+const (
+	accountRootPath = "foojank/accounts"
+	accountPathT    = accountRootPath + "/%s/account"
+)
+
+var (
+	ErrAccountNotFound = errors.New("account not found")
+)
+
+func WriteAccount(name string, accountJWT string, accountSeed []byte) error {
+	// Validate that the JWT is an account JWT.
+	_, err := jwt.DecodeAccountClaims(accountJWT)
+	if err != nil {
+		return fmt.Errorf("cannot decode JWT: %w", err)
+	}
+
+	if !isAccountSeed(accountSeed) {
+		return errors.New("invalid account seed")
+	}
+
+	jwtDecorated, err := jwt.DecorateJWT(accountJWT)
+	if err != nil {
+		return fmt.Errorf("cannot encode decorated JWT: %w", err)
+	}
+
+	seedDecorated, err := jwt.DecorateSeed(accountSeed)
+	if err != nil {
+		return fmt.Errorf("cannot encode decorated seed: %w", err)
+	}
+
+	data := bytes.Join([][]byte{jwtDecorated, seedDecorated}, []byte(""))
+
+	pth, err := AccountPath(name)
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll(filepath.Dir(pth), 0o700)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(pth, data, 0o600)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetAccountKey(name string) (nkeys.KeyPair, error) {
+	data, err := getAccountData(name)
+	if err != nil {
+		return nil, err
+	}
+	return jwt.ParseDecoratedNKey(data)
+}
+
+func GetAccountJWT(name string) (*jwt.AccountClaims, error) {
+	data, err := getAccountData(name)
+	if err != nil {
+		return nil, err
+	}
+
+	accountJWT, err := jwt.ParseDecoratedJWT(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return jwt.DecodeAccountClaims(accountJWT)
+}
+
+func ReadAccount(name string) (string, []byte, error) {
+	pth, err := AccountPath(name)
+	if err != nil {
+		return "", nil, err
+	}
+
+	data, err := os.ReadFile(pth)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", nil, ErrAccountNotFound
+		}
+		return "", nil, err
+	}
+
+	accountJWT, err := jwt.ParseDecoratedJWT(data)
+	if err != nil {
+		return "", nil, fmt.Errorf("cannot decode decorated JWT: %w", err)
+	}
+
+	// Validate that the JWT is account JWT.
+	_, err = jwt.DecodeAccountClaims(accountJWT)
+	if err != nil {
+		return "", nil, fmt.Errorf("cannot decode JWT: %w", err)
+	}
+
+	account, err := jwt.ParseDecoratedNKey(data)
+	if err != nil {
+		return "", nil, fmt.Errorf("cannot decode decorated seed: %w", err)
+	}
+
+	accountSeed, err := account.Seed()
+	if err != nil {
+		return "", nil, fmt.Errorf("cannot encode seed: %w", err)
+	}
+
+	if !isAccountSeed(accountSeed) {
+		return "", nil, errors.New("invalid account seed")
+	}
+
+	return accountJWT, accountSeed, nil
+}
+
+func ListAccounts() ([]string, error) {
+	pth, err := AccountRootPath()
+	if err != nil {
+		return nil, err
+	}
+
+	files, err := os.ReadDir(pth)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var accounts []string
+	for _, file := range files {
+		accounts = append(accounts, file.Name())
+	}
+
+	return accounts, nil
+}
+
+func DeleteAccount(name string) error {
+	pth, err := AccountPath(name)
+	if err != nil {
+		return err
+	}
+
+	err = os.RemoveAll(pth)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func AccountPath(name string) (string, error) {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+
+	pth := filepath.Join(configDir, fmt.Sprintf(accountPathT, filepath.Clean(name)))
+	return pth, nil
+}
+
+func AccountRootPath() (string, error) {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(configDir, accountRootPath), nil
+}
+
+func getAccountData(name string) ([]byte, error) {
+	pth, err := AccountPath(name)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := os.ReadFile(pth)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, ErrAccountNotFound
+		}
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func isAccountSeed(key []byte) bool {
+	return bytes.HasPrefix(key, []byte("SA"))
+}
