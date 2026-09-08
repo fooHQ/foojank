@@ -9,9 +9,9 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	"github.com/foohq/foojank/internal/authdir"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
-	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/formatter"
 )
@@ -59,7 +59,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 	format, _ := conf.String(flags.Format)
 	noColor, _ := conf.Bool(flags.NoColor)
 
-	accounts, err := auth.ListAccounts()
+	accounts, err := authdir.ListAccounts()
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot list accounts: %v", err)
 		return err
@@ -72,7 +72,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 		formatter.NewStringCell("ISSUED AT").WithBold(),
 	})
 	for _, account := range accounts {
-		claims, err := auth.GetAccountJWT(account)
+		claims, err := authdir.GetAccountJWT(account)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get account %q JWT: %v", account, err)
 			return err

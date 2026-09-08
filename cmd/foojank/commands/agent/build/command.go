@@ -13,7 +13,7 @@ import (
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/cmd/foojank/flags"
-	"github.com/foohq/foojank/internal/auth"
+	"github.com/foohq/foojank/internal/authdir"
 	"github.com/foohq/foojank/internal/builder"
 	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/clients/server"
@@ -85,7 +85,7 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 	outputName, _ := conf.String(flags.Output)
 	sourceDir, _ := conf.String(flags.SourceDir)
 
-	userJWT, userSeed, err := auth.ReadUser(accountName)
+	userJWT, userSeed, err := authdir.ReadUser(accountName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot read user %q: %v", accountName, err)
 		return err

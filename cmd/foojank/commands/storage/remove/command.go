@@ -9,9 +9,9 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	"github.com/foohq/foojank/internal/authdir"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
-	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/clients/agent"
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
@@ -73,7 +73,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	serverCert, _ := conf.String(flags.ServerCertificate)
 	accountName, _ := conf.String(flags.Account)
 
-	userJWT, userSeed, err := auth.ReadUser(accountName)
+	userJWT, userSeed, err := authdir.ReadUser(accountName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot read user %q: %v", accountName, err)
 		return err
