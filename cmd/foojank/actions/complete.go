@@ -85,11 +85,12 @@ func completeFlagToken(ctx context.Context, c *cli.Command) bool {
 	token := completeToken()
 	if list, prefix, ok := flagValueCompleter(c, token); ok {
 		lines, err := list(ctx)
-		if err != nil {
+		if err == nil {
+			printCompletionLines(c, prefix, lines)
 			return true
 		}
-		printCompletionLines(c, prefix, lines)
-		return true
+		// Value lookup failed (server down, missing config). Fall through to
+		// flag-name completion so TAB still does something useful.
 	}
 	if strings.HasPrefix(token, "-") {
 		printFlagCompletions(c, token)
@@ -283,6 +284,9 @@ func daemonClient(ctx context.Context) (*daemon.Client, error) {
 	conf := GetConfigFromContext(ctx)
 
 	serverURL, _ := conf.String(flags.ServerURL)
+	if serverURL == "" {
+		return nil, errors.New("server URL not configured")
+	}
 	serverCert, _ := conf.String(flags.ServerCertificate)
 	accountName, _ := conf.String(flags.Account)
 

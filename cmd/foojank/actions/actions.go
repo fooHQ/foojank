@@ -19,6 +19,18 @@ import (
 
 func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.BeforeFunc {
 	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
+		newCtx, err := loadConfig(w, validateFn)(ctx, c)
+		// urfave skips ShellComplete when Before fails. Flag names do not need a
+		// working server or a project config, so keep completion running.
+		if err != nil && IsShellCompletion() {
+			return setConfigToContext(ctx, flagsOnlyConfig(c)), nil
+		}
+		return newCtx, err
+	}
+}
+
+func loadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.BeforeFunc {
+	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
 		if IsShellCompletion() {
 			w = io.Discard
 		}
@@ -93,6 +105,19 @@ func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 	}
 }
 
+func flagsOnlyConfig(c *cli.Command) *config.Config {
+	confFlags, err := config.ParseFlags(c.FlagNames(), func(name string) (any, bool) {
+		return c.Value(name), c.IsSet(name)
+	})
+	if err != nil {
+		confFlags = config.NewWithOptions(nil)
+	}
+	return config.Merge(config.NewWithOptions(map[string]string{
+		flags.Format:  "ascii",
+		flags.NoColor: "false",
+	}), confFlags)
+}
+
 func LoadFlags(w io.Writer) cli.BeforeFunc {
 	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
 		if IsShellCompletion() {
@@ -120,6 +145,9 @@ func LoadProfiles(w io.Writer) cli.BeforeFunc {
 
 		configDir, ok := conf.String(flags.ConfigDir)
 		if !ok {
+			if IsShellCompletion() {
+				return ctx, nil
+			}
 			err := errors.New("cannot load profiles: configuration directory not set")
 			_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
 			return ctx, err
@@ -127,6 +155,9 @@ func LoadProfiles(w io.Writer) cli.BeforeFunc {
 
 		profiles, err := configdir.ParseProfilesJSON(configDir)
 		if err != nil {
+			if IsShellCompletion() {
+				return ctx, nil
+			}
 			err = fmt.Errorf("cannot parse profiles: %w", err)
 			_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
 			return ctx, err
