@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 
 	"github.com/deepnoodle-ai/wonton/tty"
@@ -206,8 +207,8 @@ func GetConfigFromContext(ctx context.Context) *config.Config {
 	return conf
 }
 
-func GetLoggerFromContext(ctx context.Context) *log.Logger {
-	logger := ctx.Value(loggerKey).(*log.Logger)
+func GetLoggerFromContext(ctx context.Context) *slog.Logger {
+	logger := ctx.Value(loggerKey).(*slog.Logger)
 	return logger
 }
 
@@ -220,7 +221,7 @@ func setConfigToContext(ctx context.Context, conf *config.Config) context.Contex
 	return context.WithValue(ctx, configKey, conf)
 }
 
-func setLoggerToContext(ctx context.Context, logger *log.Logger) context.Context {
+func setLoggerToContext(ctx context.Context, logger *slog.Logger) context.Context {
 	return context.WithValue(ctx, loggerKey, logger)
 }
 
