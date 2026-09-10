@@ -1,0 +1,25 @@
+package flags
+
+const (
+	ServerURL         = "server-url"
+	ServerCertificate = "server-certificate"
+	CredentialsFile   = "credentials-file"
+	Account           = "account"
+	Format            = "format"
+	Name              = "name"
+	Description       = "description"
+	Variable          = "variable"
+	WithoutVariable   = "without-variable"
+	SourceDir         = "source-dir"
+	Output            = "output"
+	Os                = "os"
+	Arch              = "arch"
+	Gateway           = "gateway"
+	NoColor           = "no-color"
+	LinkAccount       = "link-account"
+	UnlinkAccount     = "unlink-account"
+	AcceptLinkFrom    = "accept-link-from"
+	RemoveLink        = "remove-link"
+	Agent             = "agent"
+	Force             = "force"
+)
