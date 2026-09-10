@@ -13,16 +13,6 @@
     "init_hook": [
       "echo 'Welcome to devbox!' > /dev/null"
     ],
-    "scripts": {
-      "test": [
-        "./devbox.sh test"
-      ],
-      "lint": [
-        "./devbox.sh lint"
-      ],
-      "build": [
-        "./devbox.sh build"
-      ]
-    }
+    "scripts": {}
   }
 }
