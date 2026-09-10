@@ -3,10 +3,14 @@ GO = devbox run go
 GOLANGCI_LINT = devbox run golangci-lint
 
 .PHONY: all
-all: foojank
+all: foojank foojankd
 
 .PHONY: foojank
 foojank:
+	CGO_ENABLED=0 $(GO) build -o "$(BUILD_DIR)/$@" "./cmd/$@"
+
+.PHONY: foojankd
+foojankd:
 	CGO_ENABLED=0 $(GO) build -o "$(BUILD_DIR)/$@" "./cmd/$@"
 
 .PHONY: test
