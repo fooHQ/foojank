@@ -33,6 +33,30 @@ func New(servers []string, userJWT, userSeed, serverCert string) (*Client, error
 	}, nil
 }
 
+func NewWithCredsFile(servers []string, credsFile string, serverCert string) (*Client, error) {
+	b, err := os.ReadFile(credsFile)
+	if err != nil {
+		return nil, err
+	}
+
+	userJWT, err := jwt.ParseDecoratedJWT(b)
+	if err != nil {
+		return nil, err
+	}
+
+	userKey, err := jwt.ParseDecoratedUserNKey(b)
+	if err != nil {
+		return nil, err
+	}
+
+	userSeed, err := userKey.Seed()
+	if err != nil {
+		return nil, err
+	}
+
+	return New(servers, userJWT, string(userSeed), serverCert)
+}
+
 func (c *Client) UserID() string {
 	return c.userID
 }
