@@ -22,7 +22,7 @@ import (
 
 var app = &cli.Command{
 	Name:    "foojank",
-	Usage:   "Command and control framework",
+	Usage:   "Client for Foojank C2 framework",
 	Version: foojank.Version(),
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
