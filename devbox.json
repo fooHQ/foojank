@@ -6,8 +6,7 @@
   ],
   "env": {
     "GOROOT":      "",
-    "GOPATH":      "",
-    "CGO_ENABLED": "0"
+    "GOPATH":      ""
   },
   "shell": {
     "init_hook": [
