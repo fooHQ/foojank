@@ -16,6 +16,7 @@ var (
 	ErrKeyNotFound        = errors.New("key not found")
 	ErrKeyExists          = errors.New("key already exists")
 	ErrStreamNotFound     = errors.New("stream not found")
+	ErrStreamExists       = errors.New("stream already exists")
 	ErrNameInvalid        = errors.New("invalid name")
 )
 
@@ -43,6 +44,8 @@ func translate(err error) error {
 		return ErrNameInvalid
 	case errors.Is(err, jetstream.ErrStreamNotFound):
 		return ErrStreamNotFound
+	case errors.Is(err, jetstream.ErrStreamNameAlreadyInUse):
+		return ErrStreamExists
 	default:
 		return err
 	}
