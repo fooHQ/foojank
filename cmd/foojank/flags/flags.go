@@ -23,4 +23,5 @@ const (
 	RemoveLink        = "remove-link"
 	Agent             = "agent"
 	Force             = "force"
+	PublicKey         = "public-key"
 )
