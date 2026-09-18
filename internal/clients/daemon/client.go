@@ -12,12 +12,13 @@ import (
 	"github.com/nats-io/nuid"
 
 	protoagent "github.com/foohq/foojank/proto/agent"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 	protogw "github.com/foohq/foojank/proto/gateway"
 
 	"github.com/foohq/foojank/internal/clients/server"
 )
 
-const eventStream = "event-stream"
+const EventStream = "event-stream"
 
 type Client struct {
 	srv    *server.Client
@@ -27,7 +28,7 @@ type Client struct {
 func New(srv *server.Client) *Client {
 	return &Client{
 		srv:    srv,
-		stream: eventStream,
+		stream: EventStream,
 	}
 }
 
@@ -367,6 +368,192 @@ func (c *Client) UnregisterGateway(ctx context.Context, gateway GatewayDirectory
 		return translate(err)
 	}
 	return nil
+}
+
+func (c *Client) RequestCreateUser(ctx context.Context, req protodaemon.CreateUserRequest) (protodaemon.CreateUserResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.CreateUserResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.CreateUserSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.CreateUserResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.CreateUserResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.CreateUserResponse)
+	if !ok {
+		return protodaemon.CreateUserResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.CreateUserResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
+func (c *Client) RequestGetUser(ctx context.Context, req protodaemon.GetUserRequest) (protodaemon.GetUserResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.GetUserResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.GetUserSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.GetUserResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.GetUserResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.GetUserResponse)
+	if !ok {
+		return protodaemon.GetUserResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.GetUserResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
+func (c *Client) RequestListUsers(ctx context.Context, req protodaemon.ListUsersRequest) (protodaemon.ListUsersResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.ListUsersResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.ListUsersSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.ListUsersResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.ListUsersResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.ListUsersResponse)
+	if !ok {
+		return protodaemon.ListUsersResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.ListUsersResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
+func (c *Client) RequestCreateAgent(ctx context.Context, req protodaemon.CreateAgentRequest) (protodaemon.CreateAgentResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.CreateAgentResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.CreateAgentSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.CreateAgentResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.CreateAgentResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.CreateAgentResponse)
+	if !ok {
+		return protodaemon.CreateAgentResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.CreateAgentResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
+func (c *Client) RequestGetAgent(ctx context.Context, req protodaemon.GetAgentRequest) (protodaemon.GetAgentResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.GetAgentResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.GetAgentSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.GetAgentResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.GetAgentResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.GetAgentResponse)
+	if !ok {
+		return protodaemon.GetAgentResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.GetAgentResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
+func (c *Client) RequestListAgents(ctx context.Context, req protodaemon.ListAgentsRequest) (protodaemon.ListAgentsResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.ListAgentsResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.ListAgentsSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.ListAgentsResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.ListAgentsResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.ListAgentsResponse)
+	if !ok {
+		return protodaemon.ListAgentsResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.ListAgentsResponse{}, v.Error
+	}
+
+	return v, nil
 }
 
 func (c *Client) RequestRegisterAgent(ctx context.Context, agent AgentDirectoryEntry) (map[string]string, error) {
