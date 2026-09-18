@@ -47,9 +47,37 @@ jobs:
           retention-days: 1
           overwrite: true
 
+  build_daemon:
+    name: Build foojank daemon
+    needs: [linter, tests_linux]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        GOOS:
+          - linux
+          - darwin
+        GOARCH:
+          - amd64
+          - arm64
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: jetify-com/devbox-install-action@a0d2d53632934ae004f878c840055956d9f741b0 # v0.14.0
+      - run: make foojankd
+        env:
+          GOOS: "${{ matrix.GOOS }}"
+          GOARCH: "${{ matrix.GOARCH }}"
+      - run: cp build/foojankd build/foojankd-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: foojankd-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
+          path: build/foojankd-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
+          if-no-files-found: error
+          retention-days: 1
+          overwrite: true
+
   test_install:
     name: Test installation scripts
-    needs: [build_client]
+    needs: [build_client, build_daemon]
     runs-on: ubuntu-latest
     if: github.ref_type == 'tag'
     steps:
