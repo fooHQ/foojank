@@ -96,3 +96,38 @@ func TestDirectoryCreateGetDelete(t *testing.T) {
 	})
 	require.ErrorIs(t, err, ErrNameInvalid)
 }
+
+func TestValidateKey(t *testing.T) {
+	tests := []struct {
+		name    string
+		key     string
+		wantErr error
+	}{
+		{name: "alphanumeric", key: "foo123"},
+		{name: "dotted", key: "foo.bar"},
+		{name: "mixed charset", key: "Foo.123=bar_baz-abc"},
+		{name: "slash", key: "foo/bar"},
+		{name: "empty", key: "", wantErr: ErrNameInvalid},
+		{name: "space", key: " ", wantErr: ErrNameInvalid},
+		{name: "dot", key: ".", wantErr: ErrNameInvalid},
+		{name: "leading dot", key: ".foo", wantErr: ErrNameInvalid},
+		{name: "trailing dot", key: "foo.", wantErr: ErrNameInvalid},
+		{name: "space inside", key: "foo bar", wantErr: ErrNameInvalid},
+		{name: "bang", key: "foo!", wantErr: ErrNameInvalid},
+		{name: "star token", key: "foo.*.bar", wantErr: ErrNameInvalid},
+		{name: "gt token", key: "foo.>", wantErr: ErrNameInvalid},
+		{name: "star", key: "*", wantErr: ErrNameInvalid},
+		{name: "gt", key: ">", wantErr: ErrNameInvalid},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateKey(tt.key)
+			if tt.wantErr != nil {
+				require.ErrorIs(t, err, tt.wantErr)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}

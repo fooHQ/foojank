@@ -21,6 +21,25 @@ func formatKey(parts ...string) string {
 	return strings.Join(parts, ".")
 }
 
+// ValidateKey returns ErrNameInvalid if key is not a legal NATS KV key:
+// non-empty, no leading or trailing '.', charset [-/_=.A-Za-z0-9].
+func ValidateKey(key string) error {
+	if len(key) == 0 || key[0] == '.' || key[len(key)-1] == '.' {
+		return ErrNameInvalid
+	}
+	for i := 0; i < len(key); i++ {
+		if !validKeyChar(key[i]) {
+			return ErrNameInvalid
+		}
+	}
+	return nil
+}
+
+func validKeyChar(c byte) bool {
+	return c == '-' || c == '/' || c == '_' || c == '=' || c == '.' ||
+		(c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+}
+
 type Directory struct {
 	store jetstream.KeyValue
 }
