@@ -10,6 +10,7 @@ import (
 
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/cmd/foojankd/actions"
+	"github.com/foohq/foojank/cmd/foojankd/commands/account"
 	"github.com/foohq/foojank/cmd/foojankd/flags"
 	"github.com/foohq/foojank/internal/authdir"
 	"github.com/foohq/foojank/internal/clients/server"
@@ -46,8 +47,11 @@ func NewCommand() *cli.Command {
 				Usage: "disable color output",
 			},
 		},
-		Before:                before,
-		Action:                action,
+		Before: before,
+		Action: action,
+		Commands: []*cli.Command{
+			account.NewCommand(),
+		},
 		CommandNotFound:       actions.CommandNotFound,
 		OnUsageError:          actions.UsageError,
 		HideHelpCommand:       true,
@@ -56,6 +60,10 @@ func NewCommand() *cli.Command {
 }
 
 func before(ctx context.Context, c *cli.Command) (context.Context, error) {
+	if c.Args().Present() {
+		return ctx, nil
+	}
+
 	ctx, err := actions.LoadConfig(os.Stderr, validateConfiguration)(ctx, c)
 	if err != nil {
 		return ctx, err
