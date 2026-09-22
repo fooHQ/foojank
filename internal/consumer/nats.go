@@ -18,23 +18,19 @@ type NATSConsumerConfig struct {
 type NATSConsumer struct {
 	conf   NATSConsumerConfig
 	logger *log.Logger
+	msgCh  chan *nats.Msg
+	subs   []*nats.Subscription
 }
 
 func NewNATSConsumer(logger *log.Logger, conf NATSConsumerConfig) *NATSConsumer {
 	return &NATSConsumer{
 		conf:   conf,
 		logger: logger,
+		msgCh:  make(chan *nats.Msg, 2048),
 	}
 }
 
-func (s *NATSConsumer) Messages(ctx context.Context) iter.Seq2[message.Msg, error] {
-	var subs []*nats.Subscription
-	defer func() {
-		for _, sub := range subs {
-			_ = sub.Unsubscribe()
-		}
-	}()
-
+func (s *NATSConsumer) Subscribe(_ context.Context) error {
 	subjects := []string{
 		protodaemon.CreateUserSubject(),
 		protodaemon.GetUserSubject(),
@@ -44,21 +40,34 @@ func (s *NATSConsumer) Messages(ctx context.Context) iter.Seq2[message.Msg, erro
 		protodaemon.ListAgentsSubject(),
 		protodaemon.IssueJWTSubject("*"),
 	}
-	msgCh := make(chan *nats.Msg, 2048)
+
 	for _, subject := range subjects {
-		sub, err := s.conf.Connection.ChanSubscribe(subject, msgCh)
+		sub, err := s.conf.Connection.ChanSubscribe(subject, s.msgCh)
 		if err != nil {
-			return func(yield func(message.Msg, error) bool) {
-				yield(nil, err)
-			}
+			return err
 		}
-		subs = append(subs, sub)
+		s.subs = append(s.subs, sub)
 	}
 
+	return nil
+}
+
+func (s *NATSConsumer) Unsubscribe(_ context.Context) error {
+	var errRes error
+	for _, sub := range s.subs {
+		err := sub.Unsubscribe()
+		if err != nil {
+			errRes = err
+		}
+	}
+	return errRes
+}
+
+func (s *NATSConsumer) Messages(ctx context.Context) iter.Seq2[message.Msg, error] {
 	return func(yield func(message.Msg, error) bool) {
 		for {
 			select {
-			case msg := <-msgCh:
+			case msg := <-s.msgCh:
 				s.logger.InfoContext(ctx, "Received a message: %s", msg.Subject)
 
 				data, err := protodaemon.Unmarshal(msg.Data)
