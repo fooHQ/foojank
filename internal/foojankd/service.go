@@ -98,12 +98,26 @@ func (s *Service) Start(ctx context.Context) error {
 }
 
 type Consumer interface {
+	Subscribe(context.Context) error
+	Unsubscribe(context.Context) error
 	Messages(context.Context) iter.Seq2[message.Msg, error]
 }
 
 func consumer(ctx context.Context, logger *log.Logger, consumer Consumer, outputCh chan message.Msg) error {
 	logger.InfoContext(ctx, "Service %q started", "foojankd.consumer")
 	defer logger.InfoContext(ctx, "Service %q stopped", "foojankd.consumer")
+
+	err := consumer.Subscribe(ctx)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot subscribe to a NATS subject: %v", err)
+		return err
+	}
+	defer func() {
+		err := consumer.Unsubscribe(ctx)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot unsubscribe from a NATS subject: %v", err)
+		}
+	}()
 
 	for msg, err := range consumer.Messages(ctx) {
 		if err != nil {
