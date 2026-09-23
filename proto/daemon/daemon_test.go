@@ -35,6 +35,16 @@ func TestMarshalUnmarshal(t *testing.T) {
 		},
 		CreatedAt: 1700000000,
 	}
+	testGateway := daemon.Gateway{
+		ID:          "UDUMMYGATEWAYPUBLICKEY",
+		Name:        "gw1",
+		Description: "edge gateway",
+		Config: daemon.GatewayConfig{
+			JWT:   "header.payload.sig",
+			Key:   "SUDUMMYGATEWAYSEED",
+			Extra: map[string]string{"key1": "val1", "key2": "val2"},
+		},
+	}
 
 	tests := []struct {
 		name    string
@@ -248,6 +258,101 @@ func TestMarshalUnmarshal(t *testing.T) {
 			want:  daemon.ListAgentsResponse{Error: testError},
 		},
 		{
+			name: "CreateGatewayRequest",
+			input: daemon.CreateGatewayRequest{
+				Name:        "gw1",
+				Description: "edge gateway",
+				Config: daemon.GatewayConfig{
+					JWT:   "header.payload.sig",
+					Key:   "SUDUMMYGATEWAYSEED",
+					Extra: map[string]string{"key1": "val1", "key2": "val2"},
+				},
+			},
+			want: daemon.CreateGatewayRequest{
+				Name:        "gw1",
+				Description: "edge gateway",
+				Config: daemon.GatewayConfig{
+					JWT:   "header.payload.sig",
+					Key:   "SUDUMMYGATEWAYSEED",
+					Extra: map[string]string{"key1": "val1", "key2": "val2"},
+				},
+			},
+		},
+		{
+			name: "CreateGatewayRequest with empty fields",
+			input: daemon.CreateGatewayRequest{
+				Config: daemon.GatewayConfig{
+					Extra: map[string]string{},
+				},
+			},
+			want: daemon.CreateGatewayRequest{
+				Config: daemon.GatewayConfig{
+					Extra: nil,
+				},
+			},
+		},
+		{
+			name:  "CreateGatewayResponse",
+			input: daemon.CreateGatewayResponse{},
+			want:  daemon.CreateGatewayResponse{},
+		},
+		{
+			name:  "CreateGatewayResponse with error",
+			input: daemon.CreateGatewayResponse{Error: testError},
+			want:  daemon.CreateGatewayResponse{Error: testError},
+		},
+		{
+			name: "GetGatewayRequest",
+			input: daemon.GetGatewayRequest{
+				Name: "gw1",
+			},
+			want: daemon.GetGatewayRequest{
+				Name: "gw1",
+			},
+		},
+		{
+			name: "GetGatewayResponse",
+			input: daemon.GetGatewayResponse{
+				Gateway: testGateway,
+			},
+			want: daemon.GetGatewayResponse{
+				Gateway: testGateway,
+			},
+		},
+		{
+			name:  "GetGatewayResponse with error",
+			input: daemon.GetGatewayResponse{Error: testError},
+			want:  daemon.GetGatewayResponse{Error: testError},
+		},
+		{
+			name:  "ListGatewaysRequest",
+			input: daemon.ListGatewaysRequest{},
+			want:  daemon.ListGatewaysRequest{},
+		},
+		{
+			name: "ListGatewaysResponse",
+			input: daemon.ListGatewaysResponse{
+				Gateways: []daemon.Gateway{testGateway},
+			},
+			want: daemon.ListGatewaysResponse{
+				Gateways: []daemon.Gateway{testGateway},
+			},
+		},
+		{
+			name: "ListGatewaysResponse with empty slice",
+			input: daemon.ListGatewaysResponse{
+				Gateways: []daemon.Gateway{},
+			},
+			want: daemon.ListGatewaysResponse{
+				Gateways: nil,
+			},
+		},
+		{
+			name:  "ListGatewaysResponse with error",
+			input: daemon.ListGatewaysResponse{Error: testError},
+			want:  daemon.ListGatewaysResponse{Error: testError},
+		},
+		{
 			name: "pointer input",
 			input: &daemon.CreateUserRequest{
 				Name: "ops",
@@ -375,6 +480,21 @@ func TestGetAgentSubject(t *testing.T) {
 func TestListAgentsSubject(t *testing.T) {
 	got := daemon.ListAgentsSubject()
 	require.Equal(t, "FJ.DAEMON.RPC.AGENT.LIST", got)
+}
+
+func TestCreateGatewaySubject(t *testing.T) {
+	got := daemon.CreateGatewaySubject()
+	require.Equal(t, "FJ.DAEMON.RPC.GATEWAY.CREATE", got)
+}
+
+func TestGetGatewaySubject(t *testing.T) {
+	got := daemon.GetGatewaySubject()
+	require.Equal(t, "FJ.DAEMON.RPC.GATEWAY.GET", got)
+}
+
+func TestListGatewaysSubject(t *testing.T) {
+	got := daemon.ListGatewaysSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.GATEWAY.LIST", got)
 }
 
 func TestParseIssueJWTSubject(t *testing.T) {

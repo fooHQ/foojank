@@ -36,6 +36,12 @@ const (
 	tagGetAgentResponse
 	tagListAgentsRequest
 	tagListAgentsResponse
+	tagCreateGatewayRequest
+	tagCreateGatewayResponse
+	tagGetGatewayRequest
+	tagGetGatewayResponse
+	tagListGatewaysRequest
+	tagListGatewaysResponse
 )
 
 // Marshal serializes the given message into a CBOR-encoded byte slice. It
@@ -105,6 +111,30 @@ func Marshal(message any) ([]byte, error) {
 		tag, payload = tagListAgentsResponse, &v
 	case *ListAgentsResponse:
 		tag, payload = tagListAgentsResponse, v
+	case CreateGatewayRequest:
+		tag, payload = tagCreateGatewayRequest, &v
+	case *CreateGatewayRequest:
+		tag, payload = tagCreateGatewayRequest, v
+	case CreateGatewayResponse:
+		tag, payload = tagCreateGatewayResponse, &v
+	case *CreateGatewayResponse:
+		tag, payload = tagCreateGatewayResponse, v
+	case GetGatewayRequest:
+		tag, payload = tagGetGatewayRequest, &v
+	case *GetGatewayRequest:
+		tag, payload = tagGetGatewayRequest, v
+	case GetGatewayResponse:
+		tag, payload = tagGetGatewayResponse, &v
+	case *GetGatewayResponse:
+		tag, payload = tagGetGatewayResponse, v
+	case ListGatewaysRequest:
+		tag, payload = tagListGatewaysRequest, &v
+	case *ListGatewaysRequest:
+		tag, payload = tagListGatewaysRequest, v
+	case ListGatewaysResponse:
+		tag, payload = tagListGatewaysResponse, &v
+	case *ListGatewaysResponse:
+		tag, payload = tagListGatewaysResponse, v
 	default:
 		return nil, ErrUnknownType
 	}
@@ -205,6 +235,30 @@ func Unmarshal(b []byte) (any, error) {
 		var m ListAgentsResponse
 		err = m.UnmarshalCbor(r)
 		payload = m
+	case tagCreateGatewayRequest:
+		var m CreateGatewayRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagCreateGatewayResponse:
+		var m CreateGatewayResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagGetGatewayRequest:
+		var m GetGatewayRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagGetGatewayResponse:
+		var m GetGatewayResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagListGatewaysRequest:
+		var m ListGatewaysRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagListGatewaysResponse:
+		var m ListGatewaysResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
 	default:
 		return nil, ErrUnknownTag
 	}
@@ -252,6 +306,21 @@ func GetAgentSubject() string {
 // ListAgentsSubject returns the NATS subject for listing agents.
 func ListAgentsSubject() string {
 	return "FJ.DAEMON.RPC.AGENT.LIST"
+}
+
+// CreateGatewaySubject returns the NATS subject for creating a gateway.
+func CreateGatewaySubject() string {
+	return "FJ.DAEMON.RPC.GATEWAY.CREATE"
+}
+
+// GetGatewaySubject returns the NATS subject for retrieving a gateway.
+func GetGatewaySubject() string {
+	return "FJ.DAEMON.RPC.GATEWAY.GET"
+}
+
+// ListGatewaysSubject returns the NATS subject for listing gateways.
+func ListGatewaysSubject() string {
+	return "FJ.DAEMON.RPC.GATEWAY.LIST"
 }
 
 // ParseIssueJWTSubject extracts the user ID from an issue-JWT subject. It
@@ -391,6 +460,47 @@ func readAgentSlice(r io.Reader) ([]Agent, error) {
 	}
 
 	return agents, nil
+}
+
+// writeGatewaySlice writes a slice of gateways as a definite-length CBOR array.
+// Each gateway is encoded with Gateway.MarshalCbor.
+func writeGatewaySlice(gateways []Gateway, w io.Writer) error {
+	err := cboring.WriteArrayLength(uint64(len(gateways)), w)
+	if err != nil {
+		return err
+	}
+
+	for i := range gateways {
+		err := gateways[i].MarshalCbor(w)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// readGatewaySlice reads a definite-length CBOR array of gateways. An empty
+// array is decoded as a nil slice.
+func readGatewaySlice(r io.Reader) ([]Gateway, error) {
+	l, err := cboring.ReadArrayLength(r)
+	if err != nil {
+		return nil, err
+	}
+
+	if l == 0 {
+		return nil, nil
+	}
+
+	gateways := make([]Gateway, l)
+	for i := range gateways {
+		err := gateways[i].UnmarshalCbor(r)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return gateways, nil
 }
 
 // writeStringMap writes a map of strings as a definite-length CBOR map. Keys
