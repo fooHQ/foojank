@@ -47,3 +47,11 @@ func ValidateCreateAgentRequest(req protodaemon.CreateAgentRequest) error {
 func ValidateGetAgentRequest(req protodaemon.GetAgentRequest) error {
 	return validateName(req.Name)
 }
+
+func ValidateCreateGatewayRequest(req protodaemon.CreateGatewayRequest) error {
+	return validateName(req.Name)
+}
+
+func ValidateGetGatewayRequest(req protodaemon.GetGatewayRequest) error {
+	return validateName(req.Name)
+}
