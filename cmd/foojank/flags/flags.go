@@ -24,4 +24,5 @@ const (
 	Agent             = "agent"
 	Force             = "force"
 	PublicKey         = "public-key"
+	Privilege         = "privilege"
 )
