@@ -166,6 +166,7 @@ func action(ctx context.Context, c *cli.Command) error {
 			GatewayDirectory: gatewayDir,
 			UserDirectory:    userDir,
 			AccountKey:       accountKey,
+			Stream:           streamName,
 		}),
 		Publisher: publisher.NewNATSPublisher(logger, publisher.NATSPublisherConfig{
 			Connection: srv.Conn(),
