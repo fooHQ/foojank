@@ -226,3 +226,55 @@ func TestValidateGetAgentRequest(t *testing.T) {
 	err = handler.ValidateGetAgentRequest(protodaemon.GetAgentRequest{Name: "bad name"})
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
 }
+
+func TestValidateGetGatewayRequest(t *testing.T) {
+	err := handler.ValidateGetGatewayRequest(protodaemon.GetGatewayRequest{Name: "gw1"})
+	require.NoError(t, err)
+
+	err = handler.ValidateGetGatewayRequest(protodaemon.GetGatewayRequest{})
+	require.EqualError(t, err, "name is required")
+
+	err = handler.ValidateGetGatewayRequest(protodaemon.GetGatewayRequest{Name: "bad name"})
+	require.ErrorIs(t, err, directory.ErrNameInvalid)
+}
+
+func TestValidateCreateGatewayRequest(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     protodaemon.CreateGatewayRequest
+		wantErr string
+		wantIs  error
+	}{
+		{
+			name: "valid",
+			req:  protodaemon.CreateGatewayRequest{Name: "gw1"},
+		},
+		{
+			name:    "empty name",
+			req:     protodaemon.CreateGatewayRequest{},
+			wantErr: "name is required",
+		},
+		{
+			name:   "invalid name",
+			req:    protodaemon.CreateGatewayRequest{Name: "bad name"},
+			wantIs: directory.ErrNameInvalid,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := handler.ValidateCreateGatewayRequest(tt.req)
+			if tt.wantErr == "" && tt.wantIs == nil {
+				require.NoError(t, err)
+				return
+			}
+			require.Error(t, err)
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			}
+			if tt.wantIs != nil {
+				require.ErrorIs(t, err, tt.wantIs)
+			}
+		})
+	}
+}

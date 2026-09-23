@@ -17,6 +17,7 @@ import (
 	"github.com/foohq/foojank/internal/directory"
 	"github.com/foohq/foojank/internal/log"
 	"github.com/foohq/foojank/internal/privilege"
+	protoagent "github.com/foohq/foojank/proto/agent"
 	protogw "github.com/foohq/foojank/proto/gateway"
 
 	"github.com/foohq/foojank/internal/message"
@@ -31,6 +32,7 @@ type NATSHandlerConfig struct {
 	GatewayDirectory *directory.GatewayDirectory
 	UserDirectory    *directory.UserDirectory
 	AccountKey       nkeys.KeyPair
+	Stream           string
 }
 
 type NATSHandler struct {
@@ -54,6 +56,10 @@ func (h *NATSHandler) Match(msg message.Msg) (func(context.Context) message.Msg,
 		protodaemon.CreateAgentSubject(): h.CreateAgent,
 		protodaemon.GetAgentSubject():    h.GetAgent,
 		protodaemon.ListAgentsSubject():  h.ListAgents,
+
+		protodaemon.CreateGatewaySubject(): h.CreateGateway,
+		protodaemon.GetGatewaySubject():    h.GetGateway,
+		protodaemon.ListGatewaysSubject():  h.ListGateways,
 
 		protodaemon.IssueJWTSubject("<user>"): h.IssueJWT,
 	}
@@ -498,6 +504,181 @@ func (h *NATSHandler) ListAgents(ctx context.Context, params map[string]string, 
 	}
 }
 
+func (h *NATSHandler) CreateGateway(ctx context.Context, params map[string]string, msg message.Msg) any {
+	req, ok := msg.Data().(protodaemon.CreateGatewayRequest)
+	if !ok {
+		return protodaemon.CreateGatewayResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	err := ValidateCreateGatewayRequest(req)
+	if err != nil {
+		return protodaemon.CreateGatewayResponse{
+			Error: err,
+		}
+	}
+
+	gatewayName := req.Name
+	gatewayDesc := req.Description
+	gatewayConf := req.Config
+
+	gatewayKeyPair, err := auth.NewUserKey()
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot generate a user key: %v", err)
+		return protodaemon.CreateGatewayResponse{
+			Error: err,
+		}
+	}
+
+	gatewayID, err := gatewayKeyPair.PublicKey()
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot create gateway ID: %v", err)
+		return protodaemon.CreateGatewayResponse{
+			Error: err,
+		}
+	}
+
+	gatewayPerms := auth.NewGatewayPermissions(h.conf.Stream, gatewayID)
+
+	gatewayClaims, err := auth.NewUserJWT(gatewayName, gatewayPerms, gatewayKeyPair)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
+		return protodaemon.CreateGatewayResponse{
+			Error: err,
+		}
+	}
+
+	gatewayJWT, err := gatewayClaims.Encode(h.conf.AccountKey)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
+		return protodaemon.CreateGatewayResponse{
+			Error: err,
+		}
+	}
+
+	gatewaySeed, err := gatewayKeyPair.Seed()
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot encode user seed: %v", err)
+		return protodaemon.CreateGatewayResponse{
+			Error: err,
+		}
+	}
+
+	gateway, err := h.conf.GatewayDirectory.Create(ctx, directory.GatewayDirectoryEntry{
+		ID:          gatewayID,
+		Name:        gatewayName,
+		Description: gatewayDesc,
+		Config: directory.GatewayConfig{
+			UserJWT: gatewayJWT,
+			UserKey: string(gatewaySeed),
+			Extra:   gatewayConf.Extra,
+		},
+	})
+	if err != nil {
+		if errors.Is(err, directory.ErrKeyExists) {
+			err = fmt.Errorf("%q already exists", gatewayName)
+		}
+		h.logger.ErrorContext(ctx, "Cannot create gateway: %v", err)
+		return protodaemon.CreateGatewayResponse{
+			Error: err,
+		}
+	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		err = h.conf.GatewayDirectory.Delete(cleanupCtx, gateway)
+		if err != nil {
+			h.logger.ErrorContext(ctx, "Cannot delete gateway: %v", err)
+		}
+		cancel()
+	}()
+
+	err = h.RegisterGateway(ctx, gateway)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot register gateway: %v", err)
+		return protodaemon.CreateGatewayResponse{
+			Error: err,
+		}
+	}
+
+	return protodaemon.CreateGatewayResponse{}
+}
+
+func (h *NATSHandler) GetGateway(ctx context.Context, params map[string]string, msg message.Msg) any {
+	req, ok := msg.Data().(protodaemon.GetGatewayRequest)
+	if !ok {
+		return protodaemon.GetGatewayResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	err := ValidateGetGatewayRequest(req)
+	if err != nil {
+		return protodaemon.GetGatewayResponse{
+			Error: err,
+		}
+	}
+
+	gatewayName := req.Name
+
+	gateway, err := h.conf.GatewayDirectory.Get(ctx, gatewayName)
+	if err != nil {
+		return protodaemon.GetGatewayResponse{
+			Error: err,
+		}
+	}
+
+	return protodaemon.GetGatewayResponse{
+		Gateway: protodaemon.Gateway{
+			ID:          gateway.ID,
+			Name:        gateway.Name,
+			Description: gateway.Description,
+			Config: protodaemon.GatewayConfig{
+				JWT:   gateway.Config.UserJWT,
+				Key:   gateway.Config.UserKey,
+				Extra: gateway.Config.Extra,
+			},
+		},
+	}
+}
+
+func (h *NATSHandler) ListGateways(ctx context.Context, params map[string]string, msg message.Msg) any {
+	_, ok := msg.Data().(protodaemon.ListGatewaysRequest)
+	if !ok {
+		return protodaemon.ListGatewaysResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	entries, err := h.conf.GatewayDirectory.List(ctx)
+	if err != nil {
+		return protodaemon.ListGatewaysResponse{
+			Error: err,
+		}
+	}
+
+	gateways := make([]protodaemon.Gateway, len(entries))
+	for i := range entries {
+		gateways[i] = protodaemon.Gateway{
+			ID:          entries[i].ID,
+			Name:        entries[i].Name,
+			Description: entries[i].Description,
+			Config: protodaemon.GatewayConfig{
+				JWT:   entries[i].Config.UserJWT,
+				Key:   entries[i].Config.UserKey,
+				Extra: entries[i].Config.Extra,
+			},
+		}
+	}
+
+	return protodaemon.ListGatewaysResponse{
+		Gateways: gateways,
+	}
+}
+
 func (h *NATSHandler) RequestRegisterAgent(ctx context.Context, agent directory.AgentDirectoryEntry) (map[string]string, error) {
 	b, err := protogw.Marshal(protogw.RegisterAgentRequest{
 		AgentID: agent.ID,
@@ -532,6 +713,23 @@ func (h *NATSHandler) RequestRegisterAgent(ctx context.Context, agent directory.
 	}
 
 	return v.Env, nil
+}
+
+func (h *NATSHandler) RegisterGateway(ctx context.Context, gateway directory.GatewayDirectoryEntry) error {
+	_, err := h.conf.Connection.CreateConsumer(ctx, h.conf.Stream, jetstream.ConsumerConfig{
+		Durable:       gateway.ID,
+		DeliverPolicy: jetstream.DeliverLastPolicy,
+		AckPolicy:     jetstream.AckExplicitPolicy,
+		MaxAckPending: 1,
+		FilterSubjects: []string{
+			protoagent.CmdStartWorkerSubject(gateway.ID, "*", "*"),
+			protoagent.CmdStopWorkerSubject(gateway.ID, "*", "*"),
+			protoagent.CmdWriteStdinSubject(gateway.ID, "*", "*"),
+			protogw.RegisterAgentSubject(gateway.ID),
+			protogw.UnregisterAgentSubject(gateway.ID),
+		},
+	})
+	return err
 }
 
 func (h *NATSHandler) request(ctx context.Context, msg *nats.Msg) (*nats.Msg, error) {
