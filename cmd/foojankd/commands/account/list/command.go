@@ -66,7 +66,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("NAME").WithBold(),
 		formatter.NewStringCell("ACCOUNT ID").WithBold(),
-		formatter.NewStringCell("ISSUED AT").WithBold(),
+		formatter.NewStringCell("CREATED AT").WithBold(),
 	})
 	for _, account := range accounts {
 		claims, err := authdir.GetAccountJWT(account)

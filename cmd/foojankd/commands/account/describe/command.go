@@ -85,7 +85,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell("ID").WithBold(),
 		formatter.NewStringCell("NAME").WithBold(),
 		formatter.NewStringCell("DESCRIPTION").WithBold(),
-		formatter.NewStringCell("ISSUED AT").WithBold(),
+		formatter.NewStringCell("CREATED AT").WithBold(),
 		formatter.NewStringCell("EXPIRES AT").WithBold(),
 		formatter.NewStringCell("LINKED ACCOUNT").WithBold(),
 		formatter.NewStringCell("DEPENDENT ACCOUNTS").WithBold(),
