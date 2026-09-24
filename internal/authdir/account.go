@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
@@ -161,6 +162,7 @@ func DeleteAccount(name string) error {
 }
 
 func AccountPath(name string) (string, error) {
+	name = strings.ToLower(name)
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
