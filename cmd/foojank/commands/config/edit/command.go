@@ -63,7 +63,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 	unsetVars, _ := conf.StringSlice(flags.WithoutVariable)
 	serverURL, _ := conf.String(flags.ServerURL)
 	serverCert, _ := conf.String(flags.ServerCertificate)
-	accountName, _ := conf.String(flags.Account)
+	credsName, _ := conf.String(flags.Credential)
 	format, _ := conf.String(flags.Format)
 	noColor, _ := conf.String(flags.NoColor)
 
@@ -75,7 +75,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 	opts := map[string]string{
 		flags.ServerURL:         serverURL,
 		flags.ServerCertificate: serverCert,
-		flags.Account:           accountName,
+		flags.Credential:        credsName,
 		flags.Format:            format,
 		flags.NoColor:           noColor,
 	}
