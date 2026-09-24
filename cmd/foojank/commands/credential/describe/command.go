@@ -74,7 +74,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	pubKey := userClaims.Issuer
+	pubKey := userClaims.Subject
 	issued := time.Unix(userClaims.IssuedAt, 0)
 	expires := time.Unix(userClaims.Expires, 0)
 
