@@ -53,7 +53,7 @@ func NewCommand() *cli.Command {
 func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 	ctx, err := actions.LoadConfig(io.Discard, validateConfiguration)(ctx, c)
 	if err != nil {
-		ctx, err = actions.LoadFlags(os.Stderr)(ctx, c)
+		ctx, err = actions.LoadFlags(os.Stderr, validateConfiguration)(ctx, c)
 		if err != nil {
 			return ctx, err
 		}
