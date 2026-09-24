@@ -5,7 +5,6 @@ import (
 
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/cmd/foojank/actions"
-	"github.com/foohq/foojank/cmd/foojank/commands/account"
 	"github.com/foohq/foojank/cmd/foojank/commands/agent"
 	"github.com/foohq/foojank/cmd/foojank/commands/config"
 	"github.com/foohq/foojank/cmd/foojank/commands/credential"
@@ -29,7 +28,6 @@ func NewCommand() *cli.Command {
 			},
 		},
 		Commands: []*cli.Command{
-			account.NewCommand(),
 			agent.NewCommand(),
 			config.NewCommand(),
 			credential.NewCommand(),
