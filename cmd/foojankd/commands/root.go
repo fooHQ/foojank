@@ -5,13 +5,16 @@ import (
 	"errors"
 	"os"
 
+	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go/jetstream"
+	"github.com/nats-io/nkeys"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/cmd/foojankd/actions"
 	"github.com/foohq/foojank/cmd/foojankd/commands/account"
 	"github.com/foohq/foojank/cmd/foojankd/flags"
+	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/authdir"
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
@@ -77,7 +80,10 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 	return ctx, nil
 }
 
-const streamName = "event-stream"
+const (
+	streamName   = "event-stream"
+	consumerName = "event-consumer"
+)
 
 func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
@@ -93,13 +99,13 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
-	userJWT, userKey, err := authdir.ReadUser(accountName)
+	userJWT, userKey, err := generateUserCreds(accountName, accountKey)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot read user: %v", err)
+		logger.ErrorContext(ctx, "Cannot generate user credentials: %v", err)
 		return err
 	}
 
-	srv, err := server.New([]string{serverURL}, userJWT, string(userKey), serverCert)
+	srv, err := server.New([]string{serverURL}, userJWT, userKey, serverCert)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot connect to the server: %v", err)
 		return err
@@ -123,7 +129,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	_, err = srv.CreateConsumer(ctx, streamName, jetstream.ConsumerConfig{
-		Durable:       srv.UserID(),
+		Durable:       consumerName,
 		DeliverPolicy: jetstream.DeliverLastPolicy,
 		AckPolicy:     jetstream.AckExplicitPolicy,
 		MaxAckPending: 1,
@@ -171,6 +177,30 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	return nil
+}
+
+func generateUserCreds(name string, accountKey nkeys.KeyPair) (string, string, error) {
+	userKey, err := auth.NewUserKey()
+	if err != nil {
+		return "", "", err
+	}
+
+	userClaims, err := auth.NewUserJWT(name, jwt.Permissions{}, userKey)
+	if err != nil {
+		return "", "", err
+	}
+
+	userJWT, err := userClaims.Encode(accountKey)
+	if err != nil {
+		return "", "", err
+	}
+
+	userSeed, err := userKey.Seed()
+	if err != nil {
+		return "", "", err
+	}
+
+	return userJWT, string(userSeed), nil
 }
 
 func validateConfiguration(conf *config.Config) error {
