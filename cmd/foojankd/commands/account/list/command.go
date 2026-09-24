@@ -67,7 +67,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("NAME").WithBold(),
-		formatter.NewStringCell("PUBLIC KEY").WithBold(),
+		formatter.NewStringCell("DESCRIPTION").WithBold(),
 		formatter.NewStringCell("CREATED AT").WithBold(),
 	})
 	for _, account := range accounts {
@@ -83,7 +83,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 		ts := time.Unix(claims.IssuedAt, 0)
 		table.AddRow([]formatter.Cell{
 			formatter.NewStringCell(claims.Name),
-			formatter.NewStringCell(claims.Subject),
+			formatter.NewStringCell(claims.Description),
 			formatter.NewTimeCell(ts),
 		})
 	}
