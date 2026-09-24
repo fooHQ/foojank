@@ -118,7 +118,7 @@ func flagsOnlyConfig(c *cli.Command) *config.Config {
 	}), confFlags)
 }
 
-func LoadFlags(w io.Writer) cli.BeforeFunc {
+func LoadFlags(w io.Writer, validateFn func(conf *config.Config) error) cli.BeforeFunc {
 	return func(ctx context.Context, c *cli.Command) (context.Context, error) {
 		if IsShellCompletion() {
 			w = io.Discard
@@ -130,6 +130,14 @@ func LoadFlags(w io.Writer) cli.BeforeFunc {
 			err = fmt.Errorf("cannot parse command options: %w", err)
 			_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
 			return ctx, err
+		}
+
+		if !IsShellCompletion() {
+			err = validateFn(conf)
+			if err != nil {
+				_, _ = fmt.Fprintf(w, "%s: invalid configuration: %v\n", c.FullName(), err)
+				return ctx, err
+			}
 		}
 
 		return setConfigToContext(ctx, conf), nil
