@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	userPathT = accountRootPath + "/%s/user"
+	userRootPath = "foojank/users"
+	userPathT    = userRootPath + "/%s"
 )
 
 var (
@@ -123,6 +124,36 @@ func ReadUser(name string) (string, []byte, error) {
 	}
 
 	return userJWT, userSeed, nil
+}
+
+func ListUsers() ([]string, error) {
+	pth, err := UserRootPath()
+	if err != nil {
+		return nil, err
+	}
+
+	files, err := os.ReadDir(pth)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var users []string
+	for _, file := range files {
+		users = append(users, file.Name())
+	}
+
+	return users, nil
+}
+
+func UserRootPath() (string, error) {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(configDir, userRootPath), nil
 }
 
 func UserPath(name string) (string, error) {
