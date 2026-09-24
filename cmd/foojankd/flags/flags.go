@@ -6,6 +6,7 @@ const (
 	Account           = "account"
 	Format            = "format"
 	Name              = "name"
+	Description       = "description"
 	NoColor           = "no-color"
 	LinkAccount       = "link-account"
 	UnlinkAccount     = "unlink-account"
