@@ -66,8 +66,8 @@ func action(ctx context.Context, _ *cli.Command) error {
 			Usage: "Path to server's certificate",
 		},
 		&cli.StringFlag{
-			Name:  flags.Account,
-			Usage: "Account for server authentication",
+			Name:  flags.Credential,
+			Usage: "Credential to use for authentication",
 		},
 		&cli.StringFlag{
 			Name:  flags.Format,

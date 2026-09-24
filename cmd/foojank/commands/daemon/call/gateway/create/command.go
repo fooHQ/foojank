@@ -45,8 +45,8 @@ func NewCommand() *cli.Command {
 				TakesFile: true,
 			},
 			&cli.StringFlag{
-				Name:  flags.Account,
-				Usage: "set server account",
+				Name:  flags.Credential,
+				Usage: "set credential",
 			},
 			&cli.StringFlag{
 				Name:  flags.ConfigDir,
@@ -81,14 +81,14 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 
 	serverURL, _ := conf.String(flags.ServerURL)
 	serverCert, _ := conf.String(flags.ServerCertificate)
-	accountName, _ := conf.String(flags.Account)
+	credsName, _ := conf.String(flags.Credential)
 	gatewayName, _ := conf.String(flags.Name)
 	gatewayDesc, _ := conf.String(flags.Description)
 	setVars, _ := conf.StringSlice(flags.Variable)
 
-	userJWT, userSeed, err := authdir.ReadUser(accountName)
+	userJWT, userSeed, err := authdir.ReadUser(credsName)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot read user %q: %v", accountName, err)
+		logger.ErrorContext(ctx, "Cannot read user %q: %v", credsName, err)
 		return err
 	}
 
@@ -134,7 +134,7 @@ func validateConfiguration(conf *config.Config) error {
 	for _, opt := range []string{
 		flags.Name,
 		flags.ServerURL,
-		flags.Account,
+		flags.Credential,
 	} {
 		switch opt {
 		case flags.Name:
@@ -147,10 +147,10 @@ func validateConfiguration(conf *config.Config) error {
 			if !ok || v == "" {
 				return errors.New("server URL not configured")
 			}
-		case flags.Account:
+		case flags.Credential:
 			v, ok := conf.String(opt)
 			if !ok || v == "" {
-				return errors.New("account not configured")
+				return errors.New("credential not configured")
 			}
 		}
 	}

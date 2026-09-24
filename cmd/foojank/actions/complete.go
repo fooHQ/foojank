@@ -288,9 +288,9 @@ func daemonClient(ctx context.Context) (*daemon.Client, error) {
 		return nil, errors.New("server URL not configured")
 	}
 	serverCert, _ := conf.String(flags.ServerCertificate)
-	accountName, _ := conf.String(flags.Account)
+	credsName, _ := conf.String(flags.Credential)
 
-	userJWT, userSeed, err := authdir.ReadUser(accountName)
+	userJWT, userSeed, err := authdir.ReadUser(credsName)
 	if err != nil {
 		return nil, err
 	}

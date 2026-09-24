@@ -68,8 +68,8 @@ func NewCommand() *cli.Command {
 				TakesFile: true,
 			},
 			&cli.StringFlag{
-				Name:  flags.Account,
-				Usage: "set server account",
+				Name:  flags.Credential,
+				Usage: "set credential",
 			},
 			&cli.StringFlag{
 				Name:  flags.ConfigDir,
@@ -110,7 +110,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 
 	serverURL, _ := conf.String(flags.ServerURL)
 	serverCert, _ := conf.String(flags.ServerCertificate)
-	accountName, _ := conf.String(flags.Account)
+	credsName, _ := conf.String(flags.Credential)
 	targetOS, _ := conf.String(flags.Os)
 	targetArch, _ := conf.String(flags.Arch)
 	setVars, _ := conf.StringSlice(flags.Variable)
@@ -120,9 +120,9 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	agentDesc, _ := conf.String(flags.Description)
 	profName, _ := conf.String(flags.Profile)
 
-	userJWT, userSeed, err := authdir.ReadUser(accountName)
+	userJWT, userSeed, err := authdir.ReadUser(credsName)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot read user %q: %v", accountName, err)
+		logger.ErrorContext(ctx, "Cannot read user %q: %v", credsName, err)
 		return err
 	}
 
@@ -167,7 +167,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	}
 
 	// Get the client's user JWT.
-	userClaims, err := authdir.GetUserJWT(accountName)
+	userClaims, err := authdir.GetUserJWT(credsName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot get user JWT: %v", err)
 		return err
@@ -178,7 +178,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	}
 
 	// Get the client's account key.
-	account, err := authdir.GetAccountKey(accountName)
+	account, err := authdir.GetAccountKey(credsName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot get account key: %v", err)
 		return err
@@ -304,7 +304,7 @@ func validateConfiguration(conf *config.Config) error {
 	for _, opt := range []string{
 		flags.Gateway,
 		flags.ServerURL,
-		flags.Account,
+		flags.Credential,
 	} {
 		switch opt {
 		case flags.Gateway:
@@ -317,10 +317,10 @@ func validateConfiguration(conf *config.Config) error {
 			if !ok || v == "" {
 				return errors.New("server URL not configured")
 			}
-		case flags.Account:
+		case flags.Credential:
 			v, ok := conf.String(opt)
 			if !ok || v == "" {
-				return errors.New("account not configured")
+				return errors.New("credential not configured")
 			}
 		}
 	}
