@@ -7,7 +7,6 @@ import (
 	"os"
 
 	petname "github.com/dustinkirkland/golang-petname"
-	"github.com/nats-io/jwt/v2"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojankd/flags"
@@ -78,18 +77,6 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		return err
 	}
 
-	user, err := auth.NewUserKey()
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot generate a user key: %v", err)
-		return err
-	}
-
-	userClaims, err := auth.NewUserJWT(name, jwt.Permissions{}, user)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
-		return err
-	}
-
 	accountJWT, err := accountClaims.Encode(account)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot encode account JWT: %v", err)
@@ -116,24 +103,6 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 			logger.WarnContext(ctx, "Cannot delete account %q: %v", name, err)
 		}
 	}()
-
-	userJWT, err := userClaims.Encode(account)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
-		return err
-	}
-
-	userKey, err := user.Seed()
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot encode user seed: %v", err)
-		return err
-	}
-
-	err = authdir.WriteUser(name, userJWT, userKey)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot store user: %v", err)
-		return err
-	}
 
 	logger.InfoContext(ctx, "Account %q has been created!", name)
 
