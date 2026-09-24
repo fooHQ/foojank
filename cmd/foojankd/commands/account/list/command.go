@@ -2,6 +2,8 @@ package list
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -65,13 +67,16 @@ func action(ctx context.Context, _ *cli.Command) error {
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("NAME").WithBold(),
-		formatter.NewStringCell("ACCOUNT ID").WithBold(),
+		formatter.NewStringCell("PUBLIC KEY").WithBold(),
 		formatter.NewStringCell("CREATED AT").WithBold(),
 	})
 	for _, account := range accounts {
 		claims, err := authdir.GetAccountJWT(account)
 		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get account %q JWT: %v", account, err)
+			if errors.Is(err, authdir.ErrAccountNotFound) {
+				err = fmt.Errorf("%q not found", account)
+			}
+			logger.ErrorContext(ctx, "Cannot get account: %v", err)
 			return err
 		}
 
