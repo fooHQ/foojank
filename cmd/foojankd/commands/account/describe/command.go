@@ -74,6 +74,15 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
+	accountJWT, _, err := authdir.ReadAccount(name)
+	if err != nil {
+		if errors.Is(err, authdir.ErrAccountNotFound) {
+			err = fmt.Errorf("%q not found", name)
+		}
+		logger.ErrorContext(ctx, "Cannot get account: %v", err)
+		return err
+	}
+
 	pubKey := accountClaims.Issuer
 	issued := time.Unix(accountClaims.IssuedAt, 0)
 	expires := time.Unix(accountClaims.Expires, 0)
@@ -81,15 +90,17 @@ func action(ctx context.Context, c *cli.Command) error {
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("NAME").WithBold(),
-		formatter.NewStringCell("PUBLIC KEY").WithBold(),
 		formatter.NewStringCell("DESCRIPTION").WithBold(),
+		formatter.NewStringCell("PUBLIC KEY").WithBold(),
+		formatter.NewStringCell("JWT").WithBold(),
 		formatter.NewStringCell("CREATED AT").WithBold(),
 		formatter.NewStringCell("EXPIRES AT").WithBold(),
 	})
 	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell(name),
-		formatter.NewStringCell(pubKey),
 		formatter.NewStringCell(accountClaims.Description),
+		formatter.NewStringCell(pubKey),
+		formatter.NewStringCell(accountJWT),
 		formatter.NewTimeCell(issued),
 		formatter.NewTimeCell(expires).WithEmptyValue("never"),
 	})
@@ -98,6 +109,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		format,
 		formatter.WithNoColor(noColor),
 		formatter.WithOrientation(formatter.OrientationHorizontal),
+		formatter.WithSortByColumn(0),
 	).Write(os.Stdout, table)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
