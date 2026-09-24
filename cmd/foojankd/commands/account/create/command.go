@@ -26,6 +26,10 @@ func NewCommand() *cli.Command {
 				Name:  flags.Name,
 				Usage: "set account name",
 			},
+			&cli.StringFlag{
+				Name:  flags.Description,
+				Usage: "set account description",
+			},
 		},
 		Before:          before,
 		Action:          action,
@@ -54,6 +58,8 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	logger := actions.GetLoggerFromContext(ctx)
 
 	name, _ := conf.String(flags.Name)
+	description, _ := conf.String(flags.Description)
+
 	if name == "" {
 		name = petname.Generate(2, "_")
 	}
@@ -76,6 +82,8 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		logger.ErrorContext(ctx, "Cannot generate an account JWT: %v", err)
 		return err
 	}
+
+	accountClaims.Description = description
 
 	accountJWT, err := accountClaims.Encode(account)
 	if err != nil {
