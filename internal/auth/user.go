@@ -20,3 +20,11 @@ func NewUserJWT(name string, perms jwt.Permissions, userKey nkeys.KeyPair) (*jwt
 	claims.Permissions = perms
 	return claims, nil
 }
+
+func SetDummyUserJWT(claims *jwt.UserClaims) {
+	claims.Tags.Add("fj:dummy")
+}
+
+func IsDummyUserJWT(claims *jwt.UserClaims) bool {
+	return claims.Tags.Contains("fj:dummy")
+}
