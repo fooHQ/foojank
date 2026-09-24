@@ -3,6 +3,7 @@ package describe
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -66,38 +67,31 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	accountClaims, err := authdir.GetAccountJWT(name)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get account JWT: %v", err)
+		if errors.Is(err, authdir.ErrAccountNotFound) {
+			err = fmt.Errorf("%q not found", name)
+		}
+		logger.ErrorContext(ctx, "Cannot get account: %v", err)
 		return err
 	}
 
-	userClaims, err := authdir.GetUserJWT(name)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get user JWT: %v", err)
-		return err
-	}
-
-	accountID := accountClaims.Issuer
+	pubKey := accountClaims.Issuer
 	issued := time.Unix(accountClaims.IssuedAt, 0)
 	expires := time.Unix(accountClaims.Expires, 0)
 
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
-		formatter.NewStringCell("ID").WithBold(),
 		formatter.NewStringCell("NAME").WithBold(),
+		formatter.NewStringCell("PUBLIC KEY").WithBold(),
 		formatter.NewStringCell("DESCRIPTION").WithBold(),
 		formatter.NewStringCell("CREATED AT").WithBold(),
 		formatter.NewStringCell("EXPIRES AT").WithBold(),
-		formatter.NewStringCell("LINKED ACCOUNT").WithBold(),
-		formatter.NewStringCell("DEPENDENT ACCOUNTS").WithBold(),
 	})
 	table.AddRow([]formatter.Cell{
-		formatter.NewStringCell(accountID),
 		formatter.NewStringCell(name),
+		formatter.NewStringCell(pubKey),
 		formatter.NewStringCell(accountClaims.Description),
 		formatter.NewTimeCell(issued),
 		formatter.NewTimeCell(expires).WithEmptyValue("never"),
-		formatter.NewStringCell(userClaims.IssuerAccount),
-		formatter.NewStringSliceCell(accountClaims.SigningKeys.Keys()).WithSeparator("\n"),
 	})
 
 	err = formatter.NewFormatter(
