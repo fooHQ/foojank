@@ -8,6 +8,8 @@ const (
 	Name              = "name"
 	Description       = "description"
 	NoColor           = "no-color"
+	PublicKey         = "public-key"
+	Privilege         = "privilege"
 	LinkAccount       = "link-account"
 	UnlinkAccount     = "unlink-account"
 	AcceptLinkFrom    = "accept-link-from"
