@@ -12,11 +12,6 @@ import (
 	"github.com/nats-io/nkeys"
 )
 
-const (
-	userRootPath = "foojank/users"
-	userPathT    = userRootPath + "/%s"
-)
-
 var (
 	ErrUserNotFound = errors.New("user not found")
 )
@@ -44,7 +39,7 @@ func WriteUser(name string, userJWT string, userSeed []byte) error {
 
 	data := bytes.Join([][]byte{jwtDecorated, seedDecorated}, []byte(""))
 
-	pth, err := UserPath(name)
+	pth, err := userPath(name)
 	if err != nil {
 		return err
 	}
@@ -85,7 +80,7 @@ func GetUserJWT(name string) (*jwt.UserClaims, error) {
 }
 
 func ReadUser(name string) (string, []byte, error) {
-	pth, err := UserPath(name)
+	pth, err := userPath(name)
 	if err != nil {
 		return "", nil, err
 	}
@@ -127,7 +122,7 @@ func ReadUser(name string) (string, []byte, error) {
 }
 
 func ListUsers() ([]string, error) {
-	pth, err := UserRootPath()
+	pth, err := userRootPath()
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +144,7 @@ func ListUsers() ([]string, error) {
 }
 
 func GetUserPath(name string) (string, error) {
-	pth, err := UserPath(name)
+	pth, err := userPath(name)
 	if err != nil {
 		return "", err
 	}
@@ -165,25 +160,25 @@ func GetUserPath(name string) (string, error) {
 	return pth, nil
 }
 
-func UserRootPath() (string, error) {
+func userRootPath() (string, error) {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(configDir, userRootPath), nil
+	return filepath.Join(configDir, "foojank/users"), nil
 }
 
-func UserPath(name string) (string, error) {
+func userPath(name string) (string, error) {
 	name = strings.ToLower(name)
-	configDir, err := os.UserConfigDir()
+	root, err := userRootPath()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(configDir, fmt.Sprintf(userPathT, filepath.Clean(name))), nil
+	return filepath.Join(root, name), nil
 }
 
 func getUserData(name string) ([]byte, error) {
-	pth, err := UserPath(name)
+	pth, err := userPath(name)
 	if err != nil {
 		return nil, err
 	}
