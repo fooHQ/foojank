@@ -4,6 +4,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
+	"github.com/foohq/foojank/cmd/foojank/commands/credential/activate"
 	"github.com/foohq/foojank/cmd/foojank/commands/credential/describe"
 
 	"github.com/foohq/foojank/cmd/foojank/commands/credential/create"
@@ -18,6 +19,7 @@ func NewCommand() *cli.Command {
 			create.NewCommand(),
 			describe.NewCommand(),
 			list.NewCommand(),
+			activate.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		OnUsageError:    actions.UsageError,
