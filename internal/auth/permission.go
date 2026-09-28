@@ -13,12 +13,12 @@ func NewClientPermissions(clientID string, pubPerms []string) (jwt.Permissions, 
 	return jwt.Permissions{
 		Pub: jwt.Permission{
 			Allow: append([]string{
-				inboxName("*") + ".>",
+				InboxPrefix("*") + ".>",
 			}, pubPerms...),
 		},
 		Sub: jwt.Permission{
 			Allow: []string{
-				inboxName(clientID) + ".>",
+				InboxPrefix(clientID) + ".>",
 			},
 		},
 	}, nil
@@ -34,7 +34,7 @@ func NewGatewayPermissions(stream, gatewayID string) jwt.Permissions {
 				fmt.Sprintf("$JS.API.CONSUMER.INFO.%s.%s", stream, gatewayID),
 				fmt.Sprintf("$JS.API.CONSUMER.MSG.NEXT.%s.%s", stream, gatewayID),
 				fmt.Sprintf("$JS.ACK.%s.%s.>", stream, gatewayID),
-				inboxName("*") + ".>",
+				InboxPrefix("*") + ".>",
 				/*fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.>", gatewayID),
 				fmt.Sprintf("$JS.API.CONSUMER.DELETE.OBJ_%s.*", gatewayID),
 				fmt.Sprintf("$JS.API.DIRECT.GET.OBJ_%s.>", gatewayID),*/
@@ -44,7 +44,7 @@ func NewGatewayPermissions(stream, gatewayID string) jwt.Permissions {
 		},
 		Sub: jwt.Permission{
 			Allow: []string{
-				inboxName(gatewayID) + ".>",
+				InboxPrefix(gatewayID) + ".>",
 				protogw.RegisterAgentSubject(gatewayID),
 				protogw.UnregisterAgentSubject(gatewayID),
 			},
@@ -65,12 +65,12 @@ func NewAgentPermissions(gatewayID, agentID string) jwt.Permissions {
 		},
 		Sub: jwt.Permission{
 			Allow: []string{
-				inboxName(gatewayID) + ".>",
+				InboxPrefix(gatewayID) + ".>",
 			},
 		},
 	}
 }
 
-func inboxName(name string) string {
+func InboxPrefix(name string) string {
 	return "_INBOX." + name
 }
