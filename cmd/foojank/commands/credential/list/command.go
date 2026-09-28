@@ -73,19 +73,19 @@ func action(ctx context.Context, _ *cli.Command) error {
 	for _, user := range users {
 		claims, err := authdir.GetUserJWT(user)
 		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get user JWT: %v", err)
+			logger.ErrorContext(ctx, "Cannot get credential JWT: %v", err)
 			continue
 		}
 
 		key, err := authdir.GetUserKey(user)
 		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get user key: %v", err)
+			logger.ErrorContext(ctx, "Cannot get credential key: %v", err)
 			continue
 		}
 
 		pubKey, err := key.PublicKey()
 		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get user public key: %v", err)
+			logger.ErrorContext(ctx, "Cannot get credential public key: %v", err)
 			continue
 		}
 
