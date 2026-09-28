@@ -148,6 +148,23 @@ func ListUsers() ([]string, error) {
 	return users, nil
 }
 
+func GetUserPath(name string) (string, error) {
+	pth, err := UserPath(name)
+	if err != nil {
+		return "", err
+	}
+
+	_, err = os.Stat(pth)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", ErrUserNotFound
+		}
+		return "", err
+	}
+
+	return pth, nil
+}
+
 func UserRootPath() (string, error) {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
