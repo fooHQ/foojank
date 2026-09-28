@@ -198,7 +198,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	_, err = client.RequestCreateAgent(ctx, protodaemon.CreateAgentRequest{
 		Name:        agentName,
 		Description: agentDesc,
-		Gateway:     gateway.ID,
+		GatewayID:   gateway.ID,
 		Config:      agentConf,
 	})
 	if err != nil {
