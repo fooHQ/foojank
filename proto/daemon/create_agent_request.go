@@ -11,7 +11,7 @@ import (
 type CreateAgentRequest struct {
 	Name        string
 	Description string
-	Gateway     string
+	GatewayID   string
 	Config      AgentConfig
 }
 
@@ -23,7 +23,7 @@ func (m *CreateAgentRequest) MarshalCbor(w io.Writer) error {
 		return err
 	}
 
-	for _, s := range []string{m.Name, m.Description, m.Gateway} {
+	for _, s := range []string{m.Name, m.Description, m.GatewayID} {
 		err := cboring.WriteTextString(s, w)
 		if err != nil {
 			return err
@@ -43,7 +43,7 @@ func (m *CreateAgentRequest) UnmarshalCbor(r io.Reader) error {
 		return errors.New("invalid message array length")
 	}
 
-	for _, f := range []*string{&m.Name, &m.Description, &m.Gateway} {
+	for _, f := range []*string{&m.Name, &m.Description, &m.GatewayID} {
 		s, err := cboring.ReadTextString(r)
 		if err != nil {
 			return err

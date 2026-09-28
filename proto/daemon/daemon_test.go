@@ -161,7 +161,7 @@ func TestMarshalUnmarshal(t *testing.T) {
 			input: daemon.CreateAgentRequest{
 				Name:        "web",
 				Description: "web agent",
-				Gateway:     "gw1",
+				GatewayID:   "gw1",
 				Config: daemon.AgentConfig{
 					OS:    "linux",
 					Arch:  "amd64",
@@ -173,7 +173,7 @@ func TestMarshalUnmarshal(t *testing.T) {
 			want: daemon.CreateAgentRequest{
 				Name:        "web",
 				Description: "web agent",
-				Gateway:     "gw1",
+				GatewayID:   "gw1",
 				Config: daemon.AgentConfig{
 					OS:    "linux",
 					Arch:  "amd64",
