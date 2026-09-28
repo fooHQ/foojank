@@ -158,15 +158,7 @@ func (h *NATSHandler) GetUser(ctx context.Context, params map[string]string, msg
 		}
 	}
 
-	subj, err := privilege.JWTIssue{UserID: user.ID}.Subject()
-	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot create client permissions: %v", err)
-		return protodaemon.GetUserResponse{
-			Error: err,
-		}
-	}
-
-	userPerms, err := auth.NewClientPermissions(user.ID, []string{subj})
+	userPerms, err := auth.NewRefreshTokenPermissions(user.ID)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot create client permissions: %v", err)
 		return protodaemon.GetUserResponse{
