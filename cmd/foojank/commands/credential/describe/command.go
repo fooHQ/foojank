@@ -30,7 +30,7 @@ func NewCommand() *cli.Command {
 		},
 		Before:          before,
 		Action:          action,
-		ShellComplete:   actions.CompleteFlags,
+		ShellComplete:   actions.CompleteCredentialName,
 		OnUsageError:    actions.UsageError,
 		HideHelpCommand: true,
 	}
