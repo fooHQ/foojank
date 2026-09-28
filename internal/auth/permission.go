@@ -6,6 +6,7 @@ import (
 	"github.com/nats-io/jwt/v2"
 
 	protoagent "github.com/foohq/foojank/proto/agent"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 	protogw "github.com/foohq/foojank/proto/gateway"
 )
 
@@ -15,6 +16,22 @@ func NewClientPermissions(clientID string, pubPerms []string) (jwt.Permissions, 
 			Allow: append([]string{
 				InboxPrefix("*") + ".>",
 			}, pubPerms...),
+		},
+		Sub: jwt.Permission{
+			Allow: []string{
+				InboxPrefix(clientID) + ".>",
+			},
+		},
+	}, nil
+}
+
+func NewRefreshTokenPermissions(clientID string) (jwt.Permissions, error) {
+	return jwt.Permissions{
+		Pub: jwt.Permission{
+			Allow: []string{
+				protodaemon.IssueJWTSubject(clientID),
+				InboxPrefix("*") + ".>",
+			},
 		},
 		Sub: jwt.Permission{
 			Allow: []string{
