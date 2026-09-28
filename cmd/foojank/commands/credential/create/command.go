@@ -59,7 +59,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 
 	user, err := auth.NewUserKey()
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot generate a user key: %v", err)
+		logger.ErrorContext(ctx, "Cannot generate a credential key: %v", err)
 		return err
 	}
 
@@ -71,7 +71,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 
 	userClaims, err := auth.NewUserJWT(name, jwt.Permissions{}, user)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
+		logger.ErrorContext(ctx, "Cannot generate a credential JWT: %v", err)
 		return err
 	}
 
@@ -80,19 +80,19 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 
 	userJWT, err := userClaims.Encode(account)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
+		logger.ErrorContext(ctx, "Cannot encode a credential JWT: %v", err)
 		return err
 	}
 
 	userKey, err := user.Seed()
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot encode a user seed: %v", err)
+		logger.ErrorContext(ctx, "Cannot encode a credential seed: %v", err)
 		return err
 	}
 
 	err = authdir.WriteUser(name, userJWT, userKey)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot store key: %v", err)
+		logger.ErrorContext(ctx, "Cannot create a credential: %v", err)
 		return err
 	}
 
