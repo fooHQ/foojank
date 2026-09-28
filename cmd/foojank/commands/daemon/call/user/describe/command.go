@@ -49,7 +49,7 @@ func NewCommand() *cli.Command {
 		},
 		Before:          before,
 		Action:          action,
-		ShellComplete:   actions.CompleteAgentName, // TODO
+		ShellComplete:   actions.CompleteUserName,
 		OnUsageError:    actions.UsageError,
 		HideHelpCommand: true,
 	}
