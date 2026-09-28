@@ -5,17 +5,13 @@ import (
 	"errors"
 	"os"
 
-	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go/jetstream"
-	"github.com/nats-io/nkeys"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/cmd/foojankd/actions"
 	"github.com/foohq/foojank/cmd/foojankd/flags"
-	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/authdir"
-	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/consumer"
 	"github.com/foohq/foojank/internal/directory"
@@ -69,6 +65,11 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 		return ctx, err
 	}
 
+	ctx, err = actions.SetupServer(os.Stderr)(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
 	return ctx, nil
 }
 
@@ -80,26 +81,13 @@ const (
 func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
+	srv := actions.GetServerFromContext(ctx)
 
-	serverURL, _ := conf.String(flags.ServerURL)
-	serverCert, _ := conf.String(flags.ServerCertificate)
 	accountName, _ := conf.String(flags.Account)
 
 	accountKey, err := authdir.GetAccountKey(accountName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot read account key: %v", err)
-		return err
-	}
-
-	userJWT, userKey, err := generateUserCreds(accountName, accountKey)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot generate user credentials: %v", err)
-		return err
-	}
-
-	srv, err := server.New([]string{serverURL}, userJWT, userKey, serverCert)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot connect to the server: %v", err)
 		return err
 	}
 
@@ -170,30 +158,6 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	return nil
-}
-
-func generateUserCreds(name string, accountKey nkeys.KeyPair) (string, string, error) {
-	userKey, err := auth.NewUserKey()
-	if err != nil {
-		return "", "", err
-	}
-
-	userClaims, err := auth.NewUserJWT(name, jwt.Permissions{}, userKey)
-	if err != nil {
-		return "", "", err
-	}
-
-	userJWT, err := userClaims.Encode(accountKey)
-	if err != nil {
-		return "", "", err
-	}
-
-	userSeed, err := userKey.Seed()
-	if err != nil {
-		return "", "", err
-	}
-
-	return userJWT, string(userSeed), nil
 }
 
 func validateConfiguration(conf *config.Config) error {
