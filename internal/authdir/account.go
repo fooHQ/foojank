@@ -12,11 +12,6 @@ import (
 	"github.com/nats-io/nkeys"
 )
 
-const (
-	accountRootPath = "foojank/accounts"
-	accountPathT    = accountRootPath + "/%s/account"
-)
-
 var (
 	ErrAccountNotFound = errors.New("account not found")
 )
@@ -44,7 +39,7 @@ func WriteAccount(name string, accountJWT string, accountSeed []byte) error {
 
 	data := bytes.Join([][]byte{jwtDecorated, seedDecorated}, []byte(""))
 
-	pth, err := AccountPath(name)
+	pth, err := accountPath(name)
 	if err != nil {
 		return err
 	}
@@ -85,7 +80,7 @@ func GetAccountJWT(name string) (*jwt.AccountClaims, error) {
 }
 
 func ReadAccount(name string) (string, []byte, error) {
-	pth, err := AccountPath(name)
+	pth, err := accountPath(name)
 	if err != nil {
 		return "", nil, err
 	}
@@ -127,7 +122,7 @@ func ReadAccount(name string) (string, []byte, error) {
 }
 
 func ListAccounts() ([]string, error) {
-	pth, err := AccountRootPath()
+	pth, err := accountRootPath()
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +144,7 @@ func ListAccounts() ([]string, error) {
 }
 
 func DeleteAccount(name string) error {
-	pth, err := AccountPath(name)
+	pth, err := accountPath(name)
 	if err != nil {
 		return err
 	}
@@ -161,27 +156,25 @@ func DeleteAccount(name string) error {
 	return nil
 }
 
-func AccountPath(name string) (string, error) {
-	name = strings.ToLower(name)
+func accountRootPath() (string, error) {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
 	}
-
-	pth := filepath.Join(configDir, fmt.Sprintf(accountPathT, filepath.Clean(name)))
-	return pth, nil
+	return filepath.Join(configDir, "foojank/accounts"), nil
 }
 
-func AccountRootPath() (string, error) {
-	configDir, err := os.UserConfigDir()
+func accountPath(name string) (string, error) {
+	name = strings.ToLower(name)
+	root, err := accountRootPath()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(configDir, accountRootPath), nil
+	return filepath.Join(root, name, "account"), nil
 }
 
 func getAccountData(name string) ([]byte, error) {
-	pth, err := AccountPath(name)
+	pth, err := accountPath(name)
 	if err != nil {
 		return nil, err
 	}
