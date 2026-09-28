@@ -133,8 +133,8 @@ func TestValidateGetUserRequest(t *testing.T) {
 
 func TestValidateCreateAgentRequest(t *testing.T) {
 	valid := protodaemon.CreateAgentRequest{
-		Name:    "agent",
-		Gateway: "gw",
+		Name:      "agent",
+		GatewayID: "gw",
 		Config: protodaemon.AgentConfig{
 			OS:   "linux",
 			Arch: "amd64",
@@ -173,7 +173,7 @@ func TestValidateCreateAgentRequest(t *testing.T) {
 			name: "empty gateway",
 			req: func() protodaemon.CreateAgentRequest {
 				req := valid
-				req.Gateway = ""
+				req.GatewayID = ""
 				return req
 			}(),
 			wantErr: "gateway is required",

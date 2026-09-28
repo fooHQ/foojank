@@ -32,7 +32,7 @@ func ValidateCreateAgentRequest(req protodaemon.CreateAgentRequest) error {
 	if err != nil {
 		return err
 	}
-	if req.Gateway == "" {
+	if req.GatewayID == "" {
 		return errors.New("gateway is required")
 	}
 	if req.Config.OS == "" {

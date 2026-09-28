@@ -308,7 +308,7 @@ func (h *NATSHandler) CreateAgent(ctx context.Context, params map[string]string,
 
 	agentName := req.Name
 	agentDesc := req.Description
-	gatewayName := req.Gateway
+	gatewayName := req.GatewayID
 	agentConf := req.Config
 
 	gateway, err := h.conf.GatewayDirectory.Get(ctx, gatewayName)
