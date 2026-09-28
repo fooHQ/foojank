@@ -11,6 +11,8 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	"github.com/foohq/foojank/internal/authdir"
+	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/configdir"
 	"github.com/foohq/foojank/internal/log"
@@ -217,6 +219,40 @@ func SetupLogger(_ io.Writer) cli.BeforeFunc {
 	}
 }
 
+func SetupServer(_ io.Writer) cli.BeforeFunc {
+	return func(ctx context.Context, _ *cli.Command) (context.Context, error) {
+		// urfave skips ShellComplete when Before fails. Flag names do not need
+		// a live server connection.
+		if IsShellCompletion() {
+			return ctx, nil
+		}
+
+		conf := GetConfigFromContext(ctx)
+		logger := GetLoggerFromContext(ctx)
+
+		serverURL, _ := conf.String(flags.ServerURL)
+		serverCert, _ := conf.String(flags.ServerCertificate)
+		credsName, _ := conf.String(flags.Credential)
+
+		credsFile, err := authdir.GetUserPath(credsName)
+		if err != nil {
+			if errors.Is(err, authdir.ErrUserNotFound) {
+				err = fmt.Errorf("%q not found", credsName)
+			}
+			logger.ErrorContext(ctx, "Cannot read credential: %v", err)
+			return ctx, err
+		}
+
+		srv, err := server.NewWithCredsFile([]string{serverURL}, credsFile, serverCert)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot connect to the server: %v", err)
+			return ctx, err
+		}
+
+		return setServerToContext(ctx, srv), nil
+	}
+}
+
 func UsageError(_ context.Context, c *cli.Command, err error, _ bool) error {
 	_, _ = fmt.Fprintf(os.Stderr, "%s: %v\n", c.FullName(), err.Error())
 	return nil
@@ -234,6 +270,7 @@ var (
 	configKey   contextKey = "foojank:config"
 	loggerKey   contextKey = "foojank:logger"
 	profilesKey contextKey = "foojank:profiles"
+	serverKey   contextKey = "foojank:server"
 )
 
 func GetConfigFromContext(ctx context.Context) *config.Config {
@@ -252,6 +289,11 @@ func GetProfilesFromContext(ctx context.Context) *profile.Profiles {
 	return profs
 }
 
+func GetServerFromContext(ctx context.Context) *server.Client {
+	srv := ctx.Value(serverKey).(*server.Client)
+	return srv
+}
+
 func setConfigToContext(ctx context.Context, conf *config.Config) context.Context {
 	return context.WithValue(ctx, configKey, conf)
 }
@@ -262,4 +304,8 @@ func setLoggerToContext(ctx context.Context, logger *log.Logger) context.Context
 
 func setProfilesToContext(ctx context.Context, profs *profile.Profiles) context.Context {
 	return context.WithValue(ctx, profilesKey, profs)
+}
+
+func setServerToContext(ctx context.Context, srv *server.Client) context.Context {
+	return context.WithValue(ctx, serverKey, srv)
 }
