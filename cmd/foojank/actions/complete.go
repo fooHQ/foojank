@@ -18,6 +18,7 @@ import (
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/formatter"
 	"github.com/foohq/foojank/internal/profile"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
 const generateShellCompletionFlag = "--generate-shell-completion"
@@ -59,6 +60,14 @@ func CompleteCredentialName(ctx context.Context, c *cli.Command) {
 	ctx, cancel := completionContext(ctx)
 	defer cancel()
 	completeName(ctx, c, listCredentialNames)
+}
+
+// CompleteUserName is a ShellComplete func for commands that take a single
+// user name. Flags are still completed after a positional argument.
+func CompleteUserName(ctx context.Context, c *cli.Command) {
+	ctx, cancel := completionContext(ctx)
+	defer cancel()
+	completeName(ctx, c, listUserNames)
 }
 
 func completeName(ctx context.Context, c *cli.Command, list func(context.Context) ([]string, error)) {
@@ -253,6 +262,29 @@ func listGatewayNames(ctx context.Context) ([]string, error) {
 	names := make([]string, 0, len(gateways))
 	for _, gateway := range gateways {
 		line := completionLine(gateway.Name, gateway.Description)
+		if line == "" {
+			continue
+		}
+		names = append(names, line)
+	}
+	sort.Strings(names)
+	return names, nil
+}
+
+func listUserNames(ctx context.Context) ([]string, error) {
+	client, err := daemonClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.RequestListUsers(ctx, protodaemon.ListUsersRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	names := make([]string, 0, len(resp.Users))
+	for _, user := range resp.Users {
+		line := completionLine(user.Name, user.Description)
 		if line == "" {
 			continue
 		}
