@@ -350,12 +350,15 @@ func daemonClient(ctx context.Context) (*daemon.Client, error) {
 	serverCert, _ := conf.String(flags.ServerCertificate)
 	credsName, _ := conf.String(flags.Credential)
 
-	userJWT, userSeed, err := authdir.ReadUser(credsName)
+	credsFile, err := authdir.GetUserPath(credsName)
 	if err != nil {
+		if errors.Is(err, authdir.ErrUserNotFound) {
+			err = fmt.Errorf("%q not found", credsName)
+		}
 		return nil, err
 	}
 
-	srv, err := server.New([]string{serverURL}, userJWT, string(userSeed), serverCert)
+	srv, err := server.NewWithCredsFile([]string{serverURL}, credsFile, serverCert)
 	if err != nil {
 		return nil, err
 	}
