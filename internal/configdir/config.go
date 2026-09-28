@@ -29,6 +29,10 @@ func Init(dir string) error {
 	return nil
 }
 
+// ErrNotFound is returned by Search when no configuration directory exists in
+// the start directory or any parent directory.
+var ErrNotFound = errors.New("configuration directory not found")
+
 func Search(dir string) (string, error) {
 	for range 128 {
 		isConfigDir, err := IsConfigDir(dir)
@@ -44,7 +48,7 @@ func Search(dir string) (string, error) {
 		return dir, nil
 	}
 
-	return "", errors.New("configuration directory not found")
+	return "", ErrNotFound
 }
 
 func IsConfigDir(dir string) (bool, error) {
