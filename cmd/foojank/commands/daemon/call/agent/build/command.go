@@ -12,10 +12,8 @@ import (
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/cmd/foojank/flags"
-	"github.com/foohq/foojank/internal/authdir"
 	"github.com/foohq/foojank/internal/builder"
 	"github.com/foohq/foojank/internal/clients/daemon"
-	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
@@ -72,30 +70,21 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 		return ctx, err
 	}
 
+	ctx, err = actions.SetupServer(os.Stderr)(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
 	return ctx, nil
 }
 
 func action(ctx context.Context, c *cli.Command) (err error) {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
+	srv := actions.GetServerFromContext(ctx)
 
-	serverURL, _ := conf.String(flags.ServerURL)
-	serverCert, _ := conf.String(flags.ServerCertificate)
-	credsName, _ := conf.String(flags.Credential)
 	outputName, _ := conf.String(flags.Output)
 	sourceDir, _ := conf.String(flags.SourceDir)
-
-	userJWT, userSeed, err := authdir.ReadUser(credsName)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot read user %q: %v", credsName, err)
-		return err
-	}
-
-	srv, err := server.New([]string{serverURL}, userJWT, string(userSeed), serverCert)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot connect to the server: %v", err)
-		return err
-	}
 
 	if c.Args().Len() < 1 {
 		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
