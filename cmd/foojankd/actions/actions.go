@@ -2,14 +2,20 @@ package actions
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 
 	"github.com/deepnoodle-ai/wonton/tty"
+	"github.com/nats-io/jwt/v2"
+	"github.com/nats-io/nkeys"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojankd/flags"
+	"github.com/foohq/foojank/internal/auth"
+	"github.com/foohq/foojank/internal/authdir"
+	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/log"
 )
@@ -97,6 +103,70 @@ func SetupLogger(_ io.Writer) cli.BeforeFunc {
 	}
 }
 
+func SetupServer(_ io.Writer) cli.BeforeFunc {
+	return func(ctx context.Context, _ *cli.Command) (context.Context, error) {
+		// urfave skips ShellComplete when Before fails. Flag names do not need
+		// a live server connection.
+		if IsShellCompletion() {
+			return ctx, nil
+		}
+
+		conf := GetConfigFromContext(ctx)
+		logger := GetLoggerFromContext(ctx)
+
+		serverURL, _ := conf.String(flags.ServerURL)
+		serverCert, _ := conf.String(flags.ServerCertificate)
+		accountName, _ := conf.String(flags.Account)
+
+		accountKey, err := authdir.GetAccountKey(accountName)
+		if err != nil {
+			if errors.Is(err, authdir.ErrAccountNotFound) {
+				err = fmt.Errorf("%q not found", accountName)
+			}
+			logger.ErrorContext(ctx, "Cannot read account key: %v", err)
+			return ctx, err
+		}
+
+		userJWT, userKey, err := generateUserCreds(accountName, accountKey)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot generate user credentials: %v", err)
+			return ctx, err
+		}
+
+		srv, err := server.New([]string{serverURL}, userJWT, userKey, serverCert)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot connect to the server: %v", err)
+			return ctx, err
+		}
+
+		return setServerToContext(ctx, srv), nil
+	}
+}
+
+func generateUserCreds(name string, accountKey nkeys.KeyPair) (string, string, error) {
+	userKey, err := auth.NewUserKey()
+	if err != nil {
+		return "", "", err
+	}
+
+	userClaims, err := auth.NewUserJWT(name, jwt.Permissions{}, userKey)
+	if err != nil {
+		return "", "", err
+	}
+
+	userJWT, err := userClaims.Encode(accountKey)
+	if err != nil {
+		return "", "", err
+	}
+
+	userSeed, err := userKey.Seed()
+	if err != nil {
+		return "", "", err
+	}
+
+	return userJWT, string(userSeed), nil
+}
+
 func UsageError(_ context.Context, c *cli.Command, err error, _ bool) error {
 	_, _ = fmt.Fprintf(os.Stderr, "%s: %v\n", c.FullName(), err.Error())
 	return nil
@@ -113,6 +183,7 @@ type contextKey string
 var (
 	configKey contextKey = "foojank:config"
 	loggerKey contextKey = "foojank:logger"
+	serverKey contextKey = "foojank:server"
 )
 
 func GetConfigFromContext(ctx context.Context) *config.Config {
@@ -126,10 +197,19 @@ func GetLoggerFromContext(ctx context.Context) *log.Logger {
 	return logger
 }
 
+func GetServerFromContext(ctx context.Context) *server.Client {
+	srv := ctx.Value(serverKey).(*server.Client)
+	return srv
+}
+
 func setConfigToContext(ctx context.Context, conf *config.Config) context.Context {
 	return context.WithValue(ctx, configKey, conf)
 }
 
 func setLoggerToContext(ctx context.Context, logger *log.Logger) context.Context {
 	return context.WithValue(ctx, loggerKey, logger)
+}
+
+func setServerToContext(ctx context.Context, srv *server.Client) context.Context {
+	return context.WithValue(ctx, serverKey, srv)
 }
