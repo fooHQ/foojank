@@ -37,10 +37,7 @@ func NewCommand() *cli.Command {
 func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 	ctx, err := actions.LoadConfig(os.Stderr, validateConfiguration)(ctx, c)
 	if err != nil {
-		ctx, err = actions.LoadFlags(os.Stderr, validateConfiguration)(ctx, c)
-		if err != nil {
-			return ctx, err
-		}
+		return ctx, err
 	}
 
 	ctx, err = actions.SetupLogger(os.Stderr)(ctx, c)
