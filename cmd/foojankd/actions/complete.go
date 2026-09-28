@@ -2,16 +2,22 @@ package actions
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"slices"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojankd/flags"
+	"github.com/foohq/foojank/internal/authdir"
+	"github.com/foohq/foojank/internal/clients/daemon"
+	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/formatter"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
 const generateShellCompletionFlag = "--generate-shell-completion"
@@ -21,6 +27,14 @@ const generateShellCompletionFlag = "--generate-shell-completion"
 func IsShellCompletion() bool {
 	n := len(os.Args)
 	return n > 0 && os.Args[n-1] == generateShellCompletionFlag
+}
+
+// CompleteUserName is a ShellComplete func for commands that take a single
+// user name. Flags are still completed after a positional argument.
+func CompleteUserName(ctx context.Context, c *cli.Command) {
+	ctx, cancel := completionContext(ctx)
+	defer cancel()
+	completeName(ctx, c, listUserNames)
 }
 
 // CompleteFlags is a ShellComplete func for commands that have no positional
@@ -34,6 +48,21 @@ func CompleteFlags(ctx context.Context, c *cli.Command) {
 
 func completionContext(ctx context.Context) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(ctx, 4*time.Second)
+}
+
+func completeName(ctx context.Context, c *cli.Command, list func(context.Context) ([]string, error)) {
+	if completeFlagToken(ctx, c) {
+		return
+	}
+	if c.Args().Len() > 0 {
+		return
+	}
+
+	lines, err := list(ctx)
+	if err != nil {
+		return
+	}
+	printCompletionLines(c, "", lines)
 }
 
 func completeFlagToken(ctx context.Context, c *cli.Command) bool {
@@ -145,4 +174,70 @@ func printFlagCompletions(c *cli.Command, lastArg string) {
 
 func listFormatNames(_ context.Context) ([]string, error) {
 	return []string{formatter.FormatASCII, formatter.FormatJSON}, nil
+}
+
+func completionLine(name, description string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return ""
+	}
+	description = strings.Join(strings.Fields(description), " ")
+	if description == "" {
+		return name
+	}
+	return name + ":" + description
+}
+
+func listUserNames(ctx context.Context) ([]string, error) {
+	client, err := daemonClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.RequestListUsers(ctx, protodaemon.ListUsersRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	names := make([]string, 0, len(resp.Users))
+	for _, user := range resp.Users {
+		line := completionLine(user.Name, user.Description)
+		if line == "" {
+			continue
+		}
+		names = append(names, line)
+	}
+	sort.Strings(names)
+	return names, nil
+}
+
+func daemonClient(ctx context.Context) (*daemon.Client, error) {
+	conf := GetConfigFromContext(ctx)
+
+	serverURL, _ := conf.String(flags.ServerURL)
+	if serverURL == "" {
+		return nil, errors.New("server URL not configured")
+	}
+	serverCert, _ := conf.String(flags.ServerCertificate)
+	accountName, _ := conf.String(flags.Account)
+	if accountName == "" {
+		return nil, errors.New("account not configured")
+	}
+
+	accountKey, err := authdir.GetAccountKey(accountName)
+	if err != nil {
+		return nil, err
+	}
+
+	userJWT, userKey, err := generateUserCreds(accountName, accountKey)
+	if err != nil {
+		return nil, err
+	}
+
+	srv, err := server.New([]string{serverURL}, userJWT, userKey, serverCert)
+	if err != nil {
+		return nil, err
+	}
+
+	return daemon.New(srv), nil
 }
