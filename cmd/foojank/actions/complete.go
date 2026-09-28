@@ -53,6 +53,14 @@ func CompleteProfileName(ctx context.Context, c *cli.Command) {
 	completeName(ctx, c, listProfileNames)
 }
 
+// CompleteCredentialName is a ShellComplete func for commands that take a single
+// credential name. Flags are still completed after a positional argument.
+func CompleteCredentialName(ctx context.Context, c *cli.Command) {
+	ctx, cancel := completionContext(ctx)
+	defer cancel()
+	completeName(ctx, c, listCredentialNames)
+}
+
 func completeName(ctx context.Context, c *cli.Command, list func(context.Context) ([]string, error)) {
 	if completeFlagToken(ctx, c) {
 		return
@@ -70,7 +78,7 @@ func completeName(ctx context.Context, c *cli.Command, list func(context.Context
 
 // CompleteFlags is a ShellComplete func for commands that have no positional
 // name argument. It emits flag suggestions and values for --agent, --gateway,
-// --profile, and --format.
+// --profile, --credential, and --format.
 func CompleteFlags(ctx context.Context, c *cli.Command) {
 	ctx, cancel := completionContext(ctx)
 	defer cancel()
@@ -126,6 +134,8 @@ func flagValueCompleter(c *cli.Command, token string) (list func(context.Context
 		list = listGatewayNames
 	case flags.Profile:
 		list = listProfileNames
+	case flags.Credential:
+		list = listCredentialNames
 	case flags.Format:
 		list = listFormatNames
 	default:
@@ -254,6 +264,24 @@ func listGatewayNames(ctx context.Context) ([]string, error) {
 
 func listFormatNames(_ context.Context) ([]string, error) {
 	return []string{formatter.FormatASCII, formatter.FormatJSON}, nil
+}
+
+func listCredentialNames(_ context.Context) ([]string, error) {
+	names, err := authdir.ListUsers()
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(names)
+
+	lines := make([]string, 0, len(names))
+	for _, name := range names {
+		line := completionLine(name, "")
+		if line == "" {
+			continue
+		}
+		lines = append(lines, line)
+	}
+	return lines, nil
 }
 
 func listProfileNames(ctx context.Context) ([]string, error) {
