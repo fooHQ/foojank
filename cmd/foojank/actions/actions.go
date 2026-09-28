@@ -42,56 +42,16 @@ func loadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 			return ctx, err
 		}
 
-		configDir, isSet := confFlags.String(flags.ConfigDir)
-		if !isSet {
-			dir, err := configdir.Search(".")
-			if err != nil {
-				err = errors.New("configuration directory not found in the current directory (or any of the parent directories)")
-				_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
-				return ctx, err
-			}
-
-			configDir = dir
-		}
-
-		isConfigDir, err := configdir.IsConfigDir(configDir)
-		if err != nil || !isConfigDir {
-			err = fmt.Errorf("configuration directory not found in %q", configDir)
-			_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
-			return ctx, err
-		}
-
-		confFile, err := configdir.ParseConfigJSON(configDir)
+		// A configuration directory is optional. Command-line options override the
+		// file, and validateFn rejects the result when a required option is still
+		// missing from both.
+		confFile, configDir, err := readConfigFile(confFlags)
 		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				err = fmt.Errorf("configuration directory not found in %q", configDir)
-			} else {
-				err = fmt.Errorf("cannot parse config file: %w", err)
-			}
 			_, _ = fmt.Fprintf(w, "%s: %v\n", c.FullName(), err)
 			return ctx, err
 		}
 
-		confDefs := config.NewWithOptions(map[string]string{
-			flags.ConfigDir: configDir,
-			flags.Format:    "ascii",
-			flags.NoColor:   "false",
-		})
-
-		confs := []*config.Config{
-			confDefs,
-			confFile,
-			confFlags,
-		}
-
-		// If the output is not a TTY, disable color output.
-		if !tty.IsTerminal(os.Stdout) {
-			confs = append(confs, config.NewWithOptions(map[string]string{
-				flags.NoColor: "true",
-			}))
-		}
-
-		conf := config.Merge(confs...)
+		conf := mergeConfig(configDir, confFile, confFlags)
 
 		if !IsShellCompletion() {
 			err = validateFn(conf)
@@ -103,6 +63,74 @@ func loadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.Bef
 
 		return setConfigToContext(ctx, conf), nil
 	}
+}
+
+// readConfigFile loads .foojank/config.json. When no directory was requested
+// and none can be found, the file is nil so configuration can come from
+// command-line options alone. An explicit directory that does not exist, or a
+// file that cannot be parsed, is an error.
+func readConfigFile(confFlags *config.Config) (*config.Config, string, error) {
+	configDir, explicit := confFlags.String(flags.ConfigDir)
+	if !explicit {
+		dir, err := configdir.Search(".")
+		if err != nil {
+			if errors.Is(err, configdir.ErrNotFound) {
+				return nil, "", nil
+			}
+			return nil, "", configReadError(err)
+		}
+		configDir = dir
+	}
+
+	isConfigDir, err := configdir.IsConfigDir(configDir)
+	if err != nil {
+		return nil, "", configReadError(err)
+	}
+	if !isConfigDir {
+		return nil, "", fmt.Errorf("configuration directory not found in %q", configDir)
+	}
+
+	confFile, err := configdir.ParseConfigJSON(configDir)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, "", fmt.Errorf("configuration directory not found in %q", configDir)
+		}
+		return nil, "", fmt.Errorf("cannot parse config file: %w", err)
+	}
+
+	return confFile, configDir, nil
+}
+
+func configReadError(err error) error {
+	if errors.Is(err, config.ErrParserError) {
+		return fmt.Errorf("cannot parse config file: %w", err)
+	}
+	return err
+}
+
+func mergeConfig(configDir string, confFile, confFlags *config.Config) *config.Config {
+	defs := map[string]string{
+		flags.Format:  "ascii",
+		flags.NoColor: "false",
+	}
+	if configDir != "" {
+		defs[flags.ConfigDir] = configDir
+	}
+
+	confs := []*config.Config{
+		config.NewWithOptions(defs),
+		confFile,
+		confFlags,
+	}
+
+	// If the output is not a TTY, disable color output.
+	if !tty.IsTerminal(os.Stdout) {
+		confs = append(confs, config.NewWithOptions(map[string]string{
+			flags.NoColor: "true",
+		}))
+	}
+
+	return config.Merge(confs...)
 }
 
 func flagsOnlyConfig(c *cli.Command) *config.Config {
