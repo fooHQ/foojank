@@ -3,7 +3,6 @@ package create
 import (
 	"context"
 	"errors"
-	"io"
 	"os"
 
 	"github.com/nats-io/jwt/v2"
@@ -36,7 +35,7 @@ func NewCommand() *cli.Command {
 }
 
 func before(ctx context.Context, c *cli.Command) (context.Context, error) {
-	ctx, err := actions.LoadConfig(io.Discard, validateConfiguration)(ctx, c)
+	ctx, err := actions.LoadConfig(os.Stderr, validateConfiguration)(ctx, c)
 	if err != nil {
 		ctx, err = actions.LoadFlags(os.Stderr, validateConfiguration)(ctx, c)
 		if err != nil {
