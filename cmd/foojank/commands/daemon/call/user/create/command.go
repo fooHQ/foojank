@@ -119,7 +119,7 @@ func validateConfiguration(conf *config.Config) error {
 		case flags.Name:
 			v, ok := conf.String(opt)
 			if !ok || v == "" {
-				return errors.New("name not configured")
+				return errors.New("user name not configured")
 			}
 		case flags.PublicKey:
 			v, ok := conf.String(opt)
