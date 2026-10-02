@@ -3,6 +3,7 @@ package create
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/nats-io/jwt/v2"
@@ -87,8 +88,11 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		return err
 	}
 
-	err = authdir.WriteUser(name, userJWT, userKey)
+	err = authdir.CreateUser(name, userJWT, userKey)
 	if err != nil {
+		if errors.Is(err, authdir.ErrUserExists) {
+			err = fmt.Errorf("%q already exists", name)
+		}
 		logger.ErrorContext(ctx, "Cannot create a credential: %v", err)
 		return err
 	}
@@ -106,7 +110,7 @@ func validateConfiguration(conf *config.Config) error {
 		case flags.Name:
 			v, ok := conf.String(opt)
 			if !ok || v == "" {
-				return errors.New("key name not configured")
+				return errors.New("credential name not configured")
 			}
 		}
 	}
