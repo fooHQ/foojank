@@ -157,11 +157,11 @@ func DeleteAccount(name string) error {
 }
 
 func accountRootPath() (string, error) {
-	configDir, err := os.UserConfigDir()
+	root, err := rootPath()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(configDir, "foojank/accounts"), nil
+	return filepath.Join(root, "accounts"), nil
 }
 
 func accountPath(name string) (string, error) {

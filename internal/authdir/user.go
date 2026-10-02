@@ -161,11 +161,11 @@ func GetUserPath(name string) (string, error) {
 }
 
 func userRootPath() (string, error) {
-	configDir, err := os.UserConfigDir()
+	root, err := rootPath()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(configDir, "foojank/users"), nil
+	return filepath.Join(root, "users"), nil
 }
 
 func userPath(name string) (string, error) {
