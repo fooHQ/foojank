@@ -1,7 +1,6 @@
 package authdir
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -14,43 +13,53 @@ import (
 
 var (
 	ErrUserNotFound = errors.New("user not found")
+	ErrUserExists   = errors.New("user already exists")
 )
 
-func WriteUser(name string, userJWT string, userSeed []byte) error {
-	// Validate that the JWT is a user JWT.
-	_, err := jwt.DecodeUserClaims(userJWT)
-	if err != nil {
-		return fmt.Errorf("cannot decode JWT: %w", err)
+func CreateUser(name string, userJWT string, userSeed []byte) error {
+	if !isUserJWT(userJWT) {
+		return errors.New("invalid user JWT")
 	}
 
 	if !isUserSeed(userSeed) {
 		return errors.New("invalid user seed")
 	}
 
-	jwtDecorated, err := jwt.DecorateJWT(userJWT)
-	if err != nil {
-		return fmt.Errorf("cannot encode decorated JWT: %w", err)
-	}
-
-	seedDecorated, err := jwt.DecorateSeed(userSeed)
-	if err != nil {
-		return fmt.Errorf("cannot encode decorated seed: %w", err)
-	}
-
-	data := bytes.Join([][]byte{jwtDecorated, seedDecorated}, []byte(""))
-
-	pth, err := userPath(name)
+	data, err := decorate(userJWT, userSeed)
 	if err != nil {
 		return err
 	}
 
-	err = os.MkdirAll(filepath.Dir(pth), 0o700)
+	err = writeUserData(name, data, os.O_CREATE|os.O_WRONLY|os.O_EXCL)
+	if err != nil {
+		if errors.Is(err, os.ErrExist) {
+			return ErrUserExists
+		}
+		return err
+	}
+
+	return nil
+}
+
+func UpdateUser(name string, userJWT string, userSeed []byte) error {
+	if !isUserJWT(userJWT) {
+		return errors.New("invalid user JWT")
+	}
+
+	if !isUserSeed(userSeed) {
+		return errors.New("invalid user seed")
+	}
+
+	data, err := decorate(userJWT, userSeed)
 	if err != nil {
 		return err
 	}
 
-	err = os.WriteFile(pth, data, 0o600)
+	err = writeUserData(name, data, os.O_WRONLY|os.O_TRUNC)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return ErrUserNotFound
+		}
 		return err
 	}
 
@@ -58,7 +67,7 @@ func WriteUser(name string, userJWT string, userSeed []byte) error {
 }
 
 func GetUserKey(name string) (nkeys.KeyPair, error) {
-	data, err := getUserData(name)
+	data, err := readUserData(name)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +75,7 @@ func GetUserKey(name string) (nkeys.KeyPair, error) {
 }
 
 func GetUserJWT(name string) (*jwt.UserClaims, error) {
-	data, err := getUserData(name)
+	data, err := readUserData(name)
 	if err != nil {
 		return nil, err
 	}
@@ -80,16 +89,8 @@ func GetUserJWT(name string) (*jwt.UserClaims, error) {
 }
 
 func ReadUser(name string) (string, []byte, error) {
-	pth, err := userPath(name)
+	data, err := readUserData(name)
 	if err != nil {
-		return "", nil, err
-	}
-
-	data, err := os.ReadFile(pth)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return "", nil, ErrUserNotFound
-		}
 		return "", nil, err
 	}
 
@@ -177,7 +178,57 @@ func userPath(name string) (string, error) {
 	return filepath.Join(root, name), nil
 }
 
-func getUserData(name string) ([]byte, error) {
+func isUserJWT(s string) bool {
+	_, err := jwt.DecodeUserClaims(s)
+	return err == nil
+}
+
+func isUserSeed(key []byte) bool {
+	kp, err := nkeys.FromSeed(key)
+	if err != nil {
+		return false
+	}
+
+	pub, err := kp.PublicKey()
+	if err != nil {
+		return false
+	}
+
+	return nkeys.IsValidPublicUserKey(pub)
+}
+
+func writeUserData(name string, data []byte, flag int) error {
+	pth, err := userPath(name)
+	if err != nil {
+		return err
+	}
+
+	// Create parent directories only when the caller is allowed to create the
+	// file. Update opens an existing file and must not create the users directory.
+	if flag&os.O_CREATE != 0 {
+		err = os.MkdirAll(filepath.Dir(pth), 0o700)
+		if err != nil {
+			return err
+		}
+	}
+
+	f, err := os.OpenFile(pth, flag, 0o600)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+
+	_, err = f.Write(data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func readUserData(name string) ([]byte, error) {
 	pth, err := userPath(name)
 	if err != nil {
 		return nil, err
@@ -192,8 +243,4 @@ func getUserData(name string) ([]byte, error) {
 	}
 
 	return data, nil
-}
-
-func isUserSeed(key []byte) bool {
-	return bytes.HasPrefix(key, []byte("SU"))
 }
