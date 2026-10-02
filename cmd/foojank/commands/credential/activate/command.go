@@ -84,7 +84,7 @@ func action(ctx context.Context, c *cli.Command) error {
 			return err
 		}
 
-		err = authdir.WriteUser(name, token, userKey)
+		err = authdir.UpdateUser(name, token, userKey)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot activate credential: %v", err)
 			return err
