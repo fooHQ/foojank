@@ -14,43 +14,53 @@ import (
 
 var (
 	ErrAccountNotFound = errors.New("account not found")
+	ErrAccountExists   = errors.New("account already exists")
 )
 
-func WriteAccount(name string, accountJWT string, accountSeed []byte) error {
-	// Validate that the JWT is an account JWT.
-	_, err := jwt.DecodeAccountClaims(accountJWT)
-	if err != nil {
-		return fmt.Errorf("cannot decode JWT: %w", err)
+func CreateAccount(name string, accountJWT string, accountSeed []byte) error {
+	if !isAccountJWT(accountJWT) {
+		return errors.New("invalid account JWT")
 	}
 
 	if !isAccountSeed(accountSeed) {
 		return errors.New("invalid account seed")
 	}
 
-	jwtDecorated, err := jwt.DecorateJWT(accountJWT)
-	if err != nil {
-		return fmt.Errorf("cannot encode decorated JWT: %w", err)
-	}
-
-	seedDecorated, err := jwt.DecorateSeed(accountSeed)
-	if err != nil {
-		return fmt.Errorf("cannot encode decorated seed: %w", err)
-	}
-
-	data := bytes.Join([][]byte{jwtDecorated, seedDecorated}, []byte(""))
-
-	pth, err := accountPath(name)
+	data, err := decorate(accountJWT, accountSeed)
 	if err != nil {
 		return err
 	}
 
-	err = os.MkdirAll(filepath.Dir(pth), 0o700)
+	err = writeAccountData(name, data, os.O_CREATE|os.O_WRONLY|os.O_EXCL)
+	if err != nil {
+		if errors.Is(err, os.ErrExist) {
+			return ErrAccountExists
+		}
+		return err
+	}
+
+	return nil
+}
+
+func UpdateAccount(name string, accountJWT string, accountSeed []byte) error {
+	if !isAccountJWT(accountJWT) {
+		return errors.New("invalid account JWT")
+	}
+
+	if !isAccountSeed(accountSeed) {
+		return errors.New("invalid account seed")
+	}
+
+	data, err := decorate(accountJWT, accountSeed)
 	if err != nil {
 		return err
 	}
 
-	err = os.WriteFile(pth, data, 0o600)
+	err = writeAccountData(name, data, os.O_WRONLY|os.O_TRUNC)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return ErrAccountNotFound
+		}
 		return err
 	}
 
@@ -58,7 +68,7 @@ func WriteAccount(name string, accountJWT string, accountSeed []byte) error {
 }
 
 func GetAccountKey(name string) (nkeys.KeyPair, error) {
-	data, err := getAccountData(name)
+	data, err := readAccountData(name)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +76,7 @@ func GetAccountKey(name string) (nkeys.KeyPair, error) {
 }
 
 func GetAccountJWT(name string) (*jwt.AccountClaims, error) {
-	data, err := getAccountData(name)
+	data, err := readAccountData(name)
 	if err != nil {
 		return nil, err
 	}
@@ -80,16 +90,8 @@ func GetAccountJWT(name string) (*jwt.AccountClaims, error) {
 }
 
 func ReadAccount(name string) (string, []byte, error) {
-	pth, err := accountPath(name)
+	data, err := readAccountData(name)
 	if err != nil {
-		return "", nil, err
-	}
-
-	data, err := os.ReadFile(pth)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return "", nil, ErrAccountNotFound
-		}
 		return "", nil, err
 	}
 
@@ -173,7 +175,72 @@ func accountPath(name string) (string, error) {
 	return filepath.Join(root, name, "account"), nil
 }
 
-func getAccountData(name string) ([]byte, error) {
+func decorate(accountJWT string, accountSeed []byte) ([]byte, error) {
+	jwtDecorated, err := jwt.DecorateJWT(accountJWT)
+	if err != nil {
+		return nil, fmt.Errorf("cannot decorate JWT: %w", err)
+	}
+
+	seedDecorated, err := jwt.DecorateSeed(accountSeed)
+	if err != nil {
+		return nil, fmt.Errorf("cannot decorate seed: %w", err)
+	}
+
+	return bytes.Join([][]byte{jwtDecorated, seedDecorated}, []byte("")), nil
+}
+
+func isAccountJWT(s string) bool {
+	_, err := jwt.DecodeAccountClaims(s)
+	return err == nil
+}
+
+func isAccountSeed(key []byte) bool {
+	kp, err := nkeys.FromSeed(key)
+	if err != nil {
+		return false
+	}
+
+	pub, err := kp.PublicKey()
+	if err != nil {
+		return false
+	}
+
+	return nkeys.IsValidPublicAccountKey(pub)
+}
+
+func writeAccountData(name string, data []byte, flag int) error {
+	pth, err := accountPath(name)
+	if err != nil {
+		return err
+	}
+
+	// Create parent directories only when the caller is allowed to create the
+	// file. Update opens an existing file; creating the parent first would
+	// leave an empty directory that ListAccounts treats as an account.
+	if flag&os.O_CREATE != 0 {
+		err = os.MkdirAll(filepath.Dir(pth), 0o700)
+		if err != nil {
+			return err
+		}
+	}
+
+	f, err := os.OpenFile(pth, flag, 0o600)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+
+	_, err = f.Write(data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func readAccountData(name string) ([]byte, error) {
 	pth, err := accountPath(name)
 	if err != nil {
 		return nil, err
@@ -188,8 +255,4 @@ func getAccountData(name string) ([]byte, error) {
 	}
 
 	return data, nil
-}
-
-func isAccountSeed(key []byte) bool {
-	return bytes.HasPrefix(key, []byte("SA"))
 }
