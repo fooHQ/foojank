@@ -117,6 +117,9 @@ func (h *NATSHandler) CreateUser(ctx context.Context, params map[string]string, 
 		ExpiresAt:   time.Time{}, // TODO
 	})
 	if err != nil {
+		if errors.Is(err, directory.ErrKeyExists) {
+			err = fmt.Errorf("%q already exists", userName)
+		}
 		h.logger.ErrorContext(ctx, "Cannot create user: %v", err)
 		return protodaemon.CreateUserResponse{
 			Error: err,
