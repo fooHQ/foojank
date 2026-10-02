@@ -97,7 +97,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		return err
 	}
 
-	err = authdir.WriteAccount(name, accountJWT, accountKey)
+	err = authdir.CreateAccount(name, accountJWT, accountKey)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot store account: %v", err)
 		return err
