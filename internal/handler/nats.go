@@ -177,6 +177,8 @@ func (h *NATSHandler) GetUser(ctx context.Context, params map[string]string, msg
 		}
 	}
 
+	claims.Expires = user.ExpiresAt.Unix()
+
 	userJWT, err := claims.Encode(h.conf.AccountKey)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
