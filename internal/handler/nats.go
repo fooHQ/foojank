@@ -273,6 +273,8 @@ func (h *NATSHandler) IssueJWT(ctx context.Context, params map[string]string, ms
 		}
 	}
 
+	claims.Expires = time.Now().Add(15 * time.Minute).Unix()
+
 	userJWT, err := claims.Encode(h.conf.AccountKey)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
