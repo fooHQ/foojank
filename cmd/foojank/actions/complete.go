@@ -358,7 +358,13 @@ func daemonClient(ctx context.Context) (*daemon.Client, error) {
 		return nil, err
 	}
 
-	srv, err := server.NewWithCredsFile([]string{serverURL}, credsFile, serverCert)
+	srv, err := server.NewWithCredsFile(
+		ctx,
+		[]string{serverURL},
+		credsFile,
+		serverCert,
+		server.WithOnConnect(daemon.IssueUserJWT),
+	)
 	if err != nil {
 		return nil, err
 	}

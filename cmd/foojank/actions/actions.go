@@ -12,6 +12,7 @@ import (
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
 	"github.com/foohq/foojank/internal/authdir"
+	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/configdir"
@@ -243,7 +244,13 @@ func SetupServer(_ io.Writer) cli.BeforeFunc {
 			return ctx, err
 		}
 
-		srv, err := server.NewWithCredsFile([]string{serverURL}, credsFile, serverCert)
+		srv, err := server.NewWithCredsFile(
+			ctx,
+			[]string{serverURL},
+			credsFile,
+			serverCert,
+			server.WithOnConnect(daemon.IssueUserJWT),
+		)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot connect to the server: %v", err)
 			return ctx, err
