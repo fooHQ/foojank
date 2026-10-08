@@ -234,7 +234,7 @@ func daemonClient(ctx context.Context) (*daemon.Client, error) {
 		return nil, err
 	}
 
-	srv, err := server.New([]string{serverURL}, userJWT, userKey, serverCert)
+	srv, err := server.New(ctx, []string{serverURL}, userJWT, userKey, serverCert)
 	if err != nil {
 		return nil, err
 	}
