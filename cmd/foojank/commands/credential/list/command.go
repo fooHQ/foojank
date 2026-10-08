@@ -57,7 +57,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 
 	users, err := authdir.ListUsers()
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot list users: %v", err)
+		logger.ErrorContext(ctx, "Cannot list credentials: %v", err)
 		return err
 	}
 
