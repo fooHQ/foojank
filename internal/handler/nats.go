@@ -239,6 +239,9 @@ func (h *NATSHandler) IssueJWT(ctx context.Context, params map[string]string, ms
 
 	user, err := h.conf.UserDirectory.Get(ctx, userName)
 	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = errors.New("user not found")
+		}
 		return protodaemon.IssueJWTResponse{
 			Error: err,
 		}
