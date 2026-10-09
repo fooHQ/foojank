@@ -53,6 +53,7 @@ func (h *NATSHandler) Match(msg message.Msg) (func(context.Context) message.Msg,
 		protodaemon.CreateUserSubject(): h.CreateUser,
 		protodaemon.GetUserSubject():    h.GetUser,
 		protodaemon.ListUsersSubject():  h.ListUsers,
+		protodaemon.UpdateUserSubject(): h.UpdateUser,
 
 		protodaemon.CreateAgentSubject(): h.CreateAgent,
 		protodaemon.GetAgentSubject():    h.GetAgent,
@@ -238,6 +239,55 @@ func (h *NATSHandler) ListUsers(ctx context.Context, params map[string]string, m
 	return protodaemon.ListUsersResponse{
 		Users: users,
 	}
+}
+
+func (h *NATSHandler) UpdateUser(ctx context.Context, params map[string]string, msg message.Msg) any {
+	req, ok := msg.Data().(protodaemon.UpdateUserRequest)
+	if !ok {
+		return protodaemon.UpdateUserResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	err := ValidateUpdateUserRequest(req)
+	if err != nil {
+		return protodaemon.UpdateUserResponse{
+			Error: err,
+		}
+	}
+
+	user, err := h.conf.UserDirectory.Get(ctx, req.Name)
+	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", req.Name)
+		}
+		return protodaemon.UpdateUserResponse{
+			Error: err,
+		}
+	}
+
+	if req.IsDescription {
+		user.Description = req.Description
+	}
+
+	privs, err := privilege.UpdatePrivileges(user.Privileges, req.SetPrivileges, req.UnsetPrivileges)
+	if err != nil {
+		return protodaemon.UpdateUserResponse{
+			Error: err,
+		}
+	}
+
+	user.Privileges = privs
+
+	_, err = h.conf.UserDirectory.Update(ctx, user)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot update user: %v", err)
+		return protodaemon.UpdateUserResponse{
+			Error: err,
+		}
+	}
+
+	return protodaemon.UpdateUserResponse{}
 }
 
 func (h *NATSHandler) CreateRole(ctx context.Context, params map[string]string, msg message.Msg) any {
