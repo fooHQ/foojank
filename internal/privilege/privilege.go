@@ -22,6 +22,7 @@ var parsers = map[string]parser{
 	userCreateName: parseUserCreate,
 	userGetName:    parseUserGet,
 	userListName:   parseUserList,
+	userUpdateName: parseUserUpdate,
 	jwtIssueName:   parseJWTIssue,
 }
 
