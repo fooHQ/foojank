@@ -154,6 +154,9 @@ func (h *NATSHandler) GetUser(ctx context.Context, params map[string]string, msg
 
 	user, err := h.conf.UserDirectory.Get(ctx, userName)
 	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", userName)
+		}
 		return protodaemon.GetUserResponse{
 			Error: err,
 		}
@@ -301,6 +304,9 @@ func (h *NATSHandler) GetRole(ctx context.Context, params map[string]string, msg
 
 	role, err := h.conf.RoleDirectory.Get(ctx, req.Name)
 	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", req.Name)
+		}
 		return protodaemon.GetRoleResponse{
 			Error: err,
 		}
@@ -363,6 +369,9 @@ func (h *NATSHandler) DeleteRole(ctx context.Context, params map[string]string, 
 
 	role, err := h.conf.RoleDirectory.Get(ctx, req.Name)
 	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", req.Name)
+		}
 		return protodaemon.DeleteRoleResponse{
 			Error: err,
 		}
@@ -385,7 +394,7 @@ func (h *NATSHandler) IssueJWT(ctx context.Context, params map[string]string, ms
 	user, err := h.conf.UserDirectory.Get(ctx, userName)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = errors.New("user not found")
+			err = fmt.Errorf("%q not found", userName)
 		}
 		return protodaemon.IssueJWTResponse{
 			Error: err,
@@ -590,6 +599,9 @@ func (h *NATSHandler) GetAgent(ctx context.Context, params map[string]string, ms
 
 	agent, err := h.conf.AgentDirectory.Get(ctx, agentName)
 	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", agentName)
+		}
 		return protodaemon.GetAgentResponse{
 			Error: err,
 		}
@@ -773,6 +785,9 @@ func (h *NATSHandler) GetGateway(ctx context.Context, params map[string]string, 
 
 	gateway, err := h.conf.GatewayDirectory.Get(ctx, gatewayName)
 	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", gatewayName)
+		}
 		return protodaemon.GetGatewayResponse{
 			Error: err,
 		}
