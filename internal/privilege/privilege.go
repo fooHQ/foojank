@@ -2,6 +2,8 @@ package privilege
 
 import (
 	"fmt"
+	"slices"
+	"sort"
 	"strings"
 )
 
@@ -87,6 +89,41 @@ func ParsePrivileges(ss []string) (Privileges, error) {
 		privileges:  privileges,
 		permissions: permissions,
 	}, nil
+}
+
+// UpdatePrivileges returns canonical privilege names after adding set to current
+// and then removing unset. The result is sorted. A privilege in unset is
+// absent even when it is also in set or current.
+func UpdatePrivileges(current, set, unset []string) ([]string, error) {
+	combined := make([]string, 0, len(current)+len(set))
+	combined = append(combined, current...)
+	combined = append(combined, set...)
+
+	parsed, err := ParsePrivileges(combined)
+	if err != nil {
+		return nil, err
+	}
+
+	unsetPrivs, err := ParsePrivileges(unset)
+	if err != nil {
+		return nil, err
+	}
+
+	names := FormatPrivileges(parsed.Privileges())
+	sort.Strings(names)
+	names = slices.Compact(names)
+
+	drop := make(map[string]struct{})
+	for _, p := range unsetPrivs.Privileges() {
+		drop[p.String()] = struct{}{}
+	}
+
+	names = slices.DeleteFunc(names, func(name string) bool {
+		_, ok := drop[name]
+		return ok
+	})
+
+	return names, nil
 }
 
 // FormatPrivileges encodes privileges for storage. An empty slice is returned as nil.
