@@ -6,6 +6,7 @@ import (
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/cmd/foojank/commands/daemon/call/agent"
 	"github.com/foohq/foojank/cmd/foojank/commands/daemon/call/gateway"
+	"github.com/foohq/foojank/cmd/foojank/commands/daemon/call/role"
 	"github.com/foohq/foojank/cmd/foojank/commands/daemon/call/user"
 )
 
@@ -16,6 +17,7 @@ func NewCommand() *cli.Command {
 		Commands: []*cli.Command{
 			agent.NewCommand(),
 			gateway.NewCommand(),
+			role.NewCommand(),
 			user.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
