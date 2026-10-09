@@ -649,6 +649,130 @@ func (c *Client) RequestListGateways(ctx context.Context, req protodaemon.ListGa
 	return v, nil
 }
 
+func (c *Client) RequestCreateRole(ctx context.Context, req protodaemon.CreateRoleRequest) (protodaemon.CreateRoleResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.CreateRoleResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.CreateRoleSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.CreateRoleResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.CreateRoleResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.CreateRoleResponse)
+	if !ok {
+		return protodaemon.CreateRoleResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.CreateRoleResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
+func (c *Client) RequestGetRole(ctx context.Context, req protodaemon.GetRoleRequest) (protodaemon.GetRoleResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.GetRoleResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.GetRoleSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.GetRoleResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.GetRoleResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.GetRoleResponse)
+	if !ok {
+		return protodaemon.GetRoleResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.GetRoleResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
+func (c *Client) RequestListRoles(ctx context.Context, req protodaemon.ListRolesRequest) (protodaemon.ListRolesResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.ListRolesResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.ListRolesSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.ListRolesResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.ListRolesResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.ListRolesResponse)
+	if !ok {
+		return protodaemon.ListRolesResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.ListRolesResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
+func (c *Client) RequestDeleteRole(ctx context.Context, req protodaemon.DeleteRoleRequest) (protodaemon.DeleteRoleResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.DeleteRoleResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.DeleteRoleSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.DeleteRoleResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.DeleteRoleResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.DeleteRoleResponse)
+	if !ok {
+		return protodaemon.DeleteRoleResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.DeleteRoleResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
 func (c *Client) RequestRegisterAgent(ctx context.Context, agent AgentDirectoryEntry) (map[string]string, error) {
 	b, err := protogw.Marshal(protogw.RegisterAgentRequest{
 		AgentID: agent.ID,
