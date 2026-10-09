@@ -42,6 +42,14 @@ const (
 	tagGetGatewayResponse
 	tagListGatewaysRequest
 	tagListGatewaysResponse
+	tagCreateRoleRequest
+	tagCreateRoleResponse
+	tagGetRoleRequest
+	tagGetRoleResponse
+	tagListRolesRequest
+	tagListRolesResponse
+	tagDeleteRoleRequest
+	tagDeleteRoleResponse
 )
 
 // Marshal serializes the given message into a CBOR-encoded byte slice. It
@@ -135,6 +143,38 @@ func Marshal(message any) ([]byte, error) {
 		tag, payload = tagListGatewaysResponse, &v
 	case *ListGatewaysResponse:
 		tag, payload = tagListGatewaysResponse, v
+	case CreateRoleRequest:
+		tag, payload = tagCreateRoleRequest, &v
+	case *CreateRoleRequest:
+		tag, payload = tagCreateRoleRequest, v
+	case CreateRoleResponse:
+		tag, payload = tagCreateRoleResponse, &v
+	case *CreateRoleResponse:
+		tag, payload = tagCreateRoleResponse, v
+	case GetRoleRequest:
+		tag, payload = tagGetRoleRequest, &v
+	case *GetRoleRequest:
+		tag, payload = tagGetRoleRequest, v
+	case GetRoleResponse:
+		tag, payload = tagGetRoleResponse, &v
+	case *GetRoleResponse:
+		tag, payload = tagGetRoleResponse, v
+	case ListRolesRequest:
+		tag, payload = tagListRolesRequest, &v
+	case *ListRolesRequest:
+		tag, payload = tagListRolesRequest, v
+	case ListRolesResponse:
+		tag, payload = tagListRolesResponse, &v
+	case *ListRolesResponse:
+		tag, payload = tagListRolesResponse, v
+	case DeleteRoleRequest:
+		tag, payload = tagDeleteRoleRequest, &v
+	case *DeleteRoleRequest:
+		tag, payload = tagDeleteRoleRequest, v
+	case DeleteRoleResponse:
+		tag, payload = tagDeleteRoleResponse, &v
+	case *DeleteRoleResponse:
+		tag, payload = tagDeleteRoleResponse, v
 	default:
 		return nil, ErrUnknownType
 	}
@@ -259,6 +299,38 @@ func Unmarshal(b []byte) (any, error) {
 		var m ListGatewaysResponse
 		err = m.UnmarshalCbor(r)
 		payload = m
+	case tagCreateRoleRequest:
+		var m CreateRoleRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagCreateRoleResponse:
+		var m CreateRoleResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagGetRoleRequest:
+		var m GetRoleRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagGetRoleResponse:
+		var m GetRoleResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagListRolesRequest:
+		var m ListRolesRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagListRolesResponse:
+		var m ListRolesResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagDeleteRoleRequest:
+		var m DeleteRoleRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagDeleteRoleResponse:
+		var m DeleteRoleResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
 	default:
 		return nil, ErrUnknownTag
 	}
@@ -321,6 +393,26 @@ func GetGatewaySubject() string {
 // ListGatewaysSubject returns the NATS subject for listing gateways.
 func ListGatewaysSubject() string {
 	return "FJ.DAEMON.RPC.GATEWAY.LIST"
+}
+
+// CreateRoleSubject returns the NATS subject for creating a role.
+func CreateRoleSubject() string {
+	return "FJ.DAEMON.RPC.ROLE.CREATE"
+}
+
+// GetRoleSubject returns the NATS subject for retrieving a role.
+func GetRoleSubject() string {
+	return "FJ.DAEMON.RPC.ROLE.GET"
+}
+
+// ListRolesSubject returns the NATS subject for listing roles.
+func ListRolesSubject() string {
+	return "FJ.DAEMON.RPC.ROLE.LIST"
+}
+
+// DeleteRoleSubject returns the NATS subject for deleting a role.
+func DeleteRoleSubject() string {
+	return "FJ.DAEMON.RPC.ROLE.DELETE"
 }
 
 // ParseIssueJWTSubject extracts the user ID from an issue-JWT subject. It
@@ -501,6 +593,47 @@ func readGatewaySlice(r io.Reader) ([]Gateway, error) {
 	}
 
 	return gateways, nil
+}
+
+// writeRoleSlice writes a slice of roles as a definite-length CBOR array.
+// Each role is encoded with Role.MarshalCbor.
+func writeRoleSlice(roles []Role, w io.Writer) error {
+	err := cboring.WriteArrayLength(uint64(len(roles)), w)
+	if err != nil {
+		return err
+	}
+
+	for i := range roles {
+		err := roles[i].MarshalCbor(w)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// readRoleSlice reads a definite-length CBOR array of roles. An empty array
+// is decoded as a nil slice.
+func readRoleSlice(r io.Reader) ([]Role, error) {
+	l, err := cboring.ReadArrayLength(r)
+	if err != nil {
+		return nil, err
+	}
+
+	if l == 0 {
+		return nil, nil
+	}
+
+	roles := make([]Role, l)
+	for i := range roles {
+		err := roles[i].UnmarshalCbor(r)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return roles, nil
 }
 
 // writeStringMap writes a map of strings as a definite-length CBOR map. Keys

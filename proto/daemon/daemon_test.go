@@ -45,6 +45,12 @@ func TestMarshalUnmarshal(t *testing.T) {
 			Extra: map[string]string{"key1": "val1", "key2": "val2"},
 		},
 	}
+	testRole := daemon.Role{
+		Name:        "operator",
+		Description: "operator role",
+		Privileges:  []string{"USER.CREATE", "USER.GET"},
+		CreatedAt:   1700000000,
+	}
 
 	tests := []struct {
 		name    string
@@ -353,6 +359,108 @@ func TestMarshalUnmarshal(t *testing.T) {
 			want:  daemon.ListGatewaysResponse{Error: testError},
 		},
 		{
+			name: "CreateRoleRequest",
+			input: daemon.CreateRoleRequest{
+				Name:        "operator",
+				Description: "operator role",
+				Privileges:  []string{"USER.CREATE", "USER.GET"},
+			},
+			want: daemon.CreateRoleRequest{
+				Name:        "operator",
+				Description: "operator role",
+				Privileges:  []string{"USER.CREATE", "USER.GET"},
+			},
+		},
+		{
+			name: "CreateRoleRequest with empty fields",
+			input: daemon.CreateRoleRequest{
+				Privileges: []string{},
+			},
+			want: daemon.CreateRoleRequest{
+				Privileges: nil,
+			},
+		},
+		{
+			name:  "CreateRoleResponse",
+			input: daemon.CreateRoleResponse{},
+			want:  daemon.CreateRoleResponse{},
+		},
+		{
+			name:  "CreateRoleResponse with error",
+			input: daemon.CreateRoleResponse{Error: testError},
+			want:  daemon.CreateRoleResponse{Error: testError},
+		},
+		{
+			name: "GetRoleRequest",
+			input: daemon.GetRoleRequest{
+				Name: "operator",
+			},
+			want: daemon.GetRoleRequest{
+				Name: "operator",
+			},
+		},
+		{
+			name: "GetRoleResponse",
+			input: daemon.GetRoleResponse{
+				Role: testRole,
+			},
+			want: daemon.GetRoleResponse{
+				Role: testRole,
+			},
+		},
+		{
+			name:  "GetRoleResponse with error",
+			input: daemon.GetRoleResponse{Error: testError},
+			want:  daemon.GetRoleResponse{Error: testError},
+		},
+		{
+			name:  "ListRolesRequest",
+			input: daemon.ListRolesRequest{},
+			want:  daemon.ListRolesRequest{},
+		},
+		{
+			name: "ListRolesResponse",
+			input: daemon.ListRolesResponse{
+				Roles: []daemon.Role{testRole},
+			},
+			want: daemon.ListRolesResponse{
+				Roles: []daemon.Role{testRole},
+			},
+		},
+		{
+			name: "ListRolesResponse with empty slice",
+			input: daemon.ListRolesResponse{
+				Roles: []daemon.Role{},
+			},
+			want: daemon.ListRolesResponse{
+				Roles: nil,
+			},
+		},
+		{
+			name:  "ListRolesResponse with error",
+			input: daemon.ListRolesResponse{Error: testError},
+			want:  daemon.ListRolesResponse{Error: testError},
+		},
+		{
+			name: "DeleteRoleRequest",
+			input: daemon.DeleteRoleRequest{
+				Name: "operator",
+			},
+			want: daemon.DeleteRoleRequest{
+				Name: "operator",
+			},
+		},
+		{
+			name:  "DeleteRoleResponse",
+			input: daemon.DeleteRoleResponse{},
+			want:  daemon.DeleteRoleResponse{},
+		},
+		{
+			name:  "DeleteRoleResponse with error",
+			input: daemon.DeleteRoleResponse{Error: testError},
+			want:  daemon.DeleteRoleResponse{Error: testError},
+		},
+		{
 			name: "pointer input",
 			input: &daemon.CreateUserRequest{
 				Name: "ops",
@@ -495,6 +603,26 @@ func TestGetGatewaySubject(t *testing.T) {
 func TestListGatewaysSubject(t *testing.T) {
 	got := daemon.ListGatewaysSubject()
 	require.Equal(t, "FJ.DAEMON.RPC.GATEWAY.LIST", got)
+}
+
+func TestCreateRoleSubject(t *testing.T) {
+	got := daemon.CreateRoleSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.ROLE.CREATE", got)
+}
+
+func TestGetRoleSubject(t *testing.T) {
+	got := daemon.GetRoleSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.ROLE.GET", got)
+}
+
+func TestListRolesSubject(t *testing.T) {
+	got := daemon.ListRolesSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.ROLE.LIST", got)
+}
+
+func TestDeleteRoleSubject(t *testing.T) {
+	got := daemon.DeleteRoleSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.ROLE.DELETE", got)
 }
 
 func TestParseIssueJWTSubject(t *testing.T) {
