@@ -8,12 +8,6 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 )
 
-const (
-	UserKindAgent   = "agent"
-	UserKindGateway = "gateway"
-	UserKindClient  = "client"
-)
-
 type UserDirectory struct {
 	Directory
 }
@@ -104,7 +98,6 @@ type UserDirectoryEntry struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
-	Kind        string    `json:"kind"`
 	Privileges  []string  `json:"privileges"`
 	CreatedAt   time.Time `json:"created_at"`
 	ExpiresAt   time.Time `json:"expires_at"`
