@@ -12,7 +12,6 @@ type User struct {
 	ID          string
 	Name        string
 	Description string
-	Kind        string
 	JWT         string
 	Privileges  []string
 	CreatedAt   int64
@@ -20,14 +19,14 @@ type User struct {
 }
 
 // MarshalCbor encodes the user as a CBOR array:
-// [name, id, description, kind, jwt, privileges, createdAt, expiresAt].
+// [name, id, description, jwt, privileges, createdAt, expiresAt].
 func (m *User) MarshalCbor(w io.Writer) error {
-	err := cboring.WriteArrayLength(8, w)
+	err := cboring.WriteArrayLength(7, w)
 	if err != nil {
 		return err
 	}
 
-	for _, s := range []string{m.Name, m.ID, m.Description, m.Kind, m.JWT} {
+	for _, s := range []string{m.Name, m.ID, m.Description, m.JWT} {
 		err := cboring.WriteTextString(s, w)
 		if err != nil {
 			return err
@@ -55,11 +54,11 @@ func (m *User) UnmarshalCbor(r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	if l != 8 {
+	if l != 7 {
 		return errors.New("invalid message array length")
 	}
 
-	for _, f := range []*string{&m.Name, &m.ID, &m.Description, &m.Kind, &m.JWT} {
+	for _, f := range []*string{&m.Name, &m.ID, &m.Description, &m.JWT} {
 		s, err := cboring.ReadTextString(r)
 		if err != nil {
 			return err

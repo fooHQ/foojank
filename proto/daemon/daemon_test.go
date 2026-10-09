@@ -15,7 +15,6 @@ func TestMarshalUnmarshal(t *testing.T) {
 		Name:        "ops",
 		ID:          "UDUMMYUSERPUBLICKEY",
 		Description: "operations user",
-		Kind:        "client",
 		JWT:         "header.payload.sig",
 		Privileges:  []string{"pub", "sub"},
 		CreatedAt:   1700000000,
