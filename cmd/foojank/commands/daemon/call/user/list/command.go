@@ -96,7 +96,6 @@ func action(ctx context.Context, _ *cli.Command) error {
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("NAME").WithBold(),
-		formatter.NewStringCell("KIND").WithBold(),
 		formatter.NewStringCell("DESCRIPTION").WithBold(),
 		formatter.NewStringCell("CREATED AT").WithBold(),
 	})
@@ -104,7 +103,6 @@ func action(ctx context.Context, _ *cli.Command) error {
 	for _, user := range users {
 		table.AddRow([]formatter.Cell{
 			formatter.NewStringCell(user.Name),
-			formatter.NewStringCell(user.Kind),
 			formatter.NewStringCell(user.Description),
 			formatter.NewTimeCell(time.Unix(user.CreatedAt, 0)),
 		})
