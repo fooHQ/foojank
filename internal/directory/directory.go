@@ -14,6 +14,7 @@ const (
 	agentHostDirectoryName = "agent-hosts"
 	gatewayDirectoryName   = "gateways"
 	jobsDirectoryName      = "jobs"
+	roleDirectoryName      = "roles"
 	userDirectoryName      = "users"
 )
 
