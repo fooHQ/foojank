@@ -278,3 +278,66 @@ func TestValidateCreateGatewayRequest(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateCreateRoleRequest(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     protodaemon.CreateRoleRequest
+		wantErr string
+		wantIs  error
+	}{
+		{
+			name: "valid",
+			req:  protodaemon.CreateRoleRequest{Name: "operator"},
+		},
+		{
+			name:    "empty name",
+			req:     protodaemon.CreateRoleRequest{},
+			wantErr: "name is required",
+		},
+		{
+			name:   "invalid name",
+			req:    protodaemon.CreateRoleRequest{Name: "bad name"},
+			wantIs: directory.ErrNameInvalid,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := handler.ValidateCreateRoleRequest(tt.req)
+			if tt.wantErr == "" && tt.wantIs == nil {
+				require.NoError(t, err)
+				return
+			}
+			require.Error(t, err)
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			}
+			if tt.wantIs != nil {
+				require.ErrorIs(t, err, tt.wantIs)
+			}
+		})
+	}
+}
+
+func TestValidateGetRoleRequest(t *testing.T) {
+	err := handler.ValidateGetRoleRequest(protodaemon.GetRoleRequest{Name: "operator"})
+	require.NoError(t, err)
+
+	err = handler.ValidateGetRoleRequest(protodaemon.GetRoleRequest{})
+	require.EqualError(t, err, "name is required")
+
+	err = handler.ValidateGetRoleRequest(protodaemon.GetRoleRequest{Name: "bad name"})
+	require.ErrorIs(t, err, directory.ErrNameInvalid)
+}
+
+func TestValidateDeleteRoleRequest(t *testing.T) {
+	err := handler.ValidateDeleteRoleRequest(protodaemon.DeleteRoleRequest{Name: "operator"})
+	require.NoError(t, err)
+
+	err = handler.ValidateDeleteRoleRequest(protodaemon.DeleteRoleRequest{})
+	require.EqualError(t, err, "name is required")
+
+	err = handler.ValidateDeleteRoleRequest(protodaemon.DeleteRoleRequest{Name: "bad name"})
+	require.ErrorIs(t, err, directory.ErrNameInvalid)
+}

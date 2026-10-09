@@ -31,6 +31,7 @@ type NATSHandlerConfig struct {
 	AgentDirectory   *directory.AgentDirectory
 	GatewayDirectory *directory.GatewayDirectory
 	UserDirectory    *directory.UserDirectory
+	RoleDirectory    *directory.RoleDirectory
 	AccountKey       nkeys.KeyPair
 	Stream           string
 }
@@ -60,6 +61,11 @@ func (h *NATSHandler) Match(msg message.Msg) (func(context.Context) message.Msg,
 		protodaemon.CreateGatewaySubject(): h.CreateGateway,
 		protodaemon.GetGatewaySubject():    h.GetGateway,
 		protodaemon.ListGatewaysSubject():  h.ListGateways,
+
+		protodaemon.CreateRoleSubject(): h.CreateRole,
+		protodaemon.GetRoleSubject():    h.GetRole,
+		protodaemon.ListRolesSubject():  h.ListRoles,
+		protodaemon.DeleteRoleSubject(): h.DeleteRole,
 
 		protodaemon.IssueJWTSubject("<user>"): h.IssueJWT,
 	}
@@ -232,6 +238,145 @@ func (h *NATSHandler) ListUsers(ctx context.Context, params map[string]string, m
 	return protodaemon.ListUsersResponse{
 		Users: users,
 	}
+}
+
+func (h *NATSHandler) CreateRole(ctx context.Context, params map[string]string, msg message.Msg) any {
+	req, ok := msg.Data().(protodaemon.CreateRoleRequest)
+	if !ok {
+		return protodaemon.CreateRoleResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	err := ValidateCreateRoleRequest(req)
+	if err != nil {
+		return protodaemon.CreateRoleResponse{
+			Error: err,
+		}
+	}
+
+	roleName := req.Name
+	roleDesc := req.Description
+
+	rolePrivs, err := privilege.ParsePrivileges(req.Privileges)
+	if err != nil {
+		return protodaemon.CreateRoleResponse{
+			Error: err,
+		}
+	}
+
+	_, err = h.conf.RoleDirectory.Create(ctx, directory.RoleDirectoryEntry{
+		Name:        roleName,
+		Description: roleDesc,
+		Privileges:  privilege.FormatPrivileges(rolePrivs.Privileges()),
+		CreatedAt:   time.Now().UTC(),
+	})
+	if err != nil {
+		if errors.Is(err, directory.ErrKeyExists) {
+			err = fmt.Errorf("%q already exists", roleName)
+		}
+		h.logger.ErrorContext(ctx, "Cannot create role: %v", err)
+		return protodaemon.CreateRoleResponse{
+			Error: err,
+		}
+	}
+
+	return protodaemon.CreateRoleResponse{}
+}
+
+func (h *NATSHandler) GetRole(ctx context.Context, params map[string]string, msg message.Msg) any {
+	req, ok := msg.Data().(protodaemon.GetRoleRequest)
+	if !ok {
+		return protodaemon.GetRoleResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	err := ValidateGetRoleRequest(req)
+	if err != nil {
+		return protodaemon.GetRoleResponse{
+			Error: err,
+		}
+	}
+
+	role, err := h.conf.RoleDirectory.Get(ctx, req.Name)
+	if err != nil {
+		return protodaemon.GetRoleResponse{
+			Error: err,
+		}
+	}
+
+	return protodaemon.GetRoleResponse{
+		Role: protodaemon.Role{
+			Name:        role.Name,
+			Description: role.Description,
+			Privileges:  role.Privileges,
+			CreatedAt:   role.CreatedAt.Unix(),
+		},
+	}
+}
+
+func (h *NATSHandler) ListRoles(ctx context.Context, params map[string]string, msg message.Msg) any {
+	_, ok := msg.Data().(protodaemon.ListRolesRequest)
+	if !ok {
+		return protodaemon.ListRolesResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	entries, err := h.conf.RoleDirectory.List(ctx)
+	if err != nil {
+		return protodaemon.ListRolesResponse{
+			Error: err,
+		}
+	}
+
+	roles := make([]protodaemon.Role, len(entries))
+	for i := range entries {
+		roles[i] = protodaemon.Role{
+			Name:        entries[i].Name,
+			Description: entries[i].Description,
+			Privileges:  entries[i].Privileges,
+			CreatedAt:   entries[i].CreatedAt.Unix(),
+		}
+	}
+
+	return protodaemon.ListRolesResponse{
+		Roles: roles,
+	}
+}
+
+func (h *NATSHandler) DeleteRole(ctx context.Context, params map[string]string, msg message.Msg) any {
+	req, ok := msg.Data().(protodaemon.DeleteRoleRequest)
+	if !ok {
+		return protodaemon.DeleteRoleResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	err := ValidateDeleteRoleRequest(req)
+	if err != nil {
+		return protodaemon.DeleteRoleResponse{
+			Error: err,
+		}
+	}
+
+	role, err := h.conf.RoleDirectory.Get(ctx, req.Name)
+	if err != nil {
+		return protodaemon.DeleteRoleResponse{
+			Error: err,
+		}
+	}
+
+	err = h.conf.RoleDirectory.Delete(ctx, role)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot delete role: %v", err)
+		return protodaemon.DeleteRoleResponse{
+			Error: err,
+		}
+	}
+
+	return protodaemon.DeleteRoleResponse{}
 }
 
 func (h *NATSHandler) IssueJWT(ctx context.Context, params map[string]string, msg message.Msg) any {
