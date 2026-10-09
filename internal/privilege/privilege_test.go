@@ -195,6 +195,82 @@ func TestParseFormatPrivilegesRoundTrip(t *testing.T) {
 	}, got.Permissions())
 }
 
+func TestUpdatePrivileges(t *testing.T) {
+	tests := []struct {
+		name    string
+		current []string
+		add     []string
+		without []string
+		want    []string
+		wantErr bool
+	}{
+		{
+			name:    "add and remove",
+			current: []string{"USER.CREATE", "USER.GET"},
+			add:     []string{"USER.LIST"},
+			without: []string{"user.create"},
+			want:    []string{"USER.GET", "USER.LIST"},
+		},
+		{
+			name:    "add existing",
+			current: []string{"USER.GET"},
+			add:     []string{"user.get", "USER.GET"},
+			want:    []string{"USER.GET"},
+		},
+		{
+			name:    "remove missing",
+			current: []string{"USER.GET"},
+			without: []string{"USER.LIST"},
+			want:    []string{"USER.GET"},
+		},
+		{
+			name:    "unset wins",
+			current: []string{"USER.GET"},
+			add:     []string{"USER.LIST"},
+			without: []string{"USER.GET", "USER.LIST"},
+			want:    []string{},
+		},
+		{
+			name:    "sorted and deduplicated",
+			current: []string{"USER.LIST", "user.get", "USER.GET"},
+			add:     []string{"USER.CREATE"},
+			want:    []string{"USER.CREATE", "USER.GET", "USER.LIST"},
+		},
+		{
+			name:    "empty",
+			current: nil,
+			want:    nil,
+		},
+		{
+			name:    "unknown add",
+			add:     []string{"NOPE"},
+			wantErr: true,
+		},
+		{
+			name:    "unknown without",
+			without: []string{"NOPE"},
+			wantErr: true,
+		},
+		{
+			name:    "unknown current",
+			current: []string{"NOPE"},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := privilege.UpdatePrivileges(tt.current, tt.add, tt.without)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestParseFormatPrivilegesEmpty(t *testing.T) {
 	require.Nil(t, privilege.FormatPrivileges(nil))
 	require.Nil(t, privilege.FormatPrivileges([]privilege.Privilege{}))
