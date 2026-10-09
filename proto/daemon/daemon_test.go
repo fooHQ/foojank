@@ -460,6 +460,44 @@ func TestMarshalUnmarshal(t *testing.T) {
 			want:  daemon.DeleteRoleResponse{Error: testError},
 		},
 		{
+			name: "UpdateUserRequest",
+			input: daemon.UpdateUserRequest{
+				Name:            "ops",
+				Description:     "updated",
+				IsDescription:   true,
+				SetPrivileges:   []string{"USER.GET"},
+				UnsetPrivileges: []string{"USER.CREATE"},
+			},
+			want: daemon.UpdateUserRequest{
+				Name:            "ops",
+				Description:     "updated",
+				IsDescription:   true,
+				SetPrivileges:   []string{"USER.GET"},
+				UnsetPrivileges: []string{"USER.CREATE"},
+			},
+		},
+		{
+			name: "UpdateUserRequest with empty slices",
+			input: daemon.UpdateUserRequest{
+				Name:            "ops",
+				SetPrivileges:   []string{},
+				UnsetPrivileges: []string{},
+			},
+			want: daemon.UpdateUserRequest{
+				Name: "ops",
+			},
+		},
+		{
+			name:  "UpdateUserResponse",
+			input: daemon.UpdateUserResponse{},
+			want:  daemon.UpdateUserResponse{},
+		},
+		{
+			name:  "UpdateUserResponse with error",
+			input: daemon.UpdateUserResponse{Error: testError},
+			want:  daemon.UpdateUserResponse{Error: testError},
+		},
+		{
 			name: "pointer input",
 			input: &daemon.CreateUserRequest{
 				Name: "ops",
@@ -567,6 +605,11 @@ func TestGetUserSubject(t *testing.T) {
 func TestListUsersSubject(t *testing.T) {
 	got := daemon.ListUsersSubject()
 	require.Equal(t, "FJ.DAEMON.RPC.USER.LIST", got)
+}
+
+func TestUpdateUserSubject(t *testing.T) {
+	got := daemon.UpdateUserSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.USER.UPDATE", got)
 }
 
 func TestIssueJWTSubject(t *testing.T) {

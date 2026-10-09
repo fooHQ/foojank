@@ -50,6 +50,8 @@ const (
 	tagListRolesResponse
 	tagDeleteRoleRequest
 	tagDeleteRoleResponse
+	tagUpdateUserRequest
+	tagUpdateUserResponse
 )
 
 // Marshal serializes the given message into a CBOR-encoded byte slice. It
@@ -175,6 +177,14 @@ func Marshal(message any) ([]byte, error) {
 		tag, payload = tagDeleteRoleResponse, &v
 	case *DeleteRoleResponse:
 		tag, payload = tagDeleteRoleResponse, v
+	case UpdateUserRequest:
+		tag, payload = tagUpdateUserRequest, &v
+	case *UpdateUserRequest:
+		tag, payload = tagUpdateUserRequest, v
+	case UpdateUserResponse:
+		tag, payload = tagUpdateUserResponse, &v
+	case *UpdateUserResponse:
+		tag, payload = tagUpdateUserResponse, v
 	default:
 		return nil, ErrUnknownType
 	}
@@ -331,6 +341,14 @@ func Unmarshal(b []byte) (any, error) {
 		var m DeleteRoleResponse
 		err = m.UnmarshalCbor(r)
 		payload = m
+	case tagUpdateUserRequest:
+		var m UpdateUserRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagUpdateUserResponse:
+		var m UpdateUserResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
 	default:
 		return nil, ErrUnknownTag
 	}
@@ -358,6 +376,11 @@ func GetUserSubject() string {
 // ListUsersSubject returns the NATS subject for listing users.
 func ListUsersSubject() string {
 	return "FJ.DAEMON.RPC.USER.LIST"
+}
+
+// UpdateUserSubject returns the NATS subject for updating a user.
+func UpdateUserSubject() string {
+	return "FJ.DAEMON.RPC.USER.UPDATE"
 }
 
 // IssueJWTSubject returns the NATS subject for issuing a JWT for the given user.
