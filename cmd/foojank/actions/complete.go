@@ -70,6 +70,14 @@ func CompleteUserName(ctx context.Context, c *cli.Command) {
 	completeName(ctx, c, listUserNames)
 }
 
+// CompleteRoleName is a ShellComplete func for commands that take a single
+// role name. Flags are still completed after a positional argument.
+func CompleteRoleName(ctx context.Context, c *cli.Command) {
+	ctx, cancel := completionContext(ctx)
+	defer cancel()
+	completeName(ctx, c, listRoleNames)
+}
+
 func completeName(ctx context.Context, c *cli.Command, list func(context.Context) ([]string, error)) {
 	if completeFlagToken(ctx, c) {
 		return
@@ -285,6 +293,29 @@ func listUserNames(ctx context.Context) ([]string, error) {
 	names := make([]string, 0, len(resp.Users))
 	for _, user := range resp.Users {
 		line := completionLine(user.Name, user.Description)
+		if line == "" {
+			continue
+		}
+		names = append(names, line)
+	}
+	sort.Strings(names)
+	return names, nil
+}
+
+func listRoleNames(ctx context.Context) ([]string, error) {
+	client, err := daemonClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.RequestListRoles(ctx, protodaemon.ListRolesRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	names := make([]string, 0, len(resp.Roles))
+	for _, role := range resp.Roles {
+		line := completionLine(role.Name, role.Description)
 		if line == "" {
 			continue
 		}
