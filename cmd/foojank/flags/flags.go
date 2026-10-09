@@ -21,5 +21,6 @@ const (
 	Force             = "force"
 	PublicKey         = "public-key"
 	Privilege         = "privilege"
+	WithoutPrivilege  = "without-privilege"
 	Token             = "token"
 )
