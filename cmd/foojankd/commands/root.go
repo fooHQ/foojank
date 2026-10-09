@@ -6,6 +6,7 @@ import (
 	"github.com/foohq/foojank"
 	"github.com/foohq/foojank/cmd/foojankd/actions"
 	"github.com/foohq/foojank/cmd/foojankd/commands/account"
+	"github.com/foohq/foojank/cmd/foojankd/commands/role"
 	"github.com/foohq/foojank/cmd/foojankd/commands/start"
 	"github.com/foohq/foojank/cmd/foojankd/commands/user"
 )
@@ -17,6 +18,7 @@ func NewCommand() *cli.Command {
 		Version: foojank.Version(),
 		Commands: []*cli.Command{
 			account.NewCommand(),
+			role.NewCommand(),
 			user.NewCommand(),
 			start.NewCommand(),
 		},
