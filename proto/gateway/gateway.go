@@ -25,6 +25,14 @@ const (
 	tagRegisterAgentResponse
 	tagUnregisterAgentRequest
 	tagUnregisterAgentResponse
+	tagCreateJobRequest
+	tagCreateJobResponse
+	tagCancelJobRequest
+	tagCancelJobResponse
+	tagJobInputRequest
+	tagJobInputResponse
+	tagJobOutputRequest
+	tagJobOutputResponse
 )
 
 // Marshal serializes the given message into a CBOR-encoded byte slice. It
@@ -54,6 +62,38 @@ func Marshal(message any) ([]byte, error) {
 		tag, payload = tagUnregisterAgentResponse, &v
 	case *UnregisterAgentResponse:
 		tag, payload = tagUnregisterAgentResponse, v
+	case CreateJobRequest:
+		tag, payload = tagCreateJobRequest, &v
+	case *CreateJobRequest:
+		tag, payload = tagCreateJobRequest, v
+	case CreateJobResponse:
+		tag, payload = tagCreateJobResponse, &v
+	case *CreateJobResponse:
+		tag, payload = tagCreateJobResponse, v
+	case CancelJobRequest:
+		tag, payload = tagCancelJobRequest, &v
+	case *CancelJobRequest:
+		tag, payload = tagCancelJobRequest, v
+	case CancelJobResponse:
+		tag, payload = tagCancelJobResponse, &v
+	case *CancelJobResponse:
+		tag, payload = tagCancelJobResponse, v
+	case JobInputRequest:
+		tag, payload = tagJobInputRequest, &v
+	case *JobInputRequest:
+		tag, payload = tagJobInputRequest, v
+	case JobInputResponse:
+		tag, payload = tagJobInputResponse, &v
+	case *JobInputResponse:
+		tag, payload = tagJobInputResponse, v
+	case JobOutputRequest:
+		tag, payload = tagJobOutputRequest, &v
+	case *JobOutputRequest:
+		tag, payload = tagJobOutputRequest, v
+	case JobOutputResponse:
+		tag, payload = tagJobOutputResponse, &v
+	case *JobOutputResponse:
+		tag, payload = tagJobOutputResponse, v
 	default:
 		return nil, ErrUnknownType
 	}
@@ -114,6 +154,38 @@ func Unmarshal(b []byte) (any, error) {
 		var m UnregisterAgentResponse
 		err = m.UnmarshalCbor(r)
 		payload = m
+	case tagCreateJobRequest:
+		var m CreateJobRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagCreateJobResponse:
+		var m CreateJobResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagCancelJobRequest:
+		var m CancelJobRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagCancelJobResponse:
+		var m CancelJobResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagJobInputRequest:
+		var m JobInputRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagJobInputResponse:
+		var m JobInputResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagJobOutputRequest:
+		var m JobOutputRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagJobOutputResponse:
+		var m JobOutputResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
 	default:
 		return nil, ErrUnknownTag
 	}
@@ -136,6 +208,67 @@ func RegisterAgentSubject(gatewayID string) string {
 // UnregisterAgentSubject returns the NATS subject for unregistering an agent from the gateway.
 func UnregisterAgentSubject(gatewayID string) string {
 	return "FJ.GATEWAY." + gatewayID + ".RPC.AGENT.UNREGISTER"
+}
+
+// CreateJobSubject returns the NATS subject for creating a job on the gateway.
+func CreateJobSubject(gatewayID string) string {
+	return "FJ.GATEWAY." + gatewayID + ".RPC.JOB.CREATE"
+}
+
+// CancelJobSubject returns the NATS subject for cancelling a job on the gateway.
+func CancelJobSubject(gatewayID string) string {
+	return "FJ.GATEWAY." + gatewayID + ".RPC.JOB.CANCEL"
+}
+
+// JobInputSubject returns the NATS subject for passing input to a job.
+func JobInputSubject(gatewayID string) string {
+	return "FJ.GATEWAY." + gatewayID + ".RPC.JOB.INPUT"
+}
+
+// JobOutputSubject returns the NATS subject for reading a job's output.
+func JobOutputSubject(gatewayID string) string {
+	return "FJ.GATEWAY." + gatewayID + ".RPC.JOB.OUTPUT"
+}
+
+// writeStringSlice writes a slice of strings as a definite-length CBOR array.
+func writeStringSlice(ss []string, w io.Writer) error {
+	err := cboring.WriteArrayLength(uint64(len(ss)), w)
+	if err != nil {
+		return err
+	}
+
+	for _, s := range ss {
+		err := cboring.WriteTextString(s, w)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// readStringSlice reads a definite-length CBOR array of strings. An empty
+// array is decoded as a nil slice.
+func readStringSlice(r io.Reader) ([]string, error) {
+	l, err := cboring.ReadArrayLength(r)
+	if err != nil {
+		return nil, err
+	}
+
+	if l == 0 {
+		return nil, nil
+	}
+
+	ss := make([]string, l)
+	for i := range ss {
+		s, err := cboring.ReadTextString(r)
+		if err != nil {
+			return nil, err
+		}
+		ss[i] = s
+	}
+
+	return ss, nil
 }
 
 // writeStringMap writes a map of strings as a definite-length CBOR map. Keys
