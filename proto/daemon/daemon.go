@@ -52,6 +52,10 @@ const (
 	tagDeleteRoleResponse
 	tagUpdateUserRequest
 	tagUpdateUserResponse
+	tagJobStartedRequest
+	tagJobCancelledRequest
+	tagJobStatusRequest
+	tagUpdateJobResponse
 )
 
 // Marshal serializes the given message into a CBOR-encoded byte slice. It
@@ -185,6 +189,22 @@ func Marshal(message any) ([]byte, error) {
 		tag, payload = tagUpdateUserResponse, &v
 	case *UpdateUserResponse:
 		tag, payload = tagUpdateUserResponse, v
+	case JobStartedRequest:
+		tag, payload = tagJobStartedRequest, &v
+	case *JobStartedRequest:
+		tag, payload = tagJobStartedRequest, v
+	case JobCancelledRequest:
+		tag, payload = tagJobCancelledRequest, &v
+	case *JobCancelledRequest:
+		tag, payload = tagJobCancelledRequest, v
+	case JobStatusRequest:
+		tag, payload = tagJobStatusRequest, &v
+	case *JobStatusRequest:
+		tag, payload = tagJobStatusRequest, v
+	case UpdateJobResponse:
+		tag, payload = tagUpdateJobResponse, &v
+	case *UpdateJobResponse:
+		tag, payload = tagUpdateJobResponse, v
 	default:
 		return nil, ErrUnknownType
 	}
@@ -349,6 +369,22 @@ func Unmarshal(b []byte) (any, error) {
 		var m UpdateUserResponse
 		err = m.UnmarshalCbor(r)
 		payload = m
+	case tagJobStartedRequest:
+		var m JobStartedRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagJobCancelledRequest:
+		var m JobCancelledRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagJobStatusRequest:
+		var m JobStatusRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagUpdateJobResponse:
+		var m UpdateJobResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
 	default:
 		return nil, ErrUnknownTag
 	}
@@ -436,6 +472,11 @@ func ListRolesSubject() string {
 // DeleteRoleSubject returns the NATS subject for deleting a role.
 func DeleteRoleSubject() string {
 	return "FJ.DAEMON.RPC.ROLE.DELETE"
+}
+
+// UpdateJobSubject returns the NATS subject for reporting a job's status.
+func UpdateJobSubject() string {
+	return "FJ.DAEMON.RPC.JOB.UPDATE"
 }
 
 // ParseIssueJWTSubject extracts the user ID from an issue-JWT subject. It

@@ -498,6 +498,80 @@ func TestMarshalUnmarshal(t *testing.T) {
 			want:  daemon.UpdateUserResponse{Error: testError},
 		},
 		{
+			name: "JobStartedRequest",
+			input: daemon.JobStartedRequest{
+				JobID: "job1",
+			},
+			want: daemon.JobStartedRequest{
+				JobID: "job1",
+			},
+		},
+		{
+			name: "JobStartedRequest with error",
+			input: daemon.JobStartedRequest{
+				JobID: "job1",
+				Error: testError,
+			},
+			want: daemon.JobStartedRequest{
+				JobID: "job1",
+				Error: testError,
+			},
+		},
+		{
+			name: "JobCancelledRequest",
+			input: daemon.JobCancelledRequest{
+				JobID: "job1",
+			},
+			want: daemon.JobCancelledRequest{
+				JobID: "job1",
+			},
+		},
+		{
+			name: "JobCancelledRequest with error",
+			input: daemon.JobCancelledRequest{
+				JobID: "job1",
+				Error: testError,
+			},
+			want: daemon.JobCancelledRequest{
+				JobID: "job1",
+				Error: testError,
+			},
+		},
+		{
+			name: "JobStatusRequest",
+			input: daemon.JobStatusRequest{
+				JobID:  "job1",
+				Status: 0,
+			},
+			want: daemon.JobStatusRequest{
+				JobID:  "job1",
+				Status: 0,
+			},
+		},
+		{
+			name: "JobStatusRequest with error",
+			input: daemon.JobStatusRequest{
+				JobID:  "job1",
+				Status: 130,
+				Error:  testError,
+			},
+			want: daemon.JobStatusRequest{
+				JobID:  "job1",
+				Status: 130,
+				Error:  testError,
+			},
+		},
+		{
+			name:  "UpdateJobResponse",
+			input: daemon.UpdateJobResponse{},
+			want:  daemon.UpdateJobResponse{},
+		},
+		{
+			name:  "UpdateJobResponse with error",
+			input: daemon.UpdateJobResponse{Error: testError},
+			want:  daemon.UpdateJobResponse{Error: testError},
+		},
+		{
 			name: "pointer input",
 			input: &daemon.CreateUserRequest{
 				Name: "ops",
@@ -665,6 +739,11 @@ func TestListRolesSubject(t *testing.T) {
 func TestDeleteRoleSubject(t *testing.T) {
 	got := daemon.DeleteRoleSubject()
 	require.Equal(t, "FJ.DAEMON.RPC.ROLE.DELETE", got)
+}
+
+func TestUpdateJobSubject(t *testing.T) {
+	got := daemon.UpdateJobSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.JOB.UPDATE", got)
 }
 
 func TestParseIssueJWTSubject(t *testing.T) {
