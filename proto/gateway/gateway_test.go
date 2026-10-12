@@ -78,6 +78,139 @@ func TestMarshalUnmarshal(t *testing.T) {
 			want:  gateway.UnregisterAgentResponse{Error: testError},
 		},
 		{
+			name: "CreateJobRequest",
+			input: gateway.CreateJobRequest{
+				AgentID: "agent1",
+				Command: "echo",
+				Args:    []string{"hello"},
+				Env:     []string{"A=1", "B=2"},
+			},
+			want: gateway.CreateJobRequest{
+				AgentID: "agent1",
+				Command: "echo",
+				Args:    []string{"hello"},
+				Env:     []string{"A=1", "B=2"},
+			},
+		},
+		{
+			name: "CreateJobRequest with empty slices",
+			input: gateway.CreateJobRequest{
+				AgentID: "agent1",
+				Args:    []string{},
+				Env:     []string{},
+			},
+			want: gateway.CreateJobRequest{
+				AgentID: "agent1",
+			},
+		},
+		{
+			name: "CreateJobResponse",
+			input: gateway.CreateJobResponse{
+				JobID: "job1",
+			},
+			want: gateway.CreateJobResponse{
+				JobID: "job1",
+			},
+		},
+		{
+			name:  "CreateJobResponse with error",
+			input: gateway.CreateJobResponse{Error: testError},
+			want:  gateway.CreateJobResponse{Error: testError},
+		},
+		{
+			name: "CancelJobRequest",
+			input: gateway.CancelJobRequest{
+				AgentID: "agent1",
+				JobID:   "job1",
+			},
+			want: gateway.CancelJobRequest{
+				AgentID: "agent1",
+				JobID:   "job1",
+			},
+		},
+		{
+			name:  "CancelJobResponse",
+			input: gateway.CancelJobResponse{},
+			want:  gateway.CancelJobResponse{},
+		},
+		{
+			name:  "CancelJobResponse with error",
+			input: gateway.CancelJobResponse{Error: testError},
+			want:  gateway.CancelJobResponse{Error: testError},
+		},
+		{
+			name: "JobInputRequest",
+			input: gateway.JobInputRequest{
+				AgentID: "agent1",
+				JobID:   "job1",
+				Data:    []byte("hello"),
+			},
+			want: gateway.JobInputRequest{
+				AgentID: "agent1",
+				JobID:   "job1",
+				Data:    []byte("hello"),
+			},
+		},
+		{
+			name: "JobInputRequest with empty data",
+			input: gateway.JobInputRequest{
+				AgentID: "agent1",
+				JobID:   "job1",
+			},
+			want: gateway.JobInputRequest{
+				AgentID: "agent1",
+				JobID:   "job1",
+				Data:    []byte{},
+			},
+		},
+		{
+			name:  "JobInputResponse",
+			input: gateway.JobInputResponse{},
+			want:  gateway.JobInputResponse{},
+		},
+		{
+			name:  "JobInputResponse with error",
+			input: gateway.JobInputResponse{Error: testError},
+			want:  gateway.JobInputResponse{Error: testError},
+		},
+		{
+			name: "JobOutputRequest",
+			input: gateway.JobOutputRequest{
+				AgentID: "agent1",
+				JobID:   "job1",
+				Offset:  12,
+			},
+			want: gateway.JobOutputRequest{
+				AgentID: "agent1",
+				JobID:   "job1",
+				Offset:  12,
+			},
+		},
+		{
+			name: "JobOutputResponse",
+			input: gateway.JobOutputResponse{
+				Data: []byte("hello"),
+			},
+			want: gateway.JobOutputResponse{
+				Data: []byte("hello"),
+			},
+		},
+		{
+			name:  "JobOutputResponse with empty data",
+			input: gateway.JobOutputResponse{},
+			want:  gateway.JobOutputResponse{Data: []byte{}},
+		},
+		{
+			name: "JobOutputResponse with error",
+			input: gateway.JobOutputResponse{
+				Error: testError,
+			},
+			want: gateway.JobOutputResponse{
+				Data:  []byte{},
+				Error: testError,
+			},
+		},
+		{
 			name: "pointer input",
 			input: &gateway.RegisterAgentRequest{
 				AgentID: "agent1",
@@ -182,4 +315,24 @@ func TestRegisterAgentSubject(t *testing.T) {
 func TestUnregisterAgentSubject(t *testing.T) {
 	got := gateway.UnregisterAgentSubject("gateway1")
 	require.Equal(t, "FJ.GATEWAY.gateway1.RPC.AGENT.UNREGISTER", got)
+}
+
+func TestCreateJobSubject(t *testing.T) {
+	got := gateway.CreateJobSubject("gateway1")
+	require.Equal(t, "FJ.GATEWAY.gateway1.RPC.JOB.CREATE", got)
+}
+
+func TestCancelJobSubject(t *testing.T) {
+	got := gateway.CancelJobSubject("gateway1")
+	require.Equal(t, "FJ.GATEWAY.gateway1.RPC.JOB.CANCEL", got)
+}
+
+func TestJobInputSubject(t *testing.T) {
+	got := gateway.JobInputSubject("gateway1")
+	require.Equal(t, "FJ.GATEWAY.gateway1.RPC.JOB.INPUT", got)
+}
+
+func TestJobOutputSubject(t *testing.T) {
+	got := gateway.JobOutputSubject("gateway1")
+	require.Equal(t, "FJ.GATEWAY.gateway1.RPC.JOB.OUTPUT", got)
 }
