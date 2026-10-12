@@ -50,6 +50,21 @@ func TestMarshalUnmarshal(t *testing.T) {
 		Privileges:  []string{"USER.CREATE", "USER.GET"},
 		CreatedAt:   1700000000,
 	}
+	testJob := daemon.Job{
+		ID:        "job1",
+		GatewayID: "UDUMMYGATEWAYPUBLICKEY",
+		AgentID:   "UDUMMYAGENTPUBLICKEY",
+		WorkerID:  "worker1",
+		Command:   "echo",
+		Args:      []string{"hello"},
+		Env:       []string{"A=1", "B=2"},
+		Status: daemon.JobStatus{
+			Status:    "running",
+			Error:     "exited",
+			UpdatedAt: 1700000001,
+		},
+		CreatedAt: 1700000000,
+	}
 
 	tests := []struct {
 		name    string
@@ -572,6 +587,121 @@ func TestMarshalUnmarshal(t *testing.T) {
 			want:  daemon.UpdateJobResponse{Error: testError},
 		},
 		{
+			name: "CreateJobRequest",
+			input: daemon.CreateJobRequest{
+				AgentID: "web",
+				Command: "echo",
+				Args:    []string{"hello"},
+				Env:     []string{"A=1", "B=2"},
+			},
+			want: daemon.CreateJobRequest{
+				AgentID: "web",
+				Command: "echo",
+				Args:    []string{"hello"},
+				Env:     []string{"A=1", "B=2"},
+			},
+		},
+		{
+			name: "CreateJobRequest with empty slices",
+			input: daemon.CreateJobRequest{
+				AgentID: "web",
+				Args:    []string{},
+				Env:     []string{},
+			},
+			want: daemon.CreateJobRequest{
+				AgentID: "web",
+			},
+		},
+		{
+			name: "CreateJobResponse",
+			input: daemon.CreateJobResponse{
+				JobID: "job1",
+			},
+			want: daemon.CreateJobResponse{
+				JobID: "job1",
+			},
+		},
+		{
+			name:  "CreateJobResponse with error",
+			input: daemon.CreateJobResponse{Error: testError},
+			want:  daemon.CreateJobResponse{Error: testError},
+		},
+		{
+			name: "GetJobRequest",
+			input: daemon.GetJobRequest{
+				JobID: "job1",
+			},
+			want: daemon.GetJobRequest{
+				JobID: "job1",
+			},
+		},
+		{
+			name: "GetJobResponse",
+			input: daemon.GetJobResponse{
+				Job: testJob,
+			},
+			want: daemon.GetJobResponse{
+				Job: testJob,
+			},
+		},
+		{
+			name: "GetJobResponse with empty slices",
+			input: daemon.GetJobResponse{
+				Job: daemon.Job{
+					ID:   "job1",
+					Args: []string{},
+					Env:  []string{},
+				},
+			},
+			want: daemon.GetJobResponse{
+				Job: daemon.Job{
+					ID: "job1",
+				},
+			},
+		},
+		{
+			name:  "GetJobResponse with error",
+			input: daemon.GetJobResponse{Error: testError},
+			want:  daemon.GetJobResponse{Error: testError},
+		},
+		{
+			name: "ListJobsRequest",
+			input: daemon.ListJobsRequest{
+				AgentID: "UDUMMYAGENTPUBLICKEY",
+			},
+			want: daemon.ListJobsRequest{
+				AgentID: "UDUMMYAGENTPUBLICKEY",
+			},
+		},
+		{
+			name:  "ListJobsRequest with empty agent",
+			input: daemon.ListJobsRequest{},
+			want:  daemon.ListJobsRequest{},
+		},
+		{
+			name: "ListJobsResponse",
+			input: daemon.ListJobsResponse{
+				Jobs: []daemon.Job{testJob},
+			},
+			want: daemon.ListJobsResponse{
+				Jobs: []daemon.Job{testJob},
+			},
+		},
+		{
+			name: "ListJobsResponse with empty slice",
+			input: daemon.ListJobsResponse{
+				Jobs: []daemon.Job{},
+			},
+			want: daemon.ListJobsResponse{
+				Jobs: nil,
+			},
+		},
+		{
+			name:  "ListJobsResponse with error",
+			input: daemon.ListJobsResponse{Error: testError},
+			want:  daemon.ListJobsResponse{Error: testError},
+		},
+		{
 			name: "pointer input",
 			input: &daemon.CreateUserRequest{
 				Name: "ops",
@@ -744,6 +874,21 @@ func TestDeleteRoleSubject(t *testing.T) {
 func TestUpdateJobSubject(t *testing.T) {
 	got := daemon.UpdateJobSubject()
 	require.Equal(t, "FJ.DAEMON.RPC.JOB.UPDATE", got)
+}
+
+func TestCreateJobSubject(t *testing.T) {
+	got := daemon.CreateJobSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.JOB.CREATE", got)
+}
+
+func TestGetJobSubject(t *testing.T) {
+	got := daemon.GetJobSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.JOB.GET", got)
+}
+
+func TestListJobsSubject(t *testing.T) {
+	got := daemon.ListJobsSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.JOB.LIST", got)
 }
 
 func TestParseIssueJWTSubject(t *testing.T) {

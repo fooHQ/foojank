@@ -56,6 +56,12 @@ const (
 	tagJobCancelledRequest
 	tagJobStatusRequest
 	tagUpdateJobResponse
+	tagCreateJobRequest
+	tagCreateJobResponse
+	tagGetJobRequest
+	tagGetJobResponse
+	tagListJobsRequest
+	tagListJobsResponse
 )
 
 // Marshal serializes the given message into a CBOR-encoded byte slice. It
@@ -205,6 +211,30 @@ func Marshal(message any) ([]byte, error) {
 		tag, payload = tagUpdateJobResponse, &v
 	case *UpdateJobResponse:
 		tag, payload = tagUpdateJobResponse, v
+	case CreateJobRequest:
+		tag, payload = tagCreateJobRequest, &v
+	case *CreateJobRequest:
+		tag, payload = tagCreateJobRequest, v
+	case CreateJobResponse:
+		tag, payload = tagCreateJobResponse, &v
+	case *CreateJobResponse:
+		tag, payload = tagCreateJobResponse, v
+	case GetJobRequest:
+		tag, payload = tagGetJobRequest, &v
+	case *GetJobRequest:
+		tag, payload = tagGetJobRequest, v
+	case GetJobResponse:
+		tag, payload = tagGetJobResponse, &v
+	case *GetJobResponse:
+		tag, payload = tagGetJobResponse, v
+	case ListJobsRequest:
+		tag, payload = tagListJobsRequest, &v
+	case *ListJobsRequest:
+		tag, payload = tagListJobsRequest, v
+	case ListJobsResponse:
+		tag, payload = tagListJobsResponse, &v
+	case *ListJobsResponse:
+		tag, payload = tagListJobsResponse, v
 	default:
 		return nil, ErrUnknownType
 	}
@@ -385,6 +415,30 @@ func Unmarshal(b []byte) (any, error) {
 		var m UpdateJobResponse
 		err = m.UnmarshalCbor(r)
 		payload = m
+	case tagCreateJobRequest:
+		var m CreateJobRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagCreateJobResponse:
+		var m CreateJobResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagGetJobRequest:
+		var m GetJobRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagGetJobResponse:
+		var m GetJobResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagListJobsRequest:
+		var m ListJobsRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagListJobsResponse:
+		var m ListJobsResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
 	default:
 		return nil, ErrUnknownTag
 	}
@@ -477,6 +531,21 @@ func DeleteRoleSubject() string {
 // UpdateJobSubject returns the NATS subject for reporting a job's status.
 func UpdateJobSubject() string {
 	return "FJ.DAEMON.RPC.JOB.UPDATE"
+}
+
+// CreateJobSubject returns the NATS subject for creating a job.
+func CreateJobSubject() string {
+	return "FJ.DAEMON.RPC.JOB.CREATE"
+}
+
+// GetJobSubject returns the NATS subject for retrieving a job.
+func GetJobSubject() string {
+	return "FJ.DAEMON.RPC.JOB.GET"
+}
+
+// ListJobsSubject returns the NATS subject for listing jobs.
+func ListJobsSubject() string {
+	return "FJ.DAEMON.RPC.JOB.LIST"
 }
 
 // ParseIssueJWTSubject extracts the user ID from an issue-JWT subject. It
@@ -698,6 +767,47 @@ func readRoleSlice(r io.Reader) ([]Role, error) {
 	}
 
 	return roles, nil
+}
+
+// writeJobSlice writes a slice of jobs as a definite-length CBOR array.
+// Each job is encoded with Job.MarshalCbor.
+func writeJobSlice(jobs []Job, w io.Writer) error {
+	err := cboring.WriteArrayLength(uint64(len(jobs)), w)
+	if err != nil {
+		return err
+	}
+
+	for i := range jobs {
+		err := jobs[i].MarshalCbor(w)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// readJobSlice reads a definite-length CBOR array of jobs. An empty array
+// is decoded as a nil slice.
+func readJobSlice(r io.Reader) ([]Job, error) {
+	l, err := cboring.ReadArrayLength(r)
+	if err != nil {
+		return nil, err
+	}
+
+	if l == 0 {
+		return nil, nil
+	}
+
+	jobs := make([]Job, l)
+	for i := range jobs {
+		err := jobs[i].UnmarshalCbor(r)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return jobs, nil
 }
 
 // writeStringMap writes a map of strings as a definite-length CBOR map. Keys
