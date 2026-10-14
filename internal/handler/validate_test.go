@@ -352,3 +352,86 @@ func TestValidateDeleteRoleRequest(t *testing.T) {
 	err = handler.ValidateDeleteRoleRequest(protodaemon.DeleteRoleRequest{Name: "bad name"})
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
 }
+
+func TestValidateCreateJobRequest(t *testing.T) {
+	agentID := testUserID(t)
+	valid := protodaemon.CreateJobRequest{
+		AgentID: agentID,
+		Command: "echo",
+	}
+
+	tests := []struct {
+		name    string
+		req     protodaemon.CreateJobRequest
+		wantErr string
+	}{
+		{
+			name: "valid",
+			req:  valid,
+		},
+		{
+			name: "valid with args and env",
+			req: protodaemon.CreateJobRequest{
+				AgentID: agentID,
+				Command: "echo",
+				Args:    []string{"hello"},
+				Env:     []string{"A=b"},
+			},
+		},
+		{
+			name: "invalid agent id",
+			req: protodaemon.CreateJobRequest{
+				AgentID: "agent",
+				Command: "echo",
+			},
+			wantErr: "invalid agent id",
+		},
+		{
+			name: "empty agent id",
+			req: protodaemon.CreateJobRequest{
+				Command: "echo",
+			},
+			wantErr: "invalid agent id",
+		},
+		{
+			name: "empty command",
+			req: protodaemon.CreateJobRequest{
+				AgentID: agentID,
+			},
+			wantErr: "command is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := handler.ValidateCreateJobRequest(tt.req)
+			if tt.wantErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.EqualError(t, err, tt.wantErr)
+		})
+	}
+}
+
+func TestValidateGetJobRequest(t *testing.T) {
+	err := handler.ValidateGetJobRequest(protodaemon.GetJobRequest{JobID: "job1"})
+	require.NoError(t, err)
+
+	err = handler.ValidateGetJobRequest(protodaemon.GetJobRequest{})
+	require.EqualError(t, err, "job id is required")
+
+	err = handler.ValidateGetJobRequest(protodaemon.GetJobRequest{JobID: "bad id"})
+	require.ErrorIs(t, err, directory.ErrNameInvalid)
+}
+
+func TestValidateListJobsRequest(t *testing.T) {
+	err := handler.ValidateListJobsRequest(protodaemon.ListJobsRequest{})
+	require.NoError(t, err)
+
+	err = handler.ValidateListJobsRequest(protodaemon.ListJobsRequest{AgentID: testUserID(t)})
+	require.NoError(t, err)
+
+	err = handler.ValidateListJobsRequest(protodaemon.ListJobsRequest{AgentID: "agent"})
+	require.EqualError(t, err, "invalid agent id")
+}

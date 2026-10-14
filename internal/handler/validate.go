@@ -71,3 +71,30 @@ func ValidateGetRoleRequest(req protodaemon.GetRoleRequest) error {
 func ValidateDeleteRoleRequest(req protodaemon.DeleteRoleRequest) error {
 	return validateName(req.Name)
 }
+
+func ValidateCreateJobRequest(req protodaemon.CreateJobRequest) error {
+	if !nkeys.IsValidPublicUserKey(req.AgentID) {
+		return errors.New("invalid agent id")
+	}
+	if req.Command == "" {
+		return errors.New("command is required")
+	}
+	return nil
+}
+
+func ValidateGetJobRequest(req protodaemon.GetJobRequest) error {
+	if req.JobID == "" {
+		return errors.New("job id is required")
+	}
+	return directory.ValidateKey(req.JobID)
+}
+
+func ValidateListJobsRequest(req protodaemon.ListJobsRequest) error {
+	if req.AgentID == "" {
+		return nil
+	}
+	if !nkeys.IsValidPublicUserKey(req.AgentID) {
+		return errors.New("invalid agent id")
+	}
+	return nil
+}
