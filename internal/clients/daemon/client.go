@@ -804,6 +804,99 @@ func (c *Client) RequestDeleteRole(ctx context.Context, req protodaemon.DeleteRo
 	return v, nil
 }
 
+func (c *Client) RequestCreateJob(ctx context.Context, req protodaemon.CreateJobRequest) (protodaemon.CreateJobResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.CreateJobResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.CreateJobSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.CreateJobResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.CreateJobResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.CreateJobResponse)
+	if !ok {
+		return protodaemon.CreateJobResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.CreateJobResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
+func (c *Client) RequestGetJob(ctx context.Context, req protodaemon.GetJobRequest) (protodaemon.GetJobResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.GetJobResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.GetJobSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.GetJobResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.GetJobResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.GetJobResponse)
+	if !ok {
+		return protodaemon.GetJobResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.GetJobResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
+func (c *Client) RequestListJobs(ctx context.Context, req protodaemon.ListJobsRequest) (protodaemon.ListJobsResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.ListJobsResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.ListJobsSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.ListJobsResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.ListJobsResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.ListJobsResponse)
+	if !ok {
+		return protodaemon.ListJobsResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.ListJobsResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
 func (c *Client) RequestRegisterAgent(ctx context.Context, agent AgentDirectoryEntry) (map[string]string, error) {
 	b, err := protogw.Marshal(protogw.RegisterAgentRequest{
 		AgentID: agent.ID,
