@@ -136,6 +136,12 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
+	jobDir, err := directory.OpenJobDirectory(ctx, srv)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot open job directory: %v", err)
+		return err
+	}
+
 	err = foojankd.New(logger, foojankd.Config{
 		Consumer: consumer.NewNATSConsumer(logger, consumer.NATSConsumerConfig{
 			Connection: srv.Conn(),
@@ -145,6 +151,7 @@ func action(ctx context.Context, c *cli.Command) error {
 			AgentDirectory:   agentDir,
 			GatewayDirectory: gatewayDir,
 			UserDirectory:    userDir,
+			JobDirectory:     jobDir,
 			AccountKey:       accountKey,
 			Stream:           streamName,
 		}),
