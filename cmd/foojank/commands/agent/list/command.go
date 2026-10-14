@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"os"
+	"time"
 
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/internal/clients/daemon"
@@ -80,21 +82,29 @@ func action(ctx context.Context, _ *cli.Command) error {
 
 	client := daemon.New(srv)
 
-	agents, err := client.ListAgents(ctx)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get a list of agents: %v", err)
-		return err
+	var agents []protodaemon.Agent
+	{
+		resp, err := client.RequestListAgents(ctx, protodaemon.ListAgentsRequest{})
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot get a list of agents: %v", err)
+			return err
+		}
+
+		agents = resp.Agents
 	}
 
-	gateways, err := client.ListGateways(ctx)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get a list of gateways: %v", err)
-		return err
-	}
+	gateways := make(map[string]protodaemon.Gateway)
+	{
+		resp, err := client.RequestListGateways(ctx, protodaemon.ListGatewaysRequest{})
+		if err != nil {
+			// TODO Check if request fails due to permissions. if so, dont quit and show warning!
+			logger.ErrorContext(ctx, "Cannot get a list of gateways: %v", err)
+			return err
+		}
 
-	gatewayMap := make(map[string]daemon.GatewayDirectoryEntry)
-	for i := range gateways {
-		gatewayMap[gateways[i].ID] = gateways[i]
+		for _, gateway := range resp.Gateways {
+			gateways[gateway.ID] = gateway
+		}
 	}
 
 	table := formatter.NewTable()
@@ -103,13 +113,14 @@ func action(ctx context.Context, _ *cli.Command) error {
 		formatter.NewStringCell("GATEWAY").WithBold(),
 		formatter.NewStringCell("OS").WithBold(),
 		formatter.NewStringCell("ARCH").WithBold(),
+		formatter.NewStringCell("CREATED AT").WithBold(),
 	})
 
 	for _, agent := range agents {
 		var gatewayName string
-		_, ok := gatewayMap[agent.GatewayID]
+		_, ok := gateways[agent.GatewayID]
 		if ok {
-			gatewayName = gatewayMap[agent.GatewayID].Name
+			gatewayName = gateways[agent.GatewayID].Name
 		} else {
 			gatewayName = agent.GatewayID
 		}
@@ -119,10 +130,11 @@ func action(ctx context.Context, _ *cli.Command) error {
 			formatter.NewStringCell(gatewayName),
 			formatter.NewStringCell(agent.Config.OS),
 			formatter.NewStringCell(agent.Config.Arch),
+			formatter.NewTimeCell(time.Unix(agent.CreatedAt, 0)).WithFormat("relative"),
 		})
 	}
 
-	err = formatter.NewFormatter(
+	err := formatter.NewFormatter(
 		format,
 		formatter.WithNoColor(noColor),
 		formatter.WithSortByColumn(4, 0),

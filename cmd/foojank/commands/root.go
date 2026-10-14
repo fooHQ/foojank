@@ -8,11 +8,12 @@ import (
 	"github.com/foohq/foojank/cmd/foojank/commands/agent"
 	"github.com/foohq/foojank/cmd/foojank/commands/config"
 	"github.com/foohq/foojank/cmd/foojank/commands/credential"
-	"github.com/foohq/foojank/cmd/foojank/commands/daemon"
 	"github.com/foohq/foojank/cmd/foojank/commands/gateway"
 	"github.com/foohq/foojank/cmd/foojank/commands/job"
 	"github.com/foohq/foojank/cmd/foojank/commands/profile"
+	"github.com/foohq/foojank/cmd/foojank/commands/role"
 	"github.com/foohq/foojank/cmd/foojank/commands/storage"
+	"github.com/foohq/foojank/cmd/foojank/commands/user"
 	"github.com/foohq/foojank/cmd/foojank/flags"
 )
 
@@ -31,11 +32,12 @@ func NewCommand() *cli.Command {
 			agent.NewCommand(),
 			config.NewCommand(),
 			credential.NewCommand(),
+			gateway.NewCommand(),
 			job.NewCommand(),
 			profile.NewCommand(),
+			role.NewCommand(),
 			storage.NewCommand(),
-			gateway.NewCommand(),
-			daemon.NewCommand(),
+			user.NewCommand(),
 		},
 		CommandNotFound:       actions.CommandNotFound,
 		OnUsageError:          actions.UsageError,

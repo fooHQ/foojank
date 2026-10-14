@@ -14,7 +14,7 @@ import (
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "gateway",
-		Usage: "Manage gateways",
+		Usage: "Manage gateway configurations",
 		Commands: []*cli.Command{
 			create.NewCommand(),
 			describe.NewCommand(),

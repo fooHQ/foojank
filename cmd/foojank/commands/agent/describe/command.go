@@ -3,12 +3,13 @@ package describe
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
+	"time"
 
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/internal/clients/daemon"
@@ -88,25 +89,29 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	agentName := c.Args().First()
 
-	agent, err := client.GetAgent(ctx, agentName)
-	if err != nil {
-		if errors.Is(err, daemon.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", agentName)
+	var agent protodaemon.Agent
+	{
+		resp, err := client.RequestGetAgent(ctx, protodaemon.GetAgentRequest{
+			Name: agentName,
+		})
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot get agent: %v", err)
+			return err
 		}
-		logger.ErrorContext(ctx, "Cannot get agent: %v", err)
-		return err
+
+		agent = resp.Agent
 	}
 
 	var gatewayName string
-	gateway, err := client.GetGateway(ctx, agent.GatewayID)
-	if err != nil {
-		if !errors.Is(err, daemon.ErrKeyNotFound) {
-			logger.ErrorContext(ctx, "Cannot get gateway: %v", err)
-			return err
+	{
+		resp, err := client.RequestGetGateway(ctx, protodaemon.GetGatewayRequest{
+			Name: agent.GatewayID,
+		})
+		if err != nil {
+			gatewayName = agent.GatewayID
+		} else {
+			gatewayName = resp.Gateway.Name
 		}
-		gatewayName = agent.GatewayID
-	} else {
-		gatewayName = gateway.Name
 	}
 
 	table := formatter.NewTable()
@@ -119,6 +124,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell("GATEWAY").WithBold(),
 		formatter.NewStringCell("JWT").WithBold(),
 		formatter.NewStringCell("KEY").WithBold(),
+		formatter.NewStringCell("CREATED AT").WithBold(),
 		formatter.NewStringCell("CONFIG").WithBold(),
 	})
 	table.AddRow([]formatter.Cell{
@@ -128,12 +134,13 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell(agent.Config.OS),
 		formatter.NewStringCell(agent.Config.Arch),
 		formatter.NewStringCell(gatewayName),
-		formatter.NewStringCell(agent.Config.UserJWT),
-		formatter.NewStringCell(agent.Config.UserKey),
+		formatter.NewStringCell(agent.Config.JWT),
+		formatter.NewStringCell(agent.Config.Key),
+		formatter.NewTimeCell(time.Unix(agent.CreatedAt, 0)),
 		formatter.NewStringMapCell(agent.Config.Extra).WithKeyValueSeparator(" = ").WithSeparator("\n"),
 	})
 
-	err = formatter.NewFormatter(
+	err := formatter.NewFormatter(
 		format,
 		formatter.WithNoColor(noColor),
 		formatter.WithOrientation(formatter.OrientationHorizontal),

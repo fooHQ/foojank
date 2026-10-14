@@ -3,7 +3,6 @@ package build
 import (
 	"context"
 	"errors"
-	"fmt"
 	"maps"
 	"os"
 	"path/filepath"
@@ -16,6 +15,7 @@ import (
 	"github.com/foohq/foojank/internal/builder"
 	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
 func NewCommand() *cli.Command {
@@ -95,13 +95,17 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 
 	agentName := c.Args().First()
 
-	agent, err := client.GetAgent(ctx, agentName)
-	if err != nil {
-		if errors.Is(err, daemon.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", agentName)
+	var agent protodaemon.Agent
+	{
+		resp, err := client.RequestGetAgent(ctx, protodaemon.GetAgentRequest{
+			Name: agentName,
+		})
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot get agent: %v", err)
+			return err
 		}
-		logger.ErrorContext(ctx, "Cannot get agent: %v", err)
-		return err
+
+		agent = resp.Agent
 	}
 
 	if outputName == "" {
@@ -121,8 +125,8 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 		builder.AgentID:   agent.ID,
 		builder.AgentName: agent.Name,
 		builder.GatewayID: agent.GatewayID,
-		builder.UserJWT:   agent.Config.UserJWT,
-		builder.UserKey:   agent.Config.UserKey,
+		builder.UserJWT:   agent.Config.JWT,
+		builder.UserKey:   agent.Config.Key,
 	})
 
 	output, err := builder.Run(ctx, sourceDir, env)

@@ -3,18 +3,18 @@ package list
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/foohq/foojank/cmd/foojank/flags"
-
 	"github.com/foohq/foojank/cmd/foojank/actions"
+	"github.com/foohq/foojank/cmd/foojank/flags"
 	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/formatter"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
 func NewCommand() *cli.Command {
@@ -87,37 +87,42 @@ func action(ctx context.Context, _ *cli.Command) error {
 
 	client := daemon.New(srv)
 
-	var jobs []daemon.JobDirectoryEntry
-	var agents []daemon.AgentDirectoryEntry
-	var err error
+	agents := make(map[string]protodaemon.Agent)
+	var agentID string
 	if agentName != "" {
-		agent, err := client.GetAgent(ctx, agentName)
+		resp, err := client.RequestGetAgent(ctx, protodaemon.GetAgentRequest{
+			Name: agentName,
+		})
 		if err != nil {
-			if errors.Is(err, daemon.ErrKeyNotFound) {
-				err = fmt.Errorf("%q not found", agentName)
-			}
 			logger.ErrorContext(ctx, "Cannot get agent: %v", err)
 			return err
 		}
 
-		agents = []daemon.AgentDirectoryEntry{agent}
-
-		jobs, err = client.ListJobsByAgentID(ctx, agent.ID)
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get a list of jobs: %v", err)
-			return err
-		}
+		agentID = resp.Agent.ID
+		agents[resp.Agent.ID] = resp.Agent
 	} else {
-		jobs, err = client.ListJobs(ctx)
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get a list of jobs: %v", err)
-			return err
-		}
-
-		agents, err = client.ListAgents(ctx)
+		resp, err := client.RequestListAgents(ctx, protodaemon.ListAgentsRequest{})
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get a list of agents: %v", err)
+			return err
 		}
+
+		for _, agent := range resp.Agents {
+			agents[agent.ID] = agent
+		}
+	}
+
+	var jobs []protodaemon.Job
+	{
+		resp, err := client.RequestListJobs(ctx, protodaemon.ListJobsRequest{
+			AgentID: agentID,
+		})
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot get a list of jobs: %v", err)
+			return err
+		}
+
+		jobs = resp.Jobs
 	}
 
 	table := formatter.NewTable()
@@ -125,29 +130,26 @@ func action(ctx context.Context, _ *cli.Command) error {
 		formatter.NewStringCell("ID").WithBold(),
 		formatter.NewStringCell("AGENT").WithBold(),
 		formatter.NewStringCell("COMMAND").WithBold(),
-		formatter.NewStringCell("UPDATED").WithBold(),
+		formatter.NewStringCell("UPDATED AT").WithBold(),
 		formatter.NewStringCell("STATUS").WithBold(),
 	})
 
 	for _, job := range jobs {
 		name := job.AgentID
-		for i := range agents {
-			if job.AgentID != agents[i].ID {
-				continue
-			}
-			name = agents[i].Name
+		if agent, ok := agents[job.AgentID]; ok {
+			name = agent.Name
 		}
 
 		table.AddRow([]formatter.Cell{
 			formatter.NewStringCell(job.ID),
 			formatter.NewStringCell(name),
-			formatter.NewStringCell(formatArgs(job.Config.Command, job.Config.Args)),
-			formatter.NewTimeCell(job.State.UpdatedAt).WithFormat("relative"),
-			formatter.NewStringCell(strings.ToUpper(job.State.Status)).WithBold(),
+			formatter.NewStringCell(formatArgs(job.Command, job.Args)),
+			formatter.NewTimeCell(time.Unix(job.Status.UpdatedAt, 0)).WithFormat("relative"),
+			formatter.NewStringCell(strings.ToUpper(job.Status.Status)).WithBold(),
 		})
 	}
 
-	err = formatter.NewFormatter(
+	err := formatter.NewFormatter(
 		format,
 		formatter.WithNoColor(noColor),
 		formatter.WithSortByColumn(3, 1),

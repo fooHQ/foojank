@@ -8,6 +8,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/internal/clients/daemon"
@@ -80,10 +81,15 @@ func action(ctx context.Context, _ *cli.Command) error {
 
 	client := daemon.New(srv)
 
-	gateways, err := client.ListGateways(ctx)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get a list of gateways: %v", err)
-		return err
+	var gateways []protodaemon.Gateway
+	{
+		resp, err := client.RequestListGateways(ctx, protodaemon.ListGatewaysRequest{})
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot get a list of gateways: %v", err)
+			return err
+		}
+
+		gateways = resp.Gateways
 	}
 
 	table := formatter.NewTable()
@@ -98,7 +104,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 		})
 	}
 
-	err = formatter.NewFormatter(
+	err := formatter.NewFormatter(
 		format,
 		formatter.WithNoColor(noColor),
 		formatter.WithSortByColumn(0),

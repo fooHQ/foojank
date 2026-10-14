@@ -3,12 +3,12 @@ package describe
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/internal/clients/daemon"
@@ -88,13 +88,17 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	gatewayName := c.Args().First()
 
-	gateway, err := client.GetGateway(ctx, gatewayName)
-	if err != nil {
-		if errors.Is(err, daemon.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", gatewayName)
+	var gateway protodaemon.Gateway
+	{
+		resp, err := client.RequestGetGateway(ctx, protodaemon.GetGatewayRequest{
+			Name: gatewayName,
+		})
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot get gateway: %v", err)
+			return err
 		}
-		logger.ErrorContext(ctx, "Cannot get gateway: %v", err)
-		return err
+
+		gateway = resp.Gateway
 	}
 
 	table := formatter.NewTable()
@@ -110,12 +114,12 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell(gateway.ID),
 		formatter.NewStringCell(gateway.Name),
 		formatter.NewStringCell(gateway.Description),
-		formatter.NewStringCell(gateway.Config.UserJWT),
-		formatter.NewStringCell(gateway.Config.UserKey),
+		formatter.NewStringCell(gateway.Config.JWT),
+		formatter.NewStringCell(gateway.Config.Key),
 		formatter.NewStringMapCell(gateway.Config.Extra).WithKeyValueSeparator(" = ").WithSeparator("\n"),
 	})
 
-	err = formatter.NewFormatter(
+	err := formatter.NewFormatter(
 		format,
 		formatter.WithNoColor(noColor),
 		formatter.WithOrientation(formatter.OrientationHorizontal),
