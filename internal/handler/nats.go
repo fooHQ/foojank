@@ -32,6 +32,7 @@ type NATSHandlerConfig struct {
 	GatewayDirectory *directory.GatewayDirectory
 	UserDirectory    *directory.UserDirectory
 	RoleDirectory    *directory.RoleDirectory
+	JobDirectory     *directory.JobDirectory
 	AccountKey       nkeys.KeyPair
 	Stream           string
 }
@@ -67,6 +68,10 @@ func (h *NATSHandler) Match(msg message.Msg) (func(context.Context) message.Msg,
 		protodaemon.GetRoleSubject():    h.GetRole,
 		protodaemon.ListRolesSubject():  h.ListRoles,
 		protodaemon.DeleteRoleSubject(): h.DeleteRole,
+
+		protodaemon.CreateJobSubject(): h.CreateJob,
+		protodaemon.GetJobSubject():    h.GetJob,
+		protodaemon.ListJobsSubject():  h.ListJobs,
 
 		protodaemon.IssueJWTSubject("<user>"): h.IssueJWT,
 	}
@@ -888,6 +893,173 @@ func (h *NATSHandler) ListGateways(ctx context.Context, params map[string]string
 	}
 }
 
+func (h *NATSHandler) CreateJob(ctx context.Context, params map[string]string, msg message.Msg) any {
+	req, ok := msg.Data().(protodaemon.CreateJobRequest)
+	if !ok {
+		return protodaemon.CreateJobResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	err := ValidateCreateJobRequest(req)
+	if err != nil {
+		return protodaemon.CreateJobResponse{
+			Error: err,
+		}
+	}
+
+	agentID := req.AgentID
+
+	agent, err := h.conf.AgentDirectory.Get(ctx, agentID)
+	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", agentID)
+		}
+		h.logger.ErrorContext(ctx, "Cannot get agent: %v", err)
+		return protodaemon.CreateJobResponse{
+			Error: err,
+		}
+	}
+
+	jobID := nuid.Next()
+
+	job, err := h.conf.JobDirectory.Create(ctx, directory.JobDirectoryEntry{
+		ID:        jobID,
+		AgentID:   agent.ID,
+		WorkerID:  "",
+		GatewayID: agent.GatewayID,
+		Config: directory.JobConfig{
+			Command: req.Command,
+			Args:    req.Args,
+			Env:     req.Env,
+		},
+		CreatedAt: time.Now().UTC(),
+	})
+	if err != nil {
+		if errors.Is(err, directory.ErrKeyExists) {
+			err = fmt.Errorf("%q already exists", jobID)
+		}
+		h.logger.ErrorContext(ctx, "Cannot create job: %v", err)
+		return protodaemon.CreateJobResponse{
+			Error: err,
+		}
+	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		err = h.conf.JobDirectory.Delete(cleanupCtx, job)
+		if err != nil {
+			h.logger.ErrorContext(ctx, "Cannot delete job: %v", err)
+		}
+		cancel()
+	}()
+
+	// TODO: create job with the gateway!
+	// TODO: update job directory entry!
+
+	return protodaemon.CreateJobResponse{
+		JobID: job.ID,
+	}
+}
+
+func (h *NATSHandler) GetJob(ctx context.Context, params map[string]string, msg message.Msg) any {
+	req, ok := msg.Data().(protodaemon.GetJobRequest)
+	if !ok {
+		return protodaemon.GetJobResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	err := ValidateGetJobRequest(req)
+	if err != nil {
+		return protodaemon.GetJobResponse{
+			Error: err,
+		}
+	}
+
+	job, err := h.conf.JobDirectory.Get(ctx, req.JobID)
+	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", req.JobID)
+		}
+		return protodaemon.GetJobResponse{
+			Error: err,
+		}
+	}
+
+	return protodaemon.GetJobResponse{
+		Job: protodaemon.Job{
+			ID:        job.ID,
+			GatewayID: job.GatewayID,
+			AgentID:   job.AgentID,
+			WorkerID:  job.WorkerID,
+			Command:   job.Config.Command,
+			Args:      job.Config.Args,
+			Env:       job.Config.Env,
+			Status: protodaemon.JobStatus{
+				Status:    job.State.Status,
+				Error:     job.State.Error,
+				UpdatedAt: job.State.UpdatedAt.Unix(),
+			},
+			CreatedAt: job.CreatedAt.Unix(),
+		},
+	}
+}
+
+func (h *NATSHandler) ListJobs(ctx context.Context, params map[string]string, msg message.Msg) any {
+	req, ok := msg.Data().(protodaemon.ListJobsRequest)
+	if !ok {
+		return protodaemon.ListJobsResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	err := ValidateListJobsRequest(req)
+	if err != nil {
+		return protodaemon.ListJobsResponse{
+			Error: err,
+		}
+	}
+
+	var entries []directory.JobDirectoryEntry
+	if req.AgentID == "" {
+		entries, err = h.conf.JobDirectory.List(ctx)
+	} else {
+		entries, err = h.conf.JobDirectory.ListByAgentID(ctx, req.AgentID)
+	}
+	if err != nil {
+		return protodaemon.ListJobsResponse{
+			Error: err,
+		}
+	}
+
+	jobs := make([]protodaemon.Job, len(entries))
+	for i := range entries {
+		jobs[i] = protodaemon.Job{
+			ID:        entries[i].ID,
+			GatewayID: entries[i].GatewayID,
+			AgentID:   entries[i].AgentID,
+			WorkerID:  entries[i].WorkerID,
+			Command:   entries[i].Config.Command,
+			Args:      entries[i].Config.Args,
+			Env:       entries[i].Config.Env,
+			Status: protodaemon.JobStatus{
+				Status:    entries[i].State.Status,
+				Error:     entries[i].State.Error,
+				UpdatedAt: entries[i].State.UpdatedAt.Unix(),
+			},
+			CreatedAt: entries[i].CreatedAt.Unix(),
+		}
+	}
+
+	return protodaemon.ListJobsResponse{
+		Jobs: jobs,
+	}
+}
+
+// TODO: can be removed, use gateway client!
 func (h *NATSHandler) RequestRegisterAgent(ctx context.Context, agent directory.AgentDirectoryEntry) (map[string]string, error) {
 	b, err := protogw.Marshal(protogw.RegisterAgentRequest{
 		AgentID: agent.ID,
