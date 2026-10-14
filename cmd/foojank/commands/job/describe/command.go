@@ -3,18 +3,17 @@ package describe
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
-	"strings"
+	"time"
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/foohq/foojank/cmd/foojank/flags"
-
 	"github.com/foohq/foojank/cmd/foojank/actions"
+	"github.com/foohq/foojank/cmd/foojank/flags"
 	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/formatter"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
 func NewCommand() *cli.Command {
@@ -80,7 +79,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	format, _ := conf.String(flags.Format)
 	noColor, _ := conf.Bool(flags.NoColor)
 
-	if c.Args().Len() < 1 {
+	if c.Args().Len() != 1 {
 		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
 		return errors.New("not enough arguments")
 	}
@@ -89,49 +88,72 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	jobID := c.Args().First()
 
-	job, err := client.GetJob(ctx, jobID)
-	if err != nil {
-		if errors.Is(err, daemon.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", jobID)
-		}
-		logger.ErrorContext(ctx, "Cannot get job: %v", err)
-		return err
-	}
-
-	var agentName string
-	agent, err := client.GetAgent(ctx, job.AgentID)
-	if err != nil {
-		if !errors.Is(err, daemon.ErrKeyNotFound) {
-			logger.ErrorContext(ctx, "Cannot get agent: %v", err)
+	var job protodaemon.Job
+	{
+		resp, err := client.RequestGetJob(ctx, protodaemon.GetJobRequest{
+			JobID: jobID,
+		})
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot get job: %v", err)
 			return err
 		}
 
-		agentName = job.AgentID
-	} else {
-		agentName = agent.Name
+		job = resp.Job
+	}
+
+	var agentName string
+	{
+		resp, err := client.RequestGetAgent(ctx, protodaemon.GetAgentRequest{
+			Name: job.AgentID,
+		})
+		if err != nil {
+			agentName = job.AgentID
+		} else {
+			agentName = resp.Agent.Name
+		}
+	}
+
+	var gatewayName string
+	{
+		resp, err := client.RequestGetGateway(ctx, protodaemon.GetGatewayRequest{
+			Name: job.GatewayID,
+		})
+		if err != nil {
+			gatewayName = job.GatewayID
+		} else {
+			gatewayName = resp.Gateway.Name
+		}
 	}
 
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("ID").WithBold(),
 		formatter.NewStringCell("AGENT").WithBold(),
+		formatter.NewStringCell("GATEWAY").WithBold(),
+		formatter.NewStringCell("WORKER").WithBold(),
 		formatter.NewStringCell("COMMAND").WithBold(),
+		formatter.NewStringCell("ARGS").WithBold(),
+		formatter.NewStringCell("ENV").WithBold(),
 		formatter.NewStringCell("STATUS").WithBold(),
 		formatter.NewStringCell("ERROR").WithBold(),
-		formatter.NewStringCell("CREATED").WithBold(),
-		formatter.NewStringCell("UPDATED").WithBold(),
+		formatter.NewStringCell("CREATED AT").WithBold(),
+		formatter.NewStringCell("UPDATED AT").WithBold(),
 	})
 	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell(job.ID),
 		formatter.NewStringCell(agentName),
-		formatter.NewStringCell(formatArgs(job.Config.Command, job.Config.Args)),
-		formatter.NewStringCell(job.State.Status),
-		formatter.NewStringCell(job.State.Error),
-		formatter.NewTimeCell(job.CreatedAt),
-		formatter.NewTimeCell(job.State.UpdatedAt),
+		formatter.NewStringCell(gatewayName),
+		formatter.NewStringCell(job.WorkerID),
+		formatter.NewStringCell(job.Command),
+		formatter.NewStringSliceCell(job.Args).WithSeparator("\n"),
+		formatter.NewStringSliceCell(job.Env).WithSeparator("\n"),
+		formatter.NewStringCell(job.Status.Status),
+		formatter.NewStringCell(job.Status.Error),
+		formatter.NewTimeCell(time.Unix(job.CreatedAt, 0)),
+		formatter.NewTimeCell(time.Unix(job.Status.UpdatedAt, 0)),
 	})
 
-	err = formatter.NewFormatter(
+	err := formatter.NewFormatter(
 		format,
 		formatter.WithNoColor(noColor),
 		formatter.WithOrientation(formatter.OrientationHorizontal),
@@ -142,10 +164,6 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	return nil
-}
-
-func formatArgs(command string, args []string) string {
-	return strings.Join(append([]string{command}, args...), " ")
 }
 
 func validateConfiguration(conf *config.Config) error {

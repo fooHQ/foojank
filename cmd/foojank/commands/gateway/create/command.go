@@ -3,17 +3,15 @@ package create
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
-	"github.com/foohq/foojank/internal/authdir"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
-	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
 )
@@ -85,88 +83,25 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	logger := actions.GetLoggerFromContext(ctx)
 	srv := actions.GetServerFromContext(ctx)
 
-	credsName, _ := conf.String(flags.Credential)
 	gatewayName, _ := conf.String(flags.Name)
 	gatewayDesc, _ := conf.String(flags.Description)
 	setVars, _ := conf.StringSlice(flags.Variable)
 
 	client := daemon.New(srv)
 
-	user, err := auth.NewUserKey()
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot generate a user key: %v", err)
-		return err
-	}
-
-	gatewayID, err := user.PublicKey()
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot create gateway ID: %v", err)
-		return err
-	}
-
-	gatewayPerms := client.NewGatewayPermissions(gatewayID)
-	gatewayClaims, err := auth.NewUserJWT(gatewayName, gatewayPerms, user)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
-		return err
-	}
-
-	// Get the client's user JWT.
-	userClaims, err := authdir.GetUserJWT(credsName)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get user JWT: %v", err)
-		return err
-	}
-
-	if userClaims.IssuerAccount != "" {
-		gatewayClaims.IssuerAccount = userClaims.IssuerAccount
-	}
-
-	// Get the client's account key.
-	account, err := authdir.GetAccountKey(credsName)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get account key: %v", err)
-		return err
-	}
-
-	gatewayJWT, err := gatewayClaims.Encode(account)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
-		return err
-	}
-
-	gatewaySeed, err := user.Seed()
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot encode user seed: %v", err)
-		return err
-	}
-
-	gateway := daemon.GatewayDirectoryEntry{
-		ID:          gatewayID,
+	_, err = client.RequestCreateGateway(ctx, protodaemon.CreateGatewayRequest{
 		Name:        gatewayName,
 		Description: gatewayDesc,
-		Config: daemon.GatewayConfig{
-			UserJWT: gatewayJWT,
-			UserKey: string(gatewaySeed),
-			Extra:   parseKVPairs(setVars),
+		Config: protodaemon.GatewayConfig{
+			Extra: parseKVPairs(setVars),
 		},
-	}
-	err = client.RegisterGateway(ctx, gateway)
+	})
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot register gateway: %v", err)
-		return err
-	}
-
-	_, err = client.CreateGateway(ctx, gateway)
-	if err != nil {
-		if errors.Is(err, daemon.ErrKeyExists) {
-			err = fmt.Errorf("%q already exists", gatewayName)
-		}
 		logger.ErrorContext(ctx, "Cannot create gateway: %v", err)
 		return err
 	}
 
-	logger.InfoContext(ctx, "Gateway %q has been built!", gatewayName)
+	logger.InfoContext(ctx, "Gateway %q has been created!", gatewayName)
 
 	return nil
 }

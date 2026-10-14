@@ -3,7 +3,6 @@ package create
 import (
 	"context"
 	"errors"
-	"fmt"
 	"maps"
 	"os"
 	"runtime"
@@ -14,10 +13,9 @@ import (
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/cmd/foojank/flags"
-	"github.com/foohq/foojank/internal/auth"
-	"github.com/foohq/foojank/internal/authdir"
 	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
 func NewCommand() *cli.Command {
@@ -113,7 +111,6 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	logger := actions.GetLoggerFromContext(ctx)
 	srv := actions.GetServerFromContext(ctx)
 
-	credsName, _ := conf.String(flags.Credential)
 	targetOS, _ := conf.String(flags.Os)
 	targetArch, _ := conf.String(flags.Arch)
 	setVars, _ := conf.StringSlice(flags.Variable)
@@ -125,84 +122,31 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 
 	client := daemon.New(srv)
 
-	gateway, err := client.GetGateway(ctx, gatewayName)
-	if err != nil {
-		if errors.Is(err, daemon.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", gatewayName)
+	var gateway protodaemon.Gateway
+	{
+		resp, err := client.RequestGetGateway(ctx, protodaemon.GetGatewayRequest{
+			Name: gatewayName,
+		})
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot get gateway: %v", err)
+			return err
 		}
-		logger.ErrorContext(ctx, "Cannot get gateway: %v", err)
-		return err
+
+		gateway = resp.Gateway
 	}
 
 	if agentName == "" {
 		agentName = petname.Generate(2, "-")
 	}
 
-	user, err := auth.NewUserKey()
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot generate a user key: %v", err)
-		return err
-	}
-
-	agentID, err := user.PublicKey()
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot create agent ID: %v", err)
-		return err
-	}
-
-	agentPerms := client.NewAgentPermissions(gateway.ID, agentID)
-	agentClaims, err := auth.NewUserJWT(agentName, agentPerms, user)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
-		return err
-	}
-
-	// Get the client's user JWT.
-	userClaims, err := authdir.GetUserJWT(credsName)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get user JWT: %v", err)
-		return err
-	}
-
-	if userClaims.IssuerAccount != "" {
-		agentClaims.IssuerAccount = userClaims.IssuerAccount
-	}
-
-	// Get the client's account key.
-	account, err := authdir.GetAccountKey(credsName)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot get account key: %v", err)
-		return err
-	}
-
-	agentJWT, err := agentClaims.Encode(account)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
-		return err
-	}
-
-	agentSeed, err := user.Seed()
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot encode user seed: %v", err)
-		return err
-	}
-
-	agent := daemon.AgentDirectoryEntry{
-		ID:          agentID,
-		Name:        agentName,
-		Description: agentDesc,
-		GatewayID:   gateway.ID,
-		Config: daemon.AgentBuildConfig{
-			OS:      runtime.GOOS,
-			Arch:    runtime.GOARCH,
-			UserJWT: agentJWT,
-			UserKey: string(agentSeed),
-			Extra:   make(map[string]string),
-		},
+	agentConf := protodaemon.AgentConfig{
+		OS:    runtime.GOOS,
+		Arch:  runtime.GOARCH,
+		Extra: make(map[string]string),
 	}
 
 	// Copy gateway extra configuration.
-	maps.Copy(agent.Config.Extra, gateway.Config.Extra)
+	maps.Copy(agentConf.Extra, gateway.Config.Extra)
 
 	// Parse profile file.
 	if profName != "" {
@@ -214,60 +158,38 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 
 		v := prof.OS()
 		if v != "" {
-			agent.Config.OS = v
+			agentConf.OS = v
 		}
 
 		v = prof.Arch()
 		if v != "" {
-			agent.Config.Arch = v
+			agentConf.Arch = v
 		}
 
-		maps.Copy(agent.Config.Extra, prof.Env())
+		maps.Copy(agentConf.Extra, prof.Env())
 	}
 
 	// Parse command line flags.
 	if targetOS != "" {
-		agent.Config.OS = targetOS
+		agentConf.OS = targetOS
 	}
 
 	if targetArch != "" {
-		agent.Config.Arch = targetArch
+		agentConf.Arch = targetArch
 	}
 
-	maps.Copy(agent.Config.Extra, parseKVPairs(setVars))
+	maps.Copy(agentConf.Extra, parseKVPairs(setVars))
 
 	for _, v := range unsetVars {
-		delete(agent.Config.Extra, v)
+		delete(agentConf.Extra, v)
 	}
 
-	agent, err = client.CreateAgent(ctx, agent)
-	if err != nil {
-		if errors.Is(err, daemon.ErrKeyExists) {
-			err = fmt.Errorf("%q already exists", agentName)
-		}
-		logger.ErrorContext(ctx, "Cannot create agent: %v", err)
-		return err
-	}
-	defer func() {
-		if err == nil {
-			return
-		}
-		err = client.RemoveAgent(ctx, agent)
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot remove agent: %v", err)
-		}
-	}()
-
-	props, err := client.RequestRegisterAgent(ctx, agent)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot register agent: %v", err)
-		return err
-	}
-
-	// Merge all properties together.
-	maps.Copy(agent.Config.Extra, props)
-
-	_, err = client.UpdateAgent(ctx, agent)
+	_, err = client.RequestCreateAgent(ctx, protodaemon.CreateAgentRequest{
+		Name:        agentName,
+		Description: agentDesc,
+		GatewayID:   gateway.ID,
+		Config:      agentConf,
+	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create agent: %v", err)
 		return err

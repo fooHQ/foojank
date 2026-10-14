@@ -3,18 +3,15 @@ package create
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
-	"time"
 
-	"github.com/nats-io/nuid"
 	"github.com/urfave/cli/v3"
 
-	"github.com/foohq/foojank/cmd/foojank/flags"
-
 	"github.com/foohq/foojank/cmd/foojank/actions"
+	"github.com/foohq/foojank/cmd/foojank/flags"
 	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
 func NewCommand() *cli.Command {
@@ -26,6 +23,10 @@ func NewCommand() *cli.Command {
 			&cli.StringFlag{
 				Name:  flags.Agent,
 				Usage: "assign the job to the specified agent",
+			},
+			&cli.StringSliceFlag{
+				Name:  flags.Variable,
+				Usage: "set environment variable (format: key=value)",
 			},
 			&cli.StringFlag{
 				Name:  flags.ServerURL,
@@ -72,12 +73,13 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 	return ctx, nil
 }
 
-func action(ctx context.Context, c *cli.Command) error {
+func action(ctx context.Context, c *cli.Command) (err error) {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 	srv := actions.GetServerFromContext(ctx)
 
 	agentName, _ := conf.String(flags.Agent)
+	env, _ := conf.StringSlice(flags.Variable)
 
 	if c.Args().Len() < 1 {
 		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
@@ -86,43 +88,31 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	client := daemon.New(srv)
 
-	command := c.Args().First()
-	commandArgs := c.Args().Tail()
-
-	agent, err := client.GetAgent(ctx, agentName)
-	if err != nil {
-		if errors.Is(err, daemon.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", agentName)
+	var agent protodaemon.Agent
+	{
+		resp, err := client.RequestGetAgent(ctx, protodaemon.GetAgentRequest{
+			Name: agentName,
+		})
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot get agent: %v", err)
+			return err
 		}
-		logger.ErrorContext(ctx, "Cannot create job: %v", err)
-		return err
+
+		agent = resp.Agent
 	}
 
-	job := daemon.JobDirectoryEntry{
-		ID:        nuid.Next(),
-		AgentID:   agent.ID,
-		WorkerID:  nuid.Next(),
-		GatewayID: agent.GatewayID,
-		Config: daemon.JobConfig{
-			Command: command,
-			Args:    commandArgs,
-		},
-		CreatedAt: time.Now().UTC(),
-	}
-
-	err = client.PublishStartWorker(ctx, job)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot publish start worker request: %v", err)
-		return err
-	}
-
-	_, err = client.CreateJob(ctx, job)
+	resp, err := client.RequestCreateJob(ctx, protodaemon.CreateJobRequest{
+		AgentID: agent.ID,
+		Command: c.Args().First(),
+		Args:    c.Args().Tail(),
+		Env:     env,
+	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create job: %v", err)
 		return err
 	}
 
-	logger.InfoContext(ctx, "Job %q has been created!", job.ID)
+	logger.InfoContext(ctx, "Job %q has been created!", resp.JobID)
 
 	return nil
 }
