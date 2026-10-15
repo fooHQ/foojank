@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nats-io/nkeys"
 	"github.com/nats-io/nuid"
@@ -610,7 +609,12 @@ func (h *NATSHandler) CreateAgent(ctx context.Context, params map[string]string,
 		cancel()
 	}()
 
-	props, err := h.RequestRegisterAgent(ctx, agent)
+	resp, err := h.conf.Gateway.RequestRegisterAgent(ctx, gateway.ID, protogw.RegisterAgentRequest{
+		AgentID: agent.ID,
+		OS:      agent.Config.OS,
+		Arch:    agent.Config.Arch,
+		Env:     agent.Config.Extra,
+	})
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot register agent: %v", err)
 		return protodaemon.CreateAgentResponse{
@@ -622,7 +626,7 @@ func (h *NATSHandler) CreateAgent(ctx context.Context, params map[string]string,
 	if agent.Config.Extra == nil {
 		agent.Config.Extra = make(map[string]string)
 	}
-	maps.Copy(agent.Config.Extra, props)
+	maps.Copy(agent.Config.Extra, resp.Env)
 
 	_, err = h.conf.AgentDirectory.Update(ctx, agent)
 	if err != nil {
@@ -1108,43 +1112,8 @@ func (h *NATSHandler) ListJobs(ctx context.Context, params map[string]string, ms
 	}
 }
 
-// TODO: can be removed, use gateway client!
-func (h *NATSHandler) RequestRegisterAgent(ctx context.Context, agent directory.AgentDirectoryEntry) (map[string]string, error) {
-	b, err := protogw.Marshal(protogw.RegisterAgentRequest{
-		AgentID: agent.ID,
-		OS:      agent.Config.OS,
-		Arch:    agent.Config.Arch,
-		Env:     agent.Config.Extra,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := h.request(ctx, &nats.Msg{
-		Subject: protogw.RegisterAgentSubject(agent.GatewayID),
-		Data:    b,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := protogw.Unmarshal(resp.Data)
-	if err != nil {
-		return nil, err
-	}
-
-	v, ok := data.(protogw.RegisterAgentResponse)
-	if !ok {
-		return nil, fmt.Errorf("invalid response: %T", data)
-	}
-
-	if v.Error != nil {
-		return nil, v.Error
-	}
-
-	return v.Env, nil
-}
-
+// TODO: move elsewhere!
+// TODO: remove h.conf.Connection!
 func (h *NATSHandler) RegisterGateway(ctx context.Context, gateway directory.GatewayDirectoryEntry) error {
 	_, err := h.conf.Connection.CreateConsumer(ctx, h.conf.Stream, jetstream.ConsumerConfig{
 		Durable:       gateway.ID,
@@ -1160,14 +1129,6 @@ func (h *NATSHandler) RegisterGateway(ctx context.Context, gateway directory.Gat
 		},
 	})
 	return err
-}
-
-func (h *NATSHandler) request(ctx context.Context, msg *nats.Msg) (*nats.Msg, error) {
-	if msg.Header == nil {
-		msg.Header = make(nats.Header)
-	}
-	msg.Header.Set(nats.MsgIdHdr, nuid.Next())
-	return h.conf.Connection.Conn().RequestMsgWithContext(ctx, msg)
 }
 
 type NATSHandlerMessage struct {
