@@ -487,6 +487,37 @@ func (c *Client) RequestListGateways(ctx context.Context, req protodaemon.ListGa
 	return v, nil
 }
 
+func (c *Client) RequestDeleteGateway(ctx context.Context, req protodaemon.DeleteGatewayRequest) (protodaemon.DeleteGatewayResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.DeleteGatewayResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.DeleteGatewaySubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.DeleteGatewayResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.DeleteGatewayResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.DeleteGatewayResponse)
+	if !ok {
+		return protodaemon.DeleteGatewayResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.DeleteGatewayResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
 func (c *Client) RequestCreateRole(ctx context.Context, req protodaemon.CreateRoleRequest) (protodaemon.CreateRoleResponse, error) {
 	b, err := protodaemon.Marshal(req)
 	if err != nil {
