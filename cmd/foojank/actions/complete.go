@@ -78,6 +78,14 @@ func CompleteRoleName(ctx context.Context, c *cli.Command) {
 	completeName(ctx, c, listRoleNames)
 }
 
+// CompleteJobID is a ShellComplete func for commands that take a single job
+// ID. Flags are still completed after a positional argument.
+func CompleteJobID(ctx context.Context, c *cli.Command) {
+	ctx, cancel := completionContext(ctx)
+	defer cancel()
+	completeName(ctx, c, listJobIDs)
+}
+
 func completeName(ctx context.Context, c *cli.Command, list func(context.Context) ([]string, error)) {
 	if completeFlagToken(ctx, c) {
 		return
@@ -316,6 +324,29 @@ func listRoleNames(ctx context.Context) ([]string, error) {
 	names := make([]string, 0, len(resp.Roles))
 	for _, role := range resp.Roles {
 		line := completionLine(role.Name, role.Description)
+		if line == "" {
+			continue
+		}
+		names = append(names, line)
+	}
+	sort.Strings(names)
+	return names, nil
+}
+
+func listJobIDs(ctx context.Context) ([]string, error) {
+	client, err := daemonClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.RequestListJobs(ctx, protodaemon.ListJobsRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	names := make([]string, 0, len(resp.Jobs))
+	for _, job := range resp.Jobs {
+		line := completionLine(job.ID, "")
 		if line == "" {
 			continue
 		}
