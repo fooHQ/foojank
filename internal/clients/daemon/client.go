@@ -393,6 +393,37 @@ func (c *Client) RequestListAgents(ctx context.Context, req protodaemon.ListAgen
 	return v, nil
 }
 
+func (c *Client) RequestDeleteAgent(ctx context.Context, req protodaemon.DeleteAgentRequest) (protodaemon.DeleteAgentResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.DeleteAgentResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.DeleteAgentSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.DeleteAgentResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.DeleteAgentResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.DeleteAgentResponse)
+	if !ok {
+		return protodaemon.DeleteAgentResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.DeleteAgentResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
 func (c *Client) RequestCreateGateway(ctx context.Context, req protodaemon.CreateGatewayRequest) (protodaemon.CreateGatewayResponse, error) {
 	b, err := protodaemon.Marshal(req)
 	if err != nil {
