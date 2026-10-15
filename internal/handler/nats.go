@@ -56,6 +56,7 @@ func (h *NATSHandler) Match(msg message.Msg) (func(context.Context) message.Msg,
 		protodaemon.GetUserSubject():    h.GetUser,
 		protodaemon.ListUsersSubject():  h.ListUsers,
 		protodaemon.UpdateUserSubject(): h.UpdateUser,
+		protodaemon.DeleteUserSubject(): h.DeleteUser,
 
 		protodaemon.CreateAgentSubject(): h.CreateAgent,
 		protodaemon.GetAgentSubject():    h.GetAgent,
@@ -296,6 +297,42 @@ func (h *NATSHandler) UpdateUser(ctx context.Context, params map[string]string, 
 	}
 
 	return protodaemon.UpdateUserResponse{}
+}
+
+func (h *NATSHandler) DeleteUser(ctx context.Context, params map[string]string, msg message.Msg) any {
+	req, ok := msg.Data().(protodaemon.DeleteUserRequest)
+	if !ok {
+		return protodaemon.DeleteUserResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	err := ValidateDeleteUserRequest(req)
+	if err != nil {
+		return protodaemon.DeleteUserResponse{
+			Error: err,
+		}
+	}
+
+	user, err := h.conf.UserDirectory.Get(ctx, req.Name)
+	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", req.Name)
+		}
+		return protodaemon.DeleteUserResponse{
+			Error: err,
+		}
+	}
+
+	err = h.conf.UserDirectory.Delete(ctx, user)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot delete user: %v", err)
+		return protodaemon.DeleteUserResponse{
+			Error: err,
+		}
+	}
+
+	return protodaemon.DeleteUserResponse{}
 }
 
 func (h *NATSHandler) CreateRole(ctx context.Context, params map[string]string, msg message.Msg) any {

@@ -31,6 +31,10 @@ func ValidateUpdateUserRequest(req protodaemon.UpdateUserRequest) error {
 	return validateName(req.Name)
 }
 
+func ValidateDeleteUserRequest(req protodaemon.DeleteUserRequest) error {
+	return validateName(req.Name)
+}
+
 func ValidateCreateAgentRequest(req protodaemon.CreateAgentRequest) error {
 	err := validateName(req.Name)
 	if err != nil {
