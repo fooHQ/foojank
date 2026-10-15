@@ -52,6 +52,10 @@ func ValidateGetAgentRequest(req protodaemon.GetAgentRequest) error {
 	return validateName(req.Name)
 }
 
+func ValidateDeleteAgentRequest(req protodaemon.DeleteAgentRequest) error {
+	return validateName(req.Name)
+}
+
 func ValidateCreateGatewayRequest(req protodaemon.CreateGatewayRequest) error {
 	return validateName(req.Name)
 }

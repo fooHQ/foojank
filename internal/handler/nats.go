@@ -14,6 +14,7 @@ import (
 	"github.com/nats-io/nuid"
 
 	"github.com/foohq/foojank/internal/auth"
+	"github.com/foohq/foojank/internal/clients/gateway"
 	"github.com/foohq/foojank/internal/directory"
 	"github.com/foohq/foojank/internal/log"
 	"github.com/foohq/foojank/internal/privilege"
@@ -28,6 +29,7 @@ type NATSHandlerFn func(context.Context, map[string]string, message.Msg) any
 
 type NATSHandlerConfig struct {
 	Connection       jetstream.JetStream
+	Gateway          *gateway.Client
 	AgentDirectory   *directory.AgentDirectory
 	GatewayDirectory *directory.GatewayDirectory
 	UserDirectory    *directory.UserDirectory
@@ -59,6 +61,7 @@ func (h *NATSHandler) Match(msg message.Msg) (func(context.Context) message.Msg,
 		protodaemon.CreateAgentSubject(): h.CreateAgent,
 		protodaemon.GetAgentSubject():    h.GetAgent,
 		protodaemon.ListAgentsSubject():  h.ListAgents,
+		protodaemon.DeleteAgentSubject(): h.DeleteAgent,
 
 		protodaemon.CreateGatewaySubject(): h.CreateGateway,
 		protodaemon.GetGatewaySubject():    h.GetGateway,
@@ -713,6 +716,52 @@ func (h *NATSHandler) ListAgents(ctx context.Context, params map[string]string, 
 	return protodaemon.ListAgentsResponse{
 		Agents: agents,
 	}
+}
+
+func (h *NATSHandler) DeleteAgent(ctx context.Context, params map[string]string, msg message.Msg) any {
+	req, ok := msg.Data().(protodaemon.DeleteAgentRequest)
+	if !ok {
+		return protodaemon.DeleteAgentResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	err := ValidateDeleteAgentRequest(req)
+	if err != nil {
+		return protodaemon.DeleteAgentResponse{
+			Error: err,
+		}
+	}
+
+	agent, err := h.conf.AgentDirectory.Get(ctx, req.Name)
+	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", req.Name)
+		}
+		return protodaemon.DeleteAgentResponse{
+			Error: err,
+		}
+	}
+
+	_, err = h.conf.Gateway.RequestUnregisterAgent(ctx, agent.GatewayID, protogw.UnregisterAgentRequest{
+		AgentID: agent.ID,
+	})
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot unregister agent: %v", err)
+		return protodaemon.DeleteAgentResponse{
+			Error: err,
+		}
+	}
+
+	err = h.conf.AgentDirectory.Delete(ctx, agent)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot delete agent: %v", err)
+		return protodaemon.DeleteAgentResponse{
+			Error: err,
+		}
+	}
+
+	return protodaemon.DeleteAgentResponse{}
 }
 
 func (h *NATSHandler) CreateGateway(ctx context.Context, params map[string]string, msg message.Msg) any {
