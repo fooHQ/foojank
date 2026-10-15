@@ -3,7 +3,6 @@ package remove
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/urfave/cli/v3"
@@ -13,6 +12,7 @@ import (
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
 func NewCommand() *cli.Command {
@@ -80,22 +80,9 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	gatewayName := c.Args().First()
 
-	gateway, err := client.GetGateway(ctx, gatewayName)
-	if err != nil {
-		if errors.Is(err, daemon.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", gatewayName)
-		}
-		logger.ErrorContext(ctx, "Cannot remove gateway: %v", err)
-		return err
-	}
-
-	err = client.UnregisterGateway(ctx, gateway)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot unregister gateway: %v", err)
-		return err
-	}
-
-	err = client.RemoveGateway(ctx, gateway)
+	_, err := client.RequestDeleteGateway(ctx, protodaemon.DeleteGatewayRequest{
+		Name: gatewayName,
+	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot remove gateway: %v", err)
 		return err
