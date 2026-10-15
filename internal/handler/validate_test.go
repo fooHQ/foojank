@@ -364,6 +364,17 @@ func TestValidateUpdateUserRequest(t *testing.T) {
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
 }
 
+func TestValidateDeleteUserRequest(t *testing.T) {
+	err := handler.ValidateDeleteUserRequest(protodaemon.DeleteUserRequest{Name: "alice"})
+	require.NoError(t, err)
+
+	err = handler.ValidateDeleteUserRequest(protodaemon.DeleteUserRequest{})
+	require.EqualError(t, err, "name is required")
+
+	err = handler.ValidateDeleteUserRequest(protodaemon.DeleteUserRequest{Name: "bad name"})
+	require.ErrorIs(t, err, directory.ErrNameInvalid)
+}
+
 func TestValidateDeleteRoleRequest(t *testing.T) {
 	err := handler.ValidateDeleteRoleRequest(protodaemon.DeleteRoleRequest{Name: "operator"})
 	require.NoError(t, err)
