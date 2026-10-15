@@ -62,6 +62,14 @@ const (
 	tagGetJobResponse
 	tagListJobsRequest
 	tagListJobsResponse
+	tagDeleteAgentRequest
+	tagDeleteAgentResponse
+	tagDeleteUserRequest
+	tagDeleteUserResponse
+	tagDeleteGatewayRequest
+	tagDeleteGatewayResponse
+	tagDeleteJobRequest
+	tagDeleteJobResponse
 )
 
 // Marshal serializes the given message into a CBOR-encoded byte slice. It
@@ -235,6 +243,38 @@ func Marshal(message any) ([]byte, error) {
 		tag, payload = tagListJobsResponse, &v
 	case *ListJobsResponse:
 		tag, payload = tagListJobsResponse, v
+	case DeleteAgentRequest:
+		tag, payload = tagDeleteAgentRequest, &v
+	case *DeleteAgentRequest:
+		tag, payload = tagDeleteAgentRequest, v
+	case DeleteAgentResponse:
+		tag, payload = tagDeleteAgentResponse, &v
+	case *DeleteAgentResponse:
+		tag, payload = tagDeleteAgentResponse, v
+	case DeleteUserRequest:
+		tag, payload = tagDeleteUserRequest, &v
+	case *DeleteUserRequest:
+		tag, payload = tagDeleteUserRequest, v
+	case DeleteUserResponse:
+		tag, payload = tagDeleteUserResponse, &v
+	case *DeleteUserResponse:
+		tag, payload = tagDeleteUserResponse, v
+	case DeleteGatewayRequest:
+		tag, payload = tagDeleteGatewayRequest, &v
+	case *DeleteGatewayRequest:
+		tag, payload = tagDeleteGatewayRequest, v
+	case DeleteGatewayResponse:
+		tag, payload = tagDeleteGatewayResponse, &v
+	case *DeleteGatewayResponse:
+		tag, payload = tagDeleteGatewayResponse, v
+	case DeleteJobRequest:
+		tag, payload = tagDeleteJobRequest, &v
+	case *DeleteJobRequest:
+		tag, payload = tagDeleteJobRequest, v
+	case DeleteJobResponse:
+		tag, payload = tagDeleteJobResponse, &v
+	case *DeleteJobResponse:
+		tag, payload = tagDeleteJobResponse, v
 	default:
 		return nil, ErrUnknownType
 	}
@@ -439,6 +479,38 @@ func Unmarshal(b []byte) (any, error) {
 		var m ListJobsResponse
 		err = m.UnmarshalCbor(r)
 		payload = m
+	case tagDeleteAgentRequest:
+		var m DeleteAgentRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagDeleteAgentResponse:
+		var m DeleteAgentResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagDeleteUserRequest:
+		var m DeleteUserRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagDeleteUserResponse:
+		var m DeleteUserResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagDeleteGatewayRequest:
+		var m DeleteGatewayRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagDeleteGatewayResponse:
+		var m DeleteGatewayResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagDeleteJobRequest:
+		var m DeleteJobRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagDeleteJobResponse:
+		var m DeleteJobResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
 	default:
 		return nil, ErrUnknownTag
 	}
@@ -473,6 +545,11 @@ func UpdateUserSubject() string {
 	return "FJ.DAEMON.RPC.USER.UPDATE"
 }
 
+// DeleteUserSubject returns the NATS subject for deleting a user.
+func DeleteUserSubject() string {
+	return "FJ.DAEMON.RPC.USER.DELETE"
+}
+
 // IssueJWTSubject returns the NATS subject for issuing a JWT for the given user.
 func IssueJWTSubject(userID string) string {
 	return "FJ.DAEMON.RPC.JWT." + userID + ".ISSUE"
@@ -493,6 +570,11 @@ func ListAgentsSubject() string {
 	return "FJ.DAEMON.RPC.AGENT.LIST"
 }
 
+// DeleteAgentSubject returns the NATS subject for deleting an agent.
+func DeleteAgentSubject() string {
+	return "FJ.DAEMON.RPC.AGENT.DELETE"
+}
+
 // CreateGatewaySubject returns the NATS subject for creating a gateway.
 func CreateGatewaySubject() string {
 	return "FJ.DAEMON.RPC.GATEWAY.CREATE"
@@ -506,6 +588,11 @@ func GetGatewaySubject() string {
 // ListGatewaysSubject returns the NATS subject for listing gateways.
 func ListGatewaysSubject() string {
 	return "FJ.DAEMON.RPC.GATEWAY.LIST"
+}
+
+// DeleteGatewaySubject returns the NATS subject for deleting a gateway.
+func DeleteGatewaySubject() string {
+	return "FJ.DAEMON.RPC.GATEWAY.DELETE"
 }
 
 // CreateRoleSubject returns the NATS subject for creating a role.
@@ -546,6 +633,11 @@ func GetJobSubject() string {
 // ListJobsSubject returns the NATS subject for listing jobs.
 func ListJobsSubject() string {
 	return "FJ.DAEMON.RPC.JOB.LIST"
+}
+
+// DeleteJobSubject returns the NATS subject for deleting a job.
+func DeleteJobSubject() string {
+	return "FJ.DAEMON.RPC.JOB.DELETE"
 }
 
 // ParseIssueJWTSubject extracts the user ID from an issue-JWT subject. It
