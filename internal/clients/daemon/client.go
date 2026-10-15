@@ -31,34 +31,6 @@ func New(srv *server.Client) *Client {
 	}
 }
 
-func (c *Client) RemoveAgent(ctx context.Context, agent AgentDirectoryEntry) error {
-	dir, err := c.openAgentDirectory(ctx)
-	if err != nil {
-		return translate(err)
-	}
-
-	err = dir.Delete(ctx, agent)
-	if err != nil && !errors.Is(err, jetstream.ErrKeyNotFound) {
-		return translate(err)
-	}
-
-	return nil
-}
-
-func (c *Client) GetAgent(ctx context.Context, key string) (AgentDirectoryEntry, error) {
-	dir, err := c.openAgentDirectory(ctx)
-	if err != nil {
-		return AgentDirectoryEntry{}, translate(err)
-	}
-
-	agent, err := dir.Get(ctx, key)
-	if err != nil {
-		return AgentDirectoryEntry{}, translate(err)
-	}
-
-	return agent, nil
-}
-
 func (c *Client) ListAgents(ctx context.Context) ([]AgentDirectoryEntry, error) {
 	dir, err := c.openAgentDirectory(ctx)
 	if err != nil {
