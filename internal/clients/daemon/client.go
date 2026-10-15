@@ -270,6 +270,37 @@ func (c *Client) RequestUpdateUser(ctx context.Context, req protodaemon.UpdateUs
 	return v, nil
 }
 
+func (c *Client) RequestDeleteUser(ctx context.Context, req protodaemon.DeleteUserRequest) (protodaemon.DeleteUserResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.DeleteUserResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.DeleteUserSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.DeleteUserResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.DeleteUserResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.DeleteUserResponse)
+	if !ok {
+		return protodaemon.DeleteUserResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.DeleteUserResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
 func (c *Client) RequestCreateAgent(ctx context.Context, req protodaemon.CreateAgentRequest) (protodaemon.CreateAgentResponse, error) {
 	b, err := protodaemon.Marshal(req)
 	if err != nil {
