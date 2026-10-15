@@ -36,6 +36,7 @@ func (s *NATSConsumer) Subscribe(_ context.Context) error {
 		protodaemon.GetUserSubject(),
 		protodaemon.ListUsersSubject(),
 		protodaemon.UpdateUserSubject(),
+		protodaemon.DeleteUserSubject(),
 		protodaemon.CreateAgentSubject(),
 		protodaemon.GetAgentSubject(),
 		protodaemon.ListAgentsSubject(),
