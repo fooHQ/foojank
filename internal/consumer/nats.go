@@ -43,6 +43,7 @@ func (s *NATSConsumer) Subscribe(_ context.Context) error {
 		protodaemon.CreateGatewaySubject(),
 		protodaemon.GetGatewaySubject(),
 		protodaemon.ListGatewaysSubject(),
+		protodaemon.DeleteGatewaySubject(),
 		protodaemon.CreateRoleSubject(),
 		protodaemon.GetRoleSubject(),
 		protodaemon.ListRolesSubject(),
