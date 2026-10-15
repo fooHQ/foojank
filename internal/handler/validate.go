@@ -64,6 +64,10 @@ func ValidateGetGatewayRequest(req protodaemon.GetGatewayRequest) error {
 	return validateName(req.Name)
 }
 
+func ValidateDeleteGatewayRequest(req protodaemon.DeleteGatewayRequest) error {
+	return validateName(req.Name)
+}
+
 func ValidateCreateRoleRequest(req protodaemon.CreateRoleRequest) error {
 	return validateName(req.Name)
 }

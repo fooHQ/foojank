@@ -249,6 +249,17 @@ func TestValidateGetGatewayRequest(t *testing.T) {
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
 }
 
+func TestValidateDeleteGatewayRequest(t *testing.T) {
+	err := handler.ValidateDeleteGatewayRequest(protodaemon.DeleteGatewayRequest{Name: "gw1"})
+	require.NoError(t, err)
+
+	err = handler.ValidateDeleteGatewayRequest(protodaemon.DeleteGatewayRequest{})
+	require.EqualError(t, err, "name is required")
+
+	err = handler.ValidateDeleteGatewayRequest(protodaemon.DeleteGatewayRequest{Name: "bad name"})
+	require.ErrorIs(t, err, directory.ErrNameInvalid)
+}
+
 func TestValidateCreateGatewayRequest(t *testing.T) {
 	tests := []struct {
 		name    string

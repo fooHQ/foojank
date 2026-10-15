@@ -65,6 +65,7 @@ func (h *NATSHandler) Match(msg message.Msg) (func(context.Context) message.Msg,
 		protodaemon.CreateGatewaySubject(): h.CreateGateway,
 		protodaemon.GetGatewaySubject():    h.GetGateway,
 		protodaemon.ListGatewaysSubject():  h.ListGateways,
+		protodaemon.DeleteGatewaySubject(): h.DeleteGateway,
 
 		protodaemon.CreateRoleSubject(): h.CreateRole,
 		protodaemon.GetRoleSubject():    h.GetRole,
@@ -946,6 +947,50 @@ func (h *NATSHandler) ListGateways(ctx context.Context, params map[string]string
 	}
 }
 
+func (h *NATSHandler) DeleteGateway(ctx context.Context, params map[string]string, msg message.Msg) any {
+	req, ok := msg.Data().(protodaemon.DeleteGatewayRequest)
+	if !ok {
+		return protodaemon.DeleteGatewayResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	err := ValidateDeleteGatewayRequest(req)
+	if err != nil {
+		return protodaemon.DeleteGatewayResponse{
+			Error: err,
+		}
+	}
+
+	gateway, err := h.conf.GatewayDirectory.Get(ctx, req.Name)
+	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", req.Name)
+		}
+		return protodaemon.DeleteGatewayResponse{
+			Error: err,
+		}
+	}
+
+	err = h.UnregisterGateway(ctx, gateway)
+	if err != nil && !errors.Is(err, jetstream.ErrConsumerNotFound) {
+		h.logger.ErrorContext(ctx, "Cannot unregister gateway: %v", err)
+		return protodaemon.DeleteGatewayResponse{
+			Error: err,
+		}
+	}
+
+	err = h.conf.GatewayDirectory.Delete(ctx, gateway)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot delete gateway: %v", err)
+		return protodaemon.DeleteGatewayResponse{
+			Error: err,
+		}
+	}
+
+	return protodaemon.DeleteGatewayResponse{}
+}
+
 func (h *NATSHandler) CreateJob(ctx context.Context, params map[string]string, msg message.Msg) any {
 	req, ok := msg.Data().(protodaemon.CreateJobRequest)
 	if !ok {
@@ -1129,6 +1174,10 @@ func (h *NATSHandler) RegisterGateway(ctx context.Context, gateway directory.Gat
 		},
 	})
 	return err
+}
+
+func (h *NATSHandler) UnregisterGateway(ctx context.Context, gateway directory.GatewayDirectoryEntry) error {
+	return h.conf.Connection.DeleteConsumer(ctx, h.conf.Stream, gateway.ID)
 }
 
 type NATSHandlerMessage struct {
