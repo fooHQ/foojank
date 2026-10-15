@@ -57,34 +57,6 @@ func (c *Client) GetAgentHost(ctx context.Context, key string) (AgentHostDirecto
 	return host, nil
 }
 
-func (c *Client) RemoveGateway(ctx context.Context, gateway GatewayDirectoryEntry) error {
-	dir, err := c.openGatewayDirectory(ctx)
-	if err != nil {
-		return translate(err)
-	}
-
-	err = dir.Delete(ctx, gateway)
-	if err != nil && !errors.Is(err, jetstream.ErrKeyNotFound) {
-		return translate(err)
-	}
-
-	return nil
-}
-
-func (c *Client) GetGateway(ctx context.Context, key string) (GatewayDirectoryEntry, error) {
-	dir, err := c.openGatewayDirectory(ctx)
-	if err != nil {
-		return GatewayDirectoryEntry{}, translate(err)
-	}
-
-	gateway, err := dir.Get(ctx, key)
-	if err != nil {
-		return GatewayDirectoryEntry{}, translate(err)
-	}
-
-	return gateway, nil
-}
-
 func (c *Client) ListGateways(ctx context.Context) ([]GatewayDirectoryEntry, error) {
 	dir, err := c.openGatewayDirectory(ctx)
 	if err != nil {
@@ -134,16 +106,6 @@ func (c *Client) ListJobOutputLines(ctx context.Context, job JobDirectoryEntry, 
 	}
 
 	return buff.Bytes(), nil
-}
-
-func (c *Client) UnregisterGateway(ctx context.Context, gateway GatewayDirectoryEntry) error {
-	// TODO: verify that current users of the API are able to handle the error caused by non-existent consumer!
-	consumerName := gateway.ID
-	err := c.srv.DeleteConsumer(ctx, c.stream, consumerName)
-	if err != nil {
-		return translate(err)
-	}
-	return nil
 }
 
 func (c *Client) RequestCreateUser(ctx context.Context, req protodaemon.CreateUserRequest) (protodaemon.CreateUserResponse, error) {
