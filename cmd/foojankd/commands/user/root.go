@@ -7,6 +7,7 @@ import (
 	"github.com/foohq/foojank/cmd/foojankd/commands/user/describe"
 	"github.com/foohq/foojank/cmd/foojankd/commands/user/edit"
 	"github.com/foohq/foojank/cmd/foojankd/commands/user/list"
+	"github.com/foohq/foojank/cmd/foojankd/commands/user/remove"
 
 	"github.com/foohq/foojank/cmd/foojankd/actions"
 )
@@ -20,6 +21,7 @@ func NewCommand() *cli.Command {
 			describe.NewCommand(),
 			edit.NewCommand(),
 			list.NewCommand(),
+			remove.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		OnUsageError:    actions.UsageError,
