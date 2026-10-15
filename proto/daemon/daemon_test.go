@@ -702,6 +702,82 @@ func TestMarshalUnmarshal(t *testing.T) {
 			want:  daemon.ListJobsResponse{Error: testError},
 		},
 		{
+			name: "DeleteAgentRequest",
+			input: daemon.DeleteAgentRequest{
+				Name: "web",
+			},
+			want: daemon.DeleteAgentRequest{
+				Name: "web",
+			},
+		},
+		{
+			name:  "DeleteAgentResponse",
+			input: daemon.DeleteAgentResponse{},
+			want:  daemon.DeleteAgentResponse{},
+		},
+		{
+			name:  "DeleteAgentResponse with error",
+			input: daemon.DeleteAgentResponse{Error: testError},
+			want:  daemon.DeleteAgentResponse{Error: testError},
+		},
+		{
+			name: "DeleteUserRequest",
+			input: daemon.DeleteUserRequest{
+				Name: "ops",
+			},
+			want: daemon.DeleteUserRequest{
+				Name: "ops",
+			},
+		},
+		{
+			name:  "DeleteUserResponse",
+			input: daemon.DeleteUserResponse{},
+			want:  daemon.DeleteUserResponse{},
+		},
+		{
+			name:  "DeleteUserResponse with error",
+			input: daemon.DeleteUserResponse{Error: testError},
+			want:  daemon.DeleteUserResponse{Error: testError},
+		},
+		{
+			name: "DeleteGatewayRequest",
+			input: daemon.DeleteGatewayRequest{
+				Name: "gw1",
+			},
+			want: daemon.DeleteGatewayRequest{
+				Name: "gw1",
+			},
+		},
+		{
+			name:  "DeleteGatewayResponse",
+			input: daemon.DeleteGatewayResponse{},
+			want:  daemon.DeleteGatewayResponse{},
+		},
+		{
+			name:  "DeleteGatewayResponse with error",
+			input: daemon.DeleteGatewayResponse{Error: testError},
+			want:  daemon.DeleteGatewayResponse{Error: testError},
+		},
+		{
+			name: "DeleteJobRequest",
+			input: daemon.DeleteJobRequest{
+				JobID: "job1",
+			},
+			want: daemon.DeleteJobRequest{
+				JobID: "job1",
+			},
+		},
+		{
+			name:  "DeleteJobResponse",
+			input: daemon.DeleteJobResponse{},
+			want:  daemon.DeleteJobResponse{},
+		},
+		{
+			name:  "DeleteJobResponse with error",
+			input: daemon.DeleteJobResponse{Error: testError},
+			want:  daemon.DeleteJobResponse{Error: testError},
+		},
+		{
 			name: "pointer input",
 			input: &daemon.CreateUserRequest{
 				Name: "ops",
@@ -816,6 +892,11 @@ func TestUpdateUserSubject(t *testing.T) {
 	require.Equal(t, "FJ.DAEMON.RPC.USER.UPDATE", got)
 }
 
+func TestDeleteUserSubject(t *testing.T) {
+	got := daemon.DeleteUserSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.USER.DELETE", got)
+}
+
 func TestIssueJWTSubject(t *testing.T) {
 	got := daemon.IssueJWTSubject("UDUMMYUSERPUBLICKEY")
 	require.Equal(t, "FJ.DAEMON.RPC.JWT.UDUMMYUSERPUBLICKEY.ISSUE", got)
@@ -836,6 +917,11 @@ func TestListAgentsSubject(t *testing.T) {
 	require.Equal(t, "FJ.DAEMON.RPC.AGENT.LIST", got)
 }
 
+func TestDeleteAgentSubject(t *testing.T) {
+	got := daemon.DeleteAgentSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.AGENT.DELETE", got)
+}
+
 func TestCreateGatewaySubject(t *testing.T) {
 	got := daemon.CreateGatewaySubject()
 	require.Equal(t, "FJ.DAEMON.RPC.GATEWAY.CREATE", got)
@@ -849,6 +935,11 @@ func TestGetGatewaySubject(t *testing.T) {
 func TestListGatewaysSubject(t *testing.T) {
 	got := daemon.ListGatewaysSubject()
 	require.Equal(t, "FJ.DAEMON.RPC.GATEWAY.LIST", got)
+}
+
+func TestDeleteGatewaySubject(t *testing.T) {
+	got := daemon.DeleteGatewaySubject()
+	require.Equal(t, "FJ.DAEMON.RPC.GATEWAY.DELETE", got)
 }
 
 func TestCreateRoleSubject(t *testing.T) {
@@ -889,6 +980,11 @@ func TestGetJobSubject(t *testing.T) {
 func TestListJobsSubject(t *testing.T) {
 	got := daemon.ListJobsSubject()
 	require.Equal(t, "FJ.DAEMON.RPC.JOB.LIST", got)
+}
+
+func TestDeleteJobSubject(t *testing.T) {
+	got := daemon.DeleteJobSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.JOB.DELETE", got)
 }
 
 func TestParseIssueJWTSubject(t *testing.T) {
