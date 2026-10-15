@@ -3,7 +3,6 @@ package remove
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/urfave/cli/v3"
@@ -13,6 +12,7 @@ import (
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
 func NewCommand() *cli.Command {
@@ -80,22 +80,9 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	agentName := c.Args().First()
 
-	agent, err := client.GetAgent(ctx, agentName)
-	if err != nil {
-		if errors.Is(err, daemon.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", agentName)
-		}
-		logger.ErrorContext(ctx, "Cannot remove agent: %v", err)
-		return err
-	}
-
-	err = client.RequestUnregisterAgent(ctx, agent)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot unregister agent: %v", err)
-		return err
-	}
-
-	err = client.RemoveAgent(ctx, agent)
+	_, err := client.RequestDeleteAgent(ctx, protodaemon.DeleteAgentRequest{
+		Name: agentName,
+	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot remove agent: %v", err)
 		return err
