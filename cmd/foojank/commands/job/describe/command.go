@@ -46,7 +46,7 @@ func NewCommand() *cli.Command {
 		},
 		Before:          before,
 		Action:          action,
-		ShellComplete:   actions.CompleteFlags,
+		ShellComplete:   actions.CompleteJobID,
 		OnUsageError:    actions.UsageError,
 		HideHelpCommand: true,
 	}
