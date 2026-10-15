@@ -10,11 +10,9 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nats-io/nuid"
 
+	"github.com/foohq/foojank/internal/clients/server"
 	protoagent "github.com/foohq/foojank/proto/agent"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
-	protogw "github.com/foohq/foojank/proto/gateway"
-
-	"github.com/foohq/foojank/internal/clients/server"
 )
 
 const EventStream = "event-stream"
@@ -704,39 +702,6 @@ func (c *Client) RequestListJobs(ctx context.Context, req protodaemon.ListJobsRe
 	}
 
 	return v, nil
-}
-
-func (c *Client) RequestUnregisterAgent(ctx context.Context, agent AgentDirectoryEntry) error {
-	b, err := protogw.Marshal(protogw.UnregisterAgentRequest{
-		AgentID: agent.ID,
-	})
-	if err != nil {
-		return err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protogw.UnregisterAgentSubject(agent.GatewayID),
-		Data:    b,
-	})
-	if err != nil {
-		return translate(err)
-	}
-
-	data, err := protogw.Unmarshal(resp.Data)
-	if err != nil {
-		return err
-	}
-
-	v, ok := data.(protogw.UnregisterAgentResponse)
-	if !ok {
-		return fmt.Errorf("invalid response: %T", data)
-	}
-
-	if v.Error != nil {
-		return v.Error
-	}
-
-	return nil
 }
 
 func (c *Client) PublishStopWorker(ctx context.Context, job JobDirectoryEntry) error {
