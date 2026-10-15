@@ -12,6 +12,7 @@ import (
 	"github.com/foohq/foojank/cmd/foojankd/actions"
 	"github.com/foohq/foojank/cmd/foojankd/flags"
 	"github.com/foohq/foojank/internal/authdir"
+	"github.com/foohq/foojank/internal/clients/gateway"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/consumer"
 	"github.com/foohq/foojank/internal/directory"
@@ -148,6 +149,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		}),
 		Handler: handler.NewNATSHandler(logger, handler.NATSHandlerConfig{
 			Connection:       srv,
+			Gateway:          gateway.New(srv),
 			AgentDirectory:   agentDir,
 			GatewayDirectory: gatewayDir,
 			UserDirectory:    userDir,
