@@ -227,6 +227,17 @@ func TestValidateGetAgentRequest(t *testing.T) {
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
 }
 
+func TestValidateDeleteAgentRequest(t *testing.T) {
+	err := handler.ValidateDeleteAgentRequest(protodaemon.DeleteAgentRequest{Name: "agent"})
+	require.NoError(t, err)
+
+	err = handler.ValidateDeleteAgentRequest(protodaemon.DeleteAgentRequest{})
+	require.EqualError(t, err, "name is required")
+
+	err = handler.ValidateDeleteAgentRequest(protodaemon.DeleteAgentRequest{Name: "bad name"})
+	require.ErrorIs(t, err, directory.ErrNameInvalid)
+}
+
 func TestValidateGetGatewayRequest(t *testing.T) {
 	err := handler.ValidateGetGatewayRequest(protodaemon.GetGatewayRequest{Name: "gw1"})
 	require.NoError(t, err)
