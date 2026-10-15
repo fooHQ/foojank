@@ -3,7 +3,6 @@ package remove
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/urfave/cli/v3"
@@ -80,9 +79,6 @@ func action(ctx context.Context, c *cli.Command) error {
 		Name: userName,
 	})
 	if err != nil {
-		if err.Error() == daemon.ErrKeyNotFound.Error() {
-			err = fmt.Errorf("%q not found", userName)
-		}
 		logger.ErrorContext(ctx, "Cannot remove user: %v", err)
 		return err
 	}

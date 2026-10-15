@@ -3,7 +3,6 @@ package remove
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/urfave/cli/v3"
@@ -80,9 +79,6 @@ func action(ctx context.Context, c *cli.Command) error {
 		Name: roleName,
 	})
 	if err != nil {
-		if err.Error() == daemon.ErrKeyNotFound.Error() {
-			err = fmt.Errorf("%q not found", roleName)
-		}
 		logger.ErrorContext(ctx, "Cannot remove role: %v", err)
 		return err
 	}
