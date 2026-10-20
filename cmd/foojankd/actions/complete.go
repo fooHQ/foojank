@@ -45,9 +45,17 @@ func CompleteRoleName(ctx context.Context, c *cli.Command) {
 	completeName(ctx, c, listRoleNames)
 }
 
+// CompleteAccountName is a ShellComplete func for commands that take a single
+// account name. Flags are still completed after a positional argument.
+func CompleteAccountName(ctx context.Context, c *cli.Command) {
+	ctx, cancel := completionContext(ctx)
+	defer cancel()
+	completeName(ctx, c, listAccountNames)
+}
+
 // CompleteFlags is a ShellComplete func for commands that have no positional
-// name argument. It emits flag suggestions and values for --agent, --gateway,
-// and --format.
+// name argument. It emits flag suggestions and values for --account and
+// --format.
 func CompleteFlags(ctx context.Context, c *cli.Command) {
 	ctx, cancel := completionContext(ctx)
 	defer cancel()
@@ -112,6 +120,8 @@ func flagValueCompleter(c *cli.Command, token string) (list func(context.Context
 		return nil, "", false
 	}
 	switch name {
+	case flags.Account:
+		list = listAccountNames
 	case flags.Format:
 		list = listFormatNames
 	default:
@@ -182,6 +192,29 @@ func printFlagCompletions(c *cli.Command, lastArg string) {
 
 func listFormatNames(_ context.Context) ([]string, error) {
 	return []string{formatter.FormatASCII, formatter.FormatJSON}, nil
+}
+
+func listAccountNames(_ context.Context) ([]string, error) {
+	names, err := authdir.ListAccounts()
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(names)
+
+	lines := make([]string, 0, len(names))
+	for _, name := range names {
+		var description string
+		claims, err := authdir.GetAccountJWT(name)
+		if err == nil && claims != nil {
+			description = claims.Description
+		}
+		line := completionLine(name, description)
+		if line == "" {
+			continue
+		}
+		lines = append(lines, line)
+	}
+	return lines, nil
 }
 
 func completionLine(name, description string) string {
