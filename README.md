@@ -15,28 +15,30 @@ Built on top of [NATS](https://nats.io), Foojank is extensible, observable, and 
 * Command-line client interface that can be integrated in scripts and AI agents.
 * Built-in data storage for payload distribution and data exfiltration.
 * Multi-user support with configurable roles and privileges.
-* Extensibility – support for custom and third-party agents via Gateways.
+* Extensibility – support for custom protocols and third-party agents via Gateways.
 * Observability – visibility into operator and agent activity and C2 messaging.
-* Horizontal scaling and a decentralized architecture.
+* Scalability – support for large-scale deployments with distributed architecture.
 
 ### Gateways
 
-| Name | Description |
-| --- | --- |
-| [foojank-azqueue-gateway](https://github.com/foohq/foojank-azqueue-gateway) | TODO |
+Gateways allow clients to communicate with agents using different protocols or third-party systems.
+
+| Name                                                                    | Description                                                                                          | Status |
+|-------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|--------|
+| [Azure Queue Storage](https://github.com/foohq/foojank-azqueue-gateway) | Enables client-to-agent messaging over Azure Queue Storage for reliable, asynchronous communication. | WIP    |
 
 ### Agents
 
-| Name | Description | Platform |
-| --- | --- | --- |
-| [vessel](https://github.com/foohq/vessel) | TODO | Windows, Linux, macOS |
+| Name                                      | Language | Platform               | Status |
+|-------------------------------------------|----------|------------------------|--------|
+| [Vessel](https://github.com/foohq/vessel) | Go       | Windows, Linux, Darwin | WIP    |
 
 ### Architecture
 
 ```mermaid
-flowchart BT
-    subgraph CL["Operators (Clients)"]
-        direction TB
+flowchart RL
+    subgraph CL["Clients"]
+        direction RL
         subgraph PC1["John's computer"]
             John["John"]
         end
