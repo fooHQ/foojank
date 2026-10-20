@@ -31,7 +31,7 @@ func NewCommand() *cli.Command {
 		},
 		Before:          before,
 		Action:          action,
-		ShellComplete:   actions.CompleteFlags,
+		ShellComplete:   actions.CompleteAccountName,
 		OnUsageError:    actions.UsageError,
 		HideHelpCommand: true,
 	}
