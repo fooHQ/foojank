@@ -1,77 +1,92 @@
 # Foojank
 
-Foojank is an open-source command-and-control (C2) framework built on NATS, designed for ethical hackers conducting red team and purple team engagements. It provides a scalable, observable, and extensible C2 platform for adversary simulation and security testing.
+[![Version](https://img.shields.io/github/v/release/fooHQ/foojank)](https://github.com/fooHQ/foojank/releases/latest)
 
-**Features**
+> [!NOTE]
+> This README describes an upcoming release of Foojank that is still in development. See Releases for older versions.
 
-* Customizable C2 transport over TCP and WebSockets.
-* Built-in file storage for payload distribution and data exfiltration.
-* Extensible support for custom and third-party agents.
-* Observability, including visibility into agent activity and C2 messaging.
+## Overview
 
-Foojank is currently compatible only with our prototype agent, [Vessel](https://github.com/foohq/vessel). However, we
-plan to implement support for integrating custom agents into the framework in the future.
+Foojank is a C2 framework designed for ethical hackers conducting red team and purple team engagements.
+Built on top of [NATS](https://nats.io), Foojank is extensible, observable, and scalable.
 
-#### Platform Compatibility
+### Features
 
-|                | Linux | macOS | Windows |
-|----------------|:-----:|:-----:|:-------:|
-| Vessel (Agent) |   ✅   |   ✅   |    ✅    |
-| Client         |   ✅   |   ✅   |    ❌    |
-| Server         |   ✅   |   ✅   |    ✅    |
+* Command-line client interface that can be integrated in scripts and AI agents.
+* Built-in data storage for payload distribution and data exfiltration.
+* Multi-user support with configurable roles and privileges.
+* Extensibility – support for custom and third-party agents via Gateways.
+* Observability – visibility into operator and agent activity and C2 messaging.
+* Horizontal scaling and a decentralized architecture.
 
-**Note:** Client is not supported on Windows due to being incompatible with Devbox.
+### Gateways
 
-## Installation
+| Name | Description |
+| --- | --- |
+| [foojank-azqueue-gateway](https://github.com/foohq/foojank-azqueue-gateway) | TODO |
 
-### Server
+### Agents
 
+| Name | Description | Platform |
+| --- | --- | --- |
+| [vessel](https://github.com/foohq/vessel) | TODO | Windows, Linux, macOS |
+
+### Architecture
+
+```mermaid
+flowchart BT
+    subgraph CL["Operators (Clients)"]
+        direction TB
+        subgraph PC1["John's computer"]
+            John["John"]
+        end
+        subgraph PC2["Alice's computer"]
+            Alice["Alice"]
+        end
+        subgraph PBob["Bob's computer"]
+            Bob["Bob"]
+        end
+    end
+
+    Daemon["Daemon"]
+
+    subgraph GW["Gateways"]
+        direction TB
+        GW1["Gateway A"]
+        GW2["Gateway B"]
+        GW3["Gateway C"]
+    end
+
+    subgraph AG["Agents"]
+        direction TB
+        A1["Agent A1"]
+        A2["Agent A2"]
+        B1["Agent B1"]
+        C1["Agent C1"]
+    end
+
+    %% NATS-based communication
+    John <-->|NATS| Daemon
+    Alice <-->|NATS| Daemon
+    Bob <-->|NATS| Daemon
+    Daemon <-->|NATS| GW1
+    Daemon <-->|NATS| GW2
+    Daemon <-->|NATS| GW3
+
+    %% Gateway-specific protocols
+    GW1 <-->|Protocol A| A1
+    GW1 <-->|Protocol A| A2
+    GW2 <-->|Protocol B| B1
+    GW3 <-->|Protocol C| C1
+
+    %% Styling: solid blue = NATS, dashed orange = gateway protocol
+    linkStyle 0,1,2,3,4,5 stroke:#2b7bb9,stroke-width:2px
+    linkStyle 6,7,8,9 stroke:#e08a1e,stroke-width:2px,stroke-dasharray:5 3
 ```
-$ curl -fsSL https://github.com/fooHQ/foojank/releases/latest/download/server.sh | bash
-```
 
-### Client
+## Try it
 
-```
-$ curl -fsSL https://github.com/fooHQ/foojank/releases/latest/download/client.sh | bash
-```
-
-### Installation from Source
-
-```
-$ git clone https://github.com/foohq/foojank
-$ cd foojank/
-$ devbox run build
-# install ./build/foojank /usr/local/bin/foojank
-```
-
-## Usage
-
-Foojank is controlled using a command-line client.
-
-```
-NAME:
-   foojank - Command and control framework
-
-USAGE:
-   foojank [global options] [command [command options]]
-
-VERSION:
-   0.4.2
-
-COMMANDS:
-   account  Manage accounts
-   agent    Manage agents
-   config   Manage configuration
-   job      Manage jobs
-   profile  Manage profiles
-   storage  Manage storage
-
-GLOBAL OPTIONS:
-   --no-color     disable color output
-   --help, -h     show help
-   --version, -v  print the version
-```
+TODO
 
 ## License
 
