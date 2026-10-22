@@ -73,10 +73,11 @@ func (h *NATSHandler) Match(msg message.Msg) (func(context.Context) message.Msg,
 		protodaemon.ListRolesSubject():  h.ListRoles,
 		protodaemon.DeleteRoleSubject(): h.DeleteRole,
 
-		protodaemon.CreateJobSubject(): h.CreateJob,
-		protodaemon.GetJobSubject():    h.GetJob,
-		protodaemon.ListJobsSubject():  h.ListJobs,
-		protodaemon.CancelJobSubject(): h.CancelJob,
+		protodaemon.CreateJobSubject():    h.CreateJob,
+		protodaemon.GetJobSubject():       h.GetJob,
+		protodaemon.ListJobsSubject():     h.ListJobs,
+		protodaemon.CancelJobSubject():    h.CancelJob,
+		protodaemon.GetJobOutputSubject(): h.GetJobOutput,
 
 		protodaemon.IssueJWTSubject("<user>"): h.IssueJWT,
 	}
@@ -1232,6 +1233,48 @@ func (h *NATSHandler) CancelJob(ctx context.Context, params map[string]string, m
 	}
 
 	return protodaemon.CancelJobResponse{}
+}
+
+func (h *NATSHandler) GetJobOutput(ctx context.Context, params map[string]string, msg message.Msg) any {
+	req, ok := msg.Data().(protodaemon.GetJobOutputRequest)
+	if !ok {
+		return protodaemon.GetJobOutputResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	err := ValidateGetJobOutputRequest(req)
+	if err != nil {
+		return protodaemon.GetJobOutputResponse{
+			Error: err,
+		}
+	}
+
+	job, err := h.conf.JobDirectory.Get(ctx, req.JobID)
+	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", req.JobID)
+		}
+		return protodaemon.GetJobOutputResponse{
+			Error: err,
+		}
+	}
+
+	resp, err := h.conf.Gateway.RequestJobOutput(ctx, job.GatewayID, protogw.JobOutputRequest{
+		AgentID: job.AgentID,
+		JobID:   job.ID,
+		Offset:  req.Offset,
+	})
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot get job output: %v", err)
+		return protodaemon.GetJobOutputResponse{
+			Error: err,
+		}
+	}
+
+	return protodaemon.GetJobOutputResponse{
+		Data: resp.Data,
+	}
 }
 
 // TODO: move elsewhere!
