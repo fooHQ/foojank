@@ -41,16 +41,16 @@ func NewRefreshTokenPermissions(clientID string) (jwt.Permissions, error) {
 	}, nil
 }
 
-func NewGatewayPermissions(stream, gatewayID string) jwt.Permissions {
+func NewGatewayPermissions(gatewayID string) jwt.Permissions {
 	return jwt.Permissions{
 		Pub: jwt.Permission{
 			Allow: []string{
 				/*"$JS.API.STREAM.INFO." + gatewayID,
 				"$JS.API.STREAM.INFO.OBJ_" + gatewayID,
 				"$JS.API.STREAM.PURGE.OBJ_" + gatewayID,*/
-				fmt.Sprintf("$JS.API.CONSUMER.INFO.%s.%s", stream, gatewayID),
-				fmt.Sprintf("$JS.API.CONSUMER.MSG.NEXT.%s.%s", stream, gatewayID),
-				fmt.Sprintf("$JS.ACK.%s.%s.>", stream, gatewayID),
+				fmt.Sprintf("$JS.API.CONSUMER.INFO.%s.%s", gatewayID, gatewayID),
+				fmt.Sprintf("$JS.API.CONSUMER.MSG.NEXT.%s.%s", gatewayID, gatewayID),
+				fmt.Sprintf("$JS.ACK.%s.%s.>", gatewayID, gatewayID),
 				InboxPrefix("*") + ".>",
 				/*fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.>", gatewayID),
 				fmt.Sprintf("$JS.API.CONSUMER.DELETE.OBJ_%s.*", gatewayID),
