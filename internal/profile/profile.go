@@ -3,6 +3,7 @@ package profile
 import (
 	"encoding/json"
 	"errors"
+	"maps"
 	"os"
 	"strings"
 )
@@ -119,6 +120,7 @@ func NewProfile() *Profile {
 	return &Profile{
 		data: profileData{
 			Environment: make(map[string]varData),
+			Commands:    make(map[string]commandData),
 		},
 	}
 }
@@ -181,6 +183,40 @@ func (p *Profile) Delete(name string) {
 	delete(p.data.Environment, name)
 }
 
+func (p *Profile) Commands() map[string]*Command {
+	out := make(map[string]*Command, len(p.data.Commands))
+	for name, cmd := range p.data.Commands {
+		cloned := cloneCommand(cmd)
+		cloned.Name = name
+		out[name] = &Command{data: cloned}
+	}
+	return out
+}
+
+func (p *Profile) GetCommand(name string) *Command {
+	cmd, ok := p.data.Commands[name]
+	if !ok {
+		return &Command{}
+	}
+	cloned := cloneCommand(cmd)
+	cloned.Name = name
+	return &Command{data: cloned}
+}
+
+func (p *Profile) SetCommand(cmd *Command) {
+	if cmd == nil {
+		return
+	}
+	if p.data.Commands == nil {
+		p.data.Commands = make(map[string]commandData)
+	}
+	p.data.Commands[cmd.data.Name] = cloneCommand(cmd.data)
+}
+
+func (p *Profile) DeleteCommand(name string) {
+	delete(p.data.Commands, name)
+}
+
 func (p *Profile) UnmarshalJSON(b []byte) error {
 	var data profileData
 	err := json.Unmarshal(b, &data)
@@ -189,6 +225,9 @@ func (p *Profile) UnmarshalJSON(b []byte) error {
 	}
 	if data.Environment == nil {
 		data.Environment = make(map[string]varData)
+	}
+	if data.Commands == nil {
+		data.Commands = make(map[string]commandData)
 	}
 	p.data = data
 	return nil
@@ -260,9 +299,167 @@ type profilesData struct {
 }
 
 type profileData struct {
-	OS          *string            `json:"os,omitempty"`
-	Arch        *string            `json:"arch,omitempty"`
-	Environment map[string]varData `json:"environment,omitempty"`
+	OS          *string                `json:"os,omitempty"`
+	Arch        *string                `json:"arch,omitempty"`
+	Environment map[string]varData     `json:"environment,omitempty"`
+	Commands    map[string]commandData `json:"commands,omitempty"`
+}
+
+type Command struct {
+	data commandData
+}
+
+func NewCommand(name string) *Command {
+	return &Command{
+		data: commandData{
+			Name: name,
+		},
+	}
+}
+
+func (c *Command) Name() string {
+	return c.data.Name
+}
+
+func (c *Command) Description() string {
+	return c.data.Description
+}
+
+func (c *Command) Flags() map[string]*CommandFlag {
+	out := make(map[string]*CommandFlag, len(c.data.Flags))
+	for name, flag := range c.data.Flags {
+		flag.Name = name
+		out[name] = &CommandFlag{data: flag}
+	}
+	return out
+}
+
+func (c *Command) Environment() map[string]*Var {
+	out := make(map[string]*Var, len(c.data.Environment))
+	for name, v := range c.data.Environment {
+		out[name] = &Var{data: v}
+	}
+	return out
+}
+
+func (c *Command) SetName(name string) {
+	c.data.Name = name
+}
+
+func (c *Command) SetDescription(description string) {
+	c.data.Description = description
+}
+
+func (c *Command) SetFlags(flags map[string]*CommandFlag) {
+	if len(flags) == 0 {
+		c.data.Flags = nil
+		return
+	}
+	out := make(map[string]commandFlagData, len(flags))
+	for name, flag := range flags {
+		if flag == nil {
+			continue
+		}
+		data := flag.data
+		data.Name = name
+		out[name] = data
+	}
+	if len(out) == 0 {
+		c.data.Flags = nil
+		return
+	}
+	c.data.Flags = out
+}
+
+func (c *Command) SetEnvironment(env map[string]*Var) {
+	if len(env) == 0 {
+		c.data.Environment = nil
+		return
+	}
+	out := make(map[string]varData, len(env))
+	for name, v := range env {
+		if v == nil {
+			continue
+		}
+		out[name] = v.data
+	}
+	if len(out) == 0 {
+		c.data.Environment = nil
+		return
+	}
+	c.data.Environment = out
+}
+
+func (c *Command) UnmarshalJSON(b []byte) error {
+	var data commandData
+	err := json.Unmarshal(b, &data)
+	if err != nil {
+		return err
+	}
+	c.data = data
+	return nil
+}
+
+func (c *Command) MarshalJSON() ([]byte, error) {
+	return json.Marshal(c.data)
+}
+
+type CommandFlag struct {
+	data commandFlagData
+}
+
+func NewCommandFlag(name string) *CommandFlag {
+	return &CommandFlag{
+		data: commandFlagData{
+			Name: name,
+		},
+	}
+}
+
+func (f *CommandFlag) Name() string {
+	return f.data.Name
+}
+
+func (f *CommandFlag) Description() string {
+	return f.data.Description
+}
+
+func (f *CommandFlag) Default() string {
+	return f.data.Default
+}
+
+func (f *CommandFlag) Required() bool {
+	return f.data.Required
+}
+
+func (f *CommandFlag) SetName(name string) {
+	f.data.Name = name
+}
+
+func (f *CommandFlag) SetDescription(description string) {
+	f.data.Description = description
+}
+
+func (f *CommandFlag) SetDefault(value string) {
+	f.data.Default = value
+}
+
+func (f *CommandFlag) SetRequired(required bool) {
+	f.data.Required = required
+}
+
+func (f *CommandFlag) UnmarshalJSON(b []byte) error {
+	var data commandFlagData
+	err := json.Unmarshal(b, &data)
+	if err != nil {
+		return err
+	}
+	f.data = data
+	return nil
+}
+
+func (f *CommandFlag) MarshalJSON() ([]byte, error) {
+	return json.Marshal(f.data)
 }
 
 type varData struct {
@@ -271,9 +468,24 @@ type varData struct {
 	Description string `json:"description,omitempty"`
 }
 
+type commandData struct {
+	Name        string                     `json:"-"`
+	Description string                     `json:"description,omitempty"`
+	Flags       map[string]commandFlagData `json:"flags,omitempty"`
+	Environment map[string]varData         `json:"environment,omitempty"`
+}
+
+type commandFlagData struct {
+	Name        string `json:"-"`
+	Description string `json:"description,omitempty"`
+	Default     string `json:"default,omitempty"`
+	Required    bool   `json:"required,omitempty"`
+}
+
 func merge(profs ...profileData) profileData {
 	result := profileData{
 		Environment: make(map[string]varData),
+		Commands:    make(map[string]commandData),
 	}
 	for _, prof := range profs {
 		if prof.OS != nil {
@@ -289,8 +501,26 @@ func merge(profs ...profileData) profileData {
 				Description: v.Description,
 			}
 		}
+		for name, cmd := range prof.Commands {
+			cloned := cloneCommand(cmd)
+			cloned.Name = name
+			result.Commands[name] = cloned
+		}
 	}
 	return result
+}
+
+func cloneCommand(cmd commandData) commandData {
+	out := cmd
+	if len(cmd.Flags) > 0 {
+		out.Flags = make(map[string]commandFlagData, len(cmd.Flags))
+		maps.Copy(out.Flags, cmd.Flags)
+	}
+	if len(cmd.Environment) > 0 {
+		out.Environment = make(map[string]varData, len(cmd.Environment))
+		maps.Copy(out.Environment, cmd.Environment)
+	}
+	return out
 }
 
 type options struct {
