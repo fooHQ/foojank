@@ -140,6 +140,12 @@ func TestPrivilegeStringSubject(t *testing.T) {
 			subject: protodaemon.ListJobsSubject(),
 		},
 		{
+			name:    "JobCancel",
+			priv:    privilege.JobCancel{},
+			str:     "JOB.CANCEL",
+			subject: protodaemon.CancelJobSubject(),
+		},
+		{
 			name: "JWTIssue",
 			priv: privilege.JWTIssue{
 				UserID: userID,
@@ -295,6 +301,16 @@ func TestParsePrivileges(t *testing.T) {
 			want:  privilege.JobList{},
 		},
 		{
+			name:  "JobCancel",
+			input: "JOB.CANCEL",
+			want:  privilege.JobCancel{},
+		},
+		{
+			name:  "JobCancel lowercase",
+			input: "job.cancel",
+			want:  privilege.JobCancel{},
+		},
+		{
 			name:  "JWTIssue",
 			input: "JWT.ISSUE." + userID,
 			want: privilege.JWTIssue{
@@ -341,6 +357,11 @@ func TestParsePrivileges(t *testing.T) {
 		{
 			name:    "JobUpdate is not a privilege",
 			input:   "JOB.UPDATE",
+			wantErr: true,
+		},
+		{
+			name:    "JobCancel extra argument",
+			input:   "JOB.CANCEL.extra",
 			wantErr: true,
 		},
 		{
@@ -403,6 +424,7 @@ func TestParseFormatPrivilegesRoundTrip(t *testing.T) {
 		privilege.JobCreate{},
 		privilege.JobGet{},
 		privilege.JobList{},
+		privilege.JobCancel{},
 	}
 
 	ss := privilege.FormatPrivileges(privileges)
@@ -428,6 +450,7 @@ func TestParseFormatPrivilegesRoundTrip(t *testing.T) {
 		"JOB.CREATE",
 		"JOB.GET",
 		"JOB.LIST",
+		"JOB.CANCEL",
 	}, ss)
 
 	got, err := privilege.ParsePrivileges(ss)
@@ -455,6 +478,7 @@ func TestParseFormatPrivilegesRoundTrip(t *testing.T) {
 		protodaemon.CreateJobSubject(),
 		protodaemon.GetJobSubject(),
 		protodaemon.ListJobsSubject(),
+		protodaemon.CancelJobSubject(),
 	}, got.Permissions())
 }
 
