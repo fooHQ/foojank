@@ -12,7 +12,7 @@ var (
 	ErrStorageNotFound    = errors.New("storage not found")
 	ErrFileNotFound       = errors.New("file not found")
 	ErrInvalidStorageName = errors.New("invalid storage name")
-	ErrServiceUnavailable = errors.New("service unavailable")
+	ErrDaemonUnavailable  = errors.New("daemon is unavailable")
 	ErrKeyNotFound        = errors.New("key not found")
 	ErrKeyExists          = errors.New("key already exists")
 	ErrStreamNotFound     = errors.New("stream not found")
@@ -35,7 +35,7 @@ func translate(err error) error {
 	case errors.Is(err, jetstream.ErrInvalidStoreName):
 		return ErrInvalidStorageName
 	case errors.Is(err, nats.ErrNoResponders), errors.Is(err, jetstream.ErrNoStreamResponse):
-		return ErrServiceUnavailable
+		return ErrDaemonUnavailable
 	case errors.Is(err, jetstream.ErrKeyNotFound):
 		return ErrKeyNotFound
 	case errors.Is(err, jetstream.ErrKeyExists):
