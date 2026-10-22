@@ -22,20 +22,7 @@ func New(srv *server.Client) *Client {
 }
 
 func (c *Client) RequestCreateUser(ctx context.Context, req protodaemon.CreateUserRequest) (protodaemon.CreateUserResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.CreateUserResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.CreateUserSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.CreateUserResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.CreateUserSubject(), req)
 	if err != nil {
 		return protodaemon.CreateUserResponse{}, err
 	}
@@ -53,20 +40,7 @@ func (c *Client) RequestCreateUser(ctx context.Context, req protodaemon.CreateUs
 }
 
 func (c *Client) RequestGetUser(ctx context.Context, req protodaemon.GetUserRequest) (protodaemon.GetUserResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.GetUserResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.GetUserSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.GetUserResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.GetUserSubject(), req)
 	if err != nil {
 		return protodaemon.GetUserResponse{}, err
 	}
@@ -84,20 +58,7 @@ func (c *Client) RequestGetUser(ctx context.Context, req protodaemon.GetUserRequ
 }
 
 func (c *Client) RequestListUsers(ctx context.Context, req protodaemon.ListUsersRequest) (protodaemon.ListUsersResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.ListUsersResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.ListUsersSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.ListUsersResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.ListUsersSubject(), req)
 	if err != nil {
 		return protodaemon.ListUsersResponse{}, err
 	}
@@ -115,20 +76,7 @@ func (c *Client) RequestListUsers(ctx context.Context, req protodaemon.ListUsers
 }
 
 func (c *Client) RequestUpdateUser(ctx context.Context, req protodaemon.UpdateUserRequest) (protodaemon.UpdateUserResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.UpdateUserResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.UpdateUserSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.UpdateUserResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.UpdateUserSubject(), req)
 	if err != nil {
 		return protodaemon.UpdateUserResponse{}, err
 	}
@@ -146,20 +94,7 @@ func (c *Client) RequestUpdateUser(ctx context.Context, req protodaemon.UpdateUs
 }
 
 func (c *Client) RequestDeleteUser(ctx context.Context, req protodaemon.DeleteUserRequest) (protodaemon.DeleteUserResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.DeleteUserResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.DeleteUserSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.DeleteUserResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.DeleteUserSubject(), req)
 	if err != nil {
 		return protodaemon.DeleteUserResponse{}, err
 	}
@@ -177,20 +112,7 @@ func (c *Client) RequestDeleteUser(ctx context.Context, req protodaemon.DeleteUs
 }
 
 func (c *Client) RequestCreateAgent(ctx context.Context, req protodaemon.CreateAgentRequest) (protodaemon.CreateAgentResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.CreateAgentResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.CreateAgentSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.CreateAgentResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.CreateAgentSubject(), req)
 	if err != nil {
 		return protodaemon.CreateAgentResponse{}, err
 	}
@@ -208,20 +130,7 @@ func (c *Client) RequestCreateAgent(ctx context.Context, req protodaemon.CreateA
 }
 
 func (c *Client) RequestGetAgent(ctx context.Context, req protodaemon.GetAgentRequest) (protodaemon.GetAgentResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.GetAgentResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.GetAgentSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.GetAgentResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.GetAgentSubject(), req)
 	if err != nil {
 		return protodaemon.GetAgentResponse{}, err
 	}
@@ -239,20 +148,7 @@ func (c *Client) RequestGetAgent(ctx context.Context, req protodaemon.GetAgentRe
 }
 
 func (c *Client) RequestListAgents(ctx context.Context, req protodaemon.ListAgentsRequest) (protodaemon.ListAgentsResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.ListAgentsResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.ListAgentsSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.ListAgentsResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.ListAgentsSubject(), req)
 	if err != nil {
 		return protodaemon.ListAgentsResponse{}, err
 	}
@@ -270,20 +166,7 @@ func (c *Client) RequestListAgents(ctx context.Context, req protodaemon.ListAgen
 }
 
 func (c *Client) RequestDeleteAgent(ctx context.Context, req protodaemon.DeleteAgentRequest) (protodaemon.DeleteAgentResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.DeleteAgentResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.DeleteAgentSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.DeleteAgentResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.DeleteAgentSubject(), req)
 	if err != nil {
 		return protodaemon.DeleteAgentResponse{}, err
 	}
@@ -301,20 +184,7 @@ func (c *Client) RequestDeleteAgent(ctx context.Context, req protodaemon.DeleteA
 }
 
 func (c *Client) RequestCreateGateway(ctx context.Context, req protodaemon.CreateGatewayRequest) (protodaemon.CreateGatewayResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.CreateGatewayResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.CreateGatewaySubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.CreateGatewayResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.CreateGatewaySubject(), req)
 	if err != nil {
 		return protodaemon.CreateGatewayResponse{}, err
 	}
@@ -332,20 +202,7 @@ func (c *Client) RequestCreateGateway(ctx context.Context, req protodaemon.Creat
 }
 
 func (c *Client) RequestGetGateway(ctx context.Context, req protodaemon.GetGatewayRequest) (protodaemon.GetGatewayResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.GetGatewayResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.GetGatewaySubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.GetGatewayResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.GetGatewaySubject(), req)
 	if err != nil {
 		return protodaemon.GetGatewayResponse{}, err
 	}
@@ -363,20 +220,7 @@ func (c *Client) RequestGetGateway(ctx context.Context, req protodaemon.GetGatew
 }
 
 func (c *Client) RequestListGateways(ctx context.Context, req protodaemon.ListGatewaysRequest) (protodaemon.ListGatewaysResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.ListGatewaysResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.ListGatewaysSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.ListGatewaysResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.ListGatewaysSubject(), req)
 	if err != nil {
 		return protodaemon.ListGatewaysResponse{}, err
 	}
@@ -394,20 +238,7 @@ func (c *Client) RequestListGateways(ctx context.Context, req protodaemon.ListGa
 }
 
 func (c *Client) RequestDeleteGateway(ctx context.Context, req protodaemon.DeleteGatewayRequest) (protodaemon.DeleteGatewayResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.DeleteGatewayResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.DeleteGatewaySubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.DeleteGatewayResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.DeleteGatewaySubject(), req)
 	if err != nil {
 		return protodaemon.DeleteGatewayResponse{}, err
 	}
@@ -425,20 +256,7 @@ func (c *Client) RequestDeleteGateway(ctx context.Context, req protodaemon.Delet
 }
 
 func (c *Client) RequestCreateRole(ctx context.Context, req protodaemon.CreateRoleRequest) (protodaemon.CreateRoleResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.CreateRoleResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.CreateRoleSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.CreateRoleResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.CreateRoleSubject(), req)
 	if err != nil {
 		return protodaemon.CreateRoleResponse{}, err
 	}
@@ -456,20 +274,7 @@ func (c *Client) RequestCreateRole(ctx context.Context, req protodaemon.CreateRo
 }
 
 func (c *Client) RequestGetRole(ctx context.Context, req protodaemon.GetRoleRequest) (protodaemon.GetRoleResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.GetRoleResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.GetRoleSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.GetRoleResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.GetRoleSubject(), req)
 	if err != nil {
 		return protodaemon.GetRoleResponse{}, err
 	}
@@ -487,20 +292,7 @@ func (c *Client) RequestGetRole(ctx context.Context, req protodaemon.GetRoleRequ
 }
 
 func (c *Client) RequestListRoles(ctx context.Context, req protodaemon.ListRolesRequest) (protodaemon.ListRolesResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.ListRolesResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.ListRolesSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.ListRolesResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.ListRolesSubject(), req)
 	if err != nil {
 		return protodaemon.ListRolesResponse{}, err
 	}
@@ -518,20 +310,7 @@ func (c *Client) RequestListRoles(ctx context.Context, req protodaemon.ListRoles
 }
 
 func (c *Client) RequestDeleteRole(ctx context.Context, req protodaemon.DeleteRoleRequest) (protodaemon.DeleteRoleResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.DeleteRoleResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.DeleteRoleSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.DeleteRoleResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.DeleteRoleSubject(), req)
 	if err != nil {
 		return protodaemon.DeleteRoleResponse{}, err
 	}
@@ -549,20 +328,7 @@ func (c *Client) RequestDeleteRole(ctx context.Context, req protodaemon.DeleteRo
 }
 
 func (c *Client) RequestCreateJob(ctx context.Context, req protodaemon.CreateJobRequest) (protodaemon.CreateJobResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.CreateJobResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.CreateJobSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.CreateJobResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.CreateJobSubject(), req)
 	if err != nil {
 		return protodaemon.CreateJobResponse{}, err
 	}
@@ -580,20 +346,7 @@ func (c *Client) RequestCreateJob(ctx context.Context, req protodaemon.CreateJob
 }
 
 func (c *Client) RequestGetJob(ctx context.Context, req protodaemon.GetJobRequest) (protodaemon.GetJobResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.GetJobResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.GetJobSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.GetJobResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.GetJobSubject(), req)
 	if err != nil {
 		return protodaemon.GetJobResponse{}, err
 	}
@@ -611,20 +364,7 @@ func (c *Client) RequestGetJob(ctx context.Context, req protodaemon.GetJobReques
 }
 
 func (c *Client) RequestListJobs(ctx context.Context, req protodaemon.ListJobsRequest) (protodaemon.ListJobsResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.ListJobsResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.ListJobsSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.ListJobsResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.ListJobsSubject(), req)
 	if err != nil {
 		return protodaemon.ListJobsResponse{}, err
 	}
@@ -642,20 +382,7 @@ func (c *Client) RequestListJobs(ctx context.Context, req protodaemon.ListJobsRe
 }
 
 func (c *Client) RequestCancelJob(ctx context.Context, req protodaemon.CancelJobRequest) (protodaemon.CancelJobResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.CancelJobResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.CancelJobSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.CancelJobResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.CancelJobSubject(), req)
 	if err != nil {
 		return protodaemon.CancelJobResponse{}, err
 	}
@@ -673,20 +400,7 @@ func (c *Client) RequestCancelJob(ctx context.Context, req protodaemon.CancelJob
 }
 
 func (c *Client) RequestJobOutput(ctx context.Context, req protodaemon.GetJobOutputRequest) (protodaemon.GetJobOutputResponse, error) {
-	b, err := protodaemon.Marshal(req)
-	if err != nil {
-		return protodaemon.GetJobOutputResponse{}, err
-	}
-
-	resp, err := c.request(ctx, &nats.Msg{
-		Subject: protodaemon.GetJobOutputSubject(),
-		Data:    b,
-	})
-	if err != nil {
-		return protodaemon.GetJobOutputResponse{}, translate(err)
-	}
-
-	data, err := protodaemon.Unmarshal(resp.Data)
+	data, err := c.request(ctx, protodaemon.GetJobOutputSubject(), req)
 	if err != nil {
 		return protodaemon.GetJobOutputResponse{}, err
 	}
@@ -703,10 +417,27 @@ func (c *Client) RequestJobOutput(ctx context.Context, req protodaemon.GetJobOut
 	return v, nil
 }
 
-func (c *Client) request(ctx context.Context, msg *nats.Msg) (*nats.Msg, error) {
-	if msg.Header == nil {
-		msg.Header = make(nats.Header)
+func (c *Client) request(ctx context.Context, subject string, req any) (any, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return nil, err
 	}
-	msg.Header.Set(nats.MsgIdHdr, nuid.Next())
-	return c.srv.Conn().RequestMsgWithContext(ctx, msg)
+
+	resp, err := c.srv.Conn().RequestMsgWithContext(ctx, &nats.Msg{
+		Subject: subject,
+		Header: nats.Header{
+			nats.MsgIdHdr: []string{nuid.Next()},
+		},
+		Data: b,
+	})
+	if err != nil {
+		return nil, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
