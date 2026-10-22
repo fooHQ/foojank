@@ -196,6 +196,39 @@ func TestValidateCreateAgentRequest(t *testing.T) {
 			}(),
 			wantErr: "arch is required",
 		},
+		{
+			name: "valid with commands",
+			req: func() protodaemon.CreateAgentRequest {
+				req := valid
+				req.Commands = map[string]protodaemon.AgentCommand{
+					"ls": {
+						Description: "List a directory",
+						Flags: map[string]protodaemon.AgentCommandFlag{
+							"recursive": {
+								Description: "Recurse into directories",
+								Default:     "false",
+								Required:    true,
+							},
+						},
+						Environment: map[string]protodaemon.AgentCommandVar{
+							"DEPTH": {
+								Value:       "2",
+								Description: "Max recursion depth",
+							},
+						},
+					},
+				}
+				return req
+			}(),
+		},
+		{
+			name: "valid with empty commands",
+			req: func() protodaemon.CreateAgentRequest {
+				req := valid
+				req.Commands = map[string]protodaemon.AgentCommand{}
+				return req
+			}(),
+		},
 	}
 
 	for _, tt := range tests {

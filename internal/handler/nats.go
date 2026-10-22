@@ -623,6 +623,7 @@ func (h *NATSHandler) CreateAgent(ctx context.Context, params map[string]string,
 			UserKey: string(agentSeed),
 			Extra:   agentConf.Extra,
 		},
+		Commands:  copyProtoCommands(req.Commands),
 		CreatedAt: time.Now().UTC(),
 	})
 	if err != nil {
@@ -716,6 +717,7 @@ func (h *NATSHandler) GetAgent(ctx context.Context, params map[string]string, ms
 				Key:   agent.Config.UserKey,
 				Extra: agent.Config.Extra,
 			},
+			Commands:  copyDirectoryCommands(agent.Commands),
 			CreatedAt: agent.CreatedAt.Unix(),
 		},
 	}
@@ -737,20 +739,21 @@ func (h *NATSHandler) ListAgents(ctx context.Context, params map[string]string, 
 	}
 
 	agents := make([]protodaemon.Agent, len(entries))
-	for i := range entries {
+	for i, entry := range entries {
 		agents[i] = protodaemon.Agent{
-			ID:          entries[i].ID,
-			Name:        entries[i].Name,
-			Description: entries[i].Description,
-			GatewayID:   entries[i].GatewayID,
+			ID:          entry.ID,
+			Name:        entry.Name,
+			Description: entry.Description,
+			GatewayID:   entry.GatewayID,
 			Config: protodaemon.AgentConfig{
-				OS:    entries[i].Config.OS,
-				Arch:  entries[i].Config.Arch,
-				JWT:   entries[i].Config.UserJWT,
-				Key:   entries[i].Config.UserKey,
-				Extra: entries[i].Config.Extra,
+				OS:    entry.Config.OS,
+				Arch:  entry.Config.Arch,
+				JWT:   entry.Config.UserJWT,
+				Key:   entry.Config.UserKey,
+				Extra: entry.Config.Extra,
 			},
-			CreatedAt: entries[i].CreatedAt.Unix(),
+			Commands:  copyDirectoryCommands(entry.Commands),
+			CreatedAt: entry.CreatedAt.Unix(),
 		}
 	}
 
@@ -1334,4 +1337,62 @@ func match(route, subject string) (map[string]string, bool) {
 	}
 
 	return params, true
+}
+
+func copyProtoCommands(in map[string]protodaemon.AgentCommand) map[string]directory.AgentCommand {
+	out := make(map[string]directory.AgentCommand, len(in))
+	for name, command := range in {
+		flags := make(map[string]directory.AgentCommandFlag, len(command.Flags))
+		for flagName, flag := range command.Flags {
+			flags[flagName] = directory.AgentCommandFlag{
+				Description: flag.Description,
+				Default:     flag.Default,
+				Required:    flag.Required,
+			}
+		}
+
+		env := make(map[string]directory.AgentCommandVar, len(command.Environment))
+		for envName, variable := range command.Environment {
+			env[envName] = directory.AgentCommandVar{
+				Value:       variable.Value,
+				Description: variable.Description,
+			}
+		}
+
+		out[name] = directory.AgentCommand{
+			Description: command.Description,
+			Flags:       flags,
+			Environment: env,
+		}
+	}
+	return out
+}
+
+func copyDirectoryCommands(in map[string]directory.AgentCommand) map[string]protodaemon.AgentCommand {
+	out := make(map[string]protodaemon.AgentCommand, len(in))
+	for name, command := range in {
+		flags := make(map[string]protodaemon.AgentCommandFlag, len(command.Flags))
+		for flagName, flag := range command.Flags {
+			flags[flagName] = protodaemon.AgentCommandFlag{
+				Description: flag.Description,
+				Default:     flag.Default,
+				Required:    flag.Required,
+			}
+		}
+
+		env := make(map[string]protodaemon.AgentCommandVar, len(command.Environment))
+		for envName, variable := range command.Environment {
+			env[envName] = protodaemon.AgentCommandVar{
+				Value:       variable.Value,
+				Description: variable.Description,
+			}
+		}
+
+		out[name] = protodaemon.AgentCommand{
+			Description: command.Description,
+			Flags:       flags,
+			Environment: env,
+		}
+	}
+	return out
 }
