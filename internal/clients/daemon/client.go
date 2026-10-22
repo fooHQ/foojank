@@ -731,6 +731,37 @@ func (c *Client) RequestCancelJob(ctx context.Context, req protodaemon.CancelJob
 	return v, nil
 }
 
+func (c *Client) RequestJobOutput(ctx context.Context, req protodaemon.GetJobOutputRequest) (protodaemon.GetJobOutputResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.GetJobOutputResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.GetJobOutputSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.GetJobOutputResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.GetJobOutputResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.GetJobOutputResponse)
+	if !ok {
+		return protodaemon.GetJobOutputResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.GetJobOutputResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
 const agentHostDirectoryName = "agent-hosts"
 
 func (c *Client) openAgentHostDirectory(ctx context.Context) (*AgentHostDirectory, error) {
