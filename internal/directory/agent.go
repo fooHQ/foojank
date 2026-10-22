@@ -95,13 +95,14 @@ func (d *AgentDirectory) Delete(ctx context.Context, agent AgentDirectoryEntry) 
 }
 
 type AgentDirectoryEntry struct {
-	ID          string           `json:"id"`
-	Name        string           `json:"name"`
-	Description string           `json:"description"`
-	GatewayID   string           `json:"gateway_id"`
-	Config      AgentBuildConfig `json:"config"`
-	CreatedAt   time.Time        `json:"created_at"`
-	Revision    uint64           `json:"-"`
+	ID          string                  `json:"id"`
+	Name        string                  `json:"name"`
+	Description string                  `json:"description"`
+	GatewayID   string                  `json:"gateway_id"`
+	Config      AgentBuildConfig        `json:"config"`
+	Commands    map[string]AgentCommand `json:"commands,omitempty"`
+	CreatedAt   time.Time               `json:"created_at"`
+	Revision    uint64                  `json:"-"`
 }
 
 type AgentBuildConfig struct {
@@ -110,4 +111,21 @@ type AgentBuildConfig struct {
 	UserJWT string            `json:"user_jwt"`
 	UserKey string            `json:"user_key"`
 	Extra   map[string]string `json:"extra"`
+}
+
+type AgentCommand struct {
+	Description string                      `json:"description,omitempty"`
+	Flags       map[string]AgentCommandFlag `json:"flags,omitempty"`
+	Environment map[string]AgentCommandVar  `json:"environment,omitempty"`
+}
+
+type AgentCommandFlag struct {
+	Description string `json:"description,omitempty"`
+	Default     string `json:"default,omitempty"`
+	Required    bool   `json:"required,omitempty"`
+}
+
+type AgentCommandVar struct {
+	Value       string `json:"value"`
+	Description string `json:"description,omitempty"`
 }
