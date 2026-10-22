@@ -70,6 +70,8 @@ const (
 	tagDeleteGatewayResponse
 	tagDeleteJobRequest
 	tagDeleteJobResponse
+	tagCancelJobRequest
+	tagCancelJobResponse
 )
 
 // Marshal serializes the given message into a CBOR-encoded byte slice. It
@@ -275,6 +277,14 @@ func Marshal(message any) ([]byte, error) {
 		tag, payload = tagDeleteJobResponse, &v
 	case *DeleteJobResponse:
 		tag, payload = tagDeleteJobResponse, v
+	case CancelJobRequest:
+		tag, payload = tagCancelJobRequest, &v
+	case *CancelJobRequest:
+		tag, payload = tagCancelJobRequest, v
+	case CancelJobResponse:
+		tag, payload = tagCancelJobResponse, &v
+	case *CancelJobResponse:
+		tag, payload = tagCancelJobResponse, v
 	default:
 		return nil, ErrUnknownType
 	}
@@ -511,6 +521,14 @@ func Unmarshal(b []byte) (any, error) {
 		var m DeleteJobResponse
 		err = m.UnmarshalCbor(r)
 		payload = m
+	case tagCancelJobRequest:
+		var m CancelJobRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagCancelJobResponse:
+		var m CancelJobResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
 	default:
 		return nil, ErrUnknownTag
 	}
@@ -638,6 +656,11 @@ func ListJobsSubject() string {
 // DeleteJobSubject returns the NATS subject for deleting a job.
 func DeleteJobSubject() string {
 	return "FJ.DAEMON.RPC.JOB.DELETE"
+}
+
+// CancelJobSubject returns the NATS subject for cancelling a job.
+func CancelJobSubject() string {
+	return "FJ.DAEMON.RPC.JOB.CANCEL"
 }
 
 // ParseIssueJWTSubject extracts the user ID from an issue-JWT subject. It
