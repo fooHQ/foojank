@@ -731,42 +731,6 @@ func (c *Client) RequestCancelJob(ctx context.Context, req protodaemon.CancelJob
 	return v, nil
 }
 
-func (c *Client) PublishStopWorker(ctx context.Context, job JobDirectoryEntry) error {
-	b, err := protoagent.Marshal(protoagent.StopWorker{})
-	if err != nil {
-		return err
-	}
-
-	err = c.publishMsgToStream(
-		ctx,
-		&nats.Msg{
-			Subject: protoagent.CmdStopWorkerSubject(job.GatewayID, job.AgentID, job.WorkerID),
-			Data:    b,
-		},
-	)
-	if err != nil {
-		return translate(err)
-	}
-
-	return nil
-}
-
-func (c *Client) publishMsgToStream(ctx context.Context, msg *nats.Msg) error {
-	if msg.Header == nil {
-		msg.Header = make(nats.Header)
-	}
-	msg.Header.Set(nats.MsgIdHdr, nuid.Next())
-	_, err := c.srv.PublishMsg(
-		ctx,
-		msg,
-		jetstream.WithExpectStream(c.stream),
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 const agentHostDirectoryName = "agent-hosts"
 
 func (c *Client) openAgentHostDirectory(ctx context.Context) (*AgentHostDirectory, error) {
