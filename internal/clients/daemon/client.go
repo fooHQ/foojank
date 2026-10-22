@@ -2,43 +2,23 @@ package daemon
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nats-io/nuid"
 
 	"github.com/foohq/foojank/internal/clients/server"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
-const EventStream = "event-stream"
-
 type Client struct {
-	srv    *server.Client
-	stream string
+	srv *server.Client
 }
 
 func New(srv *server.Client) *Client {
 	return &Client{
-		srv:    srv,
-		stream: EventStream,
+		srv: srv,
 	}
-}
-
-func (c *Client) GetAgentHost(ctx context.Context, key string) (AgentHostDirectoryEntry, error) {
-	dir, err := c.openAgentHostDirectory(ctx)
-	if err != nil {
-		return AgentHostDirectoryEntry{}, translate(err)
-	}
-
-	host, err := dir.Get(ctx, key)
-	if err != nil {
-		return AgentHostDirectoryEntry{}, translate(err)
-	}
-
-	return host, nil
 }
 
 func (c *Client) RequestCreateUser(ctx context.Context, req protodaemon.CreateUserRequest) (protodaemon.CreateUserResponse, error) {
@@ -721,22 +701,6 @@ func (c *Client) RequestJobOutput(ctx context.Context, req protodaemon.GetJobOut
 	}
 
 	return v, nil
-}
-
-const agentHostDirectoryName = "agent-hosts"
-
-func (c *Client) openAgentHostDirectory(ctx context.Context) (*AgentHostDirectory, error) {
-	dir, err := c.srv.CreateKeyValue(ctx, jetstream.KeyValueConfig{
-		Bucket: agentHostDirectoryName,
-	})
-	if err != nil && !errors.Is(err, jetstream.ErrBucketExists) {
-		return nil, err
-	}
-	return &AgentHostDirectory{
-		Directory: Directory{
-			store: dir,
-		},
-	}, nil
 }
 
 func (c *Client) request(ctx context.Context, msg *nats.Msg) (*nats.Msg, error) {
