@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nats-io/nuid"
 
 	"github.com/foohq/foojank/internal/clients/server"
@@ -127,6 +128,24 @@ func (c *Client) RequestJobOutput(ctx context.Context, gatewayID string, req pro
 	}
 
 	return v, nil
+}
+
+func (c *Client) RegisterGateway(ctx context.Context, gatewayID string) error {
+	_, err := c.srv.CreateConsumer(ctx, gatewayID, jetstream.ConsumerConfig{
+		Durable:       gatewayID,
+		DeliverPolicy: jetstream.DeliverLastPolicy,
+		AckPolicy:     jetstream.AckExplicitPolicy,
+		MaxAckPending: 1,
+		FilterSubjects: []string{
+			protogw.RegisterAgentSubject(gatewayID),
+			protogw.UnregisterAgentSubject(gatewayID),
+		},
+	})
+	return err
+}
+
+func (c *Client) UnregisterGateway(ctx context.Context, gatewayID string) error {
+	return c.srv.DeleteConsumer(ctx, gatewayID, gatewayID)
 }
 
 func (c *Client) request(ctx context.Context, subject string, req any) (any, error) {
