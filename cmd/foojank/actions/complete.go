@@ -247,13 +247,13 @@ func listAgentNames(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	agents, err := client.ListAgents(ctx)
+	resp, err := client.RequestListAgents(ctx, protodaemon.ListAgentsRequest{})
 	if err != nil {
 		return nil, err
 	}
 
-	names := make([]string, 0, len(agents))
-	for _, agent := range agents {
+	names := make([]string, 0, len(resp.Agents))
+	for _, agent := range resp.Agents {
 		line := completionLine(agent.Name, agent.Description)
 		if line == "" {
 			continue
