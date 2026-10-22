@@ -1,7 +1,6 @@
 package daemon
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -11,7 +10,6 @@ import (
 	"github.com/nats-io/nuid"
 
 	"github.com/foohq/foojank/internal/clients/server"
-	protoagent "github.com/foohq/foojank/proto/agent"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
@@ -41,43 +39,6 @@ func (c *Client) GetAgentHost(ctx context.Context, key string) (AgentHostDirecto
 	}
 
 	return host, nil
-}
-
-func (c *Client) GetJob(ctx context.Context, key string) (JobDirectoryEntry, error) {
-	dir, err := c.openJobDirectory(ctx)
-	if err != nil {
-		return JobDirectoryEntry{}, translate(err)
-	}
-
-	job, err := dir.Get(ctx, key)
-	if err != nil {
-		return JobDirectoryEntry{}, translate(err)
-	}
-
-	return job, nil
-}
-
-func (c *Client) ListJobOutputLines(ctx context.Context, job JobDirectoryEntry, count, skip int) ([]byte, error) {
-	msgCh := make(chan Message)
-	err := c.listStreamMessages(
-		ctx,
-		[]string{
-			protoagent.EvtWorkerStdoutSubject(job.GatewayID, job.AgentID, "*"),
-		},
-		1+uint64(skip),
-		count,
-		msgCh,
-	)
-	if err != nil {
-		return nil, translate(err)
-	}
-
-	var buff bytes.Buffer
-	for msg := range msgCh {
-		buff.Write(msg.Data())
-	}
-
-	return buff.Bytes(), nil
 }
 
 func (c *Client) RequestCreateUser(ctx context.Context, req protodaemon.CreateUserRequest) (protodaemon.CreateUserResponse, error) {
@@ -778,69 +739,10 @@ func (c *Client) openAgentHostDirectory(ctx context.Context) (*AgentHostDirector
 	}, nil
 }
 
-const jobsDirectoryName = "jobs"
-
-func (c *Client) openJobDirectory(ctx context.Context) (*JobDirectory, error) {
-	dir, err := c.srv.CreateKeyValue(ctx, jetstream.KeyValueConfig{
-		Bucket: jobsDirectoryName,
-	})
-	if err != nil && !errors.Is(err, jetstream.ErrBucketExists) {
-		return nil, err
-	}
-	return &JobDirectory{
-		Directory: Directory{
-			store: dir,
-		},
-	}, nil
-}
-
 func (c *Client) request(ctx context.Context, msg *nats.Msg) (*nats.Msg, error) {
 	if msg.Header == nil {
 		msg.Header = make(nats.Header)
 	}
 	msg.Header.Set(nats.MsgIdHdr, nuid.Next())
 	return c.srv.Conn().RequestMsgWithContext(ctx, msg)
-}
-
-func (c *Client) listStreamMessages(ctx context.Context, subjects []string, startSeq uint64, limit int, outputCh chan<- Message) error {
-	consumer, err := c.srv.CreateConsumer(ctx, c.stream, jetstream.ConsumerConfig{
-		DeliverPolicy:  jetstream.DeliverByStartSequencePolicy,
-		AckPolicy:      jetstream.AckNonePolicy,
-		MaxAckPending:  1,
-		FilterSubjects: subjects,
-		OptStartSeq:    startSeq,
-	})
-	if err != nil {
-		return err
-	}
-
-	if limit <= 0 {
-		limit = 50
-	}
-
-	iter, err := consumer.FetchNoWait(limit)
-	if err != nil {
-		return err
-	}
-
-	for msg := range iter.Messages() {
-		meta, err := msg.Metadata()
-		if err != nil {
-			return err
-		}
-
-		outputCh <- Message{
-			msg:  msg,
-			meta: meta,
-		}
-	}
-
-	close(outputCh)
-
-	err = iter.Error()
-	if err != nil {
-		return iter.Error()
-	}
-
-	return nil
 }
