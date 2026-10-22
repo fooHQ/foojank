@@ -3,12 +3,12 @@ package cancel
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/internal/clients/daemon"
@@ -79,16 +79,9 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	jobID := c.Args().First()
 
-	job, err := client.GetJob(ctx, jobID)
-	if err != nil {
-		if errors.Is(err, daemon.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", jobID)
-		}
-		logger.ErrorContext(ctx, "Cannot get job: %v", err)
-		return err
-	}
-
-	err = client.PublishStopWorker(ctx, job)
+	_, err := client.RequestCancelJob(ctx, protodaemon.CancelJobRequest{
+		JobID: jobID,
+	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot cancel job: %v", err)
 		return err
