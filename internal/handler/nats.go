@@ -703,6 +703,33 @@ func (h *NATSHandler) GetAgent(ctx context.Context, params map[string]string, ms
 		}
 	}
 
+	commands := make(map[string]protodaemon.AgentCommand, len(agent.Commands))
+	for name, command := range agent.Commands {
+		flags := make(map[string]protodaemon.AgentCommandFlag, len(command.Flags))
+		for flagName, flag := range command.Flags {
+			flags[flagName] = protodaemon.AgentCommandFlag{
+				Description: flag.Description,
+				Default:     flag.Default,
+				Required:    flag.Required,
+			}
+		}
+
+		env := make(map[string]protodaemon.AgentCommandVar, len(command.Environment))
+		for envName, variable := range command.Environment {
+			env[envName] = protodaemon.AgentCommandVar{
+				Value:       variable.Value,
+				Default:     variable.Default,
+				Description: variable.Description,
+			}
+		}
+
+		commands[name] = protodaemon.AgentCommand{
+			Description: command.Description,
+			Flags:       flags,
+			Environment: env,
+		}
+	}
+
 	return protodaemon.GetAgentResponse{
 		Agent: protodaemon.Agent{
 			ID:          agent.ID,
@@ -716,6 +743,7 @@ func (h *NATSHandler) GetAgent(ctx context.Context, params map[string]string, ms
 				Key:   agent.Config.UserKey,
 				Extra: agent.Config.Extra,
 			},
+			Commands:  commands,
 			CreatedAt: agent.CreatedAt.Unix(),
 		},
 	}
@@ -737,20 +765,48 @@ func (h *NATSHandler) ListAgents(ctx context.Context, params map[string]string, 
 	}
 
 	agents := make([]protodaemon.Agent, len(entries))
-	for i := range entries {
+	for i, entry := range entries {
+		commands := make(map[string]protodaemon.AgentCommand, len(entry.Commands))
+		for name, command := range entry.Commands {
+			flags := make(map[string]protodaemon.AgentCommandFlag, len(command.Flags))
+			for flagName, flag := range command.Flags {
+				flags[flagName] = protodaemon.AgentCommandFlag{
+					Description: flag.Description,
+					Default:     flag.Default,
+					Required:    flag.Required,
+				}
+			}
+
+			env := make(map[string]protodaemon.AgentCommandVar, len(command.Environment))
+			for envName, variable := range command.Environment {
+				env[envName] = protodaemon.AgentCommandVar{
+					Value:       variable.Value,
+					Default:     variable.Default,
+					Description: variable.Description,
+				}
+			}
+
+			commands[name] = protodaemon.AgentCommand{
+				Description: command.Description,
+				Flags:       flags,
+				Environment: env,
+			}
+		}
+
 		agents[i] = protodaemon.Agent{
-			ID:          entries[i].ID,
-			Name:        entries[i].Name,
-			Description: entries[i].Description,
-			GatewayID:   entries[i].GatewayID,
+			ID:          entry.ID,
+			Name:        entry.Name,
+			Description: entry.Description,
+			GatewayID:   entry.GatewayID,
 			Config: protodaemon.AgentConfig{
-				OS:    entries[i].Config.OS,
-				Arch:  entries[i].Config.Arch,
-				JWT:   entries[i].Config.UserJWT,
-				Key:   entries[i].Config.UserKey,
-				Extra: entries[i].Config.Extra,
+				OS:    entry.Config.OS,
+				Arch:  entry.Config.Arch,
+				JWT:   entry.Config.UserJWT,
+				Key:   entry.Config.UserKey,
+				Extra: entry.Config.Extra,
 			},
-			CreatedAt: entries[i].CreatedAt.Unix(),
+			Commands:  commands,
+			CreatedAt: entry.CreatedAt.Unix(),
 		}
 	}
 
