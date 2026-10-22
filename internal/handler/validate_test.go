@@ -469,6 +469,17 @@ func TestValidateCancelJobRequest(t *testing.T) {
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
 }
 
+func TestValidateGetJobOutputRequest(t *testing.T) {
+	err := handler.ValidateGetJobOutputRequest(protodaemon.GetJobOutputRequest{JobID: "job1", Offset: 12})
+	require.NoError(t, err)
+
+	err = handler.ValidateGetJobOutputRequest(protodaemon.GetJobOutputRequest{})
+	require.EqualError(t, err, "job id is required")
+
+	err = handler.ValidateGetJobOutputRequest(protodaemon.GetJobOutputRequest{JobID: "bad id"})
+	require.ErrorIs(t, err, directory.ErrNameInvalid)
+}
+
 func TestValidateListJobsRequest(t *testing.T) {
 	err := handler.ValidateListJobsRequest(protodaemon.ListJobsRequest{})
 	require.NoError(t, err)

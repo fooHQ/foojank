@@ -108,6 +108,13 @@ func ValidateCancelJobRequest(req protodaemon.CancelJobRequest) error {
 	return directory.ValidateKey(req.JobID)
 }
 
+func ValidateGetJobOutputRequest(req protodaemon.GetJobOutputRequest) error {
+	if req.JobID == "" {
+		return errors.New("job id is required")
+	}
+	return directory.ValidateKey(req.JobID)
+}
+
 func ValidateListJobsRequest(req protodaemon.ListJobsRequest) error {
 	if req.AgentID == "" {
 		return nil
