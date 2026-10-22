@@ -68,6 +68,17 @@ func TestDirectoryCreateGetDelete(t *testing.T) {
 		ID:        "agent1",
 		Name:      "alpha",
 		CreatedAt: time.Now(),
+		Commands: map[string]AgentCommand{
+			"ls": {
+				Description: "List a directory",
+				Flags: map[string]AgentCommandFlag{
+					"recursive": {Description: "Recurse into directories"},
+				},
+				Environment: map[string]AgentCommandVar{
+					"DEPTH": {Default: "1", Description: "Max recursion depth"},
+				},
+			},
+		},
 	})
 	require.NoError(t, err)
 	require.NotZero(t, entry.Revision)
@@ -76,6 +87,9 @@ func TestDirectoryCreateGetDelete(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "agent1", got.ID)
 	require.Equal(t, "alpha", got.Name)
+	require.Equal(t, "List a directory", got.Commands["ls"].Description)
+	require.Equal(t, "Recurse into directories", got.Commands["ls"].Flags["recursive"].Description)
+	require.Equal(t, "1", got.Commands["ls"].Environment["DEPTH"].Default)
 
 	got, err = dir.Get(ctx, "alpha")
 	require.NoError(t, err)
