@@ -2,6 +2,7 @@ package profile_test
 
 import (
 	"encoding/json"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -171,6 +172,184 @@ func TestMerge(t *testing.T) {
 	require.Equal(t, "val1", merged.Get("VAR1").Value())
 	require.Equal(t, "val2_override", merged.Get("VAR2").Value())
 	require.Equal(t, "val3", merged.Get("VAR3").Value())
+}
+
+func TestProfile_Commands(t *testing.T) {
+	p := profile.NewProfile()
+
+	ls := profile.NewCommand("ls")
+	ls.SetDescription("List a directory")
+	recursive := profile.NewCommandFlag("recursive")
+	recursive.SetDescription("Recurse into directories")
+	ls.SetFlags(map[string]*profile.CommandFlag{
+		"recursive": recursive,
+	})
+	depth := profile.NewVar("1")
+	ls.SetEnvironment(map[string]*profile.Var{
+		"DEPTH": depth,
+	})
+
+	reg := profile.NewCommand("reg")
+	reg.SetDescription("Read the registry")
+
+	p.SetCommand(ls)
+	p.SetCommand(reg)
+
+	ls.SetDescription("changed")
+
+	got := p.GetCommand("ls")
+	require.Equal(t, "ls", got.Name())
+	require.Equal(t, "List a directory", got.Description())
+	require.Equal(t, "recursive", got.Flags()["recursive"].Name())
+	require.Equal(t, "Recurse into directories", got.Flags()["recursive"].Description())
+	require.Equal(t, "1", got.Environment()["DEPTH"].Value())
+
+	names := commandNames(p.Commands())
+	require.Equal(t, []string{"ls", "reg"}, names)
+
+	updated := profile.NewCommand("ls")
+	updated.SetDescription("List files")
+	p.SetCommand(updated)
+	require.Equal(t, []string{"ls", "reg"}, commandNames(p.Commands()))
+	require.Equal(t, "List files", p.GetCommand("ls").Description())
+	require.Empty(t, p.GetCommand("ls").Flags())
+
+	p.DeleteCommand("ls")
+	require.Equal(t, []string{"reg"}, commandNames(p.Commands()))
+	require.Empty(t, p.GetCommand("ls").Name())
+
+	p.SetCommand(nil)
+	require.Equal(t, []string{"reg"}, commandNames(p.Commands()))
+
+	missing := p.GetCommand("missing")
+	require.Empty(t, missing.Name())
+	require.Empty(t, missing.Flags())
+	require.Empty(t, missing.Environment())
+}
+
+func TestProfile_CommandJSON(t *testing.T) {
+	raw := []byte(`{
+		"commands": {
+			"ls": {
+				"description": "List a directory",
+				"flags": {
+					"recursive": {"description": "Recurse into directories"},
+					"depth": {"description": "Max recursion depth", "default": "1"}
+				},
+				"environment": {
+					"DEPTH": {"description": "Max recursion depth", "default": "1"}
+				}
+			}
+		}
+	}`)
+
+	var p profile.Profile
+	err := json.Unmarshal(raw, &p)
+	require.NoError(t, err)
+
+	cmd := p.GetCommand("ls")
+	require.Equal(t, "ls", cmd.Name())
+	require.Equal(t, "List a directory", cmd.Description())
+	require.Equal(t, "recursive", cmd.Flags()["recursive"].Name())
+	require.Equal(t, "1", cmd.Flags()["depth"].Default())
+	require.Equal(t, "Max recursion depth", cmd.Environment()["DEPTH"].Description())
+	require.Equal(t, "1", cmd.Environment()["DEPTH"].Value())
+
+	data, err := json.Marshal(&p)
+	require.NoError(t, err)
+
+	var again profile.Profile
+	err = json.Unmarshal(data, &again)
+	require.NoError(t, err)
+	require.Equal(t, cmd.Description(), again.GetCommand("ls").Description())
+	require.Equal(t, "recursive", again.GetCommand("ls").Flags()["recursive"].Name())
+	require.Equal(t, "Recurse into directories", again.GetCommand("ls").Flags()["recursive"].Description())
+}
+
+func TestMergeCommands(t *testing.T) {
+	raw := []byte(`{
+		"defaults": {
+			"commands": {
+				"ls": {
+					"description": "List a directory",
+					"flags": {
+						"all": {"description": "Include hidden entries"}
+					}
+				},
+				"ps": {"description": "List processes"}
+			}
+		},
+		"profiles": {
+			"linux-amd64": {"os": "linux", "arch": "amd64"},
+			"windows-amd64": {
+				"os": "windows",
+				"arch": "amd64",
+				"commands": {
+					"reg": {
+						"description": "Read the registry",
+						"flags": {
+							"key": {"description": "Registry key"}
+						}
+					},
+					"ls": {
+						"description": "List a directory",
+						"flags": {
+							"force": {}
+						}
+					}
+				}
+			}
+		}
+	}`)
+
+	var profiles profile.Profiles
+	err := json.Unmarshal(raw, &profiles)
+	require.NoError(t, err)
+
+	linux, err := profiles.Get("linux-amd64")
+	require.NoError(t, err)
+	require.Equal(t, []string{"ls", "ps"}, commandNames(linux.Commands()))
+	require.Equal(t, "all", linux.GetCommand("ls").Flags()["all"].Name())
+
+	windows, err := profiles.Get("windows-amd64")
+	require.NoError(t, err)
+	require.Equal(t, []string{"ls", "ps", "reg"}, commandNames(windows.Commands()))
+	require.Equal(t, "List processes", windows.GetCommand("ps").Description())
+	require.Equal(t, "force", windows.GetCommand("ls").Flags()["force"].Name())
+	require.Equal(t, "key", windows.GetCommand("reg").Flags()["key"].Name())
+
+	data, err := json.Marshal(&profiles)
+	require.NoError(t, err)
+	var stored struct {
+		Profiles map[string]struct {
+			Commands map[string]struct {
+				Description string `json:"description"`
+			} `json:"commands"`
+		} `json:"profiles"`
+	}
+	err = json.Unmarshal(data, &stored)
+	require.NoError(t, err)
+	require.Empty(t, stored.Profiles["linux-amd64"].Commands)
+	require.Equal(t, []string{"ls", "reg"}, commandKeys(stored.Profiles["windows-amd64"].Commands))
+	require.Equal(t, "Read the registry", stored.Profiles["windows-amd64"].Commands["reg"].Description)
+}
+
+func commandNames(cmds map[string]*profile.Command) []string {
+	names := make([]string, 0, len(cmds))
+	for name := range cmds {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+func commandKeys[T any](cmds map[string]T) []string {
+	names := make([]string, 0, len(cmds))
+	for name := range cmds {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }
 
 func TestParseKVPairs(t *testing.T) {
