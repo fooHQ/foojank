@@ -270,13 +270,13 @@ func listGatewayNames(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	gateways, err := client.ListGateways(ctx)
+	resp, err := client.RequestListGateways(ctx, protodaemon.ListGatewaysRequest{})
 	if err != nil {
 		return nil, err
 	}
 
-	names := make([]string, 0, len(gateways))
-	for _, gateway := range gateways {
+	names := make([]string, 0, len(resp.Gateways))
+	for _, gateway := range resp.Gateways {
 		line := completionLine(gateway.Name, gateway.Description)
 		if line == "" {
 			continue
