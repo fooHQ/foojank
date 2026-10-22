@@ -5,7 +5,6 @@ import (
 	"errors"
 	"os"
 
-	"github.com/nats-io/nats.go/jetstream"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank"
@@ -19,7 +18,6 @@ import (
 	"github.com/foohq/foojank/internal/foojankd"
 	"github.com/foohq/foojank/internal/handler"
 	"github.com/foohq/foojank/internal/publisher"
-	protoagent "github.com/foohq/foojank/proto/agent"
 )
 
 func NewCommand() *cli.Command {
@@ -75,11 +73,6 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 	return ctx, nil
 }
 
-const (
-	streamName   = "event-stream"
-	consumerName = "event-consumer"
-)
-
 func action(ctx context.Context, c *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
@@ -90,33 +83,6 @@ func action(ctx context.Context, c *cli.Command) error {
 	accountKey, err := authdir.GetAccountKey(accountName)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot read account key: %v", err)
-		return err
-	}
-
-	_, err = srv.CreateStream(ctx, jetstream.StreamConfig{
-		Name: streamName,
-		Subjects: []string{
-			protoagent.CmdStartWorkerSubject("*", "*", "*"),
-			protoagent.CmdStopWorkerSubject("*", "*", "*"),
-			protoagent.CmdWriteStdinSubject("*", "*", "*"),
-			protoagent.EvtStartWorkerSubject("*", "*", "*"),
-			protoagent.EvtStopWorkerSubject("*", "*", "*"),
-			protoagent.EvtWorkerStdoutSubject("*", "*", "*"),
-			protoagent.EvtWorkerStatusSubject("*", "*", "*"),
-			protoagent.EvtAgentInfoSubject("*", "*"),
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	_, err = srv.CreateConsumer(ctx, streamName, jetstream.ConsumerConfig{
-		Durable:       consumerName,
-		DeliverPolicy: jetstream.DeliverLastPolicy,
-		AckPolicy:     jetstream.AckExplicitPolicy,
-		MaxAckPending: 1,
-	})
-	if err != nil {
 		return err
 	}
 
@@ -149,14 +115,12 @@ func action(ctx context.Context, c *cli.Command) error {
 			Connection: srv.Conn(),
 		}),
 		Handler: handler.NewNATSHandler(logger, handler.NATSHandlerConfig{
-			Connection:       srv,
 			Gateway:          gateway.New(srv),
 			AgentDirectory:   agentDir,
 			GatewayDirectory: gatewayDir,
 			UserDirectory:    userDir,
 			JobDirectory:     jobDir,
 			AccountKey:       accountKey,
-			Stream:           streamName,
 		}),
 		Publisher: publisher.NewNATSPublisher(logger, publisher.NATSPublisherConfig{
 			Connection: srv.Conn(),
