@@ -9,6 +9,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	protodaemon "github.com/foohq/foojank/proto/daemon"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/internal/clients/daemon"
@@ -79,23 +80,15 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	jobID := c.Args().First()
 
-	job, err := client.GetJob(ctx, jobID)
-	if err != nil {
-		if errors.Is(err, daemon.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", jobID)
-		}
-		logger.ErrorContext(ctx, "Cannot get job: %v", err)
-		return err
-	}
-
-	// TODO: configure paging!
-	b, err := client.ListJobOutputLines(ctx, job, 100, 0)
+	resp, err := client.RequestJobOutput(ctx, protodaemon.GetJobOutputRequest{
+		JobID: jobID,
+	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot get job output: %v", err)
 		return err
 	}
 
-	_, _ = fmt.Fprintf(os.Stdout, "%s", string(b))
+	_, _ = fmt.Fprintf(os.Stdout, "%s", string(resp.Data))
 
 	return nil
 }
