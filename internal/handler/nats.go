@@ -17,7 +17,6 @@ import (
 	"github.com/foohq/foojank/internal/directory"
 	"github.com/foohq/foojank/internal/log"
 	"github.com/foohq/foojank/internal/privilege"
-	protoagent "github.com/foohq/foojank/proto/agent"
 	protogw "github.com/foohq/foojank/proto/gateway"
 
 	"github.com/foohq/foojank/internal/message"
@@ -27,7 +26,6 @@ import (
 type NATSHandlerFn func(context.Context, map[string]string, message.Msg) any
 
 type NATSHandlerConfig struct {
-	Connection       jetstream.JetStream
 	Gateway          *gateway.Client
 	AgentDirectory   *directory.AgentDirectory
 	GatewayDirectory *directory.GatewayDirectory
@@ -35,7 +33,6 @@ type NATSHandlerConfig struct {
 	RoleDirectory    *directory.RoleDirectory
 	JobDirectory     *directory.JobDirectory
 	AccountKey       nkeys.KeyPair
-	Stream           string
 }
 
 type NATSHandler struct {
@@ -843,7 +840,7 @@ func (h *NATSHandler) CreateGateway(ctx context.Context, params map[string]strin
 		}
 	}
 
-	gatewayPerms := auth.NewGatewayPermissions(h.conf.Stream, gatewayID)
+	gatewayPerms := auth.NewGatewayPermissions(gatewayID)
 
 	gatewayClaims, err := auth.NewUserJWT(gatewayName, gatewayPerms, gatewayKeyPair)
 	if err != nil {
@@ -900,7 +897,7 @@ func (h *NATSHandler) CreateGateway(ctx context.Context, params map[string]strin
 		cancel()
 	}()
 
-	err = h.RegisterGateway(ctx, gateway)
+	err = h.conf.Gateway.RegisterGateway(ctx, gateway.ID)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot register gateway: %v", err)
 		return protodaemon.CreateGatewayResponse{
@@ -1011,7 +1008,7 @@ func (h *NATSHandler) DeleteGateway(ctx context.Context, params map[string]strin
 		}
 	}
 
-	err = h.UnregisterGateway(ctx, gateway)
+	err = h.conf.Gateway.UnregisterGateway(ctx, gateway.ID)
 	if err != nil && !errors.Is(err, jetstream.ErrConsumerNotFound) {
 		h.logger.ErrorContext(ctx, "Cannot unregister gateway: %v", err)
 		return protodaemon.DeleteGatewayResponse{
@@ -1275,29 +1272,6 @@ func (h *NATSHandler) GetJobOutput(ctx context.Context, params map[string]string
 	return protodaemon.GetJobOutputResponse{
 		Data: resp.Data,
 	}
-}
-
-// TODO: move elsewhere!
-// TODO: remove h.conf.Connection!
-func (h *NATSHandler) RegisterGateway(ctx context.Context, gateway directory.GatewayDirectoryEntry) error {
-	_, err := h.conf.Connection.CreateConsumer(ctx, h.conf.Stream, jetstream.ConsumerConfig{
-		Durable:       gateway.ID,
-		DeliverPolicy: jetstream.DeliverLastPolicy,
-		AckPolicy:     jetstream.AckExplicitPolicy,
-		MaxAckPending: 1,
-		FilterSubjects: []string{
-			protoagent.CmdStartWorkerSubject(gateway.ID, "*", "*"),
-			protoagent.CmdStopWorkerSubject(gateway.ID, "*", "*"),
-			protoagent.CmdWriteStdinSubject(gateway.ID, "*", "*"),
-			protogw.RegisterAgentSubject(gateway.ID),
-			protogw.UnregisterAgentSubject(gateway.ID),
-		},
-	})
-	return err
-}
-
-func (h *NATSHandler) UnregisterGateway(ctx context.Context, gateway directory.GatewayDirectoryEntry) error {
-	return h.conf.Connection.DeleteConsumer(ctx, h.conf.Stream, gateway.ID)
 }
 
 type NATSHandlerMessage struct {
