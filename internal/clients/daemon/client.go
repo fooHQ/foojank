@@ -29,20 +29,6 @@ func New(srv *server.Client) *Client {
 	}
 }
 
-func (c *Client) ListAgents(ctx context.Context) ([]AgentDirectoryEntry, error) {
-	dir, err := c.openAgentDirectory(ctx)
-	if err != nil {
-		return nil, translate(err)
-	}
-
-	entries, err := dir.List(ctx)
-	if err != nil {
-		return nil, translate(err)
-	}
-
-	return entries, nil
-}
-
 func (c *Client) GetAgentHost(ctx context.Context, key string) (AgentHostDirectoryEntry, error) {
 	dir, err := c.openAgentHostDirectory(ctx)
 	if err != nil {
@@ -55,20 +41,6 @@ func (c *Client) GetAgentHost(ctx context.Context, key string) (AgentHostDirecto
 	}
 
 	return host, nil
-}
-
-func (c *Client) ListGateways(ctx context.Context) ([]GatewayDirectoryEntry, error) {
-	dir, err := c.openGatewayDirectory(ctx)
-	if err != nil {
-		return nil, translate(err)
-	}
-
-	entries, err := dir.List(ctx)
-	if err != nil {
-		return nil, translate(err)
-	}
-
-	return entries, nil
 }
 
 func (c *Client) GetJob(ctx context.Context, key string) (JobDirectoryEntry, error) {
@@ -764,22 +736,6 @@ func (c *Client) publishMsgToStream(ctx context.Context, msg *nats.Msg) error {
 	return nil
 }
 
-const agentDirectoryName = "agents"
-
-func (c *Client) openAgentDirectory(ctx context.Context) (*AgentDirectory, error) {
-	dir, err := c.srv.CreateKeyValue(ctx, jetstream.KeyValueConfig{
-		Bucket: agentDirectoryName,
-	})
-	if err != nil && !errors.Is(err, jetstream.ErrBucketExists) {
-		return nil, err
-	}
-	return &AgentDirectory{
-		Directory: Directory{
-			store: dir,
-		},
-	}, nil
-}
-
 const agentHostDirectoryName = "agent-hosts"
 
 func (c *Client) openAgentHostDirectory(ctx context.Context) (*AgentHostDirectory, error) {
@@ -790,22 +746,6 @@ func (c *Client) openAgentHostDirectory(ctx context.Context) (*AgentHostDirector
 		return nil, err
 	}
 	return &AgentHostDirectory{
-		Directory: Directory{
-			store: dir,
-		},
-	}, nil
-}
-
-const gatewayDirectoryName = "gateways"
-
-func (c *Client) openGatewayDirectory(ctx context.Context) (*GatewayDirectory, error) {
-	dir, err := c.srv.CreateKeyValue(ctx, jetstream.KeyValueConfig{
-		Bucket: gatewayDirectoryName,
-	})
-	if err != nil && !errors.Is(err, jetstream.ErrBucketExists) {
-		return nil, err
-	}
-	return &GatewayDirectory{
 		Directory: Directory{
 			store: dir,
 		},
