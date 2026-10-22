@@ -23,7 +23,28 @@ var parsers = map[string]parser{
 	userGetName:    parseUserGet,
 	userListName:   parseUserList,
 	userUpdateName: parseUserUpdate,
-	jwtIssueName:   parseJWTIssue,
+	userDeleteName: parseUserDelete,
+
+	agentCreateName: parseAgentCreate,
+	agentGetName:    parseAgentGet,
+	agentListName:   parseAgentList,
+	agentDeleteName: parseAgentDelete,
+
+	gatewayCreateName: parseGatewayCreate,
+	gatewayGetName:    parseGatewayGet,
+	gatewayListName:   parseGatewayList,
+	gatewayDeleteName: parseGatewayDelete,
+
+	roleCreateName: parseRoleCreate,
+	roleGetName:    parseRoleGet,
+	roleListName:   parseRoleList,
+	roleDeleteName: parseRoleDelete,
+
+	jobCreateName: parseJobCreate,
+	jobGetName:    parseJobGet,
+	jobListName:   parseJobList,
+
+	jwtIssueName: parseJWTIssue,
 }
 
 // Privileges is a parsed set of privileges and the NATS permissions they grant.

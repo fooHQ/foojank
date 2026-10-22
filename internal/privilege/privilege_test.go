@@ -44,6 +44,102 @@ func TestPrivilegeStringSubject(t *testing.T) {
 			subject: protodaemon.UpdateUserSubject(),
 		},
 		{
+			name:    "UserDelete",
+			priv:    privilege.UserDelete{},
+			str:     "USER.DELETE",
+			subject: protodaemon.DeleteUserSubject(),
+		},
+		{
+			name:    "AgentCreate",
+			priv:    privilege.AgentCreate{},
+			str:     "AGENT.CREATE",
+			subject: protodaemon.CreateAgentSubject(),
+		},
+		{
+			name:    "AgentGet",
+			priv:    privilege.AgentGet{},
+			str:     "AGENT.GET",
+			subject: protodaemon.GetAgentSubject(),
+		},
+		{
+			name:    "AgentList",
+			priv:    privilege.AgentList{},
+			str:     "AGENT.LIST",
+			subject: protodaemon.ListAgentsSubject(),
+		},
+		{
+			name:    "AgentDelete",
+			priv:    privilege.AgentDelete{},
+			str:     "AGENT.DELETE",
+			subject: protodaemon.DeleteAgentSubject(),
+		},
+		{
+			name:    "GatewayCreate",
+			priv:    privilege.GatewayCreate{},
+			str:     "GATEWAY.CREATE",
+			subject: protodaemon.CreateGatewaySubject(),
+		},
+		{
+			name:    "GatewayGet",
+			priv:    privilege.GatewayGet{},
+			str:     "GATEWAY.GET",
+			subject: protodaemon.GetGatewaySubject(),
+		},
+		{
+			name:    "GatewayList",
+			priv:    privilege.GatewayList{},
+			str:     "GATEWAY.LIST",
+			subject: protodaemon.ListGatewaysSubject(),
+		},
+		{
+			name:    "GatewayDelete",
+			priv:    privilege.GatewayDelete{},
+			str:     "GATEWAY.DELETE",
+			subject: protodaemon.DeleteGatewaySubject(),
+		},
+		{
+			name:    "RoleCreate",
+			priv:    privilege.RoleCreate{},
+			str:     "ROLE.CREATE",
+			subject: protodaemon.CreateRoleSubject(),
+		},
+		{
+			name:    "RoleGet",
+			priv:    privilege.RoleGet{},
+			str:     "ROLE.GET",
+			subject: protodaemon.GetRoleSubject(),
+		},
+		{
+			name:    "RoleList",
+			priv:    privilege.RoleList{},
+			str:     "ROLE.LIST",
+			subject: protodaemon.ListRolesSubject(),
+		},
+		{
+			name:    "RoleDelete",
+			priv:    privilege.RoleDelete{},
+			str:     "ROLE.DELETE",
+			subject: protodaemon.DeleteRoleSubject(),
+		},
+		{
+			name:    "JobCreate",
+			priv:    privilege.JobCreate{},
+			str:     "JOB.CREATE",
+			subject: protodaemon.CreateJobSubject(),
+		},
+		{
+			name:    "JobGet",
+			priv:    privilege.JobGet{},
+			str:     "JOB.GET",
+			subject: protodaemon.GetJobSubject(),
+		},
+		{
+			name:    "JobList",
+			priv:    privilege.JobList{},
+			str:     "JOB.LIST",
+			subject: protodaemon.ListJobsSubject(),
+		},
+		{
 			name: "JWTIssue",
 			priv: privilege.JWTIssue{
 				UserID: userID,
@@ -114,6 +210,91 @@ func TestParsePrivileges(t *testing.T) {
 			want:  privilege.UserUpdate{},
 		},
 		{
+			name:  "UserDelete",
+			input: "USER.DELETE",
+			want:  privilege.UserDelete{},
+		},
+		{
+			name:  "AgentCreate",
+			input: "AGENT.CREATE",
+			want:  privilege.AgentCreate{},
+		},
+		{
+			name:  "AgentCreate lowercase",
+			input: "agent.create",
+			want:  privilege.AgentCreate{},
+		},
+		{
+			name:  "AgentGet",
+			input: "AGENT.GET",
+			want:  privilege.AgentGet{},
+		},
+		{
+			name:  "AgentList",
+			input: "AGENT.LIST",
+			want:  privilege.AgentList{},
+		},
+		{
+			name:  "AgentDelete",
+			input: "AGENT.DELETE",
+			want:  privilege.AgentDelete{},
+		},
+		{
+			name:  "GatewayCreate",
+			input: "GATEWAY.CREATE",
+			want:  privilege.GatewayCreate{},
+		},
+		{
+			name:  "GatewayGet",
+			input: "GATEWAY.GET",
+			want:  privilege.GatewayGet{},
+		},
+		{
+			name:  "GatewayList",
+			input: "GATEWAY.LIST",
+			want:  privilege.GatewayList{},
+		},
+		{
+			name:  "GatewayDelete",
+			input: "GATEWAY.DELETE",
+			want:  privilege.GatewayDelete{},
+		},
+		{
+			name:  "RoleCreate",
+			input: "ROLE.CREATE",
+			want:  privilege.RoleCreate{},
+		},
+		{
+			name:  "RoleGet",
+			input: "ROLE.GET",
+			want:  privilege.RoleGet{},
+		},
+		{
+			name:  "RoleList",
+			input: "ROLE.LIST",
+			want:  privilege.RoleList{},
+		},
+		{
+			name:  "RoleDelete",
+			input: "ROLE.DELETE",
+			want:  privilege.RoleDelete{},
+		},
+		{
+			name:  "JobCreate",
+			input: "JOB.CREATE",
+			want:  privilege.JobCreate{},
+		},
+		{
+			name:  "JobGet",
+			input: "JOB.GET",
+			want:  privilege.JobGet{},
+		},
+		{
+			name:  "JobList",
+			input: "JOB.LIST",
+			want:  privilege.JobList{},
+		},
+		{
 			name:  "JWTIssue",
 			input: "JWT.ISSUE." + userID,
 			want: privilege.JWTIssue{
@@ -153,8 +334,23 @@ func TestParsePrivileges(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name:    "AgentCreate extra argument",
+			input:   "AGENT.CREATE.extra",
+			wantErr: true,
+		},
+		{
+			name:    "JobUpdate is not a privilege",
+			input:   "JOB.UPDATE",
+			wantErr: true,
+		},
+		{
+			name:    "JobDelete is not a privilege",
+			input:   "JOB.DELETE",
+			wantErr: true,
+		},
+		{
 			name:    "unknown",
-			input:   "AGENT.CREATE",
+			input:   "NOPE",
 			wantErr: true,
 		},
 		{
@@ -191,6 +387,22 @@ func TestParseFormatPrivilegesRoundTrip(t *testing.T) {
 		privilege.UserGet{},
 		privilege.UserList{},
 		privilege.UserUpdate{},
+		privilege.UserDelete{},
+		privilege.AgentCreate{},
+		privilege.AgentGet{},
+		privilege.AgentList{},
+		privilege.AgentDelete{},
+		privilege.GatewayCreate{},
+		privilege.GatewayGet{},
+		privilege.GatewayList{},
+		privilege.GatewayDelete{},
+		privilege.RoleCreate{},
+		privilege.RoleGet{},
+		privilege.RoleList{},
+		privilege.RoleDelete{},
+		privilege.JobCreate{},
+		privilege.JobGet{},
+		privilege.JobList{},
 	}
 
 	ss := privilege.FormatPrivileges(privileges)
@@ -200,6 +412,22 @@ func TestParseFormatPrivilegesRoundTrip(t *testing.T) {
 		"USER.GET",
 		"USER.LIST",
 		"USER.UPDATE",
+		"USER.DELETE",
+		"AGENT.CREATE",
+		"AGENT.GET",
+		"AGENT.LIST",
+		"AGENT.DELETE",
+		"GATEWAY.CREATE",
+		"GATEWAY.GET",
+		"GATEWAY.LIST",
+		"GATEWAY.DELETE",
+		"ROLE.CREATE",
+		"ROLE.GET",
+		"ROLE.LIST",
+		"ROLE.DELETE",
+		"JOB.CREATE",
+		"JOB.GET",
+		"JOB.LIST",
 	}, ss)
 
 	got, err := privilege.ParsePrivileges(ss)
@@ -211,6 +439,22 @@ func TestParseFormatPrivilegesRoundTrip(t *testing.T) {
 		protodaemon.GetUserSubject(),
 		protodaemon.ListUsersSubject(),
 		protodaemon.UpdateUserSubject(),
+		protodaemon.DeleteUserSubject(),
+		protodaemon.CreateAgentSubject(),
+		protodaemon.GetAgentSubject(),
+		protodaemon.ListAgentsSubject(),
+		protodaemon.DeleteAgentSubject(),
+		protodaemon.CreateGatewaySubject(),
+		protodaemon.GetGatewaySubject(),
+		protodaemon.ListGatewaysSubject(),
+		protodaemon.DeleteGatewaySubject(),
+		protodaemon.CreateRoleSubject(),
+		protodaemon.GetRoleSubject(),
+		protodaemon.ListRolesSubject(),
+		protodaemon.DeleteRoleSubject(),
+		protodaemon.CreateJobSubject(),
+		protodaemon.GetJobSubject(),
+		protodaemon.ListJobsSubject(),
 	}, got.Permissions())
 }
 
