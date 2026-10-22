@@ -700,6 +700,37 @@ func (c *Client) RequestListJobs(ctx context.Context, req protodaemon.ListJobsRe
 	return v, nil
 }
 
+func (c *Client) RequestCancelJob(ctx context.Context, req protodaemon.CancelJobRequest) (protodaemon.CancelJobResponse, error) {
+	b, err := protodaemon.Marshal(req)
+	if err != nil {
+		return protodaemon.CancelJobResponse{}, err
+	}
+
+	resp, err := c.request(ctx, &nats.Msg{
+		Subject: protodaemon.CancelJobSubject(),
+		Data:    b,
+	})
+	if err != nil {
+		return protodaemon.CancelJobResponse{}, translate(err)
+	}
+
+	data, err := protodaemon.Unmarshal(resp.Data)
+	if err != nil {
+		return protodaemon.CancelJobResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.CancelJobResponse)
+	if !ok {
+		return protodaemon.CancelJobResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.CancelJobResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
 func (c *Client) PublishStopWorker(ctx context.Context, job JobDirectoryEntry) error {
 	b, err := protoagent.Marshal(protoagent.StopWorker{})
 	if err != nil {
