@@ -76,6 +76,7 @@ func (h *NATSHandler) Match(msg message.Msg) (func(context.Context) message.Msg,
 		protodaemon.CreateJobSubject(): h.CreateJob,
 		protodaemon.GetJobSubject():    h.GetJob,
 		protodaemon.ListJobsSubject():  h.ListJobs,
+		protodaemon.CancelJobSubject(): h.CancelJob,
 
 		protodaemon.IssueJWTSubject("<user>"): h.IssueJWT,
 	}
@@ -1192,6 +1193,45 @@ func (h *NATSHandler) ListJobs(ctx context.Context, params map[string]string, ms
 	return protodaemon.ListJobsResponse{
 		Jobs: jobs,
 	}
+}
+
+func (h *NATSHandler) CancelJob(ctx context.Context, params map[string]string, msg message.Msg) any {
+	req, ok := msg.Data().(protodaemon.CancelJobRequest)
+	if !ok {
+		return protodaemon.CancelJobResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	err := ValidateCancelJobRequest(req)
+	if err != nil {
+		return protodaemon.CancelJobResponse{
+			Error: err,
+		}
+	}
+
+	job, err := h.conf.JobDirectory.Get(ctx, req.JobID)
+	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", req.JobID)
+		}
+		return protodaemon.CancelJobResponse{
+			Error: err,
+		}
+	}
+
+	_, err = h.conf.Gateway.RequestCancelJob(ctx, job.GatewayID, protogw.CancelJobRequest{
+		AgentID: job.AgentID,
+		JobID:   job.ID,
+	})
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot cancel job: %v", err)
+		return protodaemon.CancelJobResponse{
+			Error: err,
+		}
+	}
+
+	return protodaemon.CancelJobResponse{}
 }
 
 // TODO: move elsewhere!
