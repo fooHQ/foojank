@@ -112,21 +112,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		lastUpdate time.Time
 	)
 
-	host, err := client.GetAgentHost(ctx, agentName)
-	if err != nil {
-		if !errors.Is(err, daemon.ErrKeyNotFound) {
-			logger.ErrorContext(ctx, "Cannot get host info: %v", err)
-			return err
-		}
-	} else {
-		username = host.Username
-		hostname = host.Hostname
-		system = host.System
-		address = host.Address
-		country = "" // TODO
-		pid = ""     // TODO
-		lastUpdate = host.LastUpdate
-	}
+	// TODO: get host info
 
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
@@ -152,7 +138,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewTimeCell(lastUpdate).WithFormat("relative").WithEmptyValue("never"),
 	})
 
-	err = formatter.NewFormatter(
+	err := formatter.NewFormatter(
 		format,
 		formatter.WithNoColor(noColor),
 		formatter.WithOrientation(formatter.OrientationHorizontal),
