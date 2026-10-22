@@ -4,20 +4,10 @@ import (
 	"errors"
 
 	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nats.go/jetstream"
 )
 
 var (
-	ErrStorageExists      = errors.New("storage already exists")
-	ErrStorageNotFound    = errors.New("storage not found")
-	ErrFileNotFound       = errors.New("file not found")
-	ErrInvalidStorageName = errors.New("invalid storage name")
-	ErrDaemonUnavailable  = errors.New("daemon is unavailable")
-	ErrKeyNotFound        = errors.New("key not found")
-	ErrKeyExists          = errors.New("key already exists")
-	ErrStreamNotFound     = errors.New("stream not found")
-	ErrStreamExists       = errors.New("stream already exists")
-	ErrNameInvalid        = errors.New("invalid name")
+	ErrDaemonUnavailable = errors.New("daemon is unavailable")
 )
 
 func translate(err error) error {
@@ -26,26 +16,8 @@ func translate(err error) error {
 	}
 
 	switch {
-	case errors.Is(err, jetstream.ErrBucketExists):
-		return ErrStorageExists
-	case errors.Is(err, jetstream.ErrBucketNotFound):
-		return ErrStorageNotFound
-	case errors.Is(err, jetstream.ErrObjectNotFound):
-		return ErrFileNotFound
-	case errors.Is(err, jetstream.ErrInvalidStoreName):
-		return ErrInvalidStorageName
-	case errors.Is(err, nats.ErrNoResponders), errors.Is(err, jetstream.ErrNoStreamResponse):
+	case errors.Is(err, nats.ErrNoResponders):
 		return ErrDaemonUnavailable
-	case errors.Is(err, jetstream.ErrKeyNotFound):
-		return ErrKeyNotFound
-	case errors.Is(err, jetstream.ErrKeyExists):
-		return ErrKeyExists
-	case errors.Is(err, jetstream.ErrInvalidKey):
-		return ErrNameInvalid
-	case errors.Is(err, jetstream.ErrStreamNotFound):
-		return ErrStreamNotFound
-	case errors.Is(err, jetstream.ErrStreamNameAlreadyInUse):
-		return ErrStreamExists
 	default:
 		return err
 	}
