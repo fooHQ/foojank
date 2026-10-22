@@ -52,6 +52,7 @@ func (s *NATSConsumer) Subscribe(_ context.Context) error {
 		protodaemon.CreateJobSubject(),
 		protodaemon.GetJobSubject(),
 		protodaemon.ListJobsSubject(),
+		protodaemon.CancelJobSubject(),
 		protodaemon.IssueJWTSubject("*"),
 	}
 
