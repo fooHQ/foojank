@@ -32,6 +32,27 @@ func TestMarshalUnmarshal(t *testing.T) {
 			Key:   "SUDUMMYAGENTSEED",
 			Extra: map[string]string{"key1": "val1", "key2": "val2"},
 		},
+		Commands: map[string]daemon.AgentCommand{
+			"ls": {
+				Description: "List a directory",
+				Flags: map[string]daemon.AgentCommandFlag{
+					"all": {
+						Description: "Include hidden entries",
+					},
+					"recursive": {
+						Description: "Recurse into directories",
+						Default:     "false",
+						Required:    true,
+					},
+				},
+				Environment: map[string]daemon.AgentCommandVar{
+					"DEPTH": {
+						Value:       "2",
+						Description: "Max recursion depth",
+					},
+				},
+			},
+		},
 		CreatedAt: 1700000000,
 	}
 	testGateway := daemon.Gateway{
