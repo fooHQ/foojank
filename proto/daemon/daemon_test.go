@@ -797,6 +797,41 @@ func TestMarshalUnmarshal(t *testing.T) {
 			want:  daemon.CancelJobResponse{Error: testError},
 		},
 		{
+			name: "GetJobOutputRequest",
+			input: daemon.GetJobOutputRequest{
+				JobID:  "job1",
+				Offset: 12,
+			},
+			want: daemon.GetJobOutputRequest{
+				JobID:  "job1",
+				Offset: 12,
+			},
+		},
+		{
+			name: "GetJobOutputResponse",
+			input: daemon.GetJobOutputResponse{
+				Data: []byte("hello"),
+			},
+			want: daemon.GetJobOutputResponse{
+				Data: []byte("hello"),
+			},
+		},
+		{
+			name:  "GetJobOutputResponse with empty data",
+			input: daemon.GetJobOutputResponse{},
+			want:  daemon.GetJobOutputResponse{Data: []byte{}},
+		},
+		{
+			name: "GetJobOutputResponse with error",
+			input: daemon.GetJobOutputResponse{
+				Error: testError,
+			},
+			want: daemon.GetJobOutputResponse{
+				Data:  []byte{},
+				Error: testError,
+			},
+		},
+		{
 			name: "pointer input",
 			input: &daemon.CreateUserRequest{
 				Name: "ops",
@@ -1009,6 +1044,11 @@ func TestDeleteJobSubject(t *testing.T) {
 func TestCancelJobSubject(t *testing.T) {
 	got := daemon.CancelJobSubject()
 	require.Equal(t, "FJ.DAEMON.RPC.JOB.CANCEL", got)
+}
+
+func TestGetJobOutputSubject(t *testing.T) {
+	got := daemon.GetJobOutputSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.JOB.OUTPUT", got)
 }
 
 func TestParseIssueJWTSubject(t *testing.T) {
