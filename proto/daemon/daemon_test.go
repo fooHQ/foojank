@@ -210,6 +210,7 @@ func TestMarshalUnmarshal(t *testing.T) {
 					Key:   "SUDUMMYAGENTSEED",
 					Extra: map[string]string{"key1": "val1", "key2": "val2"},
 				},
+				Commands: testAgent.Commands,
 			},
 			want: daemon.CreateAgentRequest{
 				Name:        "web",
@@ -222,6 +223,7 @@ func TestMarshalUnmarshal(t *testing.T) {
 					Key:   "SUDUMMYAGENTSEED",
 					Extra: map[string]string{"key1": "val1", "key2": "val2"},
 				},
+				Commands: testAgent.Commands,
 			},
 		},
 		{
@@ -230,6 +232,7 @@ func TestMarshalUnmarshal(t *testing.T) {
 				Config: daemon.AgentConfig{
 					Extra: map[string]string{},
 				},
+				Commands: map[string]daemon.AgentCommand{},
 			},
 			want: daemon.CreateAgentRequest{
 				Config: daemon.AgentConfig{
