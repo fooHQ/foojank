@@ -13,12 +13,13 @@ type CreateAgentRequest struct {
 	Description string
 	GatewayID   string
 	Config      AgentConfig
+	Commands    map[string]AgentCommand
 }
 
 // MarshalCbor encodes the request as a CBOR array:
-// [name, description, gateway, config].
+// [name, description, gateway, config, commands].
 func (m *CreateAgentRequest) MarshalCbor(w io.Writer) error {
-	err := cboring.WriteArrayLength(4, w)
+	err := cboring.WriteArrayLength(5, w)
 	if err != nil {
 		return err
 	}
@@ -30,7 +31,12 @@ func (m *CreateAgentRequest) MarshalCbor(w io.Writer) error {
 		}
 	}
 
-	return m.Config.MarshalCbor(w)
+	err = m.Config.MarshalCbor(w)
+	if err != nil {
+		return err
+	}
+
+	return writeSortedMap(m.Commands, (*AgentCommand).MarshalCbor, w)
 }
 
 // UnmarshalCbor decodes the request from its CBOR representation.
@@ -39,7 +45,7 @@ func (m *CreateAgentRequest) UnmarshalCbor(r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	if l != 4 {
+	if l != 5 {
 		return errors.New("invalid message array length")
 	}
 
@@ -56,7 +62,14 @@ func (m *CreateAgentRequest) UnmarshalCbor(r io.Reader) error {
 	if err != nil {
 		return err
 	}
+
+	commands, err := readSortedMap((*AgentCommand).UnmarshalCbor, r)
+	if err != nil {
+		return err
+	}
+
 	m.Config = config
+	m.Commands = commands
 
 	return nil
 }
