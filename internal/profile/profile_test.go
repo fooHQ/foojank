@@ -237,7 +237,7 @@ func TestProfile_CommandJSON(t *testing.T) {
 					"depth": {"description": "Max recursion depth", "default": "1"}
 				},
 				"environment": {
-					"DEPTH": {"description": "Max recursion depth", "default": "1"}
+					"DEPTH": {"description": "Max recursion depth", "value": "1"}
 				}
 			}
 		}

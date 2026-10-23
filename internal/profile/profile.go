@@ -269,10 +269,7 @@ func (v *Var) SetValue(value string) {
 }
 
 func (v *Var) Value() string {
-	if v.data.Value != "" {
-		return v.data.Value
-	}
-	return v.data.Default
+	return v.data.Value
 }
 
 func (v *Var) Description() string {
@@ -464,7 +461,6 @@ func (f *CommandFlag) MarshalJSON() ([]byte, error) {
 
 type varData struct {
 	Value       string `json:"value"`
-	Default     string `json:"default,omitempty"`
 	Description string `json:"description,omitempty"`
 }
 
@@ -497,7 +493,6 @@ func merge(profs ...profileData) profileData {
 		for k, v := range prof.Environment {
 			result.Environment[k] = varData{
 				Value:       v.Value,
-				Default:     v.Default,
 				Description: v.Description,
 			}
 		}
