@@ -9,9 +9,9 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	"github.com/foohq/foojank/internal/clients/volume"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
-	"github.com/foohq/foojank/internal/clients/agent"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/formatter"
 	"github.com/foohq/foojank/internal/path"
@@ -81,7 +81,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	format, _ := conf.String(flags.Format)
 	noColor, _ := conf.Bool(flags.NoColor)
 
-	client := agent.New(srv)
+	client := volume.New(srv)
 
 	if c.NArg() == 0 {
 		err := listStorages(ctx, client, format, noColor)
@@ -109,8 +109,8 @@ func action(ctx context.Context, c *cli.Command) error {
 	return nil
 }
 
-func listStorages(ctx context.Context, client *agent.Client, format string, noColor bool) error {
-	storages, err := client.ListStorage(ctx)
+func listStorages(ctx context.Context, client *volume.Client, format string, noColor bool) error {
+	storages, err := client.List(ctx)
 	if err != nil {
 		return err
 	}
@@ -145,13 +145,8 @@ func listStorages(ctx context.Context, client *agent.Client, format string, noCo
 	return nil
 }
 
-func listStorage(ctx context.Context, client *agent.Client, format string, noColor bool, name, pth string) error {
-	storageName, err := client.GetStorageName(ctx, name)
-	if err != nil {
-		return err
-	}
-
-	store, err := client.GetStorage(ctx, storageName)
+func listStorage(ctx context.Context, client *volume.Client, format string, noColor bool, name, pth string) error {
+	store, err := client.Get(ctx, name)
 	if err != nil {
 		return err
 	}

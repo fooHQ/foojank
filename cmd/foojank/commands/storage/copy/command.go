@@ -11,9 +11,9 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	"github.com/foohq/foojank/internal/clients/volume"
 
 	"github.com/foohq/foojank/cmd/foojank/actions"
-	"github.com/foohq/foojank/internal/clients/agent"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/path"
 )
@@ -74,7 +74,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	logger := actions.GetLoggerFromContext(ctx)
 	srv := actions.GetServerFromContext(ctx)
 
-	client := agent.New(srv)
+	client := volume.New(srv)
 
 	if c.Args().Len() != 2 {
 		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
@@ -135,7 +135,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	return nil
 }
 
-func copyLocalFile(ctx context.Context, client *agent.Client, src string, storageName, dst string) error {
+func copyLocalFile(ctx context.Context, client *volume.Client, src string, storageName, dst string) error {
 	srcFile, err := os.Open(src)
 	if err != nil {
 		return err
@@ -153,12 +153,7 @@ func copyLocalFile(ctx context.Context, client *agent.Client, src string, storag
 		return errors.New("source file is a directory")
 	}
 
-	storageName, err = client.GetStorageName(ctx, storageName)
-	if err != nil {
-		return err
-	}
-
-	storage, err := client.GetStorage(ctx, storageName)
+	storage, err := client.Get(ctx, storageName)
 	if err != nil {
 		return err
 	}
@@ -192,13 +187,8 @@ func copyLocalFile(ctx context.Context, client *agent.Client, src string, storag
 	return nil
 }
 
-func copyRemoteFile(ctx context.Context, client *agent.Client, storageName, src string, dst string) error {
-	storageName, err := client.GetStorageName(ctx, storageName)
-	if err != nil {
-		return err
-	}
-
-	storage, err := client.GetStorage(ctx, storageName)
+func copyRemoteFile(ctx context.Context, client *volume.Client, storageName, src string, dst string) error {
+	storage, err := client.Get(ctx, storageName)
 	if err != nil {
 		return err
 	}
