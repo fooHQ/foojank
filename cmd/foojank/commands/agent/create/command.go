@@ -15,6 +15,7 @@ import (
 	"github.com/foohq/foojank/cmd/foojank/flags"
 	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/profile"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
@@ -148,6 +149,8 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	// Copy gateway extra configuration.
 	maps.Copy(agentConf.Extra, gateway.Config.Extra)
 
+	agentCmds := make(map[string]protodaemon.AgentCommand)
+
 	// Parse profile file.
 	if profName != "" {
 		prof, err := profs.Get(profName)
@@ -167,6 +170,8 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		}
 
 		maps.Copy(agentConf.Extra, prof.Env())
+
+		agentCmds = copyProfileCommands(prof.Commands())
 	}
 
 	// Parse command line flags.
@@ -189,6 +194,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		Description: agentDesc,
 		GatewayID:   gateway.ID,
 		Config:      agentConf,
+		Commands:    agentCmds,
 	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create agent: %v", err)
@@ -211,6 +217,35 @@ func parseKVPairs(pairs []string) map[string]string {
 		env[strings.TrimSpace(parts[0])] = v
 	}
 	return env
+}
+
+func copyProfileCommands(in map[string]*profile.Command) map[string]protodaemon.AgentCommand {
+	out := make(map[string]protodaemon.AgentCommand, len(in))
+	for name, command := range in {
+		flags := make(map[string]protodaemon.AgentCommandFlag, len(command.Flags()))
+		for flagName, flag := range command.Flags() {
+			flags[flagName] = protodaemon.AgentCommandFlag{
+				Description: flag.Description(),
+				Default:     flag.Default(),
+				Required:    flag.Required(),
+			}
+		}
+
+		env := make(map[string]protodaemon.AgentCommandVar, len(command.Environment()))
+		for envName, variable := range command.Environment() {
+			env[envName] = protodaemon.AgentCommandVar{
+				Value:       variable.Value(),
+				Description: variable.Description(),
+			}
+		}
+
+		out[name] = protodaemon.AgentCommand{
+			Description: command.Description(),
+			Flags:       flags,
+			Environment: env,
+		}
+	}
+	return out
 }
 
 func validateConfiguration(conf *config.Config) error {
