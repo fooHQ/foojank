@@ -102,18 +102,6 @@ func action(ctx context.Context, c *cli.Command) error {
 		agent = resp.Agent
 	}
 
-	var gatewayName string
-	{
-		resp, err := client.GetGateway(ctx, protodaemon.GetGatewayRequest{
-			GatewayRef: agent.GatewayID,
-		})
-		if err != nil {
-			gatewayName = agent.GatewayID
-		} else {
-			gatewayName = resp.Gateway.Name
-		}
-	}
-
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("ID").WithBold(),
@@ -133,7 +121,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell(agent.Description),
 		formatter.NewStringCell(agent.Config.OS),
 		formatter.NewStringCell(agent.Config.Arch),
-		formatter.NewStringCell(gatewayName),
+		formatter.NewStringCell(agent.GatewayID), // TODO: translate ID to  name!
 		formatter.NewStringCell(agent.Config.JWT),
 		formatter.NewStringCell(agent.Config.Key),
 		formatter.NewTimeCell(time.Unix(agent.CreatedAt, 0)),

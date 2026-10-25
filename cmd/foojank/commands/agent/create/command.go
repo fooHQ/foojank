@@ -123,19 +123,6 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 
 	client := daemon.New(srv)
 
-	var gateway protodaemon.Gateway
-	{
-		resp, err := client.GetGateway(ctx, protodaemon.GetGatewayRequest{
-			GatewayRef: gatewayName,
-		})
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get gateway: %v", err)
-			return err
-		}
-
-		gateway = resp.Gateway
-	}
-
 	if agentName == "" {
 		agentName = petname.Generate(2, "-")
 	}
@@ -145,9 +132,6 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		Arch:  runtime.GOARCH,
 		Extra: make(map[string]string),
 	}
-
-	// Copy gateway extra configuration.
-	maps.Copy(agentConf.Extra, gateway.Config.Extra)
 
 	agentCmds := make(map[string]protodaemon.AgentCommand)
 
@@ -192,7 +176,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	_, err = client.CreateAgent(ctx, protodaemon.CreateAgentRequest{
 		Name:        agentName,
 		Description: agentDesc,
-		GatewayRef:  gateway.ID,
+		GatewayRef:  gatewayName,
 		Config:      agentConf,
 		Commands:    agentCmds,
 	})
