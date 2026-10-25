@@ -93,20 +93,6 @@ func action(ctx context.Context, _ *cli.Command) error {
 		agents = resp.Agents
 	}
 
-	gateways := make(map[string]protodaemon.Gateway)
-	{
-		resp, err := client.ListGateways(ctx, protodaemon.ListGatewaysRequest{})
-		if err != nil {
-			// TODO Check if request fails due to permissions. if so, dont quit and show warning!
-			logger.ErrorContext(ctx, "Cannot get a list of gateways: %v", err)
-			return err
-		}
-
-		for _, gateway := range resp.Gateways {
-			gateways[gateway.ID] = gateway
-		}
-	}
-
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("NAME").WithBold(),
@@ -117,17 +103,9 @@ func action(ctx context.Context, _ *cli.Command) error {
 	})
 
 	for _, agent := range agents {
-		var gatewayName string
-		_, ok := gateways[agent.GatewayID]
-		if ok {
-			gatewayName = gateways[agent.GatewayID].Name
-		} else {
-			gatewayName = agent.GatewayID
-		}
-
 		table.AddRow([]formatter.Cell{
 			formatter.NewStringCell(agent.Name),
-			formatter.NewStringCell(gatewayName),
+			formatter.NewStringCell(agent.GatewayID), // TODO: translate ID to name!
 			formatter.NewStringCell(agent.Config.OS),
 			formatter.NewStringCell(agent.Config.Arch),
 			formatter.NewTimeCell(time.Unix(agent.CreatedAt, 0)).WithFormat("relative"),
