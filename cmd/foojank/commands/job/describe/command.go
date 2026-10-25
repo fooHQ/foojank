@@ -101,6 +101,16 @@ func action(ctx context.Context, c *cli.Command) error {
 		job = resp.Job
 	}
 
+	agentName := job.AgentName
+	if agentName == "" {
+		agentName = job.AgentID
+	}
+
+	gatewayName := job.GatewayName
+	if gatewayName == "" {
+		gatewayName = job.GatewayID
+	}
+
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("ID").WithBold(),
@@ -115,10 +125,11 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell("CREATED AT").WithBold(),
 		formatter.NewStringCell("UPDATED AT").WithBold(),
 	})
+
 	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell(job.ID),
-		formatter.NewStringCell(job.AgentID),   // TODO: translate ID to name!
-		formatter.NewStringCell(job.GatewayID), // TODO: translate ID to name!
+		formatter.NewStringCell(agentName),
+		formatter.NewStringCell(gatewayName),
 		formatter.NewStringCell(job.WorkerID),
 		formatter.NewStringCell(job.Command),
 		formatter.NewStringSliceCell(job.Args).WithSeparator("\n"),
