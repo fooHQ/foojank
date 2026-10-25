@@ -5,7 +5,6 @@ import (
 
 	"github.com/nats-io/jwt/v2"
 
-	protoagent "github.com/foohq/foojank/proto/agent"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 	protogw "github.com/foohq/foojank/proto/gateway"
 )
@@ -64,25 +63,6 @@ func NewGatewayPermissions(gatewayID string) jwt.Permissions {
 				InboxPrefix(gatewayID) + ".>",
 				protogw.RegisterAgentSubject(gatewayID),
 				protogw.UnregisterAgentSubject(gatewayID),
-			},
-		},
-	}
-}
-
-func NewAgentPermissions(gatewayID, agentID string) jwt.Permissions {
-	return jwt.Permissions{
-		Pub: jwt.Permission{
-			Allow: []string{
-				protoagent.EvtStartWorkerSubject(gatewayID, agentID, "*"),
-				protoagent.EvtStopWorkerSubject(gatewayID, agentID, "*"),
-				protoagent.EvtWorkerStdoutSubject(gatewayID, agentID, "*"),
-				protoagent.EvtWorkerStatusSubject(gatewayID, agentID, "*"),
-				protoagent.EvtAgentInfoSubject(gatewayID, agentID),
-			},
-		},
-		Sub: jwt.Permission{
-			Allow: []string{
-				InboxPrefix(gatewayID) + ".>",
 			},
 		},
 	}
