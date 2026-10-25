@@ -41,6 +41,8 @@ func (s *NATSConsumer) Subscribe(_ context.Context) error {
 		protodaemon.GetAgentSubject(),
 		protodaemon.ListAgentsSubject(),
 		protodaemon.DeleteAgentSubject(),
+		protodaemon.GetCommandSubject(),
+		protodaemon.ListCommandsSubject(),
 		protodaemon.CreateGatewaySubject(),
 		protodaemon.GetGatewaySubject(),
 		protodaemon.ListGatewaysSubject(),
@@ -50,9 +52,12 @@ func (s *NATSConsumer) Subscribe(_ context.Context) error {
 		protodaemon.ListRolesSubject(),
 		protodaemon.DeleteRoleSubject(),
 		protodaemon.CreateJobSubject(),
+		protodaemon.UpdateJobSubject(),
 		protodaemon.GetJobSubject(),
 		protodaemon.ListJobsSubject(),
+		protodaemon.DeleteJobSubject(),
 		protodaemon.CancelJobSubject(),
+		protodaemon.GetJobOutputSubject(),
 		protodaemon.IssueJWTSubject("*"),
 	}
 
