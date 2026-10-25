@@ -95,6 +95,96 @@ func CompleteCommandName(ctx context.Context, c *cli.Command) {
 	completeName(ctx, c, listCommandNames)
 }
 
+// CompleteJobUsage completes the command usage.
+// Before a command name is present, it completes command names for the agent
+// selected by --agent. After a command name is present, it completes that
+// command's flags.
+func CompleteJobUsage(ctx context.Context, c *cli.Command) {
+	ctx, cancel := completionContext(ctx)
+	defer cancel()
+	completeJobUsage(ctx, c, listAgentCommands)
+}
+
+func completeJobUsage(
+	ctx context.Context,
+	c *cli.Command,
+	commands func(context.Context) (map[string]protodaemon.AgentCommand, error),
+) {
+	token := completeToken()
+	commandName := jobCommandName(c)
+
+	if list, prefix, ok := flagValueCompleter(c, token); ok {
+		lines, err := list(ctx)
+		if err == nil {
+			printCompletionLines(c, prefix, lines)
+			return
+		}
+	}
+
+	if commandName == "" {
+		if strings.HasPrefix(token, "-") {
+			printFlagCompletions(c, token)
+			return
+		}
+		cmds, err := commands(ctx)
+		if err != nil {
+			return
+		}
+		printCompletionLines(c, "", commandNameLines(cmds))
+		return
+	}
+
+	cmds, err := commands(ctx)
+	if err != nil {
+		return
+	}
+	command, ok := cmds[commandName]
+	if !ok {
+		return
+	}
+	printCommandFlagCompletions(c, token, command.Flags)
+}
+
+// jobCommandName returns the job command name from positional arguments.
+// A trailing flag still being typed is ignored.
+func jobCommandName(c *cli.Command) string {
+	for _, arg := range c.Args().Slice() {
+		if arg == "" || strings.HasPrefix(arg, "-") {
+			continue
+		}
+		return arg
+	}
+	return ""
+}
+
+func printCommandFlagCompletions(c *cli.Command, token string, flags map[string]protodaemon.AgentCommandFlag) {
+	cur := ""
+	if strings.HasPrefix(token, "-") {
+		cur = strings.TrimLeft(token, "-")
+	}
+
+	lines := make([]string, 0, len(flags))
+	for name, flag := range flags {
+		nDashes := 2
+		if len(name) == 1 {
+			nDashes = 1
+		}
+		if strings.HasPrefix(token, "--") && nDashes == 1 {
+			continue
+		}
+		if cur != "" && (!strings.HasPrefix(name, cur) || cur == name) {
+			continue
+		}
+		line := completionLine(strings.Repeat("-", nDashes)+name, flag.Description)
+		if line == "" {
+			continue
+		}
+		lines = append(lines, line)
+	}
+	sort.Strings(lines)
+	printCompletionLines(c, "", lines)
+}
+
 func completeName(ctx context.Context, c *cli.Command, list func(context.Context) ([]string, error)) {
 	if completeFlagToken(ctx, c) {
 		return
@@ -342,7 +432,7 @@ func listRoleNames(ctx context.Context) ([]string, error) {
 	return names, nil
 }
 
-func listCommandNames(ctx context.Context) ([]string, error) {
+func listAgentCommands(ctx context.Context) (map[string]protodaemon.AgentCommand, error) {
 	conf := GetConfigFromContext(ctx)
 	agentName, ok := conf.String(flags.Agent)
 	if !ok || agentName == "" {
@@ -360,9 +450,23 @@ func listCommandNames(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	if resp.Commands == nil {
+		return map[string]protodaemon.AgentCommand{}, nil
+	}
+	return resp.Commands, nil
+}
 
-	names := make([]string, 0, len(resp.Commands))
-	for name, command := range resp.Commands {
+func listCommandNames(ctx context.Context) ([]string, error) {
+	commands, err := listAgentCommands(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return commandNameLines(commands), nil
+}
+
+func commandNameLines(commands map[string]protodaemon.AgentCommand) []string {
+	names := make([]string, 0, len(commands))
+	for name, command := range commands {
 		line := completionLine(name, command.Description)
 		if line == "" {
 			continue
@@ -370,7 +474,7 @@ func listCommandNames(ctx context.Context) ([]string, error) {
 		names = append(names, line)
 	}
 	sort.Strings(names)
-	return names, nil
+	return names
 }
 
 func listJobIDs(ctx context.Context) ([]string, error) {
