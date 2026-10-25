@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nats-io/nkeys"
 	"github.com/nats-io/nuid"
@@ -585,9 +586,7 @@ func (h *NATSHandler) CreateAgent(ctx context.Context, params map[string]string,
 		}
 	}
 
-	agentPerms := auth.NewAgentPermissions(gateway.ID, agentID)
-
-	agentClaims, err := auth.NewUserJWT(agentName, agentPerms, agentKeyPair)
+	agentClaims, err := auth.NewUserJWT(agentName, jwt.Permissions{}, agentKeyPair)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
 		return protodaemon.CreateAgentResponse{
