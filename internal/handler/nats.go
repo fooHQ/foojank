@@ -710,12 +710,23 @@ func (h *NATSHandler) GetAgent(ctx context.Context, params map[string]string, ms
 		}
 	}
 
+	var gatewayName string
+	gateway, err := h.conf.GatewayDirectory.Get(ctx, agent.GatewayID)
+	if err != nil {
+		if !errors.Is(err, directory.ErrKeyNotFound) {
+			h.logger.ErrorContext(ctx, "Cannot get gateway: %v", err)
+		}
+	} else {
+		gatewayName = gateway.Name
+	}
+
 	return protodaemon.GetAgentResponse{
 		Agent: protodaemon.Agent{
 			ID:          agent.ID,
 			Name:        agent.Name,
 			Description: agent.Description,
 			GatewayID:   agent.GatewayID,
+			GatewayName: gatewayName,
 			Config: protodaemon.AgentConfig{
 				OS:    agent.Config.OS,
 				Arch:  agent.Config.Arch,
@@ -744,6 +755,16 @@ func (h *NATSHandler) ListAgents(ctx context.Context, params map[string]string, 
 		}
 	}
 
+	gateways, err := h.conf.GatewayDirectory.List(ctx)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot list gateways: %v", err)
+	}
+
+	names := make(map[string]string, len(gateways))
+	for _, gateway := range gateways {
+		names[gateway.ID] = gateway.Name
+	}
+
 	agents := make([]protodaemon.Agent, len(entries))
 	for i, entry := range entries {
 		agents[i] = protodaemon.Agent{
@@ -751,6 +772,7 @@ func (h *NATSHandler) ListAgents(ctx context.Context, params map[string]string, 
 			Name:        entry.Name,
 			Description: entry.Description,
 			GatewayID:   entry.GatewayID,
+			GatewayName: names[entry.GatewayID],
 			Config: protodaemon.AgentConfig{
 				OS:    entry.Config.OS,
 				Arch:  entry.Config.Arch,
