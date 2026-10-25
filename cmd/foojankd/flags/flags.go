@@ -23,8 +23,4 @@ const (
 	PublicKey         = "public-key"
 	Privilege         = "privilege"
 	WithoutPrivilege  = "without-privilege"
-	LinkAccount       = "link-account"
-	UnlinkAccount     = "unlink-account"
-	AcceptLinkFrom    = "accept-link-from"
-	RemoveLink        = "remove-link"
 )
