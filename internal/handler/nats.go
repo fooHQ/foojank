@@ -241,9 +241,7 @@ func (h *NATSHandler) ListUsers(ctx context.Context, params map[string]string, m
 			ID:          entries[i].ID,
 			Name:        entries[i].Name,
 			Description: entries[i].Description,
-			Privileges:  entries[i].Privileges,
 			CreatedAt:   entries[i].CreatedAt.Unix(),
-			ExpiresAt:   entries[i].ExpiresAt.Unix(),
 		}
 	}
 
@@ -436,7 +434,6 @@ func (h *NATSHandler) ListRoles(ctx context.Context, params map[string]string, m
 		roles[i] = protodaemon.Role{
 			Name:        entries[i].Name,
 			Description: entries[i].Description,
-			Privileges:  entries[i].Privileges,
 			CreatedAt:   entries[i].CreatedAt.Unix(),
 		}
 	}
@@ -774,13 +771,9 @@ func (h *NATSHandler) ListAgents(ctx context.Context, params map[string]string, 
 			GatewayID:   entry.GatewayID,
 			GatewayName: names[entry.GatewayID],
 			Config: protodaemon.AgentConfig{
-				OS:    entry.Config.OS,
-				Arch:  entry.Config.Arch,
-				JWT:   entry.Config.UserJWT,
-				Key:   entry.Config.UserKey,
-				Extra: entry.Config.Extra,
+				OS:   entry.Config.OS,
+				Arch: entry.Config.Arch,
 			},
-			Commands:  copyDirectoryCommands(entry.Commands),
 			CreatedAt: entry.CreatedAt.Unix(),
 		}
 	}
@@ -1072,11 +1065,6 @@ func (h *NATSHandler) ListGateways(ctx context.Context, params map[string]string
 			ID:          entries[i].ID,
 			Name:        entries[i].Name,
 			Description: entries[i].Description,
-			Config: protodaemon.GatewayConfig{
-				JWT:   entries[i].Config.UserJWT,
-				Key:   entries[i].Config.UserKey,
-				Extra: entries[i].Config.Extra,
-			},
 		}
 	}
 
@@ -1293,16 +1281,6 @@ func (h *NATSHandler) ListJobs(ctx context.Context, params map[string]string, ms
 		}
 	}
 
-	gateways, err := h.conf.GatewayDirectory.List(ctx)
-	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot list gateways: %v", err)
-	}
-
-	gatewayNames := make(map[string]string, len(gateways))
-	for _, gateway := range gateways {
-		gatewayNames[gateway.ID] = gateway.Name
-	}
-
 	agents, err := h.conf.AgentDirectory.List(ctx)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot list agents: %v", err)
@@ -1315,21 +1293,15 @@ func (h *NATSHandler) ListJobs(ctx context.Context, params map[string]string, ms
 	jobs := make([]protodaemon.Job, len(entries))
 	for i := range entries {
 		jobs[i] = protodaemon.Job{
-			ID:          entries[i].ID,
-			GatewayID:   entries[i].GatewayID,
-			GatewayName: gatewayNames[entries[i].GatewayID],
-			AgentID:     entries[i].AgentID,
-			AgentName:   agentNames[entries[i].AgentID],
-			WorkerID:    entries[i].WorkerID,
-			Command:     entries[i].Config.Command,
-			Args:        entries[i].Config.Args,
-			Env:         entries[i].Config.Env,
+			ID:        entries[i].ID,
+			AgentID:   entries[i].AgentID,
+			AgentName: agentNames[entries[i].AgentID],
+			Command:   entries[i].Config.Command,
+			Args:      entries[i].Config.Args,
 			Status: protodaemon.JobStatus{
 				Status:    entries[i].State.Status,
-				Error:     entries[i].State.Error,
 				UpdatedAt: entries[i].State.UpdatedAt.Unix(),
 			},
-			CreatedAt: entries[i].CreatedAt.Unix(),
 		}
 	}
 
