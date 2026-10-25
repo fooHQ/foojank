@@ -74,6 +74,10 @@ const (
 	tagCancelJobResponse
 	tagGetJobOutputRequest
 	tagGetJobOutputResponse
+	tagGetCommandRequest
+	tagGetCommandResponse
+	tagListCommandsRequest
+	tagListCommandsResponse
 )
 
 // Marshal serializes the given message into a CBOR-encoded byte slice. It
@@ -295,6 +299,22 @@ func Marshal(message any) ([]byte, error) {
 		tag, payload = tagGetJobOutputResponse, &v
 	case *GetJobOutputResponse:
 		tag, payload = tagGetJobOutputResponse, v
+	case GetCommandRequest:
+		tag, payload = tagGetCommandRequest, &v
+	case *GetCommandRequest:
+		tag, payload = tagGetCommandRequest, v
+	case GetCommandResponse:
+		tag, payload = tagGetCommandResponse, &v
+	case *GetCommandResponse:
+		tag, payload = tagGetCommandResponse, v
+	case ListCommandsRequest:
+		tag, payload = tagListCommandsRequest, &v
+	case *ListCommandsRequest:
+		tag, payload = tagListCommandsRequest, v
+	case ListCommandsResponse:
+		tag, payload = tagListCommandsResponse, &v
+	case *ListCommandsResponse:
+		tag, payload = tagListCommandsResponse, v
 	default:
 		return nil, ErrUnknownType
 	}
@@ -547,6 +567,22 @@ func Unmarshal(b []byte) (any, error) {
 		var m GetJobOutputResponse
 		err = m.UnmarshalCbor(r)
 		payload = m
+	case tagGetCommandRequest:
+		var m GetCommandRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagGetCommandResponse:
+		var m GetCommandResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagListCommandsRequest:
+		var m ListCommandsRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagListCommandsResponse:
+		var m ListCommandsResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
 	default:
 		return nil, ErrUnknownTag
 	}
@@ -684,6 +720,16 @@ func CancelJobSubject() string {
 // GetJobOutputSubject returns the NATS subject for reading a job's output.
 func GetJobOutputSubject() string {
 	return "FJ.DAEMON.RPC.JOB.OUTPUT"
+}
+
+// GetCommandSubject returns the NATS subject for retrieving an agent command.
+func GetCommandSubject() string {
+	return "FJ.DAEMON.RPC.COMMAND.GET"
+}
+
+// ListCommandsSubject returns the NATS subject for listing an agent's commands.
+func ListCommandsSubject() string {
+	return "FJ.DAEMON.RPC.COMMAND.LIST"
 }
 
 // ParseIssueJWTSubject extracts the user ID from an issue-JWT subject. It

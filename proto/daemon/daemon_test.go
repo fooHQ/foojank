@@ -856,6 +856,63 @@ func TestMarshalUnmarshal(t *testing.T) {
 			},
 		},
 		{
+			name: "GetCommandRequest",
+			input: daemon.GetCommandRequest{
+				AgentID: "UDUMMYAGENTPUBLICKEY",
+				Name:    "ls",
+			},
+			want: daemon.GetCommandRequest{
+				AgentID: "UDUMMYAGENTPUBLICKEY",
+				Name:    "ls",
+			},
+		},
+		{
+			name: "GetCommandResponse",
+			input: daemon.GetCommandResponse{
+				Command: testAgent.Commands["ls"],
+			},
+			want: daemon.GetCommandResponse{
+				Command: testAgent.Commands["ls"],
+			},
+		},
+		{
+			name:  "GetCommandResponse with error",
+			input: daemon.GetCommandResponse{Error: testError},
+			want:  daemon.GetCommandResponse{Error: testError},
+		},
+		{
+			name: "ListCommandsRequest",
+			input: daemon.ListCommandsRequest{
+				AgentID: "UDUMMYAGENTPUBLICKEY",
+			},
+			want: daemon.ListCommandsRequest{
+				AgentID: "UDUMMYAGENTPUBLICKEY",
+			},
+		},
+		{
+			name: "ListCommandsResponse",
+			input: daemon.ListCommandsResponse{
+				Commands: testAgent.Commands,
+			},
+			want: daemon.ListCommandsResponse{
+				Commands: testAgent.Commands,
+			},
+		},
+		{
+			name: "ListCommandsResponse with empty map",
+			input: daemon.ListCommandsResponse{
+				Commands: map[string]daemon.AgentCommand{},
+			},
+			want: daemon.ListCommandsResponse{
+				Commands: nil,
+			},
+		},
+		{
+			name:  "ListCommandsResponse with error",
+			input: daemon.ListCommandsResponse{Error: testError},
+			want:  daemon.ListCommandsResponse{Error: testError},
+		},
+		{
 			name: "pointer input",
 			input: &daemon.CreateUserRequest{
 				Name: "ops",
@@ -1073,6 +1130,16 @@ func TestCancelJobSubject(t *testing.T) {
 func TestGetJobOutputSubject(t *testing.T) {
 	got := daemon.GetJobOutputSubject()
 	require.Equal(t, "FJ.DAEMON.RPC.JOB.OUTPUT", got)
+}
+
+func TestGetCommandSubject(t *testing.T) {
+	got := daemon.GetCommandSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.COMMAND.GET", got)
+}
+
+func TestListCommandsSubject(t *testing.T) {
+	got := daemon.ListCommandsSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.COMMAND.LIST", got)
 }
 
 func TestParseIssueJWTSubject(t *testing.T) {
