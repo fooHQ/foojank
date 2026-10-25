@@ -260,6 +260,39 @@ func TestValidateGetAgentRequest(t *testing.T) {
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
 }
 
+func TestValidateGetCommandRequest(t *testing.T) {
+	agentID := testUserID(t)
+
+	err := handler.ValidateGetCommandRequest(protodaemon.GetCommandRequest{
+		AgentID: agentID,
+		Name:    "ls",
+	})
+	require.NoError(t, err)
+
+	err = handler.ValidateGetCommandRequest(protodaemon.GetCommandRequest{Name: "ls"})
+	require.EqualError(t, err, "invalid agent id")
+
+	err = handler.ValidateGetCommandRequest(protodaemon.GetCommandRequest{AgentID: "agent", Name: "ls"})
+	require.EqualError(t, err, "invalid agent id")
+
+	err = handler.ValidateGetCommandRequest(protodaemon.GetCommandRequest{AgentID: agentID})
+	require.EqualError(t, err, "name is required")
+
+	err = handler.ValidateGetCommandRequest(protodaemon.GetCommandRequest{AgentID: agentID, Name: "bad name"})
+	require.ErrorIs(t, err, directory.ErrNameInvalid)
+}
+
+func TestValidateListCommandsRequest(t *testing.T) {
+	err := handler.ValidateListCommandsRequest(protodaemon.ListCommandsRequest{})
+	require.EqualError(t, err, "invalid agent id")
+
+	err = handler.ValidateListCommandsRequest(protodaemon.ListCommandsRequest{AgentID: "agent"})
+	require.EqualError(t, err, "invalid agent id")
+
+	err = handler.ValidateListCommandsRequest(protodaemon.ListCommandsRequest{AgentID: testUserID(t)})
+	require.NoError(t, err)
+}
+
 func TestValidateDeleteAgentRequest(t *testing.T) {
 	err := handler.ValidateDeleteAgentRequest(protodaemon.DeleteAgentRequest{Name: "agent"})
 	require.NoError(t, err)
