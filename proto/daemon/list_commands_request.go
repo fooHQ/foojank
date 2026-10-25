@@ -8,19 +8,19 @@ import (
 )
 
 // ListCommandsRequest is a request to list every command of an agent.
-// AgentID identifies the agent.
+// AgentRef identifies the agent.
 type ListCommandsRequest struct {
-	AgentID string
+	AgentRef string
 }
 
-// MarshalCbor encodes the request as a CBOR array: [agentID].
+// MarshalCbor encodes the request as a CBOR array: [agentRef].
 func (m *ListCommandsRequest) MarshalCbor(w io.Writer) error {
 	err := cboring.WriteArrayLength(1, w)
 	if err != nil {
 		return err
 	}
 
-	return cboring.WriteTextString(m.AgentID, w)
+	return cboring.WriteTextString(m.AgentRef, w)
 }
 
 // UnmarshalCbor decodes the request from its CBOR representation.
@@ -33,11 +33,11 @@ func (m *ListCommandsRequest) UnmarshalCbor(r io.Reader) error {
 		return errors.New("invalid message array length")
 	}
 
-	agentID, err := cboring.ReadTextString(r)
+	agentRef, err := cboring.ReadTextString(r)
 	if err != nil {
 		return err
 	}
-	m.AgentID = agentID
+	m.AgentRef = agentRef
 
 	return nil
 }

@@ -130,10 +130,10 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "GetUserRequest",
 			input: daemon.GetUserRequest{
-				Name: "ops",
+				UserRef: "ops",
 			},
 			want: daemon.GetUserRequest{
-				Name: "ops",
+				UserRef: "ops",
 			},
 		},
 		{
@@ -202,7 +202,7 @@ func TestMarshalUnmarshal(t *testing.T) {
 			input: daemon.CreateAgentRequest{
 				Name:        "web",
 				Description: "web agent",
-				GatewayID:   "gw1",
+				GatewayRef:  "gw1",
 				Config: daemon.AgentConfig{
 					OS:    "linux",
 					Arch:  "amd64",
@@ -215,7 +215,7 @@ func TestMarshalUnmarshal(t *testing.T) {
 			want: daemon.CreateAgentRequest{
 				Name:        "web",
 				Description: "web agent",
-				GatewayID:   "gw1",
+				GatewayRef:  "gw1",
 				Config: daemon.AgentConfig{
 					OS:    "linux",
 					Arch:  "amd64",
@@ -253,10 +253,10 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "GetAgentRequest",
 			input: daemon.GetAgentRequest{
-				Name: "web",
+				AgentRef: "web",
 			},
 			want: daemon.GetAgentRequest{
-				Name: "web",
+				AgentRef: "web",
 			},
 		},
 		{
@@ -348,10 +348,10 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "GetGatewayRequest",
 			input: daemon.GetGatewayRequest{
-				Name: "gw1",
+				GatewayRef: "gw1",
 			},
 			want: daemon.GetGatewayRequest{
-				Name: "gw1",
+				GatewayRef: "gw1",
 			},
 		},
 		{
@@ -431,10 +431,10 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "GetRoleRequest",
 			input: daemon.GetRoleRequest{
-				Name: "operator",
+				RoleRef: "operator",
 			},
 			want: daemon.GetRoleRequest{
-				Name: "operator",
+				RoleRef: "operator",
 			},
 		},
 		{
@@ -482,10 +482,10 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "DeleteRoleRequest",
 			input: daemon.DeleteRoleRequest{
-				Name: "operator",
+				RoleRef: "operator",
 			},
 			want: daemon.DeleteRoleRequest{
-				Name: "operator",
+				RoleRef: "operator",
 			},
 		},
 		{
@@ -501,14 +501,14 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "UpdateUserRequest",
 			input: daemon.UpdateUserRequest{
-				Name:            "ops",
+				UserRef:         "ops",
 				Description:     "updated",
 				IsDescription:   true,
 				SetPrivileges:   []string{"USER.GET"},
 				UnsetPrivileges: []string{"USER.CREATE"},
 			},
 			want: daemon.UpdateUserRequest{
-				Name:            "ops",
+				UserRef:         "ops",
 				Description:     "updated",
 				IsDescription:   true,
 				SetPrivileges:   []string{"USER.GET"},
@@ -518,12 +518,12 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "UpdateUserRequest with empty slices",
 			input: daemon.UpdateUserRequest{
-				Name:            "ops",
+				UserRef:         "ops",
 				SetPrivileges:   []string{},
 				UnsetPrivileges: []string{},
 			},
 			want: daemon.UpdateUserRequest{
-				Name: "ops",
+				UserRef: "ops",
 			},
 		},
 		{
@@ -539,63 +539,63 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "JobStartedRequest",
 			input: daemon.JobStartedRequest{
-				JobID: "job1",
+				JobRef: "job1",
 			},
 			want: daemon.JobStartedRequest{
-				JobID: "job1",
+				JobRef: "job1",
 			},
 		},
 		{
 			name: "JobStartedRequest with error",
 			input: daemon.JobStartedRequest{
-				JobID: "job1",
-				Error: testError,
+				JobRef: "job1",
+				Error:  testError,
 			},
 			want: daemon.JobStartedRequest{
-				JobID: "job1",
-				Error: testError,
+				JobRef: "job1",
+				Error:  testError,
 			},
 		},
 		{
 			name: "JobCancelledRequest",
 			input: daemon.JobCancelledRequest{
-				JobID: "job1",
+				JobRef: "job1",
 			},
 			want: daemon.JobCancelledRequest{
-				JobID: "job1",
+				JobRef: "job1",
 			},
 		},
 		{
 			name: "JobCancelledRequest with error",
 			input: daemon.JobCancelledRequest{
-				JobID: "job1",
-				Error: testError,
+				JobRef: "job1",
+				Error:  testError,
 			},
 			want: daemon.JobCancelledRequest{
-				JobID: "job1",
-				Error: testError,
+				JobRef: "job1",
+				Error:  testError,
 			},
 		},
 		{
 			name: "JobStatusRequest",
 			input: daemon.JobStatusRequest{
-				JobID:  "job1",
+				JobRef: "job1",
 				Status: 0,
 			},
 			want: daemon.JobStatusRequest{
-				JobID:  "job1",
+				JobRef: "job1",
 				Status: 0,
 			},
 		},
 		{
 			name: "JobStatusRequest with error",
 			input: daemon.JobStatusRequest{
-				JobID:  "job1",
+				JobRef: "job1",
 				Status: 130,
 				Error:  testError,
 			},
 			want: daemon.JobStatusRequest{
-				JobID:  "job1",
+				JobRef: "job1",
 				Status: 130,
 				Error:  testError,
 			},
@@ -613,27 +613,27 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "CreateJobRequest",
 			input: daemon.CreateJobRequest{
-				AgentID: "web",
-				Command: "echo",
-				Args:    []string{"hello"},
-				Env:     []string{"A=1", "B=2"},
+				AgentRef: "web",
+				Command:  "echo",
+				Args:     []string{"hello"},
+				Env:      []string{"A=1", "B=2"},
 			},
 			want: daemon.CreateJobRequest{
-				AgentID: "web",
-				Command: "echo",
-				Args:    []string{"hello"},
-				Env:     []string{"A=1", "B=2"},
+				AgentRef: "web",
+				Command:  "echo",
+				Args:     []string{"hello"},
+				Env:      []string{"A=1", "B=2"},
 			},
 		},
 		{
 			name: "CreateJobRequest with empty slices",
 			input: daemon.CreateJobRequest{
-				AgentID: "web",
-				Args:    []string{},
-				Env:     []string{},
+				AgentRef: "web",
+				Args:     []string{},
+				Env:      []string{},
 			},
 			want: daemon.CreateJobRequest{
-				AgentID: "web",
+				AgentRef: "web",
 			},
 		},
 		{
@@ -653,10 +653,10 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "GetJobRequest",
 			input: daemon.GetJobRequest{
-				JobID: "job1",
+				JobRef: "job1",
 			},
 			want: daemon.GetJobRequest{
-				JobID: "job1",
+				JobRef: "job1",
 			},
 		},
 		{
@@ -691,10 +691,10 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "ListJobsRequest",
 			input: daemon.ListJobsRequest{
-				AgentID: "UDUMMYAGENTPUBLICKEY",
+				AgentRef: "UDUMMYAGENTPUBLICKEY",
 			},
 			want: daemon.ListJobsRequest{
-				AgentID: "UDUMMYAGENTPUBLICKEY",
+				AgentRef: "UDUMMYAGENTPUBLICKEY",
 			},
 		},
 		{
@@ -728,10 +728,10 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "DeleteAgentRequest",
 			input: daemon.DeleteAgentRequest{
-				Name: "web",
+				AgentRef: "web",
 			},
 			want: daemon.DeleteAgentRequest{
-				Name: "web",
+				AgentRef: "web",
 			},
 		},
 		{
@@ -747,10 +747,10 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "DeleteUserRequest",
 			input: daemon.DeleteUserRequest{
-				Name: "ops",
+				UserRef: "ops",
 			},
 			want: daemon.DeleteUserRequest{
-				Name: "ops",
+				UserRef: "ops",
 			},
 		},
 		{
@@ -766,10 +766,10 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "DeleteGatewayRequest",
 			input: daemon.DeleteGatewayRequest{
-				Name: "gw1",
+				GatewayRef: "gw1",
 			},
 			want: daemon.DeleteGatewayRequest{
-				Name: "gw1",
+				GatewayRef: "gw1",
 			},
 		},
 		{
@@ -785,10 +785,10 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "DeleteJobRequest",
 			input: daemon.DeleteJobRequest{
-				JobID: "job1",
+				JobRef: "job1",
 			},
 			want: daemon.DeleteJobRequest{
-				JobID: "job1",
+				JobRef: "job1",
 			},
 		},
 		{
@@ -804,10 +804,10 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "CancelJobRequest",
 			input: daemon.CancelJobRequest{
-				JobID: "job1",
+				JobRef: "job1",
 			},
 			want: daemon.CancelJobRequest{
-				JobID: "job1",
+				JobRef: "job1",
 			},
 		},
 		{
@@ -823,11 +823,11 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "GetJobOutputRequest",
 			input: daemon.GetJobOutputRequest{
-				JobID:  "job1",
+				JobRef: "job1",
 				Offset: 12,
 			},
 			want: daemon.GetJobOutputRequest{
-				JobID:  "job1",
+				JobRef: "job1",
 				Offset: 12,
 			},
 		},
@@ -858,12 +858,12 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "GetCommandRequest",
 			input: daemon.GetCommandRequest{
-				AgentID: "UDUMMYAGENTPUBLICKEY",
-				Name:    "ls",
+				AgentRef: "UDUMMYAGENTPUBLICKEY",
+				Name:     "ls",
 			},
 			want: daemon.GetCommandRequest{
-				AgentID: "UDUMMYAGENTPUBLICKEY",
-				Name:    "ls",
+				AgentRef: "UDUMMYAGENTPUBLICKEY",
+				Name:     "ls",
 			},
 		},
 		{
@@ -883,10 +883,10 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "ListCommandsRequest",
 			input: daemon.ListCommandsRequest{
-				AgentID: "UDUMMYAGENTPUBLICKEY",
+				AgentRef: "UDUMMYAGENTPUBLICKEY",
 			},
 			want: daemon.ListCommandsRequest{
-				AgentID: "UDUMMYAGENTPUBLICKEY",
+				AgentRef: "UDUMMYAGENTPUBLICKEY",
 			},
 		},
 		{

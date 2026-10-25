@@ -7,13 +7,13 @@ import (
 	"github.com/dtn7/cboring"
 )
 
-// UpdateUserRequest edits the user named Name.
+// UpdateUserRequest edits the user identified by UserRef.
 //
 // Description replaces the description when IsDescription is true. SetPrivileges
 // are added to the user's privilege set and UnsetPrivileges are removed from
 // it. A privilege named in both is removed. The name and public key are unchanged.
 type UpdateUserRequest struct {
-	Name            string
+	UserRef         string
 	Description     string
 	IsDescription   bool
 	SetPrivileges   []string
@@ -21,14 +21,14 @@ type UpdateUserRequest struct {
 }
 
 // MarshalCbor encodes the request as a CBOR array:
-// [name, description, isDescription, setPrivileges, unsetPrivileges].
+// [userRef, description, isDescription, setPrivileges, unsetPrivileges].
 func (m *UpdateUserRequest) MarshalCbor(w io.Writer) error {
 	err := cboring.WriteArrayLength(5, w)
 	if err != nil {
 		return err
 	}
 
-	for _, s := range []string{m.Name, m.Description} {
+	for _, s := range []string{m.UserRef, m.Description} {
 		err := cboring.WriteTextString(s, w)
 		if err != nil {
 			return err
@@ -58,7 +58,7 @@ func (m *UpdateUserRequest) UnmarshalCbor(r io.Reader) error {
 		return errors.New("invalid message array length")
 	}
 
-	for _, f := range []*string{&m.Name, &m.Description} {
+	for _, f := range []*string{&m.UserRef, &m.Description} {
 		s, err := cboring.ReadTextString(r)
 		if err != nil {
 			return err

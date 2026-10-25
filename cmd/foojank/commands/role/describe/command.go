@@ -92,7 +92,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	var role protodaemon.Role
 	{
 		resp, err := client.GetRole(ctx, protodaemon.GetRoleRequest{
-			Name: roleName,
+			RoleRef: roleName,
 		})
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get role: %v", err)

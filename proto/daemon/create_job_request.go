@@ -8,24 +8,24 @@ import (
 )
 
 // CreateJobRequest is a request to create a job.
-// AgentID is the agent that runs the job.
+// AgentRef is the agent that runs the job.
 // Command, Args, and Env are the worker to start.
 type CreateJobRequest struct {
-	AgentID string
-	Command string
-	Args    []string
-	Env     []string
+	AgentRef string
+	Command  string
+	Args     []string
+	Env      []string
 }
 
 // MarshalCbor encodes the request as a CBOR array:
-// [agentID, command, args, env].
+// [agentRef, command, args, env].
 func (m *CreateJobRequest) MarshalCbor(w io.Writer) error {
 	err := cboring.WriteArrayLength(4, w)
 	if err != nil {
 		return err
 	}
 
-	for _, s := range []string{m.AgentID, m.Command} {
+	for _, s := range []string{m.AgentRef, m.Command} {
 		err := cboring.WriteTextString(s, w)
 		if err != nil {
 			return err
@@ -50,7 +50,7 @@ func (m *CreateJobRequest) UnmarshalCbor(r io.Reader) error {
 		return errors.New("invalid message array length")
 	}
 
-	for _, f := range []*string{&m.AgentID, &m.Command} {
+	for _, f := range []*string{&m.AgentRef, &m.Command} {
 		s, err := cboring.ReadTextString(r)
 		if err != nil {
 			return err

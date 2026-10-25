@@ -9,17 +9,17 @@ import (
 
 // CancelJobRequest is a request to cancel a job.
 type CancelJobRequest struct {
-	JobID string
+	JobRef string
 }
 
-// MarshalCbor encodes the request as a CBOR array: [jobID].
+// MarshalCbor encodes the request as a CBOR array: [jobRef].
 func (m *CancelJobRequest) MarshalCbor(w io.Writer) error {
 	err := cboring.WriteArrayLength(1, w)
 	if err != nil {
 		return err
 	}
 
-	return cboring.WriteTextString(m.JobID, w)
+	return cboring.WriteTextString(m.JobRef, w)
 }
 
 // UnmarshalCbor decodes the request from its CBOR representation.
@@ -32,11 +32,11 @@ func (m *CancelJobRequest) UnmarshalCbor(r io.Reader) error {
 		return errors.New("invalid message array length")
 	}
 
-	jobID, err := cboring.ReadTextString(r)
+	jobRef, err := cboring.ReadTextString(r)
 	if err != nil {
 		return err
 	}
-	m.JobID = jobID
+	m.JobRef = jobRef
 
 	return nil
 }

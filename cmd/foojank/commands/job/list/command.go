@@ -91,7 +91,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 	var agentID string
 	if agentName != "" {
 		resp, err := client.GetAgent(ctx, protodaemon.GetAgentRequest{
-			Name: agentName,
+			AgentRef: agentName,
 		})
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get agent: %v", err)
@@ -115,7 +115,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 	var jobs []protodaemon.Job
 	{
 		resp, err := client.ListJobs(ctx, protodaemon.ListJobsRequest{
-			AgentID: agentID,
+			AgentRef: agentID,
 		})
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get a list of jobs: %v", err)

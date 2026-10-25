@@ -81,7 +81,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	jobID := c.Args().First()
 
 	resp, err := client.ReadJobOutput(ctx, protodaemon.GetJobOutputRequest{
-		JobID: jobID,
+		JobRef: jobID,
 	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot get job output: %v", err)

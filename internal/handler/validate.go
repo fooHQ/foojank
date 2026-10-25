@@ -24,15 +24,15 @@ func ValidateCreateUserRequest(req protodaemon.CreateUserRequest) error {
 }
 
 func ValidateGetUserRequest(req protodaemon.GetUserRequest) error {
-	return validateName(req.Name)
+	return validateName(req.UserRef)
 }
 
 func ValidateUpdateUserRequest(req protodaemon.UpdateUserRequest) error {
-	return validateName(req.Name)
+	return validateName(req.UserRef)
 }
 
 func ValidateDeleteUserRequest(req protodaemon.DeleteUserRequest) error {
-	return validateName(req.Name)
+	return validateName(req.UserRef)
 }
 
 func ValidateCreateAgentRequest(req protodaemon.CreateAgentRequest) error {
@@ -40,7 +40,7 @@ func ValidateCreateAgentRequest(req protodaemon.CreateAgentRequest) error {
 	if err != nil {
 		return err
 	}
-	if req.GatewayID == "" {
+	if req.GatewayRef == "" {
 		return errors.New("gateway is required")
 	}
 	if req.Config.OS == "" {
@@ -53,22 +53,22 @@ func ValidateCreateAgentRequest(req protodaemon.CreateAgentRequest) error {
 }
 
 func ValidateGetAgentRequest(req protodaemon.GetAgentRequest) error {
-	return validateName(req.Name)
+	return validateName(req.AgentRef)
 }
 
 func ValidateDeleteAgentRequest(req protodaemon.DeleteAgentRequest) error {
-	return validateName(req.Name)
+	return validateName(req.AgentRef)
 }
 
 func ValidateGetCommandRequest(req protodaemon.GetCommandRequest) error {
-	if !nkeys.IsValidPublicUserKey(req.AgentID) {
+	if !nkeys.IsValidPublicUserKey(req.AgentRef) {
 		return errors.New("invalid agent id")
 	}
 	return validateName(req.Name)
 }
 
 func ValidateListCommandsRequest(req protodaemon.ListCommandsRequest) error {
-	if !nkeys.IsValidPublicUserKey(req.AgentID) {
+	if !nkeys.IsValidPublicUserKey(req.AgentRef) {
 		return errors.New("invalid agent id")
 	}
 	return nil
@@ -79,11 +79,11 @@ func ValidateCreateGatewayRequest(req protodaemon.CreateGatewayRequest) error {
 }
 
 func ValidateGetGatewayRequest(req protodaemon.GetGatewayRequest) error {
-	return validateName(req.Name)
+	return validateName(req.GatewayRef)
 }
 
 func ValidateDeleteGatewayRequest(req protodaemon.DeleteGatewayRequest) error {
-	return validateName(req.Name)
+	return validateName(req.GatewayRef)
 }
 
 func ValidateCreateRoleRequest(req protodaemon.CreateRoleRequest) error {
@@ -91,15 +91,15 @@ func ValidateCreateRoleRequest(req protodaemon.CreateRoleRequest) error {
 }
 
 func ValidateGetRoleRequest(req protodaemon.GetRoleRequest) error {
-	return validateName(req.Name)
+	return validateName(req.RoleRef)
 }
 
 func ValidateDeleteRoleRequest(req protodaemon.DeleteRoleRequest) error {
-	return validateName(req.Name)
+	return validateName(req.RoleRef)
 }
 
 func ValidateCreateJobRequest(req protodaemon.CreateJobRequest) error {
-	if !nkeys.IsValidPublicUserKey(req.AgentID) {
+	if !nkeys.IsValidPublicUserKey(req.AgentRef) {
 		return errors.New("invalid agent id")
 	}
 	if req.Command == "" {
@@ -109,31 +109,31 @@ func ValidateCreateJobRequest(req protodaemon.CreateJobRequest) error {
 }
 
 func ValidateGetJobRequest(req protodaemon.GetJobRequest) error {
-	if req.JobID == "" {
+	if req.JobRef == "" {
 		return errors.New("job id is required")
 	}
-	return directory.ValidateKey(req.JobID)
+	return directory.ValidateKey(req.JobRef)
 }
 
 func ValidateCancelJobRequest(req protodaemon.CancelJobRequest) error {
-	if req.JobID == "" {
+	if req.JobRef == "" {
 		return errors.New("job id is required")
 	}
-	return directory.ValidateKey(req.JobID)
+	return directory.ValidateKey(req.JobRef)
 }
 
 func ValidateGetJobOutputRequest(req protodaemon.GetJobOutputRequest) error {
-	if req.JobID == "" {
+	if req.JobRef == "" {
 		return errors.New("job id is required")
 	}
-	return directory.ValidateKey(req.JobID)
+	return directory.ValidateKey(req.JobRef)
 }
 
 func ValidateListJobsRequest(req protodaemon.ListJobsRequest) error {
-	if req.AgentID == "" {
+	if req.AgentRef == "" {
 		return nil
 	}
-	if !nkeys.IsValidPublicUserKey(req.AgentID) {
+	if !nkeys.IsValidPublicUserKey(req.AgentRef) {
 		return errors.New("invalid agent id")
 	}
 	return nil

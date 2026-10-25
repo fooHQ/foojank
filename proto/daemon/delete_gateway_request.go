@@ -8,18 +8,19 @@ import (
 )
 
 // DeleteGatewayRequest is a request to delete a gateway.
+// GatewayRef identifies the gateway.
 type DeleteGatewayRequest struct {
-	Name string
+	GatewayRef string
 }
 
-// MarshalCbor encodes the request as a CBOR array: [name].
+// MarshalCbor encodes the request as a CBOR array: [gatewayRef].
 func (m *DeleteGatewayRequest) MarshalCbor(w io.Writer) error {
 	err := cboring.WriteArrayLength(1, w)
 	if err != nil {
 		return err
 	}
 
-	return cboring.WriteTextString(m.Name, w)
+	return cboring.WriteTextString(m.GatewayRef, w)
 }
 
 // UnmarshalCbor decodes the request from its CBOR representation.
@@ -32,11 +33,11 @@ func (m *DeleteGatewayRequest) UnmarshalCbor(r io.Reader) error {
 		return errors.New("invalid message array length")
 	}
 
-	name, err := cboring.ReadTextString(r)
+	gatewayRef, err := cboring.ReadTextString(r)
 	if err != nil {
 		return err
 	}
-	m.Name = name
+	m.GatewayRef = gatewayRef
 
 	return nil
 }

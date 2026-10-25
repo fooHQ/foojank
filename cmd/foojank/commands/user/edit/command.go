@@ -96,7 +96,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	client := daemon.New(srv)
 
 	_, err := client.UpdateUser(ctx, protodaemon.UpdateUserRequest{
-		Name:            userName,
+		UserRef:         userName,
 		Description:     description,
 		IsDescription:   isDescription,
 		SetPrivileges:   setPrivileges,

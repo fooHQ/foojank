@@ -76,7 +76,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	roleName := c.Args().First()
 
 	_, err := client.DeleteRole(ctx, protodaemon.DeleteRoleRequest{
-		Name: roleName,
+		RoleRef: roleName,
 	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot remove role: %v", err)
