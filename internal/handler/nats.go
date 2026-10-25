@@ -572,6 +572,11 @@ func (h *NATSHandler) CreateAgent(ctx context.Context, params map[string]string,
 		}
 	}
 
+	extra := make(map[string]string, len(gateway.Config.Extra)+len(agentConf.Extra))
+	maps.Copy(extra, gateway.Config.Extra)
+	maps.Copy(extra, agentConf.Extra)
+	agentConf.Extra = extra
+
 	agentKeyPair, err := auth.NewUserKey()
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot generate a user key: %v", err)
