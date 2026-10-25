@@ -80,7 +80,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	gatewayName := c.Args().First()
 
-	_, err := client.RequestDeleteGateway(ctx, protodaemon.DeleteGatewayRequest{
+	_, err := client.DeleteGateway(ctx, protodaemon.DeleteGatewayRequest{
 		Name: gatewayName,
 	})
 	if err != nil {

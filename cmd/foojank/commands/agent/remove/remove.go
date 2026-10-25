@@ -80,7 +80,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	agentName := c.Args().First()
 
-	_, err := client.RequestDeleteAgent(ctx, protodaemon.DeleteAgentRequest{
+	_, err := client.DeleteAgent(ctx, protodaemon.DeleteAgentRequest{
 		Name: agentName,
 	})
 	if err != nil {

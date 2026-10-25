@@ -21,7 +21,7 @@ func New(srv *server.Client) *Client {
 	}
 }
 
-func (c *Client) RequestCreateUser(ctx context.Context, req protodaemon.CreateUserRequest) (protodaemon.CreateUserResponse, error) {
+func (c *Client) CreateUser(ctx context.Context, req protodaemon.CreateUserRequest) (protodaemon.CreateUserResponse, error) {
 	data, err := c.request(ctx, protodaemon.CreateUserSubject(), req)
 	if err != nil {
 		return protodaemon.CreateUserResponse{}, err
@@ -39,7 +39,7 @@ func (c *Client) RequestCreateUser(ctx context.Context, req protodaemon.CreateUs
 	return v, nil
 }
 
-func (c *Client) RequestGetUser(ctx context.Context, req protodaemon.GetUserRequest) (protodaemon.GetUserResponse, error) {
+func (c *Client) GetUser(ctx context.Context, req protodaemon.GetUserRequest) (protodaemon.GetUserResponse, error) {
 	data, err := c.request(ctx, protodaemon.GetUserSubject(), req)
 	if err != nil {
 		return protodaemon.GetUserResponse{}, err
@@ -57,7 +57,7 @@ func (c *Client) RequestGetUser(ctx context.Context, req protodaemon.GetUserRequ
 	return v, nil
 }
 
-func (c *Client) RequestListUsers(ctx context.Context, req protodaemon.ListUsersRequest) (protodaemon.ListUsersResponse, error) {
+func (c *Client) ListUsers(ctx context.Context, req protodaemon.ListUsersRequest) (protodaemon.ListUsersResponse, error) {
 	data, err := c.request(ctx, protodaemon.ListUsersSubject(), req)
 	if err != nil {
 		return protodaemon.ListUsersResponse{}, err
@@ -75,7 +75,7 @@ func (c *Client) RequestListUsers(ctx context.Context, req protodaemon.ListUsers
 	return v, nil
 }
 
-func (c *Client) RequestUpdateUser(ctx context.Context, req protodaemon.UpdateUserRequest) (protodaemon.UpdateUserResponse, error) {
+func (c *Client) UpdateUser(ctx context.Context, req protodaemon.UpdateUserRequest) (protodaemon.UpdateUserResponse, error) {
 	data, err := c.request(ctx, protodaemon.UpdateUserSubject(), req)
 	if err != nil {
 		return protodaemon.UpdateUserResponse{}, err
@@ -93,7 +93,7 @@ func (c *Client) RequestUpdateUser(ctx context.Context, req protodaemon.UpdateUs
 	return v, nil
 }
 
-func (c *Client) RequestDeleteUser(ctx context.Context, req protodaemon.DeleteUserRequest) (protodaemon.DeleteUserResponse, error) {
+func (c *Client) DeleteUser(ctx context.Context, req protodaemon.DeleteUserRequest) (protodaemon.DeleteUserResponse, error) {
 	data, err := c.request(ctx, protodaemon.DeleteUserSubject(), req)
 	if err != nil {
 		return protodaemon.DeleteUserResponse{}, err
@@ -111,7 +111,7 @@ func (c *Client) RequestDeleteUser(ctx context.Context, req protodaemon.DeleteUs
 	return v, nil
 }
 
-func (c *Client) RequestCreateAgent(ctx context.Context, req protodaemon.CreateAgentRequest) (protodaemon.CreateAgentResponse, error) {
+func (c *Client) CreateAgent(ctx context.Context, req protodaemon.CreateAgentRequest) (protodaemon.CreateAgentResponse, error) {
 	data, err := c.request(ctx, protodaemon.CreateAgentSubject(), req)
 	if err != nil {
 		return protodaemon.CreateAgentResponse{}, err
@@ -129,7 +129,7 @@ func (c *Client) RequestCreateAgent(ctx context.Context, req protodaemon.CreateA
 	return v, nil
 }
 
-func (c *Client) RequestGetAgent(ctx context.Context, req protodaemon.GetAgentRequest) (protodaemon.GetAgentResponse, error) {
+func (c *Client) GetAgent(ctx context.Context, req protodaemon.GetAgentRequest) (protodaemon.GetAgentResponse, error) {
 	data, err := c.request(ctx, protodaemon.GetAgentSubject(), req)
 	if err != nil {
 		return protodaemon.GetAgentResponse{}, err
@@ -147,7 +147,7 @@ func (c *Client) RequestGetAgent(ctx context.Context, req protodaemon.GetAgentRe
 	return v, nil
 }
 
-func (c *Client) RequestListAgents(ctx context.Context, req protodaemon.ListAgentsRequest) (protodaemon.ListAgentsResponse, error) {
+func (c *Client) ListAgents(ctx context.Context, req protodaemon.ListAgentsRequest) (protodaemon.ListAgentsResponse, error) {
 	data, err := c.request(ctx, protodaemon.ListAgentsSubject(), req)
 	if err != nil {
 		return protodaemon.ListAgentsResponse{}, err
@@ -165,7 +165,7 @@ func (c *Client) RequestListAgents(ctx context.Context, req protodaemon.ListAgen
 	return v, nil
 }
 
-func (c *Client) RequestDeleteAgent(ctx context.Context, req protodaemon.DeleteAgentRequest) (protodaemon.DeleteAgentResponse, error) {
+func (c *Client) DeleteAgent(ctx context.Context, req protodaemon.DeleteAgentRequest) (protodaemon.DeleteAgentResponse, error) {
 	data, err := c.request(ctx, protodaemon.DeleteAgentSubject(), req)
 	if err != nil {
 		return protodaemon.DeleteAgentResponse{}, err
@@ -183,7 +183,7 @@ func (c *Client) RequestDeleteAgent(ctx context.Context, req protodaemon.DeleteA
 	return v, nil
 }
 
-func (c *Client) RequestCreateGateway(ctx context.Context, req protodaemon.CreateGatewayRequest) (protodaemon.CreateGatewayResponse, error) {
+func (c *Client) CreateGateway(ctx context.Context, req protodaemon.CreateGatewayRequest) (protodaemon.CreateGatewayResponse, error) {
 	data, err := c.request(ctx, protodaemon.CreateGatewaySubject(), req)
 	if err != nil {
 		return protodaemon.CreateGatewayResponse{}, err
@@ -201,7 +201,7 @@ func (c *Client) RequestCreateGateway(ctx context.Context, req protodaemon.Creat
 	return v, nil
 }
 
-func (c *Client) RequestGetGateway(ctx context.Context, req protodaemon.GetGatewayRequest) (protodaemon.GetGatewayResponse, error) {
+func (c *Client) GetGateway(ctx context.Context, req protodaemon.GetGatewayRequest) (protodaemon.GetGatewayResponse, error) {
 	data, err := c.request(ctx, protodaemon.GetGatewaySubject(), req)
 	if err != nil {
 		return protodaemon.GetGatewayResponse{}, err
@@ -219,7 +219,7 @@ func (c *Client) RequestGetGateway(ctx context.Context, req protodaemon.GetGatew
 	return v, nil
 }
 
-func (c *Client) RequestListGateways(ctx context.Context, req protodaemon.ListGatewaysRequest) (protodaemon.ListGatewaysResponse, error) {
+func (c *Client) ListGateways(ctx context.Context, req protodaemon.ListGatewaysRequest) (protodaemon.ListGatewaysResponse, error) {
 	data, err := c.request(ctx, protodaemon.ListGatewaysSubject(), req)
 	if err != nil {
 		return protodaemon.ListGatewaysResponse{}, err
@@ -237,7 +237,7 @@ func (c *Client) RequestListGateways(ctx context.Context, req protodaemon.ListGa
 	return v, nil
 }
 
-func (c *Client) RequestDeleteGateway(ctx context.Context, req protodaemon.DeleteGatewayRequest) (protodaemon.DeleteGatewayResponse, error) {
+func (c *Client) DeleteGateway(ctx context.Context, req protodaemon.DeleteGatewayRequest) (protodaemon.DeleteGatewayResponse, error) {
 	data, err := c.request(ctx, protodaemon.DeleteGatewaySubject(), req)
 	if err != nil {
 		return protodaemon.DeleteGatewayResponse{}, err
@@ -255,7 +255,7 @@ func (c *Client) RequestDeleteGateway(ctx context.Context, req protodaemon.Delet
 	return v, nil
 }
 
-func (c *Client) RequestCreateRole(ctx context.Context, req protodaemon.CreateRoleRequest) (protodaemon.CreateRoleResponse, error) {
+func (c *Client) CreateRole(ctx context.Context, req protodaemon.CreateRoleRequest) (protodaemon.CreateRoleResponse, error) {
 	data, err := c.request(ctx, protodaemon.CreateRoleSubject(), req)
 	if err != nil {
 		return protodaemon.CreateRoleResponse{}, err
@@ -273,7 +273,7 @@ func (c *Client) RequestCreateRole(ctx context.Context, req protodaemon.CreateRo
 	return v, nil
 }
 
-func (c *Client) RequestGetRole(ctx context.Context, req protodaemon.GetRoleRequest) (protodaemon.GetRoleResponse, error) {
+func (c *Client) GetRole(ctx context.Context, req protodaemon.GetRoleRequest) (protodaemon.GetRoleResponse, error) {
 	data, err := c.request(ctx, protodaemon.GetRoleSubject(), req)
 	if err != nil {
 		return protodaemon.GetRoleResponse{}, err
@@ -291,7 +291,7 @@ func (c *Client) RequestGetRole(ctx context.Context, req protodaemon.GetRoleRequ
 	return v, nil
 }
 
-func (c *Client) RequestListRoles(ctx context.Context, req protodaemon.ListRolesRequest) (protodaemon.ListRolesResponse, error) {
+func (c *Client) ListRoles(ctx context.Context, req protodaemon.ListRolesRequest) (protodaemon.ListRolesResponse, error) {
 	data, err := c.request(ctx, protodaemon.ListRolesSubject(), req)
 	if err != nil {
 		return protodaemon.ListRolesResponse{}, err
@@ -309,7 +309,7 @@ func (c *Client) RequestListRoles(ctx context.Context, req protodaemon.ListRoles
 	return v, nil
 }
 
-func (c *Client) RequestDeleteRole(ctx context.Context, req protodaemon.DeleteRoleRequest) (protodaemon.DeleteRoleResponse, error) {
+func (c *Client) DeleteRole(ctx context.Context, req protodaemon.DeleteRoleRequest) (protodaemon.DeleteRoleResponse, error) {
 	data, err := c.request(ctx, protodaemon.DeleteRoleSubject(), req)
 	if err != nil {
 		return protodaemon.DeleteRoleResponse{}, err
@@ -327,7 +327,7 @@ func (c *Client) RequestDeleteRole(ctx context.Context, req protodaemon.DeleteRo
 	return v, nil
 }
 
-func (c *Client) RequestCreateJob(ctx context.Context, req protodaemon.CreateJobRequest) (protodaemon.CreateJobResponse, error) {
+func (c *Client) CreateJob(ctx context.Context, req protodaemon.CreateJobRequest) (protodaemon.CreateJobResponse, error) {
 	data, err := c.request(ctx, protodaemon.CreateJobSubject(), req)
 	if err != nil {
 		return protodaemon.CreateJobResponse{}, err
@@ -345,7 +345,7 @@ func (c *Client) RequestCreateJob(ctx context.Context, req protodaemon.CreateJob
 	return v, nil
 }
 
-func (c *Client) RequestGetJob(ctx context.Context, req protodaemon.GetJobRequest) (protodaemon.GetJobResponse, error) {
+func (c *Client) GetJob(ctx context.Context, req protodaemon.GetJobRequest) (protodaemon.GetJobResponse, error) {
 	data, err := c.request(ctx, protodaemon.GetJobSubject(), req)
 	if err != nil {
 		return protodaemon.GetJobResponse{}, err
@@ -363,7 +363,7 @@ func (c *Client) RequestGetJob(ctx context.Context, req protodaemon.GetJobReques
 	return v, nil
 }
 
-func (c *Client) RequestListJobs(ctx context.Context, req protodaemon.ListJobsRequest) (protodaemon.ListJobsResponse, error) {
+func (c *Client) ListJobs(ctx context.Context, req protodaemon.ListJobsRequest) (protodaemon.ListJobsResponse, error) {
 	data, err := c.request(ctx, protodaemon.ListJobsSubject(), req)
 	if err != nil {
 		return protodaemon.ListJobsResponse{}, err
@@ -381,7 +381,7 @@ func (c *Client) RequestListJobs(ctx context.Context, req protodaemon.ListJobsRe
 	return v, nil
 }
 
-func (c *Client) RequestCancelJob(ctx context.Context, req protodaemon.CancelJobRequest) (protodaemon.CancelJobResponse, error) {
+func (c *Client) CancelJob(ctx context.Context, req protodaemon.CancelJobRequest) (protodaemon.CancelJobResponse, error) {
 	data, err := c.request(ctx, protodaemon.CancelJobSubject(), req)
 	if err != nil {
 		return protodaemon.CancelJobResponse{}, err
@@ -399,7 +399,7 @@ func (c *Client) RequestCancelJob(ctx context.Context, req protodaemon.CancelJob
 	return v, nil
 }
 
-func (c *Client) RequestJobOutput(ctx context.Context, req protodaemon.GetJobOutputRequest) (protodaemon.GetJobOutputResponse, error) {
+func (c *Client) ReadJobOutput(ctx context.Context, req protodaemon.GetJobOutputRequest) (protodaemon.GetJobOutputResponse, error) {
 	data, err := c.request(ctx, protodaemon.GetJobOutputSubject(), req)
 	if err != nil {
 		return protodaemon.GetJobOutputResponse{}, err

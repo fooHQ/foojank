@@ -87,7 +87,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 
 	client := daemon.New(srv)
 
-	_, err = client.RequestCreateRole(ctx, protodaemon.CreateRoleRequest{
+	_, err = client.CreateRole(ctx, protodaemon.CreateRoleRequest{
 		Name:        roleName,
 		Description: roleDesc,
 		Privileges:  rolePrivs,

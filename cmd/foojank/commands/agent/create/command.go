@@ -125,7 +125,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 
 	var gateway protodaemon.Gateway
 	{
-		resp, err := client.RequestGetGateway(ctx, protodaemon.GetGatewayRequest{
+		resp, err := client.GetGateway(ctx, protodaemon.GetGatewayRequest{
 			Name: gatewayName,
 		})
 		if err != nil {
@@ -189,7 +189,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		delete(agentConf.Extra, v)
 	}
 
-	_, err = client.RequestCreateAgent(ctx, protodaemon.CreateAgentRequest{
+	_, err = client.CreateAgent(ctx, protodaemon.CreateAgentRequest{
 		Name:        agentName,
 		Description: agentDesc,
 		GatewayID:   gateway.ID,

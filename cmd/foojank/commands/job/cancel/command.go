@@ -79,7 +79,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	jobID := c.Args().First()
 
-	_, err := client.RequestCancelJob(ctx, protodaemon.CancelJobRequest{
+	_, err := client.CancelJob(ctx, protodaemon.CancelJobRequest{
 		JobID: jobID,
 	})
 	if err != nil {

@@ -235,7 +235,7 @@ func listUserNames(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	resp, err := client.RequestListUsers(ctx, protodaemon.ListUsersRequest{})
+	resp, err := client.ListUsers(ctx, protodaemon.ListUsersRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +258,7 @@ func listRoleNames(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	resp, err := client.RequestListRoles(ctx, protodaemon.ListRolesRequest{})
+	resp, err := client.ListRoles(ctx, protodaemon.ListRolesRequest{})
 	if err != nil {
 		return nil, err
 	}

@@ -86,7 +86,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	var role protodaemon.Role
 	{
-		resp, err := client.RequestGetRole(ctx, protodaemon.GetRoleRequest{
+		resp, err := client.GetRole(ctx, protodaemon.GetRoleRequest{
 			Name: roleName,
 		})
 		if err != nil {

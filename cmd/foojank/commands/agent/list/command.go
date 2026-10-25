@@ -84,7 +84,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 
 	var agents []protodaemon.Agent
 	{
-		resp, err := client.RequestListAgents(ctx, protodaemon.ListAgentsRequest{})
+		resp, err := client.ListAgents(ctx, protodaemon.ListAgentsRequest{})
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get a list of agents: %v", err)
 			return err
@@ -95,7 +95,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 
 	gateways := make(map[string]protodaemon.Gateway)
 	{
-		resp, err := client.RequestListGateways(ctx, protodaemon.ListGatewaysRequest{})
+		resp, err := client.ListGateways(ctx, protodaemon.ListGatewaysRequest{})
 		if err != nil {
 			// TODO Check if request fails due to permissions. if so, dont quit and show warning!
 			logger.ErrorContext(ctx, "Cannot get a list of gateways: %v", err)

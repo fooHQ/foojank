@@ -83,7 +83,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 
 	var gateways []protodaemon.Gateway
 	{
-		resp, err := client.RequestListGateways(ctx, protodaemon.ListGatewaysRequest{})
+		resp, err := client.ListGateways(ctx, protodaemon.ListGatewaysRequest{})
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get a list of gateways: %v", err)
 			return err

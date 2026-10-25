@@ -247,7 +247,7 @@ func listAgentNames(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	resp, err := client.RequestListAgents(ctx, protodaemon.ListAgentsRequest{})
+	resp, err := client.ListAgents(ctx, protodaemon.ListAgentsRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +270,7 @@ func listGatewayNames(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	resp, err := client.RequestListGateways(ctx, protodaemon.ListGatewaysRequest{})
+	resp, err := client.ListGateways(ctx, protodaemon.ListGatewaysRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -293,7 +293,7 @@ func listUserNames(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	resp, err := client.RequestListUsers(ctx, protodaemon.ListUsersRequest{})
+	resp, err := client.ListUsers(ctx, protodaemon.ListUsersRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -316,7 +316,7 @@ func listRoleNames(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	resp, err := client.RequestListRoles(ctx, protodaemon.ListRolesRequest{})
+	resp, err := client.ListRoles(ctx, protodaemon.ListRolesRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -339,7 +339,7 @@ func listJobIDs(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	resp, err := client.RequestListJobs(ctx, protodaemon.ListJobsRequest{})
+	resp, err := client.ListJobs(ctx, protodaemon.ListJobsRequest{})
 	if err != nil {
 		return nil, err
 	}

@@ -90,7 +90,7 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 
 	var agent protodaemon.Agent
 	{
-		resp, err := client.RequestGetAgent(ctx, protodaemon.GetAgentRequest{
+		resp, err := client.GetAgent(ctx, protodaemon.GetAgentRequest{
 			Name: agentName,
 		})
 		if err != nil {
@@ -101,7 +101,7 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 		agent = resp.Agent
 	}
 
-	resp, err := client.RequestCreateJob(ctx, protodaemon.CreateJobRequest{
+	resp, err := client.CreateJob(ctx, protodaemon.CreateJobRequest{
 		AgentID: agent.ID,
 		Command: c.Args().First(),
 		Args:    c.Args().Tail(),

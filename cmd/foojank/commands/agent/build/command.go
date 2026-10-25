@@ -97,7 +97,7 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 
 	var agent protodaemon.Agent
 	{
-		resp, err := client.RequestGetAgent(ctx, protodaemon.GetAgentRequest{
+		resp, err := client.GetAgent(ctx, protodaemon.GetAgentRequest{
 			Name: agentName,
 		})
 		if err != nil {

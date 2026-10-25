@@ -88,7 +88,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 
 	client := daemon.New(srv)
 
-	_, err = client.RequestCreateUser(ctx, protodaemon.CreateUserRequest{
+	_, err = client.CreateUser(ctx, protodaemon.CreateUserRequest{
 		ID:          userPubKey,
 		Name:        userName,
 		Description: userDesc,

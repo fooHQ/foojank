@@ -80,7 +80,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	jobID := c.Args().First()
 
-	resp, err := client.RequestJobOutput(ctx, protodaemon.GetJobOutputRequest{
+	resp, err := client.ReadJobOutput(ctx, protodaemon.GetJobOutputRequest{
 		JobID: jobID,
 	})
 	if err != nil {

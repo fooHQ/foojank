@@ -89,7 +89,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 
 	client := daemon.New(srv)
 
-	_, err = client.RequestCreateGateway(ctx, protodaemon.CreateGatewayRequest{
+	_, err = client.CreateGateway(ctx, protodaemon.CreateGatewayRequest{
 		Name:        gatewayName,
 		Description: gatewayDesc,
 		Config: protodaemon.GatewayConfig{

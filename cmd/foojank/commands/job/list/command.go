@@ -90,7 +90,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 	agents := make(map[string]protodaemon.Agent)
 	var agentID string
 	if agentName != "" {
-		resp, err := client.RequestGetAgent(ctx, protodaemon.GetAgentRequest{
+		resp, err := client.GetAgent(ctx, protodaemon.GetAgentRequest{
 			Name: agentName,
 		})
 		if err != nil {
@@ -101,7 +101,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 		agentID = resp.Agent.ID
 		agents[resp.Agent.ID] = resp.Agent
 	} else {
-		resp, err := client.RequestListAgents(ctx, protodaemon.ListAgentsRequest{})
+		resp, err := client.ListAgents(ctx, protodaemon.ListAgentsRequest{})
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get a list of agents: %v", err)
 			return err
@@ -114,7 +114,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 
 	var jobs []protodaemon.Job
 	{
-		resp, err := client.RequestListJobs(ctx, protodaemon.ListJobsRequest{
+		resp, err := client.ListJobs(ctx, protodaemon.ListJobsRequest{
 			AgentID: agentID,
 		})
 		if err != nil {

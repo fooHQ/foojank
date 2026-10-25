@@ -84,7 +84,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 
 	var roles []protodaemon.Role
 	{
-		resp, err := client.RequestListRoles(ctx, protodaemon.ListRolesRequest{})
+		resp, err := client.ListRoles(ctx, protodaemon.ListRolesRequest{})
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get a list of roles: %v", err)
 			return err

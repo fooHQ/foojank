@@ -90,7 +90,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	var gateway protodaemon.Gateway
 	{
-		resp, err := client.RequestGetGateway(ctx, protodaemon.GetGatewayRequest{
+		resp, err := client.GetGateway(ctx, protodaemon.GetGatewayRequest{
 			Name: gatewayName,
 		})
 		if err != nil {

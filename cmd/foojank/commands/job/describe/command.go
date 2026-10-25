@@ -90,7 +90,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	var job protodaemon.Job
 	{
-		resp, err := client.RequestGetJob(ctx, protodaemon.GetJobRequest{
+		resp, err := client.GetJob(ctx, protodaemon.GetJobRequest{
 			JobID: jobID,
 		})
 		if err != nil {
@@ -103,7 +103,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	var agentName string
 	{
-		resp, err := client.RequestGetAgent(ctx, protodaemon.GetAgentRequest{
+		resp, err := client.GetAgent(ctx, protodaemon.GetAgentRequest{
 			Name: job.AgentID,
 		})
 		if err != nil {
@@ -115,7 +115,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	var gatewayName string
 	{
-		resp, err := client.RequestGetGateway(ctx, protodaemon.GetGatewayRequest{
+		resp, err := client.GetGateway(ctx, protodaemon.GetGatewayRequest{
 			Name: job.GatewayID,
 		})
 		if err != nil {

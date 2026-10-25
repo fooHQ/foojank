@@ -84,7 +84,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 
 	var users []protodaemon.User
 	{
-		resp, err := client.RequestListUsers(ctx, protodaemon.ListUsersRequest{})
+		resp, err := client.ListUsers(ctx, protodaemon.ListUsersRequest{})
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get a list of users: %v", err)
 			return err

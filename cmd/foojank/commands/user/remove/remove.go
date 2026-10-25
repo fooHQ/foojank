@@ -80,7 +80,7 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	userName := c.Args().First()
 
-	_, err := client.RequestDeleteUser(ctx, protodaemon.DeleteUserRequest{
+	_, err := client.DeleteUser(ctx, protodaemon.DeleteUserRequest{
 		Name: userName,
 	})
 	if err != nil {
