@@ -103,9 +103,13 @@ func action(ctx context.Context, _ *cli.Command) error {
 	})
 
 	for _, agent := range agents {
+		gatewayName := agent.GatewayName
+		if gatewayName == "" {
+			gatewayName = agent.GatewayID
+		}
 		table.AddRow([]formatter.Cell{
 			formatter.NewStringCell(agent.Name),
-			formatter.NewStringCell(agent.GatewayID), // TODO: translate ID to name!
+			formatter.NewStringCell(gatewayName),
 			formatter.NewStringCell(agent.Config.OS),
 			formatter.NewStringCell(agent.Config.Arch),
 			formatter.NewTimeCell(time.Unix(agent.CreatedAt, 0)).WithFormat("relative"),
