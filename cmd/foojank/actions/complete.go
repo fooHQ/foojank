@@ -86,6 +86,15 @@ func CompleteJobID(ctx context.Context, c *cli.Command) {
 	completeName(ctx, c, listJobIDs)
 }
 
+// CompleteCommandName is a ShellComplete func for commands that take a single
+// agent command name. The names come from the agent selected by --agent.
+// Flags are still completed after a positional argument.
+func CompleteCommandName(ctx context.Context, c *cli.Command) {
+	ctx, cancel := completionContext(ctx)
+	defer cancel()
+	completeName(ctx, c, listCommandNames)
+}
+
 func completeName(ctx context.Context, c *cli.Command, list func(context.Context) ([]string, error)) {
 	if completeFlagToken(ctx, c) {
 		return
@@ -324,6 +333,37 @@ func listRoleNames(ctx context.Context) ([]string, error) {
 	names := make([]string, 0, len(resp.Roles))
 	for _, role := range resp.Roles {
 		line := completionLine(role.Name, role.Description)
+		if line == "" {
+			continue
+		}
+		names = append(names, line)
+	}
+	sort.Strings(names)
+	return names, nil
+}
+
+func listCommandNames(ctx context.Context) ([]string, error) {
+	conf := GetConfigFromContext(ctx)
+	agentName, ok := conf.String(flags.Agent)
+	if !ok || agentName == "" {
+		return nil, errors.New("agent not configured")
+	}
+
+	client, err := daemonClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.ListCommands(ctx, protodaemon.ListCommandsRequest{
+		AgentRef: agentName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	names := make([]string, 0, len(resp.Commands))
+	for name, command := range resp.Commands {
+		line := completionLine(name, command.Description)
 		if line == "" {
 			continue
 		}
