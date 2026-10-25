@@ -646,7 +646,7 @@ func (h *NATSHandler) CreateAgent(ctx context.Context, params map[string]string,
 		cancel()
 	}()
 
-	resp, err := h.conf.Gateway.RequestRegisterAgent(ctx, gateway.ID, protogw.RegisterAgentRequest{
+	resp, err := h.conf.Gateway.RegisterAgent(ctx, gateway.ID, protogw.RegisterAgentRequest{
 		AgentID: agent.ID,
 		OS:      agent.Config.OS,
 		Arch:    agent.Config.Arch,
@@ -786,7 +786,7 @@ func (h *NATSHandler) DeleteAgent(ctx context.Context, params map[string]string,
 		}
 	}
 
-	_, err = h.conf.Gateway.RequestUnregisterAgent(ctx, agent.GatewayID, protogw.UnregisterAgentRequest{
+	_, err = h.conf.Gateway.UnregisterAgent(ctx, agent.GatewayID, protogw.UnregisterAgentRequest{
 		AgentID: agent.ID,
 	})
 	if err != nil {
@@ -1220,7 +1220,7 @@ func (h *NATSHandler) CancelJob(ctx context.Context, params map[string]string, m
 		}
 	}
 
-	_, err = h.conf.Gateway.RequestCancelJob(ctx, job.GatewayID, protogw.CancelJobRequest{
+	_, err = h.conf.Gateway.CancelJob(ctx, job.GatewayID, protogw.CancelJobRequest{
 		AgentID: job.AgentID,
 		JobID:   job.ID,
 	})
@@ -1259,7 +1259,7 @@ func (h *NATSHandler) GetJobOutput(ctx context.Context, params map[string]string
 		}
 	}
 
-	resp, err := h.conf.Gateway.RequestJobOutput(ctx, job.GatewayID, protogw.JobOutputRequest{
+	resp, err := h.conf.Gateway.ReadJobOutput(ctx, job.GatewayID, protogw.JobOutputRequest{
 		AgentID: job.AgentID,
 		JobID:   job.ID,
 		Offset:  req.Offset,

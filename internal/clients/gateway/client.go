@@ -22,7 +22,7 @@ func New(srv *server.Client) *Client {
 	}
 }
 
-func (c *Client) RequestRegisterAgent(ctx context.Context, gatewayID string, req protogw.RegisterAgentRequest) (protogw.RegisterAgentResponse, error) {
+func (c *Client) RegisterAgent(ctx context.Context, gatewayID string, req protogw.RegisterAgentRequest) (protogw.RegisterAgentResponse, error) {
 	data, err := c.request(ctx, protogw.RegisterAgentSubject(gatewayID), req)
 	if err != nil {
 		return protogw.RegisterAgentResponse{}, err
@@ -40,7 +40,7 @@ func (c *Client) RequestRegisterAgent(ctx context.Context, gatewayID string, req
 	return v, nil
 }
 
-func (c *Client) RequestUnregisterAgent(ctx context.Context, gatewayID string, req protogw.UnregisterAgentRequest) (protogw.UnregisterAgentResponse, error) {
+func (c *Client) UnregisterAgent(ctx context.Context, gatewayID string, req protogw.UnregisterAgentRequest) (protogw.UnregisterAgentResponse, error) {
 	data, err := c.request(ctx, protogw.UnregisterAgentSubject(gatewayID), req)
 	if err != nil {
 		return protogw.UnregisterAgentResponse{}, err
@@ -58,7 +58,7 @@ func (c *Client) RequestUnregisterAgent(ctx context.Context, gatewayID string, r
 	return v, nil
 }
 
-func (c *Client) RequestCreateJob(ctx context.Context, gatewayID string, req protogw.CreateJobRequest) (protogw.CreateJobResponse, error) {
+func (c *Client) CreateJob(ctx context.Context, gatewayID string, req protogw.CreateJobRequest) (protogw.CreateJobResponse, error) {
 	data, err := c.request(ctx, protogw.CreateJobSubject(gatewayID), req)
 	if err != nil {
 		return protogw.CreateJobResponse{}, err
@@ -76,7 +76,7 @@ func (c *Client) RequestCreateJob(ctx context.Context, gatewayID string, req pro
 	return v, nil
 }
 
-func (c *Client) RequestCancelJob(ctx context.Context, gatewayID string, req protogw.CancelJobRequest) (protogw.CancelJobResponse, error) {
+func (c *Client) CancelJob(ctx context.Context, gatewayID string, req protogw.CancelJobRequest) (protogw.CancelJobResponse, error) {
 	data, err := c.request(ctx, protogw.CancelJobSubject(gatewayID), req)
 	if err != nil {
 		return protogw.CancelJobResponse{}, err
@@ -94,7 +94,7 @@ func (c *Client) RequestCancelJob(ctx context.Context, gatewayID string, req pro
 	return v, nil
 }
 
-func (c *Client) RequestJobInput(ctx context.Context, gatewayID string, req protogw.JobInputRequest) (protogw.JobInputResponse, error) {
+func (c *Client) WriteJobInput(ctx context.Context, gatewayID string, req protogw.JobInputRequest) (protogw.JobInputResponse, error) {
 	data, err := c.request(ctx, protogw.JobInputSubject(gatewayID), req)
 	if err != nil {
 		return protogw.JobInputResponse{}, err
@@ -112,7 +112,7 @@ func (c *Client) RequestJobInput(ctx context.Context, gatewayID string, req prot
 	return v, nil
 }
 
-func (c *Client) RequestJobOutput(ctx context.Context, gatewayID string, req protogw.JobOutputRequest) (protogw.JobOutputResponse, error) {
+func (c *Client) ReadJobOutput(ctx context.Context, gatewayID string, req protogw.JobOutputRequest) (protogw.JobOutputResponse, error) {
 	data, err := c.request(ctx, protogw.JobOutputSubject(gatewayID), req)
 	if err != nil {
 		return protogw.JobOutputResponse{}, err
