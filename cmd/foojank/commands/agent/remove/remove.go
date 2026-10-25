@@ -81,7 +81,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	agentName := c.Args().First()
 
 	_, err := client.DeleteAgent(ctx, protodaemon.DeleteAgentRequest{
-		Name: agentName,
+		AgentRef: agentName,
 	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot remove agent: %v", err)

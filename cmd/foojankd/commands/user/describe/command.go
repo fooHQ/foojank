@@ -87,7 +87,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	var user protodaemon.User
 	{
 		resp, err := client.GetUser(ctx, protodaemon.GetUserRequest{
-			Name: userName,
+			UserRef: userName,
 		})
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get user: %v", err)

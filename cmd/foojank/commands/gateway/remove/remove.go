@@ -81,7 +81,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	gatewayName := c.Args().First()
 
 	_, err := client.DeleteGateway(ctx, protodaemon.DeleteGatewayRequest{
-		Name: gatewayName,
+		GatewayRef: gatewayName,
 	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot remove gateway: %v", err)

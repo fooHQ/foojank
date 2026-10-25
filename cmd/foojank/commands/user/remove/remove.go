@@ -81,7 +81,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	userName := c.Args().First()
 
 	_, err := client.DeleteUser(ctx, protodaemon.DeleteUserRequest{
-		Name: userName,
+		UserRef: userName,
 	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot remove user: %v", err)

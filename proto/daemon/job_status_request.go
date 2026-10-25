@@ -10,19 +10,19 @@ import (
 // JobStatusRequest reports a job's process exit status.
 // Status is the process exit code.
 type JobStatusRequest struct {
-	JobID  string
+	JobRef string
 	Status int64
 	Error  error
 }
 
-// MarshalCbor encodes the request as a CBOR array: [jobID, status, error].
+// MarshalCbor encodes the request as a CBOR array: [jobRef, status, error].
 func (m *JobStatusRequest) MarshalCbor(w io.Writer) error {
 	err := cboring.WriteArrayLength(3, w)
 	if err != nil {
 		return err
 	}
 
-	err = cboring.WriteTextString(m.JobID, w)
+	err = cboring.WriteTextString(m.JobRef, w)
 	if err != nil {
 		return err
 	}
@@ -45,11 +45,11 @@ func (m *JobStatusRequest) UnmarshalCbor(r io.Reader) error {
 		return errors.New("invalid message array length")
 	}
 
-	jobID, err := cboring.ReadTextString(r)
+	jobRef, err := cboring.ReadTextString(r)
 	if err != nil {
 		return err
 	}
-	m.JobID = jobID
+	m.JobRef = jobRef
 
 	status, err := cboring.ReadInt(r)
 	if err != nil {

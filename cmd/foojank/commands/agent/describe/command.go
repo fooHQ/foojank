@@ -92,7 +92,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	var agent protodaemon.Agent
 	{
 		resp, err := client.GetAgent(ctx, protodaemon.GetAgentRequest{
-			Name: agentName,
+			AgentRef: agentName,
 		})
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get agent: %v", err)
@@ -105,7 +105,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	var gatewayName string
 	{
 		resp, err := client.GetGateway(ctx, protodaemon.GetGatewayRequest{
-			Name: agent.GatewayID,
+			GatewayRef: agent.GatewayID,
 		})
 		if err != nil {
 			gatewayName = agent.GatewayID

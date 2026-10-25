@@ -161,12 +161,12 @@ func (h *NATSHandler) GetUser(ctx context.Context, params map[string]string, msg
 		}
 	}
 
-	userName := req.Name
+	userRef := req.UserRef
 
-	user, err := h.conf.UserDirectory.Get(ctx, userName)
+	user, err := h.conf.UserDirectory.Get(ctx, userRef)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", userName)
+			err = fmt.Errorf("%q not found", userRef)
 		}
 		return protodaemon.GetUserResponse{
 			Error: err,
@@ -189,7 +189,7 @@ func (h *NATSHandler) GetUser(ctx context.Context, params map[string]string, msg
 		}
 	}
 
-	claims, err := auth.NewUserJWT(userName, userPerms, userKeyPair)
+	claims, err := auth.NewUserJWT(userRef, userPerms, userKeyPair)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
 		return protodaemon.GetUserResponse{
@@ -267,10 +267,10 @@ func (h *NATSHandler) UpdateUser(ctx context.Context, params map[string]string, 
 		}
 	}
 
-	user, err := h.conf.UserDirectory.Get(ctx, req.Name)
+	user, err := h.conf.UserDirectory.Get(ctx, req.UserRef)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", req.Name)
+			err = fmt.Errorf("%q not found", req.UserRef)
 		}
 		return protodaemon.UpdateUserResponse{
 			Error: err,
@@ -316,10 +316,10 @@ func (h *NATSHandler) DeleteUser(ctx context.Context, params map[string]string, 
 		}
 	}
 
-	user, err := h.conf.UserDirectory.Get(ctx, req.Name)
+	user, err := h.conf.UserDirectory.Get(ctx, req.UserRef)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", req.Name)
+			err = fmt.Errorf("%q not found", req.UserRef)
 		}
 		return protodaemon.DeleteUserResponse{
 			Error: err,
@@ -396,10 +396,10 @@ func (h *NATSHandler) GetRole(ctx context.Context, params map[string]string, msg
 		}
 	}
 
-	role, err := h.conf.RoleDirectory.Get(ctx, req.Name)
+	role, err := h.conf.RoleDirectory.Get(ctx, req.RoleRef)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", req.Name)
+			err = fmt.Errorf("%q not found", req.RoleRef)
 		}
 		return protodaemon.GetRoleResponse{
 			Error: err,
@@ -461,10 +461,10 @@ func (h *NATSHandler) DeleteRole(ctx context.Context, params map[string]string, 
 		}
 	}
 
-	role, err := h.conf.RoleDirectory.Get(ctx, req.Name)
+	role, err := h.conf.RoleDirectory.Get(ctx, req.RoleRef)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", req.Name)
+			err = fmt.Errorf("%q not found", req.RoleRef)
 		}
 		return protodaemon.DeleteRoleResponse{
 			Error: err,
@@ -558,13 +558,13 @@ func (h *NATSHandler) CreateAgent(ctx context.Context, params map[string]string,
 
 	agentName := req.Name
 	agentDesc := req.Description
-	gatewayName := req.GatewayID
+	gatewayRef := req.GatewayRef
 	agentConf := req.Config
 
-	gateway, err := h.conf.GatewayDirectory.Get(ctx, gatewayName)
+	gateway, err := h.conf.GatewayDirectory.Get(ctx, gatewayRef)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", gatewayName)
+			err = fmt.Errorf("%q not found", gatewayRef)
 		}
 		h.logger.ErrorContext(ctx, "Cannot get gateway: %v", err)
 		return protodaemon.CreateAgentResponse{
@@ -693,12 +693,12 @@ func (h *NATSHandler) GetAgent(ctx context.Context, params map[string]string, ms
 		}
 	}
 
-	agentName := req.Name
+	agentRef := req.AgentRef
 
-	agent, err := h.conf.AgentDirectory.Get(ctx, agentName)
+	agent, err := h.conf.AgentDirectory.Get(ctx, agentRef)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", agentName)
+			err = fmt.Errorf("%q not found", agentRef)
 		}
 		return protodaemon.GetAgentResponse{
 			Error: err,
@@ -778,10 +778,10 @@ func (h *NATSHandler) DeleteAgent(ctx context.Context, params map[string]string,
 		}
 	}
 
-	agent, err := h.conf.AgentDirectory.Get(ctx, req.Name)
+	agent, err := h.conf.AgentDirectory.Get(ctx, req.AgentRef)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", req.Name)
+			err = fmt.Errorf("%q not found", req.AgentRef)
 		}
 		return protodaemon.DeleteAgentResponse{
 			Error: err,
@@ -824,10 +824,10 @@ func (h *NATSHandler) GetCommand(ctx context.Context, params map[string]string, 
 		}
 	}
 
-	agent, err := h.conf.AgentDirectory.Get(ctx, req.AgentID)
+	agent, err := h.conf.AgentDirectory.Get(ctx, req.AgentRef)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", req.AgentID)
+			err = fmt.Errorf("%q not found", req.AgentRef)
 		}
 		return protodaemon.GetCommandResponse{
 			Error: err,
@@ -865,10 +865,10 @@ func (h *NATSHandler) ListCommands(ctx context.Context, params map[string]string
 		}
 	}
 
-	agent, err := h.conf.AgentDirectory.Get(ctx, req.AgentID)
+	agent, err := h.conf.AgentDirectory.Get(ctx, req.AgentRef)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", req.AgentID)
+			err = fmt.Errorf("%q not found", req.AgentRef)
 		}
 		return protodaemon.ListCommandsResponse{
 			Error: err,
@@ -998,12 +998,12 @@ func (h *NATSHandler) GetGateway(ctx context.Context, params map[string]string, 
 		}
 	}
 
-	gatewayName := req.Name
+	gatewayRef := req.GatewayRef
 
-	gateway, err := h.conf.GatewayDirectory.Get(ctx, gatewayName)
+	gateway, err := h.conf.GatewayDirectory.Get(ctx, gatewayRef)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", gatewayName)
+			err = fmt.Errorf("%q not found", gatewayRef)
 		}
 		return protodaemon.GetGatewayResponse{
 			Error: err,
@@ -1073,10 +1073,10 @@ func (h *NATSHandler) DeleteGateway(ctx context.Context, params map[string]strin
 		}
 	}
 
-	gateway, err := h.conf.GatewayDirectory.Get(ctx, req.Name)
+	gateway, err := h.conf.GatewayDirectory.Get(ctx, req.GatewayRef)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", req.Name)
+			err = fmt.Errorf("%q not found", req.GatewayRef)
 		}
 		return protodaemon.DeleteGatewayResponse{
 			Error: err,
@@ -1117,12 +1117,12 @@ func (h *NATSHandler) CreateJob(ctx context.Context, params map[string]string, m
 		}
 	}
 
-	agentID := req.AgentID
+	agentRef := req.AgentRef
 
-	agent, err := h.conf.AgentDirectory.Get(ctx, agentID)
+	agent, err := h.conf.AgentDirectory.Get(ctx, agentRef)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", agentID)
+			err = fmt.Errorf("%q not found", agentRef)
 		}
 		h.logger.ErrorContext(ctx, "Cannot get agent: %v", err)
 		return protodaemon.CreateJobResponse{
@@ -1188,10 +1188,10 @@ func (h *NATSHandler) GetJob(ctx context.Context, params map[string]string, msg 
 		}
 	}
 
-	job, err := h.conf.JobDirectory.Get(ctx, req.JobID)
+	job, err := h.conf.JobDirectory.Get(ctx, req.JobRef)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", req.JobID)
+			err = fmt.Errorf("%q not found", req.JobRef)
 		}
 		return protodaemon.GetJobResponse{
 			Error: err,
@@ -1233,10 +1233,10 @@ func (h *NATSHandler) ListJobs(ctx context.Context, params map[string]string, ms
 	}
 
 	var entries []directory.JobDirectoryEntry
-	if req.AgentID == "" {
+	if req.AgentRef == "" {
 		entries, err = h.conf.JobDirectory.List(ctx)
 	} else {
-		entries, err = h.conf.JobDirectory.ListByAgentID(ctx, req.AgentID)
+		entries, err = h.conf.JobDirectory.ListByAgentID(ctx, req.AgentRef)
 	}
 	if err != nil {
 		return protodaemon.ListJobsResponse{
@@ -1283,10 +1283,10 @@ func (h *NATSHandler) CancelJob(ctx context.Context, params map[string]string, m
 		}
 	}
 
-	job, err := h.conf.JobDirectory.Get(ctx, req.JobID)
+	job, err := h.conf.JobDirectory.Get(ctx, req.JobRef)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", req.JobID)
+			err = fmt.Errorf("%q not found", req.JobRef)
 		}
 		return protodaemon.CancelJobResponse{
 			Error: err,
@@ -1322,10 +1322,10 @@ func (h *NATSHandler) GetJobOutput(ctx context.Context, params map[string]string
 		}
 	}
 
-	job, err := h.conf.JobDirectory.Get(ctx, req.JobID)
+	job, err := h.conf.JobDirectory.Get(ctx, req.JobRef)
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyNotFound) {
-			err = fmt.Errorf("%q not found", req.JobID)
+			err = fmt.Errorf("%q not found", req.JobRef)
 		}
 		return protodaemon.GetJobOutputResponse{
 			Error: err,

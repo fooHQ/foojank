@@ -80,7 +80,7 @@ func action(ctx context.Context, c *cli.Command) error {
 	jobID := c.Args().First()
 
 	_, err := client.CancelJob(ctx, protodaemon.CancelJobRequest{
-		JobID: jobID,
+		JobRef: jobID,
 	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot cancel job: %v", err)

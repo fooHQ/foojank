@@ -8,20 +8,20 @@ import (
 )
 
 // GetCommandRequest is a request to retrieve one command of an agent.
-// AgentID identifies the agent. Name is the command name.
+// AgentRef identifies the agent. Name is the command name.
 type GetCommandRequest struct {
-	AgentID string
-	Name    string
+	AgentRef string
+	Name     string
 }
 
-// MarshalCbor encodes the request as a CBOR array: [agentID, name].
+// MarshalCbor encodes the request as a CBOR array: [agentRef, name].
 func (m *GetCommandRequest) MarshalCbor(w io.Writer) error {
 	err := cboring.WriteArrayLength(2, w)
 	if err != nil {
 		return err
 	}
 
-	for _, s := range []string{m.AgentID, m.Name} {
+	for _, s := range []string{m.AgentRef, m.Name} {
 		err := cboring.WriteTextString(s, w)
 		if err != nil {
 			return err
@@ -41,7 +41,7 @@ func (m *GetCommandRequest) UnmarshalCbor(r io.Reader) error {
 		return errors.New("invalid message array length")
 	}
 
-	for _, f := range []*string{&m.AgentID, &m.Name} {
+	for _, f := range []*string{&m.AgentRef, &m.Name} {
 		s, err := cboring.ReadTextString(r)
 		if err != nil {
 			return err

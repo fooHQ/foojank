@@ -91,7 +91,7 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 	var agent protodaemon.Agent
 	{
 		resp, err := client.GetAgent(ctx, protodaemon.GetAgentRequest{
-			Name: agentName,
+			AgentRef: agentName,
 		})
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get agent: %v", err)
@@ -102,10 +102,10 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 	}
 
 	resp, err := client.CreateJob(ctx, protodaemon.CreateJobRequest{
-		AgentID: agent.ID,
-		Command: c.Args().First(),
-		Args:    c.Args().Tail(),
-		Env:     env,
+		AgentRef: agent.ID,
+		Command:  c.Args().First(),
+		Args:     c.Args().Tail(),
+		Env:      env,
 	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create job: %v", err)
