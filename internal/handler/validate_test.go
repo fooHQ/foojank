@@ -102,9 +102,9 @@ func TestValidateGetUserRequest(t *testing.T) {
 			req:  protodaemon.GetUserRequest{UserRef: testUserID(t)},
 		},
 		{
-			name:    "empty name",
+			name:    "empty ref",
 			req:     protodaemon.GetUserRequest{},
-			wantErr: "name is required",
+			wantErr: "ref is required",
 		},
 		{
 			name:   "invalid name",
@@ -176,7 +176,16 @@ func TestValidateCreateAgentRequest(t *testing.T) {
 				req.GatewayRef = ""
 				return req
 			}(),
-			wantErr: "gateway is required",
+			wantErr: "ref is required",
+		},
+		{
+			name: "invalid gateway",
+			req: func() protodaemon.CreateAgentRequest {
+				req := valid
+				req.GatewayRef = "bad name"
+				return req
+			}(),
+			wantIs: directory.ErrNameInvalid,
 		},
 		{
 			name: "empty os",
@@ -254,43 +263,41 @@ func TestValidateGetAgentRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	err = handler.ValidateGetAgentRequest(protodaemon.GetAgentRequest{})
-	require.EqualError(t, err, "name is required")
+	require.EqualError(t, err, "ref is required")
 
 	err = handler.ValidateGetAgentRequest(protodaemon.GetAgentRequest{AgentRef: "bad name"})
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
 }
 
 func TestValidateGetCommandRequest(t *testing.T) {
-	agentID := testUserID(t)
-
 	err := handler.ValidateGetCommandRequest(protodaemon.GetCommandRequest{
-		AgentRef: agentID,
+		AgentRef: "agent",
 		Name:     "ls",
 	})
 	require.NoError(t, err)
 
 	err = handler.ValidateGetCommandRequest(protodaemon.GetCommandRequest{Name: "ls"})
-	require.EqualError(t, err, "invalid agent id")
+	require.EqualError(t, err, "ref is required")
 
-	err = handler.ValidateGetCommandRequest(protodaemon.GetCommandRequest{AgentRef: "agent", Name: "ls"})
-	require.EqualError(t, err, "invalid agent id")
+	err = handler.ValidateGetCommandRequest(protodaemon.GetCommandRequest{AgentRef: "bad name", Name: "ls"})
+	require.ErrorIs(t, err, directory.ErrNameInvalid)
 
-	err = handler.ValidateGetCommandRequest(protodaemon.GetCommandRequest{AgentRef: agentID})
+	err = handler.ValidateGetCommandRequest(protodaemon.GetCommandRequest{AgentRef: "agent"})
 	require.EqualError(t, err, "name is required")
 
-	err = handler.ValidateGetCommandRequest(protodaemon.GetCommandRequest{AgentRef: agentID, Name: "bad name"})
+	err = handler.ValidateGetCommandRequest(protodaemon.GetCommandRequest{AgentRef: "agent", Name: "bad name"})
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
 }
 
 func TestValidateListCommandsRequest(t *testing.T) {
 	err := handler.ValidateListCommandsRequest(protodaemon.ListCommandsRequest{})
-	require.EqualError(t, err, "invalid agent id")
+	require.EqualError(t, err, "ref is required")
 
 	err = handler.ValidateListCommandsRequest(protodaemon.ListCommandsRequest{AgentRef: "agent"})
-	require.EqualError(t, err, "invalid agent id")
-
-	err = handler.ValidateListCommandsRequest(protodaemon.ListCommandsRequest{AgentRef: testUserID(t)})
 	require.NoError(t, err)
+
+	err = handler.ValidateListCommandsRequest(protodaemon.ListCommandsRequest{AgentRef: "bad name"})
+	require.ErrorIs(t, err, directory.ErrNameInvalid)
 }
 
 func TestValidateDeleteAgentRequest(t *testing.T) {
@@ -298,7 +305,7 @@ func TestValidateDeleteAgentRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	err = handler.ValidateDeleteAgentRequest(protodaemon.DeleteAgentRequest{})
-	require.EqualError(t, err, "name is required")
+	require.EqualError(t, err, "ref is required")
 
 	err = handler.ValidateDeleteAgentRequest(protodaemon.DeleteAgentRequest{AgentRef: "bad name"})
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
@@ -309,7 +316,7 @@ func TestValidateGetGatewayRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	err = handler.ValidateGetGatewayRequest(protodaemon.GetGatewayRequest{})
-	require.EqualError(t, err, "name is required")
+	require.EqualError(t, err, "ref is required")
 
 	err = handler.ValidateGetGatewayRequest(protodaemon.GetGatewayRequest{GatewayRef: "bad name"})
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
@@ -320,7 +327,7 @@ func TestValidateDeleteGatewayRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	err = handler.ValidateDeleteGatewayRequest(protodaemon.DeleteGatewayRequest{})
-	require.EqualError(t, err, "name is required")
+	require.EqualError(t, err, "ref is required")
 
 	err = handler.ValidateDeleteGatewayRequest(protodaemon.DeleteGatewayRequest{GatewayRef: "bad name"})
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
@@ -413,7 +420,7 @@ func TestValidateGetRoleRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	err = handler.ValidateGetRoleRequest(protodaemon.GetRoleRequest{})
-	require.EqualError(t, err, "name is required")
+	require.EqualError(t, err, "ref is required")
 
 	err = handler.ValidateGetRoleRequest(protodaemon.GetRoleRequest{RoleRef: "bad name"})
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
@@ -424,7 +431,7 @@ func TestValidateUpdateUserRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	err = handler.ValidateUpdateUserRequest(protodaemon.UpdateUserRequest{})
-	require.EqualError(t, err, "name is required")
+	require.EqualError(t, err, "ref is required")
 
 	err = handler.ValidateUpdateUserRequest(protodaemon.UpdateUserRequest{UserRef: "bad name"})
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
@@ -435,7 +442,7 @@ func TestValidateDeleteUserRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	err = handler.ValidateDeleteUserRequest(protodaemon.DeleteUserRequest{})
-	require.EqualError(t, err, "name is required")
+	require.EqualError(t, err, "ref is required")
 
 	err = handler.ValidateDeleteUserRequest(protodaemon.DeleteUserRequest{UserRef: "bad name"})
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
@@ -446,16 +453,15 @@ func TestValidateDeleteRoleRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	err = handler.ValidateDeleteRoleRequest(protodaemon.DeleteRoleRequest{})
-	require.EqualError(t, err, "name is required")
+	require.EqualError(t, err, "ref is required")
 
 	err = handler.ValidateDeleteRoleRequest(protodaemon.DeleteRoleRequest{RoleRef: "bad name"})
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
 }
 
 func TestValidateCreateJobRequest(t *testing.T) {
-	agentID := testUserID(t)
 	valid := protodaemon.CreateJobRequest{
-		AgentRef: agentID,
+		AgentRef: "agent",
 		Command:  "echo",
 	}
 
@@ -471,31 +477,31 @@ func TestValidateCreateJobRequest(t *testing.T) {
 		{
 			name: "valid with args and env",
 			req: protodaemon.CreateJobRequest{
-				AgentRef: agentID,
+				AgentRef: "agent",
 				Command:  "echo",
 				Args:     []string{"hello"},
 				Env:      []string{"A=b"},
 			},
 		},
 		{
-			name: "invalid agent id",
+			name: "invalid agent ref",
 			req: protodaemon.CreateJobRequest{
-				AgentRef: "agent",
+				AgentRef: "bad name",
 				Command:  "echo",
 			},
-			wantErr: "invalid agent id",
+			wantErr: "invalid name",
 		},
 		{
-			name: "empty agent id",
+			name: "empty agent ref",
 			req: protodaemon.CreateJobRequest{
 				Command: "echo",
 			},
-			wantErr: "invalid agent id",
+			wantErr: "ref is required",
 		},
 		{
 			name: "empty command",
 			req: protodaemon.CreateJobRequest{
-				AgentRef: agentID,
+				AgentRef: "agent",
 			},
 			wantErr: "command is required",
 		},
@@ -518,7 +524,7 @@ func TestValidateGetJobRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	err = handler.ValidateGetJobRequest(protodaemon.GetJobRequest{})
-	require.EqualError(t, err, "job id is required")
+	require.EqualError(t, err, "ref is required")
 
 	err = handler.ValidateGetJobRequest(protodaemon.GetJobRequest{JobRef: "bad id"})
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
@@ -529,7 +535,7 @@ func TestValidateCancelJobRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	err = handler.ValidateCancelJobRequest(protodaemon.CancelJobRequest{})
-	require.EqualError(t, err, "job id is required")
+	require.EqualError(t, err, "ref is required")
 
 	err = handler.ValidateCancelJobRequest(protodaemon.CancelJobRequest{JobRef: "bad id"})
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
@@ -540,7 +546,7 @@ func TestValidateGetJobOutputRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	err = handler.ValidateGetJobOutputRequest(protodaemon.GetJobOutputRequest{})
-	require.EqualError(t, err, "job id is required")
+	require.EqualError(t, err, "ref is required")
 
 	err = handler.ValidateGetJobOutputRequest(protodaemon.GetJobOutputRequest{JobRef: "bad id"})
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
@@ -550,9 +556,9 @@ func TestValidateListJobsRequest(t *testing.T) {
 	err := handler.ValidateListJobsRequest(protodaemon.ListJobsRequest{})
 	require.NoError(t, err)
 
-	err = handler.ValidateListJobsRequest(protodaemon.ListJobsRequest{AgentRef: testUserID(t)})
+	err = handler.ValidateListJobsRequest(protodaemon.ListJobsRequest{AgentRef: "agent"})
 	require.NoError(t, err)
 
-	err = handler.ValidateListJobsRequest(protodaemon.ListJobsRequest{AgentRef: "agent"})
-	require.EqualError(t, err, "invalid agent id")
+	err = handler.ValidateListJobsRequest(protodaemon.ListJobsRequest{AgentRef: "bad name"})
+	require.ErrorIs(t, err, directory.ErrNameInvalid)
 }
