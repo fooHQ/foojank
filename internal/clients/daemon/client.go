@@ -417,6 +417,42 @@ func (c *Client) ReadJobOutput(ctx context.Context, req protodaemon.GetJobOutput
 	return v, nil
 }
 
+func (c *Client) GetCommand(ctx context.Context, req protodaemon.GetCommandRequest) (protodaemon.GetCommandResponse, error) {
+	data, err := c.request(ctx, protodaemon.GetCommandSubject(), req)
+	if err != nil {
+		return protodaemon.GetCommandResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.GetCommandResponse)
+	if !ok {
+		return protodaemon.GetCommandResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.GetCommandResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
+func (c *Client) ListCommands(ctx context.Context, req protodaemon.ListCommandsRequest) (protodaemon.ListCommandsResponse, error) {
+	data, err := c.request(ctx, protodaemon.ListCommandsSubject(), req)
+	if err != nil {
+		return protodaemon.ListCommandsResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.ListCommandsResponse)
+	if !ok {
+		return protodaemon.ListCommandsResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.ListCommandsResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
 func (c *Client) request(ctx context.Context, subject string, req any) (any, error) {
 	b, err := protodaemon.Marshal(req)
 	if err != nil {
