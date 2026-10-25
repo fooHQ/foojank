@@ -25,6 +25,7 @@ func TestMarshalUnmarshal(t *testing.T) {
 		Name:        "web",
 		Description: "web agent",
 		GatewayID:   "UDUMMYGATEWAYPUBLICKEY",
+		GatewayName: "gw1",
 		Config: daemon.AgentConfig{
 			OS:    "linux",
 			Arch:  "amd64",
