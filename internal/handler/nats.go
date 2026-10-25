@@ -1225,15 +1225,37 @@ func (h *NATSHandler) GetJob(ctx context.Context, params map[string]string, msg 
 		}
 	}
 
+	var gatewayName string
+	gateway, err := h.conf.GatewayDirectory.Get(ctx, job.GatewayID)
+	if err != nil {
+		if !errors.Is(err, directory.ErrKeyNotFound) {
+			h.logger.ErrorContext(ctx, "Cannot get gateway: %v", err)
+		}
+	} else {
+		gatewayName = gateway.Name
+	}
+
+	var agentName string
+	agent, err := h.conf.AgentDirectory.Get(ctx, job.AgentID)
+	if err != nil {
+		if !errors.Is(err, directory.ErrKeyNotFound) {
+			h.logger.ErrorContext(ctx, "Cannot get agent: %v", err)
+		}
+	} else {
+		agentName = agent.Name
+	}
+
 	return protodaemon.GetJobResponse{
 		Job: protodaemon.Job{
-			ID:        job.ID,
-			GatewayID: job.GatewayID,
-			AgentID:   job.AgentID,
-			WorkerID:  job.WorkerID,
-			Command:   job.Config.Command,
-			Args:      job.Config.Args,
-			Env:       job.Config.Env,
+			ID:          job.ID,
+			GatewayID:   job.GatewayID,
+			GatewayName: gatewayName,
+			AgentID:     job.AgentID,
+			AgentName:   agentName,
+			WorkerID:    job.WorkerID,
+			Command:     job.Config.Command,
+			Args:        job.Config.Args,
+			Env:         job.Config.Env,
 			Status: protodaemon.JobStatus{
 				Status:    job.State.Status,
 				Error:     job.State.Error,
@@ -1271,16 +1293,37 @@ func (h *NATSHandler) ListJobs(ctx context.Context, params map[string]string, ms
 		}
 	}
 
+	gateways, err := h.conf.GatewayDirectory.List(ctx)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot list gateways: %v", err)
+	}
+
+	gatewayNames := make(map[string]string, len(gateways))
+	for _, gateway := range gateways {
+		gatewayNames[gateway.ID] = gateway.Name
+	}
+
+	agents, err := h.conf.AgentDirectory.List(ctx)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot list agents: %v", err)
+	}
+	agentNames := make(map[string]string, len(agents))
+	for _, agent := range agents {
+		agentNames[agent.ID] = agent.Name
+	}
+
 	jobs := make([]protodaemon.Job, len(entries))
 	for i := range entries {
 		jobs[i] = protodaemon.Job{
-			ID:        entries[i].ID,
-			GatewayID: entries[i].GatewayID,
-			AgentID:   entries[i].AgentID,
-			WorkerID:  entries[i].WorkerID,
-			Command:   entries[i].Config.Command,
-			Args:      entries[i].Config.Args,
-			Env:       entries[i].Config.Env,
+			ID:          entries[i].ID,
+			GatewayID:   entries[i].GatewayID,
+			GatewayName: gatewayNames[entries[i].GatewayID],
+			AgentID:     entries[i].AgentID,
+			AgentName:   agentNames[entries[i].AgentID],
+			WorkerID:    entries[i].WorkerID,
+			Command:     entries[i].Config.Command,
+			Args:        entries[i].Config.Args,
+			Env:         entries[i].Config.Env,
 			Status: protodaemon.JobStatus{
 				Status:    entries[i].State.Status,
 				Error:     entries[i].State.Error,
