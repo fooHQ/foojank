@@ -110,9 +110,13 @@ func action(ctx context.Context, _ *cli.Command) error {
 	})
 
 	for _, job := range jobs {
+		agentName := job.AgentName
+		if agentName == "" {
+			agentName = job.AgentID
+		}
 		table.AddRow([]formatter.Cell{
 			formatter.NewStringCell(job.ID),
-			formatter.NewStringCell(job.AgentID), // TODO: translate ID to name!
+			formatter.NewStringCell(agentName),
 			formatter.NewStringCell(formatArgs(job.Command, job.Args)),
 			formatter.NewTimeCell(time.Unix(job.Status.UpdatedAt, 0)).WithFormat("relative"),
 			formatter.NewStringCell(strings.ToUpper(job.Status.Status)).WithBold(),
