@@ -9,26 +9,28 @@ import (
 
 // Job is a job as returned by the daemon.
 type Job struct {
-	ID        string
-	GatewayID string
-	AgentID   string
-	WorkerID  string
-	Command   string
-	Args      []string
-	Env       []string
-	Status    JobStatus
-	CreatedAt int64
+	ID          string
+	GatewayID   string
+	GatewayName string
+	AgentID     string
+	AgentName   string
+	WorkerID    string
+	Command     string
+	Args        []string
+	Env         []string
+	Status      JobStatus
+	CreatedAt   int64
 }
 
 // MarshalCbor encodes the job as a CBOR array:
-// [id, gatewayID, agentID, workerID, command, args, env, status, createdAt].
+// [id, gatewayID, gatewayName, agentID, agentName, workerID, command, args, env, status, createdAt].
 func (m *Job) MarshalCbor(w io.Writer) error {
-	err := cboring.WriteArrayLength(9, w)
+	err := cboring.WriteArrayLength(11, w)
 	if err != nil {
 		return err
 	}
 
-	for _, s := range []string{m.ID, m.GatewayID, m.AgentID, m.WorkerID, m.Command} {
+	for _, s := range []string{m.ID, m.GatewayID, m.GatewayName, m.AgentID, m.AgentName, m.WorkerID, m.Command} {
 		err := cboring.WriteTextString(s, w)
 		if err != nil {
 			return err
@@ -59,11 +61,11 @@ func (m *Job) UnmarshalCbor(r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	if l != 9 {
+	if l != 11 {
 		return errors.New("invalid message array length")
 	}
 
-	for _, f := range []*string{&m.ID, &m.GatewayID, &m.AgentID, &m.WorkerID, &m.Command} {
+	for _, f := range []*string{&m.ID, &m.GatewayID, &m.GatewayName, &m.AgentID, &m.AgentName, &m.WorkerID, &m.Command} {
 		s, err := cboring.ReadTextString(r)
 		if err != nil {
 			return err

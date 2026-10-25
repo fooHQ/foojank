@@ -73,13 +73,15 @@ func TestMarshalUnmarshal(t *testing.T) {
 		CreatedAt:   1700000000,
 	}
 	testJob := daemon.Job{
-		ID:        "job1",
-		GatewayID: "UDUMMYGATEWAYPUBLICKEY",
-		AgentID:   "UDUMMYAGENTPUBLICKEY",
-		WorkerID:  "worker1",
-		Command:   "echo",
-		Args:      []string{"hello"},
-		Env:       []string{"A=1", "B=2"},
+		ID:          "job1",
+		GatewayID:   "UDUMMYGATEWAYPUBLICKEY",
+		GatewayName: "gw1",
+		AgentID:     "UDUMMYAGENTPUBLICKEY",
+		AgentName:   "web",
+		WorkerID:    "worker1",
+		Command:     "echo",
+		Args:        []string{"hello"},
+		Env:         []string{"A=1", "B=2"},
 		Status: daemon.JobStatus{
 			Status:    "running",
 			Error:     "exited",
