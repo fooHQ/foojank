@@ -46,6 +46,9 @@ var parsers = map[string]parser{
 	jobCancelName: parseJobCancel,
 	jobOutputName: parseJobOutput,
 
+	commandGetName:  parseCommandGet,
+	commandListName: parseCommandList,
+
 	jwtIssueName: parseJWTIssue,
 }
 
