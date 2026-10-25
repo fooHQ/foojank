@@ -83,24 +83,24 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	table := formatter.NewTable()
-	table.AddRow([]formatter.Cell{
+	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("NAME").WithBold(),
-		formatter.NewStringCell(name),
-	})
-	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell("OS").WithBold(),
-		formatter.NewStringCell(prof.OS()),
-	})
-	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell("ARCH").WithBold(),
-		formatter.NewStringCell(prof.Arch()),
+		formatter.NewStringCell("CONFIG").WithBold(),
 	})
 	table.AddRow([]formatter.Cell{
-		formatter.NewStringCell("CONFIG").WithBold(),
+		formatter.NewStringCell(name),
+		formatter.NewStringCell(prof.OS()),
+		formatter.NewStringCell(prof.Arch()),
 		formatter.NewStringSliceCell(envs).WithSeparator("\n"),
 	})
 
-	err = formatter.NewFormatter(format, formatter.WithNoColor(noColor)).Write(os.Stdout, table)
+	err = formatter.NewFormatter(
+		format,
+		formatter.WithNoColor(noColor),
+		formatter.WithOrientation(formatter.OrientationHorizontal),
+	).Write(os.Stdout, table)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot write formatted output: %v", err)
 		return err
