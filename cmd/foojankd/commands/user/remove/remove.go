@@ -21,17 +21,20 @@ func NewCommand() *cli.Command {
 		Usage:     "Remove a user",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  flags.ServerURL,
-				Usage: "set server URL",
+				Name:    flags.ServerURL,
+				Usage:   "set server URL",
+				Sources: flags.Env(flags.ServerURL),
 			},
 			&cli.StringFlag{
 				Name:      flags.ServerCertificate,
 				Usage:     "set path to server's certificate",
 				TakesFile: true,
+				Sources:   flags.Env(flags.ServerCertificate),
 			},
 			&cli.StringFlag{
-				Name:  flags.Account,
-				Usage: "set account",
+				Name:    flags.Account,
+				Usage:   "set account",
+				Sources: flags.Env(flags.Account),
 			},
 		},
 		Before:          before,

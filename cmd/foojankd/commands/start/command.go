@@ -27,17 +27,20 @@ func NewCommand() *cli.Command {
 		Version: foojank.Version(),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  flags.ServerURL,
-				Usage: "set server URL",
+				Name:    flags.ServerURL,
+				Usage:   "set server URL",
+				Sources: flags.Env(flags.ServerURL),
 			},
 			&cli.StringFlag{
 				Name:      flags.ServerCertificate,
 				Usage:     "set path to server's certificate",
 				TakesFile: true,
+				Sources:   flags.Env(flags.ServerCertificate),
 			},
 			&cli.StringFlag{
-				Name:  flags.Account,
-				Usage: "set account name",
+				Name:    flags.Account,
+				Usage:   "set account name",
+				Sources: flags.Env(flags.Account),
 			},
 			&cli.BoolFlag{
 				Name:  flags.NoColor,
