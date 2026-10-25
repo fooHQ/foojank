@@ -60,6 +60,20 @@ func ValidateDeleteAgentRequest(req protodaemon.DeleteAgentRequest) error {
 	return validateName(req.Name)
 }
 
+func ValidateGetCommandRequest(req protodaemon.GetCommandRequest) error {
+	if !nkeys.IsValidPublicUserKey(req.AgentID) {
+		return errors.New("invalid agent id")
+	}
+	return validateName(req.Name)
+}
+
+func ValidateListCommandsRequest(req protodaemon.ListCommandsRequest) error {
+	if !nkeys.IsValidPublicUserKey(req.AgentID) {
+		return errors.New("invalid agent id")
+	}
+	return nil
+}
+
 func ValidateCreateGatewayRequest(req protodaemon.CreateGatewayRequest) error {
 	return validateName(req.Name)
 }

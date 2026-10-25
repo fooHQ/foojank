@@ -56,10 +56,12 @@ func (h *NATSHandler) Match(msg message.Msg) (func(context.Context) message.Msg,
 		protodaemon.UpdateUserSubject(): h.UpdateUser,
 		protodaemon.DeleteUserSubject(): h.DeleteUser,
 
-		protodaemon.CreateAgentSubject(): h.CreateAgent,
-		protodaemon.GetAgentSubject():    h.GetAgent,
-		protodaemon.ListAgentsSubject():  h.ListAgents,
-		protodaemon.DeleteAgentSubject(): h.DeleteAgent,
+		protodaemon.CreateAgentSubject():  h.CreateAgent,
+		protodaemon.GetAgentSubject():     h.GetAgent,
+		protodaemon.ListAgentsSubject():   h.ListAgents,
+		protodaemon.DeleteAgentSubject():  h.DeleteAgent,
+		protodaemon.GetCommandSubject():   h.GetCommand,
+		protodaemon.ListCommandsSubject(): h.ListCommands,
 
 		protodaemon.CreateGatewaySubject(): h.CreateGateway,
 		protodaemon.GetGatewaySubject():    h.GetGateway,
@@ -805,6 +807,77 @@ func (h *NATSHandler) DeleteAgent(ctx context.Context, params map[string]string,
 	}
 
 	return protodaemon.DeleteAgentResponse{}
+}
+
+func (h *NATSHandler) GetCommand(ctx context.Context, params map[string]string, msg message.Msg) any {
+	req, ok := msg.Data().(protodaemon.GetCommandRequest)
+	if !ok {
+		return protodaemon.GetCommandResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	err := ValidateGetCommandRequest(req)
+	if err != nil {
+		return protodaemon.GetCommandResponse{
+			Error: err,
+		}
+	}
+
+	agent, err := h.conf.AgentDirectory.Get(ctx, req.AgentID)
+	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", req.AgentID)
+		}
+		return protodaemon.GetCommandResponse{
+			Error: err,
+		}
+	}
+
+	command, ok := agent.Commands[req.Name]
+	if !ok {
+		return protodaemon.GetCommandResponse{
+			Error: fmt.Errorf("%q not found", req.Name),
+		}
+	}
+
+	copied := copyDirectoryCommands(map[string]directory.AgentCommand{
+		req.Name: command,
+	})
+
+	return protodaemon.GetCommandResponse{
+		Command: copied[req.Name],
+	}
+}
+
+func (h *NATSHandler) ListCommands(ctx context.Context, params map[string]string, msg message.Msg) any {
+	req, ok := msg.Data().(protodaemon.ListCommandsRequest)
+	if !ok {
+		return protodaemon.ListCommandsResponse{
+			Error: errors.New("invalid request data"),
+		}
+	}
+
+	err := ValidateListCommandsRequest(req)
+	if err != nil {
+		return protodaemon.ListCommandsResponse{
+			Error: err,
+		}
+	}
+
+	agent, err := h.conf.AgentDirectory.Get(ctx, req.AgentID)
+	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", req.AgentID)
+		}
+		return protodaemon.ListCommandsResponse{
+			Error: err,
+		}
+	}
+
+	return protodaemon.ListCommandsResponse{
+		Commands: copyDirectoryCommands(agent.Commands),
+	}
 }
 
 func (h *NATSHandler) CreateGateway(ctx context.Context, params map[string]string, msg message.Msg) any {
