@@ -102,6 +102,11 @@ func action(ctx context.Context, c *cli.Command) error {
 		agent = resp.Agent
 	}
 
+	gatewayName := agent.GatewayName
+	if gatewayName == "" {
+		gatewayName = agent.GatewayID
+	}
+
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("ID").WithBold(),
@@ -115,13 +120,14 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell("CREATED AT").WithBold(),
 		formatter.NewStringCell("CONFIG").WithBold(),
 	})
+
 	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell(agent.ID),
 		formatter.NewStringCell(agent.Name),
 		formatter.NewStringCell(agent.Description),
 		formatter.NewStringCell(agent.Config.OS),
 		formatter.NewStringCell(agent.Config.Arch),
-		formatter.NewStringCell(agent.GatewayID), // TODO: translate ID to  name!
+		formatter.NewStringCell(gatewayName),
 		formatter.NewStringCell(agent.Config.JWT),
 		formatter.NewStringCell(agent.Config.Key),
 		formatter.NewTimeCell(time.Unix(agent.CreatedAt, 0)),
