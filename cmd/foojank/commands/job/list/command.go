@@ -87,35 +87,10 @@ func action(ctx context.Context, _ *cli.Command) error {
 
 	client := daemon.New(srv)
 
-	agents := make(map[string]protodaemon.Agent)
-	var agentID string
-	if agentName != "" {
-		resp, err := client.GetAgent(ctx, protodaemon.GetAgentRequest{
-			AgentRef: agentName,
-		})
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get agent: %v", err)
-			return err
-		}
-
-		agentID = resp.Agent.ID
-		agents[resp.Agent.ID] = resp.Agent
-	} else {
-		resp, err := client.ListAgents(ctx, protodaemon.ListAgentsRequest{})
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get a list of agents: %v", err)
-			return err
-		}
-
-		for _, agent := range resp.Agents {
-			agents[agent.ID] = agent
-		}
-	}
-
 	var jobs []protodaemon.Job
 	{
 		resp, err := client.ListJobs(ctx, protodaemon.ListJobsRequest{
-			AgentRef: agentID,
+			AgentRef: agentName,
 		})
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot get a list of jobs: %v", err)
@@ -135,14 +110,9 @@ func action(ctx context.Context, _ *cli.Command) error {
 	})
 
 	for _, job := range jobs {
-		name := job.AgentID
-		if agent, ok := agents[job.AgentID]; ok {
-			name = agent.Name
-		}
-
 		table.AddRow([]formatter.Cell{
 			formatter.NewStringCell(job.ID),
-			formatter.NewStringCell(name),
+			formatter.NewStringCell(job.AgentID), // TODO: translate ID to name!
 			formatter.NewStringCell(formatArgs(job.Command, job.Args)),
 			formatter.NewTimeCell(time.Unix(job.Status.UpdatedAt, 0)).WithFormat("relative"),
 			formatter.NewStringCell(strings.ToUpper(job.Status.Status)).WithBold(),

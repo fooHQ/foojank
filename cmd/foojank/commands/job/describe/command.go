@@ -101,30 +101,6 @@ func action(ctx context.Context, c *cli.Command) error {
 		job = resp.Job
 	}
 
-	var agentName string
-	{
-		resp, err := client.GetAgent(ctx, protodaemon.GetAgentRequest{
-			AgentRef: job.AgentID,
-		})
-		if err != nil {
-			agentName = job.AgentID
-		} else {
-			agentName = resp.Agent.Name
-		}
-	}
-
-	var gatewayName string
-	{
-		resp, err := client.GetGateway(ctx, protodaemon.GetGatewayRequest{
-			GatewayRef: job.GatewayID,
-		})
-		if err != nil {
-			gatewayName = job.GatewayID
-		} else {
-			gatewayName = resp.Gateway.Name
-		}
-	}
-
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
 		formatter.NewStringCell("ID").WithBold(),
@@ -141,8 +117,8 @@ func action(ctx context.Context, c *cli.Command) error {
 	})
 	table.AddRow([]formatter.Cell{
 		formatter.NewStringCell(job.ID),
-		formatter.NewStringCell(agentName),
-		formatter.NewStringCell(gatewayName),
+		formatter.NewStringCell(job.AgentID),   // TODO: translate ID to name!
+		formatter.NewStringCell(job.GatewayID), // TODO: translate ID to name!
 		formatter.NewStringCell(job.WorkerID),
 		formatter.NewStringCell(job.Command),
 		formatter.NewStringSliceCell(job.Args).WithSeparator("\n"),
