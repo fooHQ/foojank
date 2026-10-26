@@ -7,6 +7,7 @@ import (
 
 	"github.com/foohq/foojank/cmd/foojank/commands/role/create"
 	"github.com/foohq/foojank/cmd/foojank/commands/role/describe"
+	importcmd "github.com/foohq/foojank/cmd/foojank/commands/role/import"
 	"github.com/foohq/foojank/cmd/foojank/commands/role/list"
 	"github.com/foohq/foojank/cmd/foojank/commands/role/remove"
 )
@@ -20,6 +21,7 @@ func NewCommand() *cli.Command {
 			describe.NewCommand(),
 			list.NewCommand(),
 			remove.NewCommand(),
+			importcmd.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		OnUsageError:    actions.UsageError,
