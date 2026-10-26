@@ -23,4 +23,5 @@ const (
 	PublicKey         = "public-key"
 	Privilege         = "privilege"
 	WithoutPrivilege  = "without-privilege"
+	File              = "file"
 )
