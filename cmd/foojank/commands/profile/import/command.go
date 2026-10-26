@@ -18,10 +18,14 @@ import (
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:      "import",
-		ArgsUsage: "<file>",
-		Usage:     "Import profiles from a file",
+		Name:  "import",
+		Usage: "Import profiles from a file",
 		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:      flags.File,
+				Usage:     "set path to an input file",
+				TakesFile: true,
+			},
 			&cli.BoolFlag{
 				Name:  flags.Force,
 				Usage: "overwrite existing profiles",
@@ -58,20 +62,14 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 	return ctx, nil
 }
 
-func action(ctx context.Context, c *cli.Command) error {
+func action(ctx context.Context, _ *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
 	profs := actions.GetProfilesFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 
 	force, _ := conf.Bool(flags.Force)
 	configDir, _ := conf.String(flags.ConfigDir)
-
-	if c.Args().Len() != 1 {
-		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
-		return errors.New("not enough arguments")
-	}
-
-	pth := c.Args().First()
+	pth, _ := conf.String(flags.File)
 
 	profsImport, err := profile.ParseFile(pth)
 	if err != nil {
@@ -102,6 +100,17 @@ func action(ctx context.Context, c *cli.Command) error {
 	return nil
 }
 
-func validateConfiguration(_ *config.Config) error {
+func validateConfiguration(conf *config.Config) error {
+	for _, opt := range []string{
+		flags.File,
+	} {
+		switch opt {
+		case flags.File:
+			v, ok := conf.String(opt)
+			if !ok || v == "" {
+				return errors.New("file not configured")
+			}
+		}
+	}
 	return nil
 }
