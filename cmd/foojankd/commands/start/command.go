@@ -114,10 +114,10 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	err = foojankd.New(logger, foojankd.Config{
-		Consumer: consumer.NewNATSConsumer(logger, consumer.NATSConsumerConfig{
+		Consumer: consumer.New(logger, consumer.Config{
 			Connection: srv.Conn(),
 		}),
-		Handler: handler.NewNATSHandler(logger, handler.NATSHandlerConfig{
+		Handler: handler.New(logger, handler.Config{
 			Gateway:          gateway.New(srv),
 			AgentDirectory:   agentDir,
 			GatewayDirectory: gatewayDir,
@@ -125,7 +125,7 @@ func action(ctx context.Context, c *cli.Command) error {
 			JobDirectory:     jobDir,
 			AccountKey:       accountKey,
 		}),
-		Publisher: publisher.NewNATSPublisher(logger, publisher.NATSPublisherConfig{
+		Publisher: publisher.New(logger, publisher.Config{
 			Connection: srv.Conn(),
 		}),
 	}).Start(ctx)
