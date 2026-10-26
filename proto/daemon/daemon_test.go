@@ -916,6 +916,40 @@ func TestMarshalUnmarshal(t *testing.T) {
 			want:  daemon.ListCommandsResponse{Error: testError},
 		},
 		{
+			name: "ListAuditRequest",
+			input: daemon.ListAuditRequest{
+				Offset: 20,
+				Limit:  50,
+			},
+			want: daemon.ListAuditRequest{
+				Offset: 20,
+				Limit:  50,
+			},
+		},
+		{
+			name: "ListAuditResponse",
+			input: daemon.ListAuditResponse{
+				Events: []daemon.Event{{}},
+			},
+			want: daemon.ListAuditResponse{
+				Events: []daemon.Event{{}},
+			},
+		},
+		{
+			name: "ListAuditResponse with empty slice",
+			input: daemon.ListAuditResponse{
+				Events: []daemon.Event{},
+			},
+			want: daemon.ListAuditResponse{
+				Events: nil,
+			},
+		},
+		{
+			name:  "ListAuditResponse with error",
+			input: daemon.ListAuditResponse{Error: testError},
+			want:  daemon.ListAuditResponse{Error: testError},
+		},
+		{
 			name: "pointer input",
 			input: &daemon.CreateUserRequest{
 				Name: "ops",
@@ -1143,6 +1177,11 @@ func TestGetCommandSubject(t *testing.T) {
 func TestListCommandsSubject(t *testing.T) {
 	got := daemon.ListCommandsSubject()
 	require.Equal(t, "FJ.DAEMON.RPC.COMMAND.LIST", got)
+}
+
+func TestListAuditSubject(t *testing.T) {
+	got := daemon.ListAuditSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.AUDIT.LIST", got)
 }
 
 func TestParseIssueJWTSubject(t *testing.T) {
