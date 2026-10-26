@@ -10,9 +10,11 @@ import (
 
 	"github.com/foohq/foojank/cmd/foojankd/actions"
 	"github.com/foohq/foojank/cmd/foojankd/flags"
-	"github.com/foohq/foojank/internal/clients/daemon"
+	"github.com/foohq/foojank/internal/authdir"
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/directory"
 	"github.com/foohq/foojank/internal/formatter"
+	"github.com/foohq/foojank/internal/handler"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
@@ -77,28 +79,39 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	format, _ := conf.String(flags.Format)
 	noColor, _ := conf.Bool(flags.NoColor)
+	accountName, _ := conf.String(flags.Account)
 
 	if c.Args().Len() != 1 {
 		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
 		return errors.New("not enough arguments")
 	}
 
-	client := daemon.New(srv)
-
 	userName := c.Args().First()
 
-	var user protodaemon.User
-	{
-		resp, err := client.GetUser(ctx, protodaemon.GetUserRequest{
-			UserRef: userName,
-		})
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get user: %v", err)
-			return err
-		}
-
-		user = resp.User
+	accountKey, err := authdir.GetAccountKey(accountName)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot read account key: %v", err)
+		return err
 	}
+
+	userDir, err := directory.OpenUserDirectory(ctx, srv)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot open user directory: %v", err)
+		return err
+	}
+
+	resp := handler.New(logger, handler.Config{
+		UserDirectory: userDir,
+		AccountKey:    accountKey,
+	}).GetUser(ctx, nil, protodaemon.GetUserRequest{
+		UserRef: userName,
+	})
+	if resp.Error != nil {
+		logger.ErrorContext(ctx, "Cannot get user: %v", resp.Error)
+		return resp.Error
+	}
+
+	user := resp.User
 
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
@@ -120,7 +133,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewTimeCell(time.Unix(user.CreatedAt, 0)),
 	})
 
-	err := formatter.NewFormatter(
+	err = formatter.NewFormatter(
 		format,
 		formatter.WithNoColor(noColor),
 		formatter.WithOrientation(formatter.OrientationHorizontal),

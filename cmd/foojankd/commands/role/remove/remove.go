@@ -9,8 +9,9 @@ import (
 
 	"github.com/foohq/foojank/cmd/foojankd/actions"
 	"github.com/foohq/foojank/cmd/foojankd/flags"
-	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/directory"
+	"github.com/foohq/foojank/internal/handler"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
@@ -74,16 +75,22 @@ func action(ctx context.Context, c *cli.Command) error {
 		return errors.New("not enough arguments")
 	}
 
-	client := daemon.New(srv)
-
 	roleName := c.Args().First()
 
-	_, err := client.DeleteRole(ctx, protodaemon.DeleteRoleRequest{
+	roleDir, err := directory.OpenRoleDirectory(ctx, srv)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot open role directory: %v", err)
+		return err
+	}
+
+	resp := handler.New(logger, handler.Config{
+		RoleDirectory: roleDir,
+	}).DeleteRole(ctx, nil, protodaemon.DeleteRoleRequest{
 		RoleRef: roleName,
 	})
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot remove role: %v", err)
-		return err
+	if resp.Error != nil {
+		logger.ErrorContext(ctx, "Cannot remove role: %v", resp.Error)
+		return resp.Error
 	}
 
 	return nil
