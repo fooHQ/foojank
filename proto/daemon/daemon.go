@@ -78,6 +78,8 @@ const (
 	tagGetCommandResponse
 	tagListCommandsRequest
 	tagListCommandsResponse
+	tagListAuditRequest
+	tagListAuditResponse
 )
 
 // Marshal serializes the given message into a CBOR-encoded byte slice. It
@@ -315,6 +317,14 @@ func Marshal(message any) ([]byte, error) {
 		tag, payload = tagListCommandsResponse, &v
 	case *ListCommandsResponse:
 		tag, payload = tagListCommandsResponse, v
+	case ListAuditRequest:
+		tag, payload = tagListAuditRequest, &v
+	case *ListAuditRequest:
+		tag, payload = tagListAuditRequest, v
+	case ListAuditResponse:
+		tag, payload = tagListAuditResponse, &v
+	case *ListAuditResponse:
+		tag, payload = tagListAuditResponse, v
 	default:
 		return nil, ErrUnknownType
 	}
@@ -583,6 +593,14 @@ func Unmarshal(b []byte) (any, error) {
 		var m ListCommandsResponse
 		err = m.UnmarshalCbor(r)
 		payload = m
+	case tagListAuditRequest:
+		var m ListAuditRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagListAuditResponse:
+		var m ListAuditResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
 	default:
 		return nil, ErrUnknownTag
 	}
@@ -730,6 +748,11 @@ func GetCommandSubject() string {
 // ListCommandsSubject returns the NATS subject for listing an agent's commands.
 func ListCommandsSubject() string {
 	return "FJ.DAEMON.RPC.COMMAND.LIST"
+}
+
+// ListAuditSubject returns the NATS subject for listing audit records.
+func ListAuditSubject() string {
+	return "FJ.DAEMON.RPC.AUDIT.LIST"
 }
 
 // ParseIssueJWTSubject extracts the user ID from an issue-JWT subject. It
@@ -992,6 +1015,47 @@ func readJobSlice(r io.Reader) ([]Job, error) {
 	}
 
 	return jobs, nil
+}
+
+// writeEventSlice writes a slice of events as a definite-length CBOR array.
+// Each event is encoded with Event.MarshalCbor.
+func writeEventSlice(events []Event, w io.Writer) error {
+	err := cboring.WriteArrayLength(uint64(len(events)), w)
+	if err != nil {
+		return err
+	}
+
+	for i := range events {
+		err := events[i].MarshalCbor(w)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// readEventSlice reads a definite-length CBOR array of events. An empty array
+// is decoded as a nil slice.
+func readEventSlice(r io.Reader) ([]Event, error) {
+	l, err := cboring.ReadArrayLength(r)
+	if err != nil {
+		return nil, err
+	}
+
+	if l == 0 {
+		return nil, nil
+	}
+
+	events := make([]Event, l)
+	for i := range events {
+		err := events[i].UnmarshalCbor(r)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return events, nil
 }
 
 // writeStringMap writes a map of strings as a definite-length CBOR map. Keys
