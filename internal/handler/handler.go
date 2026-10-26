@@ -24,7 +24,7 @@ import (
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
-type NATSHandlerConfig struct {
+type Config struct {
 	Gateway          *gateway.Client
 	AgentDirectory   *directory.AgentDirectory
 	GatewayDirectory *directory.GatewayDirectory
@@ -34,19 +34,19 @@ type NATSHandlerConfig struct {
 	AccountKey       nkeys.KeyPair
 }
 
-type NATSHandler struct {
-	conf   NATSHandlerConfig
+type Handler struct {
+	conf   Config
 	logger *log.Logger
 }
 
-func NewNATSHandler(logger *log.Logger, conf NATSHandlerConfig) *NATSHandler {
-	return &NATSHandler{
+func New(logger *log.Logger, conf Config) *Handler {
+	return &Handler{
 		conf:   conf,
 		logger: logger,
 	}
 }
 
-func (h *NATSHandler) Match(msg message.Msg) (func(context.Context) message.Msg, bool) {
+func (h *Handler) Match(msg message.Msg) (func(context.Context) message.Msg, bool) {
 	routes := map[string]adapterFn{
 		protodaemon.CreateUserSubject(): adapter(h.CreateUser),
 		protodaemon.GetUserSubject():    adapter(h.GetUser),
@@ -86,7 +86,7 @@ func (h *NATSHandler) Match(msg message.Msg) (func(context.Context) message.Msg,
 		}
 		return func(ctx context.Context) message.Msg {
 			v := handler(ctx, params, msg.Data())
-			return NATSHandlerMessage{
+			return Message{
 				msg:     msg,
 				subject: msg.ReplySubject(),
 				data:    v,
@@ -97,7 +97,7 @@ func (h *NATSHandler) Match(msg message.Msg) (func(context.Context) message.Msg,
 	return nil, false
 }
 
-func (h *NATSHandler) CreateUser(ctx context.Context, params map[string]string, req protodaemon.CreateUserRequest) protodaemon.CreateUserResponse {
+func (h *Handler) CreateUser(ctx context.Context, params map[string]string, req protodaemon.CreateUserRequest) protodaemon.CreateUserResponse {
 	err := ValidateCreateUserRequest(req)
 	if err != nil {
 		return protodaemon.CreateUserResponse{
@@ -137,7 +137,7 @@ func (h *NATSHandler) CreateUser(ctx context.Context, params map[string]string, 
 	return protodaemon.CreateUserResponse{}
 }
 
-func (h *NATSHandler) GetUser(ctx context.Context, params map[string]string, req protodaemon.GetUserRequest) protodaemon.GetUserResponse {
+func (h *Handler) GetUser(ctx context.Context, params map[string]string, req protodaemon.GetUserRequest) protodaemon.GetUserResponse {
 	err := ValidateGetUserRequest(req)
 	if err != nil {
 		return protodaemon.GetUserResponse{
@@ -204,7 +204,7 @@ func (h *NATSHandler) GetUser(ctx context.Context, params map[string]string, req
 	}
 }
 
-func (h *NATSHandler) ListUsers(ctx context.Context, params map[string]string, req protodaemon.ListUsersRequest) protodaemon.ListUsersResponse {
+func (h *Handler) ListUsers(ctx context.Context, params map[string]string, req protodaemon.ListUsersRequest) protodaemon.ListUsersResponse {
 	entries, err := h.conf.UserDirectory.List(ctx)
 	if err != nil {
 		return protodaemon.ListUsersResponse{
@@ -227,7 +227,7 @@ func (h *NATSHandler) ListUsers(ctx context.Context, params map[string]string, r
 	}
 }
 
-func (h *NATSHandler) UpdateUser(ctx context.Context, params map[string]string, req protodaemon.UpdateUserRequest) protodaemon.UpdateUserResponse {
+func (h *Handler) UpdateUser(ctx context.Context, params map[string]string, req protodaemon.UpdateUserRequest) protodaemon.UpdateUserResponse {
 	err := ValidateUpdateUserRequest(req)
 	if err != nil {
 		return protodaemon.UpdateUserResponse{
@@ -269,7 +269,7 @@ func (h *NATSHandler) UpdateUser(ctx context.Context, params map[string]string, 
 	return protodaemon.UpdateUserResponse{}
 }
 
-func (h *NATSHandler) DeleteUser(ctx context.Context, params map[string]string, req protodaemon.DeleteUserRequest) protodaemon.DeleteUserResponse {
+func (h *Handler) DeleteUser(ctx context.Context, params map[string]string, req protodaemon.DeleteUserRequest) protodaemon.DeleteUserResponse {
 	err := ValidateDeleteUserRequest(req)
 	if err != nil {
 		return protodaemon.DeleteUserResponse{
@@ -298,7 +298,7 @@ func (h *NATSHandler) DeleteUser(ctx context.Context, params map[string]string, 
 	return protodaemon.DeleteUserResponse{}
 }
 
-func (h *NATSHandler) CreateRole(ctx context.Context, params map[string]string, req protodaemon.CreateRoleRequest) protodaemon.CreateRoleResponse {
+func (h *Handler) CreateRole(ctx context.Context, params map[string]string, req protodaemon.CreateRoleRequest) protodaemon.CreateRoleResponse {
 	err := ValidateCreateRoleRequest(req)
 	if err != nil {
 		return protodaemon.CreateRoleResponse{
@@ -335,7 +335,7 @@ func (h *NATSHandler) CreateRole(ctx context.Context, params map[string]string, 
 	return protodaemon.CreateRoleResponse{}
 }
 
-func (h *NATSHandler) GetRole(ctx context.Context, params map[string]string, req protodaemon.GetRoleRequest) protodaemon.GetRoleResponse {
+func (h *Handler) GetRole(ctx context.Context, params map[string]string, req protodaemon.GetRoleRequest) protodaemon.GetRoleResponse {
 	err := ValidateGetRoleRequest(req)
 	if err != nil {
 		return protodaemon.GetRoleResponse{
@@ -363,7 +363,7 @@ func (h *NATSHandler) GetRole(ctx context.Context, params map[string]string, req
 	}
 }
 
-func (h *NATSHandler) ListRoles(ctx context.Context, params map[string]string, req protodaemon.ListRolesRequest) protodaemon.ListRolesResponse {
+func (h *Handler) ListRoles(ctx context.Context, params map[string]string, req protodaemon.ListRolesRequest) protodaemon.ListRolesResponse {
 	entries, err := h.conf.RoleDirectory.List(ctx)
 	if err != nil {
 		return protodaemon.ListRolesResponse{
@@ -385,7 +385,7 @@ func (h *NATSHandler) ListRoles(ctx context.Context, params map[string]string, r
 	}
 }
 
-func (h *NATSHandler) DeleteRole(ctx context.Context, params map[string]string, req protodaemon.DeleteRoleRequest) protodaemon.DeleteRoleResponse {
+func (h *Handler) DeleteRole(ctx context.Context, params map[string]string, req protodaemon.DeleteRoleRequest) protodaemon.DeleteRoleResponse {
 	err := ValidateDeleteRoleRequest(req)
 	if err != nil {
 		return protodaemon.DeleteRoleResponse{
@@ -414,7 +414,7 @@ func (h *NATSHandler) DeleteRole(ctx context.Context, params map[string]string, 
 	return protodaemon.DeleteRoleResponse{}
 }
 
-func (h *NATSHandler) IssueJWT(ctx context.Context, params map[string]string, req protodaemon.IssueJWTRequest) protodaemon.IssueJWTResponse {
+func (h *Handler) IssueJWT(ctx context.Context, params map[string]string, req protodaemon.IssueJWTRequest) protodaemon.IssueJWTResponse {
 	userName := params["user"]
 
 	user, err := h.conf.UserDirectory.Get(ctx, userName)
@@ -473,7 +473,7 @@ func (h *NATSHandler) IssueJWT(ctx context.Context, params map[string]string, re
 	}
 }
 
-func (h *NATSHandler) CreateAgent(ctx context.Context, params map[string]string, req protodaemon.CreateAgentRequest) protodaemon.CreateAgentResponse {
+func (h *Handler) CreateAgent(ctx context.Context, params map[string]string, req protodaemon.CreateAgentRequest) protodaemon.CreateAgentResponse {
 	err := ValidateCreateAgentRequest(req)
 	if err != nil {
 		return protodaemon.CreateAgentResponse{
@@ -608,7 +608,7 @@ func (h *NATSHandler) CreateAgent(ctx context.Context, params map[string]string,
 	return protodaemon.CreateAgentResponse{}
 }
 
-func (h *NATSHandler) GetAgent(ctx context.Context, params map[string]string, req protodaemon.GetAgentRequest) protodaemon.GetAgentResponse {
+func (h *Handler) GetAgent(ctx context.Context, params map[string]string, req protodaemon.GetAgentRequest) protodaemon.GetAgentResponse {
 	err := ValidateGetAgentRequest(req)
 	if err != nil {
 		return protodaemon.GetAgentResponse{
@@ -658,7 +658,7 @@ func (h *NATSHandler) GetAgent(ctx context.Context, params map[string]string, re
 	}
 }
 
-func (h *NATSHandler) ListAgents(ctx context.Context, params map[string]string, req protodaemon.ListAgentsRequest) protodaemon.ListAgentsResponse {
+func (h *Handler) ListAgents(ctx context.Context, params map[string]string, req protodaemon.ListAgentsRequest) protodaemon.ListAgentsResponse {
 	entries, err := h.conf.AgentDirectory.List(ctx)
 	if err != nil {
 		return protodaemon.ListAgentsResponse{
@@ -697,7 +697,7 @@ func (h *NATSHandler) ListAgents(ctx context.Context, params map[string]string, 
 	}
 }
 
-func (h *NATSHandler) DeleteAgent(ctx context.Context, params map[string]string, req protodaemon.DeleteAgentRequest) protodaemon.DeleteAgentResponse {
+func (h *Handler) DeleteAgent(ctx context.Context, params map[string]string, req protodaemon.DeleteAgentRequest) protodaemon.DeleteAgentResponse {
 	err := ValidateDeleteAgentRequest(req)
 	if err != nil {
 		return protodaemon.DeleteAgentResponse{
@@ -736,7 +736,7 @@ func (h *NATSHandler) DeleteAgent(ctx context.Context, params map[string]string,
 	return protodaemon.DeleteAgentResponse{}
 }
 
-func (h *NATSHandler) GetCommand(ctx context.Context, params map[string]string, req protodaemon.GetCommandRequest) protodaemon.GetCommandResponse {
+func (h *Handler) GetCommand(ctx context.Context, params map[string]string, req protodaemon.GetCommandRequest) protodaemon.GetCommandResponse {
 	err := ValidateGetCommandRequest(req)
 	if err != nil {
 		return protodaemon.GetCommandResponse{
@@ -770,7 +770,7 @@ func (h *NATSHandler) GetCommand(ctx context.Context, params map[string]string, 
 	}
 }
 
-func (h *NATSHandler) ListCommands(ctx context.Context, params map[string]string, req protodaemon.ListCommandsRequest) protodaemon.ListCommandsResponse {
+func (h *Handler) ListCommands(ctx context.Context, params map[string]string, req protodaemon.ListCommandsRequest) protodaemon.ListCommandsResponse {
 	err := ValidateListCommandsRequest(req)
 	if err != nil {
 		return protodaemon.ListCommandsResponse{
@@ -793,7 +793,7 @@ func (h *NATSHandler) ListCommands(ctx context.Context, params map[string]string
 	}
 }
 
-func (h *NATSHandler) CreateGateway(ctx context.Context, params map[string]string, req protodaemon.CreateGatewayRequest) protodaemon.CreateGatewayResponse {
+func (h *Handler) CreateGateway(ctx context.Context, params map[string]string, req protodaemon.CreateGatewayRequest) protodaemon.CreateGatewayResponse {
 	err := ValidateCreateGatewayRequest(req)
 	if err != nil {
 		return protodaemon.CreateGatewayResponse{
@@ -889,7 +889,7 @@ func (h *NATSHandler) CreateGateway(ctx context.Context, params map[string]strin
 	return protodaemon.CreateGatewayResponse{}
 }
 
-func (h *NATSHandler) GetGateway(ctx context.Context, params map[string]string, req protodaemon.GetGatewayRequest) protodaemon.GetGatewayResponse {
+func (h *Handler) GetGateway(ctx context.Context, params map[string]string, req protodaemon.GetGatewayRequest) protodaemon.GetGatewayResponse {
 	err := ValidateGetGatewayRequest(req)
 	if err != nil {
 		return protodaemon.GetGatewayResponse{
@@ -923,7 +923,7 @@ func (h *NATSHandler) GetGateway(ctx context.Context, params map[string]string, 
 	}
 }
 
-func (h *NATSHandler) ListGateways(ctx context.Context, params map[string]string, req protodaemon.ListGatewaysRequest) protodaemon.ListGatewaysResponse {
+func (h *Handler) ListGateways(ctx context.Context, params map[string]string, req protodaemon.ListGatewaysRequest) protodaemon.ListGatewaysResponse {
 	entries, err := h.conf.GatewayDirectory.List(ctx)
 	if err != nil {
 		return protodaemon.ListGatewaysResponse{
@@ -945,7 +945,7 @@ func (h *NATSHandler) ListGateways(ctx context.Context, params map[string]string
 	}
 }
 
-func (h *NATSHandler) DeleteGateway(ctx context.Context, params map[string]string, req protodaemon.DeleteGatewayRequest) protodaemon.DeleteGatewayResponse {
+func (h *Handler) DeleteGateway(ctx context.Context, params map[string]string, req protodaemon.DeleteGatewayRequest) protodaemon.DeleteGatewayResponse {
 	err := ValidateDeleteGatewayRequest(req)
 	if err != nil {
 		return protodaemon.DeleteGatewayResponse{
@@ -982,7 +982,7 @@ func (h *NATSHandler) DeleteGateway(ctx context.Context, params map[string]strin
 	return protodaemon.DeleteGatewayResponse{}
 }
 
-func (h *NATSHandler) CreateJob(ctx context.Context, params map[string]string, req protodaemon.CreateJobRequest) protodaemon.CreateJobResponse {
+func (h *Handler) CreateJob(ctx context.Context, params map[string]string, req protodaemon.CreateJobRequest) protodaemon.CreateJobResponse {
 	err := ValidateCreateJobRequest(req)
 	if err != nil {
 		return protodaemon.CreateJobResponse{
@@ -1046,7 +1046,7 @@ func (h *NATSHandler) CreateJob(ctx context.Context, params map[string]string, r
 	}
 }
 
-func (h *NATSHandler) GetJob(ctx context.Context, params map[string]string, req protodaemon.GetJobRequest) protodaemon.GetJobResponse {
+func (h *Handler) GetJob(ctx context.Context, params map[string]string, req protodaemon.GetJobRequest) protodaemon.GetJobResponse {
 	err := ValidateGetJobRequest(req)
 	if err != nil {
 		return protodaemon.GetJobResponse{
@@ -1105,7 +1105,7 @@ func (h *NATSHandler) GetJob(ctx context.Context, params map[string]string, req 
 	}
 }
 
-func (h *NATSHandler) ListJobs(ctx context.Context, params map[string]string, req protodaemon.ListJobsRequest) protodaemon.ListJobsResponse {
+func (h *Handler) ListJobs(ctx context.Context, params map[string]string, req protodaemon.ListJobsRequest) protodaemon.ListJobsResponse {
 	err := ValidateListJobsRequest(req)
 	if err != nil {
 		return protodaemon.ListJobsResponse{
@@ -1154,7 +1154,7 @@ func (h *NATSHandler) ListJobs(ctx context.Context, params map[string]string, re
 	}
 }
 
-func (h *NATSHandler) CancelJob(ctx context.Context, params map[string]string, req protodaemon.CancelJobRequest) protodaemon.CancelJobResponse {
+func (h *Handler) CancelJob(ctx context.Context, params map[string]string, req protodaemon.CancelJobRequest) protodaemon.CancelJobResponse {
 	err := ValidateCancelJobRequest(req)
 	if err != nil {
 		return protodaemon.CancelJobResponse{
@@ -1186,7 +1186,7 @@ func (h *NATSHandler) CancelJob(ctx context.Context, params map[string]string, r
 	return protodaemon.CancelJobResponse{}
 }
 
-func (h *NATSHandler) GetJobOutput(ctx context.Context, params map[string]string, req protodaemon.GetJobOutputRequest) protodaemon.GetJobOutputResponse {
+func (h *Handler) GetJobOutput(ctx context.Context, params map[string]string, req protodaemon.GetJobOutputRequest) protodaemon.GetJobOutputResponse {
 	err := ValidateGetJobOutputRequest(req)
 	if err != nil {
 		return protodaemon.GetJobOutputResponse{
@@ -1221,29 +1221,29 @@ func (h *NATSHandler) GetJobOutput(ctx context.Context, params map[string]string
 	}
 }
 
-type NATSHandlerMessage struct {
+type Message struct {
 	msg     message.Msg
 	subject string
 	data    any
 }
 
-func (m NATSHandlerMessage) ID() string {
+func (m Message) ID() string {
 	return m.msg.ID()
 }
 
-func (m NATSHandlerMessage) Subject() string {
+func (m Message) Subject() string {
 	return m.subject
 }
 
-func (m NATSHandlerMessage) ReplySubject() string {
+func (m Message) ReplySubject() string {
 	return ""
 }
 
-func (m NATSHandlerMessage) Data() any {
+func (m Message) Data() any {
 	return m.data
 }
 
-func (m NATSHandlerMessage) Ack() error {
+func (m Message) Ack() error {
 	return m.msg.Ack()
 }
 

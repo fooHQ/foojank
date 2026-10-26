@@ -11,26 +11,26 @@ import (
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
-type NATSConsumerConfig struct {
+type Config struct {
 	Connection *nats.Conn
 }
 
-type NATSConsumer struct {
-	conf   NATSConsumerConfig
+type Consumer struct {
+	conf   Config
 	logger *log.Logger
 	msgCh  chan *nats.Msg
 	subs   []*nats.Subscription
 }
 
-func NewNATSConsumer(logger *log.Logger, conf NATSConsumerConfig) *NATSConsumer {
-	return &NATSConsumer{
+func New(logger *log.Logger, conf Config) *Consumer {
+	return &Consumer{
 		conf:   conf,
 		logger: logger,
 		msgCh:  make(chan *nats.Msg, 2048),
 	}
 }
 
-func (s *NATSConsumer) Subscribe(_ context.Context) error {
+func (s *Consumer) Subscribe(_ context.Context) error {
 	subjects := []string{
 		protodaemon.CreateUserSubject(),
 		protodaemon.GetUserSubject(),
@@ -72,7 +72,7 @@ func (s *NATSConsumer) Subscribe(_ context.Context) error {
 	return nil
 }
 
-func (s *NATSConsumer) Unsubscribe(_ context.Context) error {
+func (s *Consumer) Unsubscribe(_ context.Context) error {
 	var errRes error
 	for _, sub := range s.subs {
 		err := sub.Unsubscribe()
@@ -83,7 +83,7 @@ func (s *NATSConsumer) Unsubscribe(_ context.Context) error {
 	return errRes
 }
 
-func (s *NATSConsumer) Messages(ctx context.Context) iter.Seq2[message.Msg, error] {
+func (s *Consumer) Messages(ctx context.Context) iter.Seq2[message.Msg, error] {
 	return func(yield func(message.Msg, error) bool) {
 		for {
 			select {
@@ -95,7 +95,7 @@ func (s *NATSConsumer) Messages(ctx context.Context) iter.Seq2[message.Msg, erro
 					continue
 				}
 
-				yield(NATSConsumerMessage{
+				yield(Message{
 					msg:  msg,
 					data: data,
 				}, nil)
@@ -107,27 +107,27 @@ func (s *NATSConsumer) Messages(ctx context.Context) iter.Seq2[message.Msg, erro
 	}
 }
 
-type NATSConsumerMessage struct {
+type Message struct {
 	msg  *nats.Msg
 	data any
 }
 
-func (m NATSConsumerMessage) ID() string {
+func (m Message) ID() string {
 	return m.msg.Header.Get(nats.MsgIdHdr)
 }
 
-func (m NATSConsumerMessage) Subject() string {
+func (m Message) Subject() string {
 	return m.msg.Subject
 }
 
-func (m NATSConsumerMessage) ReplySubject() string {
+func (m Message) ReplySubject() string {
 	return m.msg.Reply
 }
 
-func (m NATSConsumerMessage) Data() any {
+func (m Message) Data() any {
 	return m.data
 }
 
-func (m NATSConsumerMessage) Ack() error {
+func (m Message) Ack() error {
 	return m.msg.Ack()
 }
