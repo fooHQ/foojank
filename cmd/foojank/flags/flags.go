@@ -18,6 +18,7 @@ const (
 	Gateway           = "gateway"
 	NoColor           = "no-color"
 	Agent             = "agent"
+	File              = "file"
 	Force             = "force"
 	PublicKey         = "public-key"
 	Privilege         = "privilege"
