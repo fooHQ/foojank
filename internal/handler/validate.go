@@ -123,6 +123,10 @@ func ValidateCancelJobRequest(req protodaemon.CancelJobRequest) error {
 	return validateRef(req.JobRef)
 }
 
+func ValidateDeleteJobRequest(req protodaemon.DeleteJobRequest) error {
+	return validateRef(req.JobRef)
+}
+
 func ValidateGetJobOutputRequest(req protodaemon.GetJobOutputRequest) error {
 	return validateRef(req.JobRef)
 }

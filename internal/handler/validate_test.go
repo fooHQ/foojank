@@ -541,6 +541,17 @@ func TestValidateCancelJobRequest(t *testing.T) {
 	require.ErrorIs(t, err, directory.ErrNameInvalid)
 }
 
+func TestValidateDeleteJobRequest(t *testing.T) {
+	err := handler.ValidateDeleteJobRequest(protodaemon.DeleteJobRequest{JobRef: "job1"})
+	require.NoError(t, err)
+
+	err = handler.ValidateDeleteJobRequest(protodaemon.DeleteJobRequest{})
+	require.EqualError(t, err, "ref is required")
+
+	err = handler.ValidateDeleteJobRequest(protodaemon.DeleteJobRequest{JobRef: "bad id"})
+	require.ErrorIs(t, err, directory.ErrNameInvalid)
+}
+
 func TestValidateGetJobOutputRequest(t *testing.T) {
 	err := handler.ValidateGetJobOutputRequest(protodaemon.GetJobOutputRequest{JobRef: "job1", Offset: 12})
 	require.NoError(t, err)
