@@ -24,8 +24,6 @@ import (
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
-type NATSHandlerFn func(context.Context, map[string]string, message.Msg) any
-
 type NATSHandlerConfig struct {
 	Gateway          *gateway.Client
 	AgentDirectory   *directory.AgentDirectory
@@ -49,37 +47,37 @@ func NewNATSHandler(logger *log.Logger, conf NATSHandlerConfig) *NATSHandler {
 }
 
 func (h *NATSHandler) Match(msg message.Msg) (func(context.Context) message.Msg, bool) {
-	routes := map[string]NATSHandlerFn{
-		protodaemon.CreateUserSubject(): h.CreateUser,
-		protodaemon.GetUserSubject():    h.GetUser,
-		protodaemon.ListUsersSubject():  h.ListUsers,
-		protodaemon.UpdateUserSubject(): h.UpdateUser,
-		protodaemon.DeleteUserSubject(): h.DeleteUser,
+	routes := map[string]adapterFn{
+		protodaemon.CreateUserSubject(): adapter(h.CreateUser),
+		protodaemon.GetUserSubject():    adapter(h.GetUser),
+		protodaemon.ListUsersSubject():  adapter(h.ListUsers),
+		protodaemon.UpdateUserSubject(): adapter(h.UpdateUser),
+		protodaemon.DeleteUserSubject(): adapter(h.DeleteUser),
 
-		protodaemon.CreateAgentSubject():  h.CreateAgent,
-		protodaemon.GetAgentSubject():     h.GetAgent,
-		protodaemon.ListAgentsSubject():   h.ListAgents,
-		protodaemon.DeleteAgentSubject():  h.DeleteAgent,
-		protodaemon.GetCommandSubject():   h.GetCommand,
-		protodaemon.ListCommandsSubject(): h.ListCommands,
+		protodaemon.CreateAgentSubject():  adapter(h.CreateAgent),
+		protodaemon.GetAgentSubject():     adapter(h.GetAgent),
+		protodaemon.ListAgentsSubject():   adapter(h.ListAgents),
+		protodaemon.DeleteAgentSubject():  adapter(h.DeleteAgent),
+		protodaemon.GetCommandSubject():   adapter(h.GetCommand),
+		protodaemon.ListCommandsSubject(): adapter(h.ListCommands),
 
-		protodaemon.CreateGatewaySubject(): h.CreateGateway,
-		protodaemon.GetGatewaySubject():    h.GetGateway,
-		protodaemon.ListGatewaysSubject():  h.ListGateways,
-		protodaemon.DeleteGatewaySubject(): h.DeleteGateway,
+		protodaemon.CreateGatewaySubject(): adapter(h.CreateGateway),
+		protodaemon.GetGatewaySubject():    adapter(h.GetGateway),
+		protodaemon.ListGatewaysSubject():  adapter(h.ListGateways),
+		protodaemon.DeleteGatewaySubject(): adapter(h.DeleteGateway),
 
-		protodaemon.CreateRoleSubject(): h.CreateRole,
-		protodaemon.GetRoleSubject():    h.GetRole,
-		protodaemon.ListRolesSubject():  h.ListRoles,
-		protodaemon.DeleteRoleSubject(): h.DeleteRole,
+		protodaemon.CreateRoleSubject(): adapter(h.CreateRole),
+		protodaemon.GetRoleSubject():    adapter(h.GetRole),
+		protodaemon.ListRolesSubject():  adapter(h.ListRoles),
+		protodaemon.DeleteRoleSubject(): adapter(h.DeleteRole),
 
-		protodaemon.CreateJobSubject():    h.CreateJob,
-		protodaemon.GetJobSubject():       h.GetJob,
-		protodaemon.ListJobsSubject():     h.ListJobs,
-		protodaemon.CancelJobSubject():    h.CancelJob,
-		protodaemon.GetJobOutputSubject(): h.GetJobOutput,
+		protodaemon.CreateJobSubject():    adapter(h.CreateJob),
+		protodaemon.GetJobSubject():       adapter(h.GetJob),
+		protodaemon.ListJobsSubject():     adapter(h.ListJobs),
+		protodaemon.CancelJobSubject():    adapter(h.CancelJob),
+		protodaemon.GetJobOutputSubject(): adapter(h.GetJobOutput),
 
-		protodaemon.IssueJWTSubject("<user>"): h.IssueJWT,
+		protodaemon.IssueJWTSubject("<user>"): adapter(h.IssueJWT),
 	}
 	for route, handler := range routes {
 		params, ok := match(route, msg.Subject())
@@ -87,7 +85,7 @@ func (h *NATSHandler) Match(msg message.Msg) (func(context.Context) message.Msg,
 			continue
 		}
 		return func(ctx context.Context) message.Msg {
-			v := handler(ctx, params, msg)
+			v := handler(ctx, params, msg.Data())
 			return NATSHandlerMessage{
 				msg:     msg,
 				subject: msg.ReplySubject(),
@@ -99,14 +97,7 @@ func (h *NATSHandler) Match(msg message.Msg) (func(context.Context) message.Msg,
 	return nil, false
 }
 
-func (h *NATSHandler) CreateUser(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.CreateUserRequest)
-	if !ok {
-		return protodaemon.CreateUserResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) CreateUser(ctx context.Context, params map[string]string, req protodaemon.CreateUserRequest) protodaemon.CreateUserResponse {
 	err := ValidateCreateUserRequest(req)
 	if err != nil {
 		return protodaemon.CreateUserResponse{
@@ -146,14 +137,7 @@ func (h *NATSHandler) CreateUser(ctx context.Context, params map[string]string, 
 	return protodaemon.CreateUserResponse{}
 }
 
-func (h *NATSHandler) GetUser(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.GetUserRequest)
-	if !ok {
-		return protodaemon.GetUserResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) GetUser(ctx context.Context, params map[string]string, req protodaemon.GetUserRequest) protodaemon.GetUserResponse {
 	err := ValidateGetUserRequest(req)
 	if err != nil {
 		return protodaemon.GetUserResponse{
@@ -220,14 +204,7 @@ func (h *NATSHandler) GetUser(ctx context.Context, params map[string]string, msg
 	}
 }
 
-func (h *NATSHandler) ListUsers(ctx context.Context, params map[string]string, msg message.Msg) any {
-	_, ok := msg.Data().(protodaemon.ListUsersRequest)
-	if !ok {
-		return protodaemon.ListUsersResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) ListUsers(ctx context.Context, params map[string]string, req protodaemon.ListUsersRequest) protodaemon.ListUsersResponse {
 	entries, err := h.conf.UserDirectory.List(ctx)
 	if err != nil {
 		return protodaemon.ListUsersResponse{
@@ -250,14 +227,7 @@ func (h *NATSHandler) ListUsers(ctx context.Context, params map[string]string, m
 	}
 }
 
-func (h *NATSHandler) UpdateUser(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.UpdateUserRequest)
-	if !ok {
-		return protodaemon.UpdateUserResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) UpdateUser(ctx context.Context, params map[string]string, req protodaemon.UpdateUserRequest) protodaemon.UpdateUserResponse {
 	err := ValidateUpdateUserRequest(req)
 	if err != nil {
 		return protodaemon.UpdateUserResponse{
@@ -299,14 +269,7 @@ func (h *NATSHandler) UpdateUser(ctx context.Context, params map[string]string, 
 	return protodaemon.UpdateUserResponse{}
 }
 
-func (h *NATSHandler) DeleteUser(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.DeleteUserRequest)
-	if !ok {
-		return protodaemon.DeleteUserResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) DeleteUser(ctx context.Context, params map[string]string, req protodaemon.DeleteUserRequest) protodaemon.DeleteUserResponse {
 	err := ValidateDeleteUserRequest(req)
 	if err != nil {
 		return protodaemon.DeleteUserResponse{
@@ -335,14 +298,7 @@ func (h *NATSHandler) DeleteUser(ctx context.Context, params map[string]string, 
 	return protodaemon.DeleteUserResponse{}
 }
 
-func (h *NATSHandler) CreateRole(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.CreateRoleRequest)
-	if !ok {
-		return protodaemon.CreateRoleResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) CreateRole(ctx context.Context, params map[string]string, req protodaemon.CreateRoleRequest) protodaemon.CreateRoleResponse {
 	err := ValidateCreateRoleRequest(req)
 	if err != nil {
 		return protodaemon.CreateRoleResponse{
@@ -379,14 +335,7 @@ func (h *NATSHandler) CreateRole(ctx context.Context, params map[string]string, 
 	return protodaemon.CreateRoleResponse{}
 }
 
-func (h *NATSHandler) GetRole(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.GetRoleRequest)
-	if !ok {
-		return protodaemon.GetRoleResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) GetRole(ctx context.Context, params map[string]string, req protodaemon.GetRoleRequest) protodaemon.GetRoleResponse {
 	err := ValidateGetRoleRequest(req)
 	if err != nil {
 		return protodaemon.GetRoleResponse{
@@ -414,14 +363,7 @@ func (h *NATSHandler) GetRole(ctx context.Context, params map[string]string, msg
 	}
 }
 
-func (h *NATSHandler) ListRoles(ctx context.Context, params map[string]string, msg message.Msg) any {
-	_, ok := msg.Data().(protodaemon.ListRolesRequest)
-	if !ok {
-		return protodaemon.ListRolesResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) ListRoles(ctx context.Context, params map[string]string, req protodaemon.ListRolesRequest) protodaemon.ListRolesResponse {
 	entries, err := h.conf.RoleDirectory.List(ctx)
 	if err != nil {
 		return protodaemon.ListRolesResponse{
@@ -443,14 +385,7 @@ func (h *NATSHandler) ListRoles(ctx context.Context, params map[string]string, m
 	}
 }
 
-func (h *NATSHandler) DeleteRole(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.DeleteRoleRequest)
-	if !ok {
-		return protodaemon.DeleteRoleResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) DeleteRole(ctx context.Context, params map[string]string, req protodaemon.DeleteRoleRequest) protodaemon.DeleteRoleResponse {
 	err := ValidateDeleteRoleRequest(req)
 	if err != nil {
 		return protodaemon.DeleteRoleResponse{
@@ -479,7 +414,7 @@ func (h *NATSHandler) DeleteRole(ctx context.Context, params map[string]string, 
 	return protodaemon.DeleteRoleResponse{}
 }
 
-func (h *NATSHandler) IssueJWT(ctx context.Context, params map[string]string, msg message.Msg) any {
+func (h *NATSHandler) IssueJWT(ctx context.Context, params map[string]string, req protodaemon.IssueJWTRequest) protodaemon.IssueJWTResponse {
 	userName := params["user"]
 
 	user, err := h.conf.UserDirectory.Get(ctx, userName)
@@ -538,14 +473,7 @@ func (h *NATSHandler) IssueJWT(ctx context.Context, params map[string]string, ms
 	}
 }
 
-func (h *NATSHandler) CreateAgent(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.CreateAgentRequest)
-	if !ok {
-		return protodaemon.CreateAgentResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) CreateAgent(ctx context.Context, params map[string]string, req protodaemon.CreateAgentRequest) protodaemon.CreateAgentResponse {
 	err := ValidateCreateAgentRequest(req)
 	if err != nil {
 		return protodaemon.CreateAgentResponse{
@@ -680,14 +608,7 @@ func (h *NATSHandler) CreateAgent(ctx context.Context, params map[string]string,
 	return protodaemon.CreateAgentResponse{}
 }
 
-func (h *NATSHandler) GetAgent(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.GetAgentRequest)
-	if !ok {
-		return protodaemon.GetAgentResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) GetAgent(ctx context.Context, params map[string]string, req protodaemon.GetAgentRequest) protodaemon.GetAgentResponse {
 	err := ValidateGetAgentRequest(req)
 	if err != nil {
 		return protodaemon.GetAgentResponse{
@@ -737,14 +658,7 @@ func (h *NATSHandler) GetAgent(ctx context.Context, params map[string]string, ms
 	}
 }
 
-func (h *NATSHandler) ListAgents(ctx context.Context, params map[string]string, msg message.Msg) any {
-	_, ok := msg.Data().(protodaemon.ListAgentsRequest)
-	if !ok {
-		return protodaemon.ListAgentsResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) ListAgents(ctx context.Context, params map[string]string, req protodaemon.ListAgentsRequest) protodaemon.ListAgentsResponse {
 	entries, err := h.conf.AgentDirectory.List(ctx)
 	if err != nil {
 		return protodaemon.ListAgentsResponse{
@@ -783,14 +697,7 @@ func (h *NATSHandler) ListAgents(ctx context.Context, params map[string]string, 
 	}
 }
 
-func (h *NATSHandler) DeleteAgent(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.DeleteAgentRequest)
-	if !ok {
-		return protodaemon.DeleteAgentResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) DeleteAgent(ctx context.Context, params map[string]string, req protodaemon.DeleteAgentRequest) protodaemon.DeleteAgentResponse {
 	err := ValidateDeleteAgentRequest(req)
 	if err != nil {
 		return protodaemon.DeleteAgentResponse{
@@ -829,14 +736,7 @@ func (h *NATSHandler) DeleteAgent(ctx context.Context, params map[string]string,
 	return protodaemon.DeleteAgentResponse{}
 }
 
-func (h *NATSHandler) GetCommand(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.GetCommandRequest)
-	if !ok {
-		return protodaemon.GetCommandResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) GetCommand(ctx context.Context, params map[string]string, req protodaemon.GetCommandRequest) protodaemon.GetCommandResponse {
 	err := ValidateGetCommandRequest(req)
 	if err != nil {
 		return protodaemon.GetCommandResponse{
@@ -870,14 +770,7 @@ func (h *NATSHandler) GetCommand(ctx context.Context, params map[string]string, 
 	}
 }
 
-func (h *NATSHandler) ListCommands(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.ListCommandsRequest)
-	if !ok {
-		return protodaemon.ListCommandsResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) ListCommands(ctx context.Context, params map[string]string, req protodaemon.ListCommandsRequest) protodaemon.ListCommandsResponse {
 	err := ValidateListCommandsRequest(req)
 	if err != nil {
 		return protodaemon.ListCommandsResponse{
@@ -900,14 +793,7 @@ func (h *NATSHandler) ListCommands(ctx context.Context, params map[string]string
 	}
 }
 
-func (h *NATSHandler) CreateGateway(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.CreateGatewayRequest)
-	if !ok {
-		return protodaemon.CreateGatewayResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) CreateGateway(ctx context.Context, params map[string]string, req protodaemon.CreateGatewayRequest) protodaemon.CreateGatewayResponse {
 	err := ValidateCreateGatewayRequest(req)
 	if err != nil {
 		return protodaemon.CreateGatewayResponse{
@@ -1003,14 +889,7 @@ func (h *NATSHandler) CreateGateway(ctx context.Context, params map[string]strin
 	return protodaemon.CreateGatewayResponse{}
 }
 
-func (h *NATSHandler) GetGateway(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.GetGatewayRequest)
-	if !ok {
-		return protodaemon.GetGatewayResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) GetGateway(ctx context.Context, params map[string]string, req protodaemon.GetGatewayRequest) protodaemon.GetGatewayResponse {
 	err := ValidateGetGatewayRequest(req)
 	if err != nil {
 		return protodaemon.GetGatewayResponse{
@@ -1044,14 +923,7 @@ func (h *NATSHandler) GetGateway(ctx context.Context, params map[string]string, 
 	}
 }
 
-func (h *NATSHandler) ListGateways(ctx context.Context, params map[string]string, msg message.Msg) any {
-	_, ok := msg.Data().(protodaemon.ListGatewaysRequest)
-	if !ok {
-		return protodaemon.ListGatewaysResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) ListGateways(ctx context.Context, params map[string]string, req protodaemon.ListGatewaysRequest) protodaemon.ListGatewaysResponse {
 	entries, err := h.conf.GatewayDirectory.List(ctx)
 	if err != nil {
 		return protodaemon.ListGatewaysResponse{
@@ -1073,14 +945,7 @@ func (h *NATSHandler) ListGateways(ctx context.Context, params map[string]string
 	}
 }
 
-func (h *NATSHandler) DeleteGateway(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.DeleteGatewayRequest)
-	if !ok {
-		return protodaemon.DeleteGatewayResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) DeleteGateway(ctx context.Context, params map[string]string, req protodaemon.DeleteGatewayRequest) protodaemon.DeleteGatewayResponse {
 	err := ValidateDeleteGatewayRequest(req)
 	if err != nil {
 		return protodaemon.DeleteGatewayResponse{
@@ -1117,14 +982,7 @@ func (h *NATSHandler) DeleteGateway(ctx context.Context, params map[string]strin
 	return protodaemon.DeleteGatewayResponse{}
 }
 
-func (h *NATSHandler) CreateJob(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.CreateJobRequest)
-	if !ok {
-		return protodaemon.CreateJobResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) CreateJob(ctx context.Context, params map[string]string, req protodaemon.CreateJobRequest) protodaemon.CreateJobResponse {
 	err := ValidateCreateJobRequest(req)
 	if err != nil {
 		return protodaemon.CreateJobResponse{
@@ -1188,14 +1046,7 @@ func (h *NATSHandler) CreateJob(ctx context.Context, params map[string]string, m
 	}
 }
 
-func (h *NATSHandler) GetJob(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.GetJobRequest)
-	if !ok {
-		return protodaemon.GetJobResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) GetJob(ctx context.Context, params map[string]string, req protodaemon.GetJobRequest) protodaemon.GetJobResponse {
 	err := ValidateGetJobRequest(req)
 	if err != nil {
 		return protodaemon.GetJobResponse{
@@ -1254,14 +1105,7 @@ func (h *NATSHandler) GetJob(ctx context.Context, params map[string]string, msg 
 	}
 }
 
-func (h *NATSHandler) ListJobs(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.ListJobsRequest)
-	if !ok {
-		return protodaemon.ListJobsResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) ListJobs(ctx context.Context, params map[string]string, req protodaemon.ListJobsRequest) protodaemon.ListJobsResponse {
 	err := ValidateListJobsRequest(req)
 	if err != nil {
 		return protodaemon.ListJobsResponse{
@@ -1310,14 +1154,7 @@ func (h *NATSHandler) ListJobs(ctx context.Context, params map[string]string, ms
 	}
 }
 
-func (h *NATSHandler) CancelJob(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.CancelJobRequest)
-	if !ok {
-		return protodaemon.CancelJobResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) CancelJob(ctx context.Context, params map[string]string, req protodaemon.CancelJobRequest) protodaemon.CancelJobResponse {
 	err := ValidateCancelJobRequest(req)
 	if err != nil {
 		return protodaemon.CancelJobResponse{
@@ -1349,14 +1186,7 @@ func (h *NATSHandler) CancelJob(ctx context.Context, params map[string]string, m
 	return protodaemon.CancelJobResponse{}
 }
 
-func (h *NATSHandler) GetJobOutput(ctx context.Context, params map[string]string, msg message.Msg) any {
-	req, ok := msg.Data().(protodaemon.GetJobOutputRequest)
-	if !ok {
-		return protodaemon.GetJobOutputResponse{
-			Error: errors.New("invalid request data"),
-		}
-	}
-
+func (h *NATSHandler) GetJobOutput(ctx context.Context, params map[string]string, req protodaemon.GetJobOutputRequest) protodaemon.GetJobOutputResponse {
 	err := ValidateGetJobOutputRequest(req)
 	if err != nil {
 		return protodaemon.GetJobOutputResponse{
@@ -1415,6 +1245,17 @@ func (m NATSHandlerMessage) Data() any {
 
 func (m NATSHandlerMessage) Ack() error {
 	return m.msg.Ack()
+}
+
+type (
+	adapterFn         func(context.Context, map[string]string, any) any
+	fn[Req, Resp any] func(context.Context, map[string]string, Req) Resp
+)
+
+func adapter[Req, Resp any](fn fn[Req, Resp]) adapterFn {
+	return func(ctx context.Context, params map[string]string, req any) any {
+		return fn(ctx, params, req.(Req))
+	}
 }
 
 func match(route, subject string) (map[string]string, bool) {
