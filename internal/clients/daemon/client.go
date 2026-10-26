@@ -381,6 +381,24 @@ func (c *Client) ListJobs(ctx context.Context, req protodaemon.ListJobsRequest) 
 	return v, nil
 }
 
+func (c *Client) DeleteJob(ctx context.Context, req protodaemon.DeleteJobRequest) (protodaemon.DeleteJobResponse, error) {
+	data, err := c.request(ctx, protodaemon.DeleteJobSubject(), req)
+	if err != nil {
+		return protodaemon.DeleteJobResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.DeleteJobResponse)
+	if !ok {
+		return protodaemon.DeleteJobResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.DeleteJobResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
 func (c *Client) CancelJob(ctx context.Context, req protodaemon.CancelJobRequest) (protodaemon.CancelJobResponse, error) {
 	data, err := c.request(ctx, protodaemon.CancelJobSubject(), req)
 	if err != nil {
