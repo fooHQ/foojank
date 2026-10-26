@@ -10,9 +10,10 @@ import (
 
 	"github.com/foohq/foojank/cmd/foojankd/actions"
 	"github.com/foohq/foojank/cmd/foojankd/flags"
-	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/directory"
 	"github.com/foohq/foojank/internal/formatter"
+	"github.com/foohq/foojank/internal/handler"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
@@ -78,18 +79,21 @@ func action(ctx context.Context, _ *cli.Command) error {
 	format, _ := conf.String(flags.Format)
 	noColor, _ := conf.Bool(flags.NoColor)
 
-	client := daemon.New(srv)
-
-	var users []protodaemon.User
-	{
-		resp, err := client.ListUsers(ctx, protodaemon.ListUsersRequest{})
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get a list of users: %v", err)
-			return err
-		}
-
-		users = resp.Users
+	userDir, err := directory.OpenUserDirectory(ctx, srv)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot open user directory: %v", err)
+		return err
 	}
+
+	resp := handler.New(logger, handler.Config{
+		UserDirectory: userDir,
+	}).ListUsers(ctx, nil, protodaemon.ListUsersRequest{})
+	if resp.Error != nil {
+		logger.ErrorContext(ctx, "Cannot get a list of users: %v", resp.Error)
+		return resp.Error
+	}
+
+	users := resp.Users
 
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
@@ -106,7 +110,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 		})
 	}
 
-	err := formatter.NewFormatter(
+	err = formatter.NewFormatter(
 		format,
 		formatter.WithNoColor(noColor),
 		formatter.WithSortByColumn(4, 0),

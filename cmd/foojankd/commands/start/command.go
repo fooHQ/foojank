@@ -107,6 +107,12 @@ func action(ctx context.Context, c *cli.Command) error {
 		return err
 	}
 
+	roleDir, err := directory.OpenRoleDirectory(ctx, srv)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot open role directory: %v", err)
+		return err
+	}
+
 	jobDir, err := directory.OpenJobDirectory(ctx, srv)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot open job directory: %v", err)
@@ -122,6 +128,7 @@ func action(ctx context.Context, c *cli.Command) error {
 			AgentDirectory:   agentDir,
 			GatewayDirectory: gatewayDir,
 			UserDirectory:    userDir,
+			RoleDirectory:    roleDir,
 			JobDirectory:     jobDir,
 			AccountKey:       accountKey,
 		}),

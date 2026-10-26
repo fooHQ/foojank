@@ -10,9 +10,10 @@ import (
 
 	"github.com/foohq/foojank/cmd/foojankd/actions"
 	"github.com/foohq/foojank/cmd/foojankd/flags"
-	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/directory"
 	"github.com/foohq/foojank/internal/formatter"
+	"github.com/foohq/foojank/internal/handler"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
@@ -78,18 +79,21 @@ func action(ctx context.Context, _ *cli.Command) error {
 	format, _ := conf.String(flags.Format)
 	noColor, _ := conf.Bool(flags.NoColor)
 
-	client := daemon.New(srv)
-
-	var roles []protodaemon.Role
-	{
-		resp, err := client.ListRoles(ctx, protodaemon.ListRolesRequest{})
-		if err != nil {
-			logger.ErrorContext(ctx, "Cannot get a list of roles: %v", err)
-			return err
-		}
-
-		roles = resp.Roles
+	roleDir, err := directory.OpenRoleDirectory(ctx, srv)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot open role directory: %v", err)
+		return err
 	}
+
+	resp := handler.New(logger, handler.Config{
+		RoleDirectory: roleDir,
+	}).ListRoles(ctx, nil, protodaemon.ListRolesRequest{})
+	if resp.Error != nil {
+		logger.ErrorContext(ctx, "Cannot get a list of roles: %v", resp.Error)
+		return resp.Error
+	}
+
+	roles := resp.Roles
 
 	table := formatter.NewTable()
 	table.SetHeader([]formatter.Cell{
@@ -106,7 +110,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 		})
 	}
 
-	err := formatter.NewFormatter(
+	err = formatter.NewFormatter(
 		format,
 		formatter.WithNoColor(noColor),
 		formatter.WithSortByColumn(2, 0),

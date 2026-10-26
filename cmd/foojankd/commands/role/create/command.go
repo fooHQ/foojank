@@ -9,8 +9,9 @@ import (
 
 	"github.com/foohq/foojank/cmd/foojankd/actions"
 	"github.com/foohq/foojank/cmd/foojankd/flags"
-	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/directory"
+	"github.com/foohq/foojank/internal/handler"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
@@ -75,7 +76,7 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 	return ctx, nil
 }
 
-func action(ctx context.Context, _ *cli.Command) (err error) {
+func action(ctx context.Context, _ *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 	srv := actions.GetServerFromContext(ctx)
@@ -84,16 +85,22 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	roleDesc, _ := conf.String(flags.Description)
 	rolePrivs, _ := conf.StringSlice(flags.Privilege)
 
-	client := daemon.New(srv)
+	roleDir, err := directory.OpenRoleDirectory(ctx, srv)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot open role directory: %v", err)
+		return err
+	}
 
-	_, err = client.CreateRole(ctx, protodaemon.CreateRoleRequest{
+	resp := handler.New(logger, handler.Config{
+		RoleDirectory: roleDir,
+	}).CreateRole(ctx, nil, protodaemon.CreateRoleRequest{
 		Name:        roleName,
 		Description: roleDesc,
 		Privileges:  rolePrivs,
 	})
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot create role: %v", err)
-		return err
+	if resp.Error != nil {
+		logger.ErrorContext(ctx, "Cannot create role: %v", resp.Error)
+		return resp.Error
 	}
 
 	logger.InfoContext(ctx, "Role %q has been created!", roleName)

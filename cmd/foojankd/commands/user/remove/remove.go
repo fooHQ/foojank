@@ -9,8 +9,9 @@ import (
 
 	"github.com/foohq/foojank/cmd/foojankd/actions"
 	"github.com/foohq/foojank/cmd/foojankd/flags"
-	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/directory"
+	"github.com/foohq/foojank/internal/handler"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
@@ -74,16 +75,22 @@ func action(ctx context.Context, c *cli.Command) error {
 		return errors.New("not enough arguments")
 	}
 
-	client := daemon.New(srv)
-
 	userName := c.Args().First()
 
-	_, err := client.DeleteUser(ctx, protodaemon.DeleteUserRequest{
+	userDir, err := directory.OpenUserDirectory(ctx, srv)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot open user directory: %v", err)
+		return err
+	}
+
+	resp := handler.New(logger, handler.Config{
+		UserDirectory: userDir,
+	}).DeleteUser(ctx, nil, protodaemon.DeleteUserRequest{
 		UserRef: userName,
 	})
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot remove user: %v", err)
-		return err
+	if resp.Error != nil {
+		logger.ErrorContext(ctx, "Cannot remove user: %v", resp.Error)
+		return resp.Error
 	}
 
 	return nil

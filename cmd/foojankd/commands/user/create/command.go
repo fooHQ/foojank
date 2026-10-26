@@ -9,8 +9,9 @@ import (
 
 	"github.com/foohq/foojank/cmd/foojankd/actions"
 	"github.com/foohq/foojank/cmd/foojankd/flags"
-	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/directory"
+	"github.com/foohq/foojank/internal/handler"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
@@ -79,7 +80,7 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 	return ctx, nil
 }
 
-func action(ctx context.Context, _ *cli.Command) (err error) {
+func action(ctx context.Context, _ *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
 	srv := actions.GetServerFromContext(ctx)
@@ -89,17 +90,23 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	userDesc, _ := conf.String(flags.Description)
 	userPrivs, _ := conf.StringSlice(flags.Privilege)
 
-	client := daemon.New(srv)
+	userDir, err := directory.OpenUserDirectory(ctx, srv)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot open user directory: %v", err)
+		return err
+	}
 
-	_, err = client.CreateUser(ctx, protodaemon.CreateUserRequest{
+	resp := handler.New(logger, handler.Config{
+		UserDirectory: userDir,
+	}).CreateUser(ctx, nil, protodaemon.CreateUserRequest{
 		ID:          userPubKey,
 		Name:        userName,
 		Description: userDesc,
 		Privileges:  userPrivs,
 	})
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot create user: %v", err)
-		return err
+	if resp.Error != nil {
+		logger.ErrorContext(ctx, "Cannot create user: %v", resp.Error)
+		return resp.Error
 	}
 
 	logger.InfoContext(ctx, "User %q has been created!", userName)
