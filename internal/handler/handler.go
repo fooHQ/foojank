@@ -74,6 +74,7 @@ func (h *Handler) Match(msg message.Msg) (func(context.Context) message.Msg, boo
 		protodaemon.CreateJobSubject():    adapter(h.CreateJob),
 		protodaemon.GetJobSubject():       adapter(h.GetJob),
 		protodaemon.ListJobsSubject():     adapter(h.ListJobs),
+		protodaemon.DeleteJobSubject():    adapter(h.DeleteJob),
 		protodaemon.CancelJobSubject():    adapter(h.CancelJob),
 		protodaemon.GetJobOutputSubject(): adapter(h.GetJobOutput),
 
@@ -1152,6 +1153,35 @@ func (h *Handler) ListJobs(ctx context.Context, params map[string]string, req pr
 	return protodaemon.ListJobsResponse{
 		Jobs: jobs,
 	}
+}
+
+func (h *Handler) DeleteJob(ctx context.Context, params map[string]string, req protodaemon.DeleteJobRequest) protodaemon.DeleteJobResponse {
+	err := ValidateDeleteJobRequest(req)
+	if err != nil {
+		return protodaemon.DeleteJobResponse{
+			Error: err,
+		}
+	}
+
+	job, err := h.conf.JobDirectory.Get(ctx, req.JobRef)
+	if err != nil {
+		if errors.Is(err, directory.ErrKeyNotFound) {
+			err = fmt.Errorf("%q not found", req.JobRef)
+		}
+		return protodaemon.DeleteJobResponse{
+			Error: err,
+		}
+	}
+
+	err = h.conf.JobDirectory.Delete(ctx, job)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot delete job: %v", err)
+		return protodaemon.DeleteJobResponse{
+			Error: err,
+		}
+	}
+
+	return protodaemon.DeleteJobResponse{}
 }
 
 func (h *Handler) CancelJob(ctx context.Context, params map[string]string, req protodaemon.CancelJobRequest) protodaemon.CancelJobResponse {
