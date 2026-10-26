@@ -8,6 +8,7 @@ import (
 	"github.com/foohq/foojank/cmd/foojank/commands/job/create"
 	"github.com/foohq/foojank/cmd/foojank/commands/job/describe"
 	"github.com/foohq/foojank/cmd/foojank/commands/job/list"
+	"github.com/foohq/foojank/cmd/foojank/commands/job/remove"
 )
 
 func NewCommand() *cli.Command {
@@ -18,6 +19,7 @@ func NewCommand() *cli.Command {
 			create.NewCommand(),
 			describe.NewCommand(),
 			list.NewCommand(),
+			remove.NewCommand(),
 		},
 		CommandNotFound: actions.CommandNotFound,
 		OnUsageError:    actions.UsageError,
