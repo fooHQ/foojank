@@ -140,6 +140,12 @@ func TestPrivilegeStringSubject(t *testing.T) {
 			subject: protodaemon.ListJobsSubject(),
 		},
 		{
+			name:    "JobDelete",
+			priv:    privilege.JobDelete{},
+			str:     "JOB.DELETE",
+			subject: protodaemon.DeleteJobSubject(),
+		},
+		{
 			name:    "JobCancel",
 			priv:    privilege.JobCancel{},
 			str:     "JOB.CANCEL",
@@ -319,6 +325,16 @@ func TestParsePrivileges(t *testing.T) {
 			want:  privilege.JobList{},
 		},
 		{
+			name:  "JobDelete",
+			input: "JOB.DELETE",
+			want:  privilege.JobDelete{},
+		},
+		{
+			name:  "JobDelete lowercase",
+			input: "job.delete",
+			want:  privilege.JobDelete{},
+		},
+		{
 			name:  "JobCancel",
 			input: "JOB.CANCEL",
 			want:  privilege.JobCancel{},
@@ -403,6 +419,11 @@ func TestParsePrivileges(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name:    "JobDelete extra argument",
+			input:   "JOB.DELETE.extra",
+			wantErr: true,
+		},
+		{
 			name:    "JobCancel extra argument",
 			input:   "JOB.CANCEL.extra",
 			wantErr: true,
@@ -415,11 +436,6 @@ func TestParsePrivileges(t *testing.T) {
 		{
 			name:    "CommandGet extra argument",
 			input:   "COMMAND.GET.extra",
-			wantErr: true,
-		},
-		{
-			name:    "JobDelete is not a privilege",
-			input:   "JOB.DELETE",
 			wantErr: true,
 		},
 		{
@@ -477,6 +493,7 @@ func TestParseFormatPrivilegesRoundTrip(t *testing.T) {
 		privilege.JobCreate{},
 		privilege.JobGet{},
 		privilege.JobList{},
+		privilege.JobDelete{},
 		privilege.JobCancel{},
 		privilege.JobOutput{},
 		privilege.CommandGet{},
@@ -506,6 +523,7 @@ func TestParseFormatPrivilegesRoundTrip(t *testing.T) {
 		"JOB.CREATE",
 		"JOB.GET",
 		"JOB.LIST",
+		"JOB.DELETE",
 		"JOB.CANCEL",
 		"JOB.OUTPUT",
 		"COMMAND.GET",
@@ -537,6 +555,7 @@ func TestParseFormatPrivilegesRoundTrip(t *testing.T) {
 		protodaemon.CreateJobSubject(),
 		protodaemon.GetJobSubject(),
 		protodaemon.ListJobsSubject(),
+		protodaemon.DeleteJobSubject(),
 		protodaemon.CancelJobSubject(),
 		protodaemon.GetJobOutputSubject(),
 		protodaemon.GetCommandSubject(),
