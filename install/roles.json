@@ -1,0 +1,114 @@
+[
+  {
+    "name": "admin",
+    "description": "Manages every resource on the platform, including full control over users and roles. Assign to the one or two people responsible for platform setup and for managing accounts and roles.",
+    "privileges": [
+      "USER.CREATE",
+      "USER.GET",
+      "USER.LIST",
+      "USER.UPDATE",
+      "USER.DELETE",
+      "AGENT.CREATE",
+      "AGENT.GET",
+      "AGENT.LIST",
+      "AGENT.DELETE",
+      "GATEWAY.CREATE",
+      "GATEWAY.GET",
+      "GATEWAY.LIST",
+      "GATEWAY.DELETE",
+      "ROLE.CREATE",
+      "ROLE.GET",
+      "ROLE.LIST",
+      "ROLE.DELETE",
+      "JOB.CREATE",
+      "JOB.GET",
+      "JOB.LIST",
+      "JOB.DELETE",
+      "JOB.CANCEL",
+      "JOB.OUTPUT",
+      "COMMAND.GET",
+      "COMMAND.LIST",
+      "AUDIT.LIST"
+    ]
+  },
+  {
+    "name": "team_lead",
+    "description": "Manages agents, gateways, and jobs, and views users, roles, and the audit log. Assign to whoever leads an engagement and is accountable for its agents, infrastructure, jobs, and team activity.",
+    "privileges": [
+      "USER.GET",
+      "USER.LIST",
+      "AGENT.CREATE",
+      "AGENT.GET",
+      "AGENT.LIST",
+      "AGENT.DELETE",
+      "GATEWAY.CREATE",
+      "GATEWAY.GET",
+      "GATEWAY.LIST",
+      "GATEWAY.DELETE",
+      "ROLE.GET",
+      "ROLE.LIST",
+      "JOB.CREATE",
+      "JOB.GET",
+      "JOB.LIST",
+      "JOB.DELETE",
+      "JOB.CANCEL",
+      "JOB.OUTPUT",
+      "COMMAND.GET",
+      "COMMAND.LIST",
+      "AUDIT.LIST"
+    ]
+  },
+  {
+    "name": "operator",
+    "description": "Deploys and operates agents, runs and cancels jobs, reads job output, and views gateways. Assign to the people actively running the engagement by deploying agents and executing jobs; the default role for most of the team.",
+    "privileges": [
+      "AGENT.CREATE",
+      "AGENT.GET",
+      "AGENT.LIST",
+      "GATEWAY.GET",
+      "GATEWAY.LIST",
+      "JOB.CREATE",
+      "JOB.GET",
+      "JOB.LIST",
+      "JOB.CANCEL",
+      "JOB.OUTPUT",
+      "COMMAND.GET",
+      "COMMAND.LIST"
+    ]
+  },
+  {
+    "name": "analyst",
+    "description": "Views agents, gateways, jobs, and job output. Assign to people who follow and report on an engagement without executing anything, such as reporting staff, trainees, or blue-team observers.",
+    "privileges": [
+      "AGENT.GET",
+      "AGENT.LIST",
+      "GATEWAY.GET",
+      "GATEWAY.LIST",
+      "JOB.GET",
+      "JOB.LIST",
+      "JOB.OUTPUT",
+      "COMMAND.GET",
+      "COMMAND.LIST"
+    ]
+  },
+  {
+    "name": "auditor",
+    "description": "Views every resource, including users, roles, and the audit log. Assign to oversight or compliance reviewers who need full visibility across the platform but take no operational action.",
+    "privileges": [
+      "USER.GET",
+      "USER.LIST",
+      "AGENT.GET",
+      "AGENT.LIST",
+      "GATEWAY.GET",
+      "GATEWAY.LIST",
+      "ROLE.GET",
+      "ROLE.LIST",
+      "JOB.GET",
+      "JOB.LIST",
+      "JOB.OUTPUT",
+      "COMMAND.GET",
+      "COMMAND.LIST",
+      "AUDIT.LIST"
+    ]
+  }
+]
