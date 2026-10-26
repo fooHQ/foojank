@@ -50,6 +50,8 @@ var parsers = map[string]parser{
 	commandGetName:  parseCommandGet,
 	commandListName: parseCommandList,
 
+	auditListName: parseAuditList,
+
 	jwtIssueName: parseJWTIssue,
 }
 
