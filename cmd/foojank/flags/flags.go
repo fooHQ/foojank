@@ -23,5 +23,6 @@ const (
 	PublicKey         = "public-key"
 	Privilege         = "privilege"
 	WithoutPrivilege  = "without-privilege"
+	Role              = "role"
 	Token             = "token"
 )
