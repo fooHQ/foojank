@@ -58,6 +58,7 @@ func (s *Consumer) Subscribe(_ context.Context) error {
 		protodaemon.DeleteJobSubject(),
 		protodaemon.CancelJobSubject(),
 		protodaemon.GetJobOutputSubject(),
+		protodaemon.HealthCheckSubject(),
 		protodaemon.IssueJWTSubject("*"),
 	}
 
