@@ -78,6 +78,8 @@ func (h *Handler) Match(msg message.Msg) (func(context.Context) message.Msg, boo
 		protodaemon.CancelJobSubject():    adapter(h.CancelJob),
 		protodaemon.GetJobOutputSubject(): adapter(h.GetJobOutput),
 
+		protodaemon.HealthCheckSubject(): adapter(h.CheckHealth),
+
 		protodaemon.IssueJWTSubject("<user>"): adapter(h.IssueJWT),
 	}
 	for route, handler := range routes {
@@ -1248,6 +1250,12 @@ func (h *Handler) GetJobOutput(ctx context.Context, params map[string]string, re
 
 	return protodaemon.GetJobOutputResponse{
 		Data: resp.Data,
+	}
+}
+
+func (h *Handler) CheckHealth(ctx context.Context, params map[string]string, req protodaemon.HealthCheckRequest) protodaemon.HealthCheckResponse {
+	return protodaemon.HealthCheckResponse{
+		Status: "ok",
 	}
 }
 
