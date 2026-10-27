@@ -950,6 +950,25 @@ func TestMarshalUnmarshal(t *testing.T) {
 			want:  daemon.ListAuditResponse{Error: testError},
 		},
 		{
+			name:  "HealthCheckRequest",
+			input: daemon.HealthCheckRequest{},
+			want:  daemon.HealthCheckRequest{},
+		},
+		{
+			name: "HealthCheckResponse",
+			input: daemon.HealthCheckResponse{
+				Status: "ok",
+			},
+			want: daemon.HealthCheckResponse{
+				Status: "ok",
+			},
+		},
+		{
+			name:  "HealthCheckResponse with error",
+			input: daemon.HealthCheckResponse{Error: testError},
+			want:  daemon.HealthCheckResponse{Error: testError},
+		},
+		{
 			name: "pointer input",
 			input: &daemon.CreateUserRequest{
 				Name: "ops",
@@ -1182,6 +1201,11 @@ func TestListCommandsSubject(t *testing.T) {
 func TestListAuditSubject(t *testing.T) {
 	got := daemon.ListAuditSubject()
 	require.Equal(t, "FJ.DAEMON.RPC.AUDIT.LIST", got)
+}
+
+func TestHealthCheckSubject(t *testing.T) {
+	got := daemon.HealthCheckSubject()
+	require.Equal(t, "FJ.DAEMON.RPC.HEALTH.CHECK", got)
 }
 
 func TestParseIssueJWTSubject(t *testing.T) {
