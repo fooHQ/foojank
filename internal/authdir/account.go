@@ -172,7 +172,7 @@ func accountPath(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(root, name, "account"), nil
+	return filepath.Join(root, name), nil
 }
 
 func decorate(accountJWT string, accountSeed []byte) ([]byte, error) {
