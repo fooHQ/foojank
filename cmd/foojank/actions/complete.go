@@ -202,7 +202,7 @@ func completeName(ctx context.Context, c *cli.Command, list func(context.Context
 
 // CompleteFlags is a ShellComplete func for commands that have no positional
 // name argument. It emits flag suggestions and values for --agent, --gateway,
-// --profile, --credential, and --format.
+// --profile, --credential, --role, and --format.
 func CompleteFlags(ctx context.Context, c *cli.Command) {
 	ctx, cancel := completionContext(ctx)
 	defer cancel()
@@ -260,6 +260,8 @@ func flagValueCompleter(c *cli.Command, token string) (list func(context.Context
 		list = listProfileNames
 	case flags.Credential:
 		list = listCredentialNames
+	case flags.Role:
+		list = listRoleNames
 	case flags.Format:
 		list = listFormatNames
 	default:
