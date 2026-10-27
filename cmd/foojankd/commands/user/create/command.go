@@ -12,6 +12,7 @@ import (
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/directory"
 	"github.com/foohq/foojank/internal/handler"
+	"github.com/foohq/foojank/internal/privilege"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
@@ -32,9 +33,17 @@ func NewCommand() *cli.Command {
 				Name:  flags.Description,
 				Usage: "set user description",
 			},
+			&cli.StringFlag{
+				Name:  flags.Role,
+				Usage: "set user's privileges from a role",
+			},
 			&cli.StringSliceFlag{
 				Name:  flags.Privilege,
 				Usage: "set user's privileges",
+			},
+			&cli.StringSliceFlag{
+				Name:  flags.WithoutPrivilege,
+				Usage: "remove a privilege",
 			},
 			&cli.StringFlag{
 				Name:    flags.ServerURL,
@@ -88,7 +97,36 @@ func action(ctx context.Context, _ *cli.Command) error {
 	userName, _ := conf.String(flags.Name)
 	userPubKey, _ := conf.String(flags.PublicKey)
 	userDesc, _ := conf.String(flags.Description)
-	userPrivs, _ := conf.StringSlice(flags.Privilege)
+	setPrivileges, _ := conf.StringSlice(flags.Privilege)
+	unsetPrivileges, _ := conf.StringSlice(flags.WithoutPrivilege)
+	roleName, _ := conf.String(flags.Role)
+
+	var rolePrivileges []string
+	if roleName != "" {
+		roleDir, err := directory.OpenRoleDirectory(ctx, srv)
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot open role directory: %v", err)
+			return err
+		}
+
+		resp := handler.New(logger, handler.Config{
+			RoleDirectory: roleDir,
+		}).GetRole(ctx, nil, protodaemon.GetRoleRequest{
+			RoleRef: roleName,
+		})
+		if resp.Error != nil {
+			logger.ErrorContext(ctx, "Cannot get role: %v", resp.Error)
+			return resp.Error
+		}
+
+		rolePrivileges = resp.Role.Privileges
+	}
+
+	setPrivileges, err := privilege.UpdatePrivileges(rolePrivileges, setPrivileges, unsetPrivileges)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot create user: %v", err)
+		return err
+	}
 
 	userDir, err := directory.OpenUserDirectory(ctx, srv)
 	if err != nil {
@@ -102,7 +140,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 		ID:          userPubKey,
 		Name:        userName,
 		Description: userDesc,
-		Privileges:  userPrivs,
+		Privileges:  setPrivileges,
 	})
 	if resp.Error != nil {
 		logger.ErrorContext(ctx, "Cannot create user: %v", resp.Error)
