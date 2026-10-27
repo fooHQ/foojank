@@ -11,6 +11,7 @@ import (
 	"github.com/foohq/foojank/cmd/foojank/flags"
 	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
+	"github.com/foohq/foojank/internal/privilege"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 
@@ -31,9 +32,17 @@ func NewCommand() *cli.Command {
 				Name:  flags.Description,
 				Usage: "set user description",
 			},
+			&cli.StringFlag{
+				Name:  flags.Role,
+				Usage: "set user's privileges from a role",
+			},
 			&cli.StringSliceFlag{
 				Name:  flags.Privilege,
 				Usage: "set user's privileges",
+			},
+			&cli.StringSliceFlag{
+				Name:  flags.WithoutPrivilege,
+				Usage: "remove a privilege",
 			},
 			&cli.StringFlag{
 				Name:  flags.ServerURL,
@@ -88,15 +97,36 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	userName, _ := conf.String(flags.Name)
 	userPubKey, _ := conf.String(flags.PublicKey)
 	userDesc, _ := conf.String(flags.Description)
-	userPrivs, _ := conf.StringSlice(flags.Privilege)
+	setPrivileges, _ := conf.StringSlice(flags.Privilege)
+	unsetPrivileges, _ := conf.StringSlice(flags.WithoutPrivilege)
+	roleName, _ := conf.String(flags.Role)
 
 	client := daemon.New(srv)
+
+	var rolePrivileges []string
+	if roleName != "" {
+		resp, err := client.GetRole(ctx, protodaemon.GetRoleRequest{
+			RoleRef: roleName,
+		})
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot get role: %v", err)
+			return err
+		}
+
+		rolePrivileges = resp.Role.Privileges
+	}
+
+	setPrivileges, err = privilege.UpdatePrivileges(rolePrivileges, setPrivileges, unsetPrivileges)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot create user: %v", err)
+		return err
+	}
 
 	_, err = client.CreateUser(ctx, protodaemon.CreateUserRequest{
 		ID:          userPubKey,
 		Name:        userName,
 		Description: userDesc,
-		Privileges:  userPrivs,
+		Privileges:  setPrivileges,
 	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create user: %v", err)
