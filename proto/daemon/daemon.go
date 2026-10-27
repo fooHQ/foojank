@@ -80,6 +80,8 @@ const (
 	tagListCommandsResponse
 	tagListAuditRequest
 	tagListAuditResponse
+	tagHealthCheckRequest
+	tagHealthCheckResponse
 )
 
 // Marshal serializes the given message into a CBOR-encoded byte slice. It
@@ -325,6 +327,14 @@ func Marshal(message any) ([]byte, error) {
 		tag, payload = tagListAuditResponse, &v
 	case *ListAuditResponse:
 		tag, payload = tagListAuditResponse, v
+	case HealthCheckRequest:
+		tag, payload = tagHealthCheckRequest, &v
+	case *HealthCheckRequest:
+		tag, payload = tagHealthCheckRequest, v
+	case HealthCheckResponse:
+		tag, payload = tagHealthCheckResponse, &v
+	case *HealthCheckResponse:
+		tag, payload = tagHealthCheckResponse, v
 	default:
 		return nil, ErrUnknownType
 	}
@@ -601,6 +611,14 @@ func Unmarshal(b []byte) (any, error) {
 		var m ListAuditResponse
 		err = m.UnmarshalCbor(r)
 		payload = m
+	case tagHealthCheckRequest:
+		var m HealthCheckRequest
+		err = m.UnmarshalCbor(r)
+		payload = m
+	case tagHealthCheckResponse:
+		var m HealthCheckResponse
+		err = m.UnmarshalCbor(r)
+		payload = m
 	default:
 		return nil, ErrUnknownTag
 	}
@@ -753,6 +771,11 @@ func ListCommandsSubject() string {
 // ListAuditSubject returns the NATS subject for listing audit records.
 func ListAuditSubject() string {
 	return "FJ.DAEMON.RPC.AUDIT.LIST"
+}
+
+// HealthCheckSubject returns the NATS subject for checking daemon health.
+func HealthCheckSubject() string {
+	return "FJ.DAEMON.RPC.HEALTH.CHECK"
 }
 
 // ParseIssueJWTSubject extracts the user ID from an issue-JWT subject. It
