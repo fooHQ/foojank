@@ -471,6 +471,24 @@ func (c *Client) ListCommands(ctx context.Context, req protodaemon.ListCommandsR
 	return v, nil
 }
 
+func (c *Client) CheckHealth(ctx context.Context, req protodaemon.HealthCheckRequest) (protodaemon.HealthCheckResponse, error) {
+	data, err := c.request(ctx, protodaemon.HealthCheckSubject(), req)
+	if err != nil {
+		return protodaemon.HealthCheckResponse{}, err
+	}
+
+	v, ok := data.(protodaemon.HealthCheckResponse)
+	if !ok {
+		return protodaemon.HealthCheckResponse{}, fmt.Errorf("invalid response: %T", data)
+	}
+
+	if v.Error != nil {
+		return protodaemon.HealthCheckResponse{}, v.Error
+	}
+
+	return v, nil
+}
+
 func (c *Client) request(ctx context.Context, subject string, req any) (any, error) {
 	b, err := protodaemon.Marshal(req)
 	if err != nil {
