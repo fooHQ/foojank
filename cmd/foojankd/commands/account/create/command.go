@@ -3,6 +3,7 @@ package create
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
 	petname "github.com/dustinkirkland/golang-petname"
@@ -49,25 +50,24 @@ func before(ctx context.Context, c *cli.Command) (context.Context, error) {
 		return ctx, err
 	}
 
+	ctx, err = actions.SetupOperator(os.Stderr)(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
 	return ctx, nil
 }
 
-func action(ctx context.Context, _ *cli.Command) (err error) {
+func action(ctx context.Context, _ *cli.Command) error {
 	conf := actions.GetConfigFromContext(ctx)
 	logger := actions.GetLoggerFromContext(ctx)
+	operator := actions.GetOperatorFromContext(ctx)
 
 	name, _ := conf.String(flags.Name)
 	description, _ := conf.String(flags.Description)
 
 	if name == "" {
 		name = petname.Generate(2, "_")
-	}
-
-	_, _, err = authdir.ReadAccount(name)
-	if err == nil {
-		err = errors.New("account already exists")
-		logger.ErrorContext(ctx, "Cannot create account %q: %v", name, err)
-		return err
 	}
 
 	account, err := auth.NewAccountKey()
@@ -84,7 +84,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 
 	accountClaims.Description = description
 
-	accountJWT, err := accountClaims.Encode(account)
+	accountJWT, err := accountClaims.Encode(operator.KeyPair())
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot encode account JWT: %v", err)
 		return err
@@ -98,18 +98,12 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 
 	err = authdir.CreateAccount(name, accountJWT, accountKey)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot store account: %v", err)
+		if errors.Is(err, authdir.ErrAccountExists) {
+			err = fmt.Errorf("%q already exists", name)
+		}
+		logger.ErrorContext(ctx, "Cannot create account: %v", err)
 		return err
 	}
-	defer func() {
-		if err == nil {
-			return
-		}
-		err := authdir.DeleteAccount(name)
-		if err != nil {
-			logger.WarnContext(ctx, "Cannot delete account %q: %v", name, err)
-		}
-	}()
 
 	logger.InfoContext(ctx, "Account %q has been created!", name)
 
