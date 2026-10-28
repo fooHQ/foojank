@@ -399,7 +399,7 @@ func storeRoot(t *testing.T) string {
 
 func accountFile(t *testing.T, name string) string {
 	t.Helper()
-	return filepath.Join(storeRoot(t), "accounts", strings.ToLower(name), "account")
+	return filepath.Join(storeRoot(t), "accounts", strings.ToLower(name))
 }
 
 func writeCreds(t *testing.T, path, token string, seed []byte) {
