@@ -143,6 +143,59 @@ func SetupServer(_ io.Writer) cli.BeforeFunc {
 	}
 }
 
+func SetupOperator(_ io.Writer) cli.BeforeFunc {
+	const operatorName = "_default"
+	return func(ctx context.Context, _ *cli.Command) (context.Context, error) {
+		// urfave skips ShellComplete when Before fails. Completion does not
+		// need an operator, and must not create one.
+		if IsShellCompletion() {
+			return ctx, nil
+		}
+
+		logger := GetLoggerFromContext(ctx)
+
+		operator, err := authdir.GetOperator(operatorName)
+		if err != nil {
+			if !errors.Is(err, authdir.ErrOperatorNotFound) {
+				logger.ErrorContext(ctx, "Cannot get operator: %v", err)
+				return ctx, err
+			}
+
+			operator, err = createOperator(operatorName)
+			if err != nil {
+				logger.ErrorContext(ctx, "Cannot create operator: %v", err)
+				return ctx, err
+			}
+		}
+
+		return setOperatorToContext(ctx, operator), nil
+	}
+}
+
+func createOperator(name string) (*authdir.Operator, error) {
+	operator, err := auth.GenerateOperator(name)
+	if err != nil {
+		return nil, err
+	}
+
+	operatorJWT, err := operator.Encode(operator.KeyPair())
+	if err != nil {
+		return nil, err
+	}
+
+	operatorSeed, err := operator.KeyPair().Seed()
+	if err != nil {
+		return nil, err
+	}
+
+	err = authdir.CreateOperator(name, operatorJWT, operatorSeed)
+	if err != nil {
+		return nil, err
+	}
+
+	return authdir.GetOperator(name)
+}
+
 func generateUserCreds(name string, accountKey nkeys.KeyPair) (string, string, error) {
 	userKey, err := auth.NewUserKey()
 	if err != nil {
@@ -181,9 +234,10 @@ func CommandNotFound(_ context.Context, c *cli.Command, s string) {
 type contextKey string
 
 var (
-	configKey contextKey = "foojank:config"
-	loggerKey contextKey = "foojank:logger"
-	serverKey contextKey = "foojank:server"
+	configKey   contextKey = "foojank:config"
+	loggerKey   contextKey = "foojank:logger"
+	serverKey   contextKey = "foojank:server"
+	operatorKey contextKey = "foojank:operator"
 )
 
 func GetConfigFromContext(ctx context.Context) *config.Config {
@@ -202,6 +256,11 @@ func GetServerFromContext(ctx context.Context) *server.Client {
 	return srv
 }
 
+func GetOperatorFromContext(ctx context.Context) *authdir.Operator {
+	operator := ctx.Value(operatorKey).(*authdir.Operator)
+	return operator
+}
+
 func setConfigToContext(ctx context.Context, conf *config.Config) context.Context {
 	return context.WithValue(ctx, configKey, conf)
 }
@@ -212,4 +271,8 @@ func setLoggerToContext(ctx context.Context, logger *log.Logger) context.Context
 
 func setServerToContext(ctx context.Context, srv *server.Client) context.Context {
 	return context.WithValue(ctx, serverKey, srv)
+}
+
+func setOperatorToContext(ctx context.Context, operator *authdir.Operator) context.Context {
+	return context.WithValue(ctx, operatorKey, operator)
 }
