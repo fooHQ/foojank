@@ -36,6 +36,15 @@ func TestCreateUserRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, seed, keySeed)
 
+	got, err := authdir.GetUser("MAIN")
+	require.NoError(t, err)
+	require.Equal(t, token, got.JWT())
+	require.Equal(t, "Main", got.Name())
+	require.Equal(t, got.PublicKey(), publicKey(t, seed))
+	gotSeed, err = got.KeyPair().Seed()
+	require.NoError(t, err)
+	require.Equal(t, seed, gotSeed)
+
 	pth, err := authdir.GetUserPath("main")
 	require.NoError(t, err)
 	require.Equal(t, userFile(t, "main"), pth)
@@ -178,6 +187,9 @@ func TestReadUserMissing(t *testing.T) {
 	require.ErrorIs(t, err, authdir.ErrUserNotFound)
 
 	_, err = authdir.GetUserKey("missing")
+	require.ErrorIs(t, err, authdir.ErrUserNotFound)
+
+	_, err = authdir.GetUser("missing")
 	require.ErrorIs(t, err, authdir.ErrUserNotFound)
 
 	_, err = authdir.GetUserPath("missing")

@@ -9,6 +9,8 @@ import (
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
+
+	"github.com/foohq/foojank/internal/auth"
 )
 
 var (
@@ -64,6 +66,47 @@ func UpdateAccount(name string, accountJWT string, accountSeed []byte) error {
 	}
 
 	return nil
+}
+
+type Account struct {
+	*auth.Account
+	jwt string
+}
+
+func (a *Account) JWT() string {
+	return a.jwt
+}
+
+func GetAccount(name string) (*Account, error) {
+	data, err := readAccountData(name)
+	if err != nil {
+		return nil, err
+	}
+
+	keyPair, err := jwt.ParseDecoratedNKey(data)
+	if err != nil {
+		return nil, err
+	}
+
+	accountJWT, err := jwt.ParseDecoratedJWT(data)
+	if err != nil {
+		return nil, err
+	}
+
+	claims, err := jwt.DecodeAccountClaims(accountJWT)
+	if err != nil {
+		return nil, err
+	}
+
+	account, err := auth.NewAccount(claims, keyPair)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Account{
+		jwt:     accountJWT,
+		Account: account,
+	}, nil
 }
 
 func GetAccountKey(name string) (nkeys.KeyPair, error) {
