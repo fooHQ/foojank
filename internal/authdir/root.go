@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 )
 
-// Root is the directory that contains the accounts and users stores.
+// Root is the directory that contains the accounts, users, and operators stores.
 // An empty value uses the default, UserConfigDir()/foojank.
 // Set Root before calling any other function in this package.
 var Root string

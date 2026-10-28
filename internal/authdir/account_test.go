@@ -123,7 +123,7 @@ func TestRejectInvalidAccountCredentials(t *testing.T) {
 
 	token, seed := mustAccount(t, "main", "")
 	userToken, userSeed := mustUser(t, "user")
-	operatorSeed := mustOperatorSeed(t)
+	operatorToken, operatorSeed := mustOperator(t, "op")
 
 	tests := []struct {
 		name    string
@@ -133,6 +133,7 @@ func TestRejectInvalidAccountCredentials(t *testing.T) {
 	}{
 		{name: "malformed jwt", token: "not-a-jwt", seed: seed, wantErr: "invalid account JWT"},
 		{name: "user jwt", token: userToken, seed: seed, wantErr: "invalid account JWT"},
+		{name: "operator jwt", token: operatorToken, seed: seed, wantErr: "invalid account JWT"},
 		{name: "empty jwt", token: "", seed: seed, wantErr: "invalid account JWT"},
 		{name: "malformed seed", token: token, seed: []byte("nope"), wantErr: "invalid account seed"},
 		{name: "prefix only seed", token: token, seed: []byte("SA"), wantErr: "invalid account seed"},
@@ -433,16 +434,6 @@ func mustAccount(t *testing.T, name, description string) (string, []byte) {
 	seed, err := key.Seed()
 	require.NoError(t, err)
 	return token, seed
-}
-
-func mustOperatorSeed(t *testing.T) []byte {
-	t.Helper()
-
-	key, err := nkeys.CreateOperator()
-	require.NoError(t, err)
-	seed, err := key.Seed()
-	require.NoError(t, err)
-	return seed
 }
 
 func publicKey(t *testing.T, seed []byte) string {
