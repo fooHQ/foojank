@@ -16,6 +16,7 @@ const (
 	ServerURL         = "server-url"
 	ServerCertificate = "server-certificate"
 	Account           = "account"
+	SystemAccount     = "system-account"
 	Format            = "format"
 	Name              = "name"
 	Description       = "description"
