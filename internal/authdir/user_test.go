@@ -124,7 +124,7 @@ func TestRejectInvalidUserCredentials(t *testing.T) {
 
 	token, seed := mustUser(t, "main")
 	accountToken, accountSeed := mustAccount(t, "main", "")
-	operatorSeed := mustOperatorSeed(t)
+	operatorToken, operatorSeed := mustOperator(t, "op")
 
 	tests := []struct {
 		name    string
@@ -134,6 +134,7 @@ func TestRejectInvalidUserCredentials(t *testing.T) {
 	}{
 		{name: "malformed jwt", token: "not-a-jwt", seed: seed, wantErr: "invalid user JWT"},
 		{name: "account jwt", token: accountToken, seed: seed, wantErr: "invalid user JWT"},
+		{name: "operator jwt", token: operatorToken, seed: seed, wantErr: "invalid user JWT"},
 		{name: "empty jwt", token: "", seed: seed, wantErr: "invalid user JWT"},
 		{name: "malformed seed", token: token, seed: []byte("nope"), wantErr: "invalid user seed"},
 		{name: "prefix only seed", token: token, seed: []byte("SU"), wantErr: "invalid user seed"},
