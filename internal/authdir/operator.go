@@ -2,13 +2,14 @@ package authdir
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
+
+	"github.com/foohq/foojank/internal/auth"
 )
 
 var (
@@ -66,16 +67,22 @@ func UpdateOperator(name string, operatorJWT string, operatorSeed []byte) error 
 	return nil
 }
 
-func GetOperatorKey(name string) (nkeys.KeyPair, error) {
+type Operator struct {
+	*auth.Operator
+	jwt string
+}
+
+func (o *Operator) JWT() string {
+	return o.jwt
+}
+
+func GetOperator(name string) (*Operator, error) {
 	data, err := readOperatorData(name)
 	if err != nil {
 		return nil, err
 	}
-	return jwt.ParseDecoratedNKey(data)
-}
 
-func GetOperatorJWT(name string) (*jwt.OperatorClaims, error) {
-	data, err := readOperatorData(name)
+	keyPair, err := jwt.ParseDecoratedNKey(data)
 	if err != nil {
 		return nil, err
 	}
@@ -85,41 +92,20 @@ func GetOperatorJWT(name string) (*jwt.OperatorClaims, error) {
 		return nil, err
 	}
 
-	return jwt.DecodeOperatorClaims(operatorJWT)
-}
-
-func ReadOperator(name string) (string, []byte, error) {
-	data, err := readOperatorData(name)
+	claims, err := jwt.DecodeOperatorClaims(operatorJWT)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
-	operatorJWT, err := jwt.ParseDecoratedJWT(data)
+	operator, err := auth.NewOperator(claims, keyPair)
 	if err != nil {
-		return "", nil, fmt.Errorf("cannot decode decorated JWT: %w", err)
+		return nil, err
 	}
 
-	// Validate that the JWT is an operator JWT.
-	_, err = jwt.DecodeOperatorClaims(operatorJWT)
-	if err != nil {
-		return "", nil, fmt.Errorf("cannot decode JWT: %w", err)
-	}
-
-	operator, err := jwt.ParseDecoratedNKey(data)
-	if err != nil {
-		return "", nil, fmt.Errorf("cannot decode decorated seed: %w", err)
-	}
-
-	operatorSeed, err := operator.Seed()
-	if err != nil {
-		return "", nil, fmt.Errorf("cannot encode seed: %w", err)
-	}
-
-	if !isOperatorSeed(operatorSeed) {
-		return "", nil, errors.New("invalid operator seed")
-	}
-
-	return operatorJWT, operatorSeed, nil
+	return &Operator{
+		jwt:      operatorJWT,
+		Operator: operator,
+	}, nil
 }
 
 func ListOperators() ([]string, error) {

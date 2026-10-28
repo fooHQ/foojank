@@ -38,6 +38,16 @@ func TestCreateAccountRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, seed, keySeed)
 
+	got, err := authdir.GetAccount("MAIN")
+	require.NoError(t, err)
+	require.Equal(t, token, got.JWT())
+	require.Equal(t, "Main", got.Name())
+	require.Equal(t, "primary", got.Claims().Description)
+	require.Equal(t, got.PublicKey(), publicKey(t, seed))
+	gotSeed, err = got.KeyPair().Seed()
+	require.NoError(t, err)
+	require.Equal(t, seed, gotSeed)
+
 	pth := accountFile(t, "main")
 	data, err := os.ReadFile(pth)
 	require.NoError(t, err)
@@ -177,6 +187,9 @@ func TestReadAccountMissing(t *testing.T) {
 	require.ErrorIs(t, err, authdir.ErrAccountNotFound)
 
 	_, err = authdir.GetAccountKey("missing")
+	require.ErrorIs(t, err, authdir.ErrAccountNotFound)
+
+	_, err = authdir.GetAccount("missing")
 	require.ErrorIs(t, err, authdir.ErrAccountNotFound)
 
 	accounts, err := authdir.ListAccounts()

@@ -20,21 +20,15 @@ func TestCreateOperatorRoundTrip(t *testing.T) {
 	token, seed := mustOperator(t, "Main")
 	require.NoError(t, authdir.CreateOperator("Main", token, seed))
 
-	gotToken, gotSeed, err := authdir.ReadOperator("MAIN")
+	got, err := authdir.GetOperator("MAIN")
 	require.NoError(t, err)
-	require.Equal(t, token, gotToken)
+	require.Equal(t, token, got.JWT())
+	require.Equal(t, "Main", got.Name())
+	require.Equal(t, "Main", got.Claims().Name)
+	require.Equal(t, got.PublicKey(), publicKey(t, seed))
+	gotSeed, err := got.KeyPair().Seed()
+	require.NoError(t, err)
 	require.Equal(t, seed, gotSeed)
-
-	claims, err := authdir.GetOperatorJWT("main")
-	require.NoError(t, err)
-	require.Equal(t, "Main", claims.Name)
-	require.Equal(t, claims.Subject, publicKey(t, seed))
-
-	key, err := authdir.GetOperatorKey("main")
-	require.NoError(t, err)
-	keySeed, err := key.Seed()
-	require.NoError(t, err)
-	require.Equal(t, seed, keySeed)
 
 	pth, err := authdir.GetOperatorPath("main")
 	require.NoError(t, err)
@@ -73,9 +67,12 @@ func TestCreateOperatorExists(t *testing.T) {
 	require.ErrorIs(t, err, authdir.ErrOperatorExists)
 	require.NotErrorIs(t, err, os.ErrExist)
 
-	gotToken, gotSeed, err := authdir.ReadOperator("foo")
+	got, err := authdir.GetOperator("foo")
 	require.NoError(t, err)
-	require.Equal(t, originalToken, gotToken)
+	require.Equal(t, originalToken, got.JWT())
+	require.Equal(t, "original", got.Name())
+	gotSeed, err := got.KeyPair().Seed()
+	require.NoError(t, err)
 	require.Equal(t, originalSeed, gotSeed)
 }
 
@@ -88,15 +85,14 @@ func TestUpdateOperator(t *testing.T) {
 	require.NoError(t, authdir.CreateOperator("main", originalToken, originalSeed))
 	require.NoError(t, authdir.UpdateOperator("MAIN", replacementToken, replacementSeed))
 
-	gotToken, gotSeed, err := authdir.ReadOperator("main")
+	got, err := authdir.GetOperator("main")
 	require.NoError(t, err)
-	require.Equal(t, replacementToken, gotToken)
+	require.Equal(t, replacementToken, got.JWT())
+	require.Equal(t, "replacement", got.Name())
+	require.Equal(t, got.Claims().Subject, publicKey(t, replacementSeed))
+	gotSeed, err := got.KeyPair().Seed()
+	require.NoError(t, err)
 	require.Equal(t, replacementSeed, gotSeed)
-
-	claims, err := authdir.GetOperatorJWT("main")
-	require.NoError(t, err)
-	require.Equal(t, "replacement", claims.Name)
-	require.Equal(t, claims.Subject, publicKey(t, replacementSeed))
 
 	operators, err := authdir.ListOperators()
 	require.NoError(t, err)
@@ -111,7 +107,7 @@ func TestUpdateOperatorMissing(t *testing.T) {
 	require.ErrorIs(t, err, authdir.ErrOperatorNotFound)
 	require.NotErrorIs(t, err, os.ErrNotExist)
 
-	_, _, err = authdir.ReadOperator("ghost")
+	_, err = authdir.GetOperator("ghost")
 	require.ErrorIs(t, err, authdir.ErrOperatorNotFound)
 
 	operators, err := authdir.ListOperators()
@@ -171,13 +167,7 @@ func TestRejectInvalidOperatorCredentials(t *testing.T) {
 func TestReadOperatorMissing(t *testing.T) {
 	useTempHome(t)
 
-	_, _, err := authdir.ReadOperator("missing")
-	require.ErrorIs(t, err, authdir.ErrOperatorNotFound)
-
-	_, err = authdir.GetOperatorJWT("missing")
-	require.ErrorIs(t, err, authdir.ErrOperatorNotFound)
-
-	_, err = authdir.GetOperatorKey("missing")
+	_, err := authdir.GetOperator("missing")
 	require.ErrorIs(t, err, authdir.ErrOperatorNotFound)
 
 	_, err = authdir.GetOperatorPath("missing")
@@ -198,17 +188,8 @@ func TestReadOperatorCorrupt(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, os.WriteFile(pth, []byte("not a creds file"), 0o600))
 
-	_, _, err = authdir.ReadOperator("bad")
-	require.Error(t, err)
-	require.NotErrorIs(t, err, authdir.ErrOperatorNotFound)
-	require.ErrorContains(t, err, "cannot decode JWT")
-
-	_, err = authdir.GetOperatorJWT("bad")
-	require.Error(t, err)
-	require.NotErrorIs(t, err, authdir.ErrOperatorNotFound)
-
-	_, err = authdir.GetOperatorKey("bad")
-	require.Error(t, err)
+	_, err = authdir.GetOperator("bad")
+	require.EqualError(t, err, "no nkey seed found")
 	require.NotErrorIs(t, err, authdir.ErrOperatorNotFound)
 }
 
@@ -225,9 +206,11 @@ func TestOperatorRootOverride(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, operatorFile(t, "main"), operatorPath)
 
-	gotToken, gotSeed, err := authdir.ReadOperator("main")
+	got, err := authdir.GetOperator("main")
 	require.NoError(t, err)
-	require.Equal(t, token, gotToken)
+	require.Equal(t, token, got.JWT())
+	gotSeed, err := got.KeyPair().Seed()
+	require.NoError(t, err)
 	require.Equal(t, seed, gotSeed)
 
 	operators, err := authdir.ListOperators()
@@ -244,11 +227,7 @@ func TestOperatorConfigDirUnavailable(t *testing.T) {
 	require.Error(t, authdir.CreateOperator("main", token, seed))
 	require.Error(t, authdir.UpdateOperator("main", token, seed))
 
-	_, _, err := authdir.ReadOperator("main")
-	require.Error(t, err)
-	_, err = authdir.GetOperatorJWT("main")
-	require.Error(t, err)
-	_, err = authdir.GetOperatorKey("main")
+	_, err := authdir.GetOperator("main")
 	require.Error(t, err)
 	_, err = authdir.GetOperatorPath("main")
 	require.Error(t, err)
@@ -284,15 +263,7 @@ func TestReadOperatorTargetIsDirectory(t *testing.T) {
 	setRoot(t, dir)
 	require.NoError(t, os.MkdirAll(filepath.Join(dir, "operators", "main"), 0o700))
 
-	_, _, err := authdir.ReadOperator("main")
-	require.Error(t, err)
-	require.NotErrorIs(t, err, authdir.ErrOperatorNotFound)
-
-	_, err = authdir.GetOperatorJWT("main")
-	require.Error(t, err)
-	require.NotErrorIs(t, err, authdir.ErrOperatorNotFound)
-
-	_, err = authdir.GetOperatorKey("main")
+	_, err := authdir.GetOperator("main")
 	require.Error(t, err)
 	require.NotErrorIs(t, err, authdir.ErrOperatorNotFound)
 }
@@ -351,8 +322,8 @@ func TestReadOperatorRejectsUndecodableSeed(t *testing.T) {
 	token, _ := mustOperator(t, "main")
 	writeCreds(t, operatorFile(t, "main"), token, nil)
 
-	_, _, err := authdir.ReadOperator("main")
-	require.ErrorContains(t, err, "cannot decode decorated seed")
+	_, err := authdir.GetOperator("main")
+	require.EqualError(t, err, "no nkey seed found")
 }
 
 func TestReadOperatorRejectsNonOperatorSeed(t *testing.T) {
@@ -362,8 +333,8 @@ func TestReadOperatorRejectsNonOperatorSeed(t *testing.T) {
 	_, accountSeed := mustAccount(t, "other", "")
 	writeCreds(t, operatorFile(t, "main"), token, accountSeed)
 
-	_, _, err := authdir.ReadOperator("main")
-	require.EqualError(t, err, "invalid operator seed")
+	_, err := authdir.GetOperator("main")
+	require.EqualError(t, err, "JWT and key mismatch")
 }
 
 func TestListAndDeleteOperators(t *testing.T) {
@@ -380,16 +351,21 @@ func TestListAndDeleteOperators(t *testing.T) {
 	require.Equal(t, []string{"alpha", "beta"}, operators)
 
 	require.NoError(t, authdir.DeleteOperator("ALPHA"))
-	_, _, err = authdir.ReadOperator("alpha")
+	_, err = authdir.GetOperator("alpha")
 	require.ErrorIs(t, err, authdir.ErrOperatorNotFound)
 
-	_, _, err = authdir.ReadOperator("beta")
+	got, err := authdir.GetOperator("beta")
 	require.NoError(t, err)
+	require.Equal(t, betaToken, got.JWT())
 
 	require.NoError(t, authdir.DeleteOperator("alpha"))
 	require.NoError(t, authdir.CreateOperator("alpha", alphaToken, alphaSeed))
-	_, _, err = authdir.ReadOperator("alpha")
+	got, err = authdir.GetOperator("alpha")
 	require.NoError(t, err)
+	require.Equal(t, alphaToken, got.JWT())
+	gotSeed, err := got.KeyPair().Seed()
+	require.NoError(t, err)
+	require.Equal(t, alphaSeed, gotSeed)
 }
 
 func operatorFile(t *testing.T, name string) string {
@@ -400,16 +376,13 @@ func operatorFile(t *testing.T, name string) string {
 func mustOperator(t *testing.T, name string) (string, []byte) {
 	t.Helper()
 
-	key, err := auth.NewOperatorKey()
+	operator, err := auth.GenerateOperator(name)
 	require.NoError(t, err)
 
-	claims, err := auth.NewOperatorJWT(name, key)
+	token, err := operator.Encode(operator.KeyPair())
 	require.NoError(t, err)
 
-	token, err := claims.Encode(key)
-	require.NoError(t, err)
-
-	seed, err := key.Seed()
+	seed, err := operator.KeyPair().Seed()
 	require.NoError(t, err)
 	return token, seed
 }
