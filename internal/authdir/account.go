@@ -1,7 +1,6 @@
 package authdir
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -175,20 +174,6 @@ func accountPath(name string) (string, error) {
 	return filepath.Join(root, name), nil
 }
 
-func decorate(accountJWT string, accountSeed []byte) ([]byte, error) {
-	jwtDecorated, err := jwt.DecorateJWT(accountJWT)
-	if err != nil {
-		return nil, fmt.Errorf("cannot decorate JWT: %w", err)
-	}
-
-	seedDecorated, err := jwt.DecorateSeed(accountSeed)
-	if err != nil {
-		return nil, fmt.Errorf("cannot decorate seed: %w", err)
-	}
-
-	return bytes.Join([][]byte{jwtDecorated, seedDecorated}, []byte("")), nil
-}
-
 func isAccountJWT(s string) bool {
 	_, err := jwt.DecodeAccountClaims(s)
 	return err == nil
@@ -213,31 +198,7 @@ func writeAccountData(name string, data []byte, flag int) error {
 	if err != nil {
 		return err
 	}
-
-	// Create parent directories only when the caller is allowed to create the
-	// file. Update opens an existing file; creating the parent first would
-	// leave an empty directory that ListAccounts treats as an account.
-	if flag&os.O_CREATE != 0 {
-		err = os.MkdirAll(filepath.Dir(pth), 0o700)
-		if err != nil {
-			return err
-		}
-	}
-
-	f, err := os.OpenFile(pth, flag, 0o600)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = f.Close()
-	}()
-
-	_, err = f.Write(data)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return writeData(pth, data, flag)
 }
 
 func readAccountData(name string) ([]byte, error) {
@@ -245,14 +206,12 @@ func readAccountData(name string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	data, err := os.ReadFile(pth)
+	b, err := readData(pth)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, ErrAccountNotFound
 		}
 		return nil, err
 	}
-
-	return data, nil
+	return b, nil
 }
