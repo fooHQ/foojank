@@ -47,10 +47,6 @@ func GenerateAccount(name string) (*Account, error) {
 
 	claims := jwt.NewAccountClaims(pubKey)
 	claims.Name = name
-	claims.Limits.JetStreamLimits = jwt.JetStreamLimits{
-		DiskStorage:   -1,
-		MemoryStorage: -1,
-	}
 
 	return &Account{
 		claims:  claims,
