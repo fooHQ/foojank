@@ -33,7 +33,7 @@ func NewUser(claims *jwt.UserClaims, keyPair nkeys.KeyPair) (*User, error) {
 	}, nil
 }
 
-func GenerateUser(name string, perms jwt.Permissions) (*User, error) {
+func GenerateUser(name string) (*User, error) {
 	var err error
 
 	keyPair, err := nkeys.CreateUser()
@@ -48,7 +48,6 @@ func GenerateUser(name string, perms jwt.Permissions) (*User, error) {
 
 	claims := jwt.NewUserClaims(pubKey)
 	claims.Name = name
-	claims.Permissions = perms
 
 	return &User{
 		claims:  claims,
