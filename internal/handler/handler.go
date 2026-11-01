@@ -160,14 +160,6 @@ func (h *Handler) GetUser(ctx context.Context, params map[string]string, req pro
 		}
 	}
 
-	userKeyPair, err := nkeys.FromPublicKey(user.ID)
-	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot create user keypair: %v", err)
-		return protodaemon.GetUserResponse{
-			Error: err,
-		}
-	}
-
 	userPerms, err := auth.NewRefreshTokenPermissions(user.ID)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot create client permissions: %v", err)
@@ -176,17 +168,11 @@ func (h *Handler) GetUser(ctx context.Context, params map[string]string, req pro
 		}
 	}
 
-	claims, err := auth.NewUserJWT(userRef, userPerms, userKeyPair)
-	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
-		return protodaemon.GetUserResponse{
-			Error: err,
-		}
-	}
+	userClaims := jwt.NewUserClaims(user.ID)
+	userClaims.Permissions = userPerms
+	userClaims.Expires = user.ExpiresAt.Unix()
 
-	claims.Expires = user.ExpiresAt.Unix()
-
-	userJWT, err := claims.Encode(h.conf.AccountKey)
+	userJWT, err := userClaims.Encode(h.conf.AccountKey)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
 		return protodaemon.GetUserResponse{
@@ -430,14 +416,6 @@ func (h *Handler) IssueJWT(ctx context.Context, params map[string]string, req pr
 		}
 	}
 
-	userKeyPair, err := nkeys.FromPublicKey(user.ID)
-	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot create user keypair: %v", err)
-		return protodaemon.IssueJWTResponse{
-			Error: err,
-		}
-	}
-
 	userPrivs, err := privilege.ParsePrivileges(user.Privileges)
 	if err != nil {
 		return protodaemon.IssueJWTResponse{
@@ -453,17 +431,11 @@ func (h *Handler) IssueJWT(ctx context.Context, params map[string]string, req pr
 		}
 	}
 
-	claims, err := auth.NewUserJWT(userName, userPerms, userKeyPair)
-	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
-		return protodaemon.IssueJWTResponse{
-			Error: err,
-		}
-	}
+	userClaims := jwt.NewUserClaims(user.ID)
+	userClaims.Permissions = userPerms
+	userClaims.Expires = time.Now().Add(15 * time.Minute).Unix()
 
-	claims.Expires = time.Now().Add(15 * time.Minute).Unix()
-
-	userJWT, err := claims.Encode(h.conf.AccountKey)
+	userJWT, err := userClaims.Encode(h.conf.AccountKey)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
 		return protodaemon.IssueJWTResponse{
@@ -505,31 +477,15 @@ func (h *Handler) CreateAgent(ctx context.Context, params map[string]string, req
 	maps.Copy(extra, agentConf.Extra)
 	agentConf.Extra = extra
 
-	agentKeyPair, err := auth.NewUserKey()
+	user, err := auth.GenerateUser(agentName)
 	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot generate a user key: %v", err)
+		h.logger.ErrorContext(ctx, "Cannot generate a user: %v", err)
 		return protodaemon.CreateAgentResponse{
 			Error: err,
 		}
 	}
 
-	agentID, err := agentKeyPair.PublicKey()
-	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot create agent ID: %v", err)
-		return protodaemon.CreateAgentResponse{
-			Error: err,
-		}
-	}
-
-	agentClaims, err := auth.NewUserJWT(agentName, jwt.Permissions{}, agentKeyPair)
-	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
-		return protodaemon.CreateAgentResponse{
-			Error: err,
-		}
-	}
-
-	agentJWT, err := agentClaims.Encode(h.conf.AccountKey)
+	agentJWT, err := user.Claims().Encode(h.conf.AccountKey)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
 		return protodaemon.CreateAgentResponse{
@@ -537,9 +493,17 @@ func (h *Handler) CreateAgent(ctx context.Context, params map[string]string, req
 		}
 	}
 
-	agentSeed, err := agentKeyPair.Seed()
+	agentSeed, err := user.KeyPair().Seed()
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot encode user seed: %v", err)
+		return protodaemon.CreateAgentResponse{
+			Error: err,
+		}
+	}
+
+	agentID, err := user.KeyPair().PublicKey()
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot create agent ID: %v", err)
 		return protodaemon.CreateAgentResponse{
 			Error: err,
 		}
@@ -808,15 +772,15 @@ func (h *Handler) CreateGateway(ctx context.Context, params map[string]string, r
 	gatewayDesc := req.Description
 	gatewayConf := req.Config
 
-	gatewayKeyPair, err := auth.NewUserKey()
+	user, err := auth.GenerateUser(gatewayName)
 	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot generate a user key: %v", err)
+		h.logger.ErrorContext(ctx, "Cannot generate a user: %v", err)
 		return protodaemon.CreateGatewayResponse{
 			Error: err,
 		}
 	}
 
-	gatewayID, err := gatewayKeyPair.PublicKey()
+	gatewayID, err := user.KeyPair().PublicKey()
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot create gateway ID: %v", err)
 		return protodaemon.CreateGatewayResponse{
@@ -824,17 +788,9 @@ func (h *Handler) CreateGateway(ctx context.Context, params map[string]string, r
 		}
 	}
 
-	gatewayPerms := auth.NewGatewayPermissions(gatewayID)
+	user.Claims().Permissions = auth.NewGatewayPermissions(gatewayID)
 
-	gatewayClaims, err := auth.NewUserJWT(gatewayName, gatewayPerms, gatewayKeyPair)
-	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot generate a user JWT: %v", err)
-		return protodaemon.CreateGatewayResponse{
-			Error: err,
-		}
-	}
-
-	gatewayJWT, err := gatewayClaims.Encode(h.conf.AccountKey)
+	gatewayJWT, err := user.Claims().Encode(h.conf.AccountKey)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
 		return protodaemon.CreateGatewayResponse{
@@ -842,7 +798,7 @@ func (h *Handler) CreateGateway(ctx context.Context, params map[string]string, r
 		}
 	}
 
-	gatewaySeed, err := gatewayKeyPair.Seed()
+	gatewaySeed, err := user.KeyPair().Seed()
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot encode user seed: %v", err)
 		return protodaemon.CreateGatewayResponse{
