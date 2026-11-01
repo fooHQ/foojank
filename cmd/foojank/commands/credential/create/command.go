@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nats-io/jwt/v2"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojank/flags"
@@ -55,34 +54,28 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 
 	name, _ := conf.String(flags.Name)
 
-	user, err := auth.NewUserKey()
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot generate a credential key: %v", err)
-		return err
-	}
-
-	account, err := auth.NewAccountKey()
+	account, err := auth.GenerateAccount(name)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot generate an account key: %v", err)
 		return err
 	}
 
-	userClaims, err := auth.NewUserJWT(name, jwt.Permissions{}, user)
+	user, err := auth.GenerateUser(name)
 	if err != nil {
-		logger.ErrorContext(ctx, "Cannot generate a credential JWT: %v", err)
+		logger.ErrorContext(ctx, "Cannot generate a credential key: %v", err)
 		return err
 	}
 
 	// Mark the initial user JWT as a dummy. The JWT must be replaced by a JWT signed with a real account key.
-	auth.SetDummyUserJWT(userClaims)
+	auth.SetDummyUserJWT(user.Claims())
 
-	userJWT, err := userClaims.Encode(account)
+	userJWT, err := user.Claims().Encode(account.KeyPair())
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot encode a credential JWT: %v", err)
 		return err
 	}
 
-	userKey, err := user.Seed()
+	userKey, err := user.KeyPair().Seed()
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot encode a credential seed: %v", err)
 		return err
