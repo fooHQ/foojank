@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
+	"github.com/nats-io/jwt/v2"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojankd/flags"
@@ -92,14 +94,16 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell("DESCRIPTION").WithBold(),
 		formatter.NewStringCell("PUBLIC KEY").WithBold(),
 		formatter.NewStringCell("JWT").WithBold(),
+		formatter.NewStringCell("JETSTREAM LIMITS").WithBold(),
 		formatter.NewStringCell("CREATED AT").WithBold(),
 		formatter.NewStringCell("EXPIRES AT").WithBold(),
 	})
 	table.AddRow([]formatter.Cell{
-		formatter.NewStringCell(name),
+		formatter.NewStringCell(accountClaims.Name),
 		formatter.NewStringCell(accountClaims.Description),
 		formatter.NewStringCell(pubKey),
 		formatter.NewStringCell(accountJWT),
+		formatter.NewStringSliceCell(formatLimits(accountClaims.Limits.JetStreamLimits)).WithSeparator("\n"),
 		formatter.NewTimeCell(issued),
 		formatter.NewTimeCell(expires).WithEmptyValue("never"),
 	})
@@ -116,6 +120,13 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	return nil
+}
+
+func formatLimits(limits jwt.JetStreamLimits) []string {
+	return []string{
+		"Disk Storage = " + strconv.FormatInt(limits.DiskStorage, 10),
+		"Memory Storage = " + strconv.FormatInt(limits.MemoryStorage, 10),
+	}
 }
 
 func validateConfiguration(_ *config.Config) error {
