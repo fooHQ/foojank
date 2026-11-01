@@ -170,7 +170,9 @@ func (h *Handler) GetUser(ctx context.Context, params map[string]string, req pro
 
 	userClaims := jwt.NewUserClaims(user.ID)
 	userClaims.Permissions = userPerms
-	userClaims.Expires = user.ExpiresAt.Unix()
+	if !user.ExpiresAt.IsZero() {
+		userClaims.Expires = user.ExpiresAt.Unix()
+	}
 
 	userJWT, err := userClaims.Encode(h.conf.AccountKey)
 	if err != nil {
