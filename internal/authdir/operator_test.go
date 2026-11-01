@@ -379,7 +379,7 @@ func mustOperator(t *testing.T, name string) (string, []byte) {
 	operator, err := auth.GenerateOperator(name)
 	require.NoError(t, err)
 
-	token, err := operator.Encode(operator.KeyPair())
+	token, err := operator.Claims().Encode(operator.KeyPair())
 	require.NoError(t, err)
 
 	seed, err := operator.KeyPair().Seed()
