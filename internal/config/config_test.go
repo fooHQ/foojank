@@ -131,6 +131,68 @@ func TestConfig_Bool(t *testing.T) {
 	}
 }
 
+func TestConfig_Int64(t *testing.T) {
+	cfg := config.NewWithOptions(map[string]string{
+		"int-key":      "42",
+		"negative-key": "-7",
+		"max-key":      "9223372036854775807",
+		"other-key":    "not-an-int",
+		"overflow-key": "9223372036854775808",
+	})
+
+	tests := []struct {
+		name      string
+		key       string
+		wantValue int64
+		wantOk    bool
+	}{
+		{
+			name:      "existing int key",
+			key:       "int-key",
+			wantValue: 42,
+			wantOk:    true,
+		},
+		{
+			name:      "existing negative int key",
+			key:       "negative-key",
+			wantValue: -7,
+			wantOk:    true,
+		},
+		{
+			name:      "max int64",
+			key:       "max-key",
+			wantValue: 9223372036854775807,
+			wantOk:    true,
+		},
+		{
+			name:      "wrong type key",
+			key:       "other-key",
+			wantValue: 0,
+			wantOk:    false,
+		},
+		{
+			name:      "overflow key",
+			key:       "overflow-key",
+			wantValue: 0,
+			wantOk:    false,
+		},
+		{
+			name:      "non-existing key",
+			key:       "missing",
+			wantValue: 0,
+			wantOk:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotValue, gotOk := cfg.Int64(tt.key)
+			require.Equal(t, tt.wantValue, gotValue)
+			require.Equal(t, tt.wantOk, gotOk)
+		})
+	}
+}
+
 func TestParseFile(t *testing.T) {
 	tests := []struct {
 		name     string
