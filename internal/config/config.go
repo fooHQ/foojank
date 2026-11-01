@@ -42,6 +42,18 @@ func (c *Config) StringSlice(name string) ([]string, bool) {
 	return ss, true
 }
 
+func (c *Config) Int64(name string) (int64, bool) {
+	v, ok := c.get(name)
+	if !ok {
+		return 0, false
+	}
+	i, err := strconv.ParseInt(v, 10, 64)
+	if err != nil {
+		return 0, false
+	}
+	return i, true
+}
+
 func (c *Config) get(name string) (string, bool) {
 	v, ok := c.data[name]
 	return v, ok
@@ -160,6 +172,8 @@ func toString(v any) string {
 		return strings.Join(vv, ",")
 	case bool:
 		return strconv.FormatBool(vv)
+	case int64:
+		return strconv.FormatInt(vv, 10)
 	default:
 		return ""
 	}
