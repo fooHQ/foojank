@@ -74,26 +74,6 @@ func (u *User) KeyPair() nkeys.KeyPair {
 	return u.keyPair
 }
 
-func (u *User) Encode(keyPair nkeys.KeyPair) (string, error) {
-	return u.claims.Encode(keyPair)
-}
-
-func NewUserKey() (nkeys.KeyPair, error) {
-	return nkeys.CreateUser()
-}
-
-func NewUserJWT(name string, perms jwt.Permissions, userKey nkeys.KeyPair) (*jwt.UserClaims, error) {
-	userPublicKey, err := userKey.PublicKey()
-	if err != nil {
-		return nil, err
-	}
-
-	claims := jwt.NewUserClaims(userPublicKey)
-	claims.Name = name
-	claims.Permissions = perms
-	return claims, nil
-}
-
 func SetDummyUserJWT(claims *jwt.UserClaims) {
 	claims.Tags.Add("fj:dummy")
 }
