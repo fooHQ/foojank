@@ -115,7 +115,10 @@ func SetupServer(_ io.Writer) cli.BeforeFunc {
 
 		serverURL, _ := conf.String(flags.ServerURL)
 		serverCert, _ := conf.String(flags.ServerCertificate)
-		accountName, _ := conf.String(flags.Account)
+		accountName, ok := conf.String(flags.Account)
+		if !ok || accountName == "" {
+			accountName, _ = conf.String(flags.SystemAccount)
+		}
 
 		accountKey, err := authdir.GetAccountKey(accountName)
 		if err != nil {
