@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/deepnoodle-ai/wonton/tty"
-	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
 	"github.com/urfave/cli/v3"
 
@@ -178,7 +177,7 @@ func createOperator(name string) (*authdir.Operator, error) {
 		return nil, err
 	}
 
-	operatorJWT, err := operator.Encode(operator.KeyPair())
+	operatorJWT, err := operator.Claims().Encode(operator.KeyPair())
 	if err != nil {
 		return nil, err
 	}
@@ -197,22 +196,17 @@ func createOperator(name string) (*authdir.Operator, error) {
 }
 
 func generateUserCreds(name string, accountKey nkeys.KeyPair) (string, string, error) {
-	userKey, err := auth.NewUserKey()
+	user, err := auth.GenerateUser(name)
 	if err != nil {
 		return "", "", err
 	}
 
-	userClaims, err := auth.NewUserJWT(name, jwt.Permissions{}, userKey)
+	userJWT, err := user.Claims().Encode(accountKey)
 	if err != nil {
 		return "", "", err
 	}
 
-	userJWT, err := userClaims.Encode(accountKey)
-	if err != nil {
-		return "", "", err
-	}
-
-	userSeed, err := userKey.Seed()
+	userSeed, err := user.KeyPair().Seed()
 	if err != nil {
 		return "", "", err
 	}
