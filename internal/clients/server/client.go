@@ -59,6 +59,10 @@ func New(ctx context.Context, servers []string, userJWT, userSeed, serverCert st
 		return nil, err
 	}
 
+	if auth.IsDummyUserJWT(userClaims) {
+		return nil, fmt.Errorf("credential %q has not been activated", userClaims.Name)
+	}
+
 	userID := userClaims.Subject
 
 	creds := &credentials{
