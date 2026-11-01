@@ -70,27 +70,21 @@ func action(ctx context.Context, _ *cli.Command) error {
 		name = petname.Generate(2, "_")
 	}
 
-	account, err := auth.NewAccountKey()
+	account, err := auth.GenerateAccount(name)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot generate an account key: %v", err)
 		return err
 	}
 
-	accountClaims, err := auth.NewAccountJWT(name, account)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot generate an account JWT: %v", err)
-		return err
-	}
+	account.Claims().Description = description
 
-	accountClaims.Description = description
-
-	accountJWT, err := accountClaims.Encode(operator.KeyPair())
+	accountJWT, err := account.Claims().Encode(operator.KeyPair())
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot encode account JWT: %v", err)
 		return err
 	}
 
-	accountKey, err := account.Seed()
+	accountKey, err := account.KeyPair().Seed()
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot encode account seed: %v", err)
 		return err
