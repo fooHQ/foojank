@@ -71,7 +71,3 @@ func (o *Operator) Claims() *jwt.OperatorClaims {
 func (o *Operator) KeyPair() nkeys.KeyPair {
 	return o.keyPair
 }
-
-func (o *Operator) Encode(keyPair nkeys.KeyPair) (string, error) {
-	return o.claims.Encode(keyPair)
-}
