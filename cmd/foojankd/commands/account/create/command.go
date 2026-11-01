@@ -7,6 +7,7 @@ import (
 	"os"
 
 	petname "github.com/dustinkirkland/golang-petname"
+	"github.com/nats-io/jwt/v2"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/cmd/foojankd/flags"
@@ -29,6 +30,16 @@ func NewCommand() *cli.Command {
 			&cli.StringFlag{
 				Name:  flags.Description,
 				Usage: "set account description",
+			},
+			&cli.Int64Flag{
+				Name:  flags.JetStreamMemoryStorage,
+				Usage: "set JetStream memory storage limit in bytes (-1 unlimited, 0 disabled)",
+				Value: jwt.NoLimit,
+			},
+			&cli.Int64Flag{
+				Name:  flags.JetStreamDiskStorage,
+				Usage: "set JetStream disk storage limit in bytes (-1 unlimited, 0 disabled)",
+				Value: jwt.NoLimit,
 			},
 		},
 		Before:          before,
@@ -63,11 +74,18 @@ func action(ctx context.Context, _ *cli.Command) error {
 	logger := actions.GetLoggerFromContext(ctx)
 	operator := actions.GetOperatorFromContext(ctx)
 
-	name, _ := conf.String(flags.Name)
-	description, _ := conf.String(flags.Description)
-
-	if name == "" {
+	name, ok := conf.String(flags.Name)
+	if !ok {
 		name = petname.Generate(2, "_")
+	}
+	description, _ := conf.String(flags.Description)
+	memoryStorage, ok := conf.Int64(flags.JetStreamMemoryStorage)
+	if !ok {
+		memoryStorage = jwt.NoLimit
+	}
+	diskStorage, _ := conf.Int64(flags.JetStreamDiskStorage)
+	if !ok {
+		diskStorage = jwt.NoLimit
 	}
 
 	account, err := auth.GenerateAccount(name)
@@ -77,6 +95,8 @@ func action(ctx context.Context, _ *cli.Command) error {
 	}
 
 	account.Claims().Description = description
+	account.Claims().Limits.MemoryStorage = memoryStorage
+	account.Claims().Limits.DiskStorage = diskStorage
 
 	accountJWT, err := account.Claims().Encode(operator.KeyPair())
 	if err != nil {
@@ -104,6 +124,6 @@ func action(ctx context.Context, _ *cli.Command) error {
 	return nil
 }
 
-func validateConfiguration(_ *config.Config) error {
+func validateConfiguration(conf *config.Config) error {
 	return nil
 }
