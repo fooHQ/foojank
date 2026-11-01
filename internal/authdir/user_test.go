@@ -380,18 +380,16 @@ func userFile(t *testing.T, name string) string {
 func mustUser(t *testing.T, name string) (string, []byte) {
 	t.Helper()
 
-	key, err := auth.NewUserKey()
+	user, err := auth.GenerateUser(name)
 	require.NoError(t, err)
 
-	claims, err := auth.NewUserJWT(name, jwt.Permissions{}, key)
+	account, err := auth.GenerateAccount(name)
 	require.NoError(t, err)
 
-	accountKey, err := auth.NewAccountKey()
-	require.NoError(t, err)
-	token, err := claims.Encode(accountKey)
+	token, err := user.Claims().Encode(account.KeyPair())
 	require.NoError(t, err)
 
-	seed, err := key.Seed()
+	seed, err := user.KeyPair().Seed()
 	require.NoError(t, err)
 	return token, seed
 }

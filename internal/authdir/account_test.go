@@ -434,17 +434,15 @@ func writeCreds(t *testing.T, path, token string, seed []byte) {
 func mustAccount(t *testing.T, name, description string) (string, []byte) {
 	t.Helper()
 
-	key, err := auth.NewAccountKey()
+	account, err := auth.GenerateAccount(name)
 	require.NoError(t, err)
 
-	claims, err := auth.NewAccountJWT(name, key)
-	require.NoError(t, err)
-	claims.Description = description
+	account.Claims().Description = description
 
-	token, err := claims.Encode(key)
+	token, err := account.Claims().Encode(account.KeyPair())
 	require.NoError(t, err)
 
-	seed, err := key.Seed()
+	seed, err := account.KeyPair().Seed()
 	require.NoError(t, err)
 	return token, seed
 }
