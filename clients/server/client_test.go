@@ -15,8 +15,8 @@ import (
 	"github.com/nats-io/nkeys"
 	"github.com/stretchr/testify/require"
 
+	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/internal/auth"
-	"github.com/foohq/foojank/internal/clients/server"
 )
 
 func TestOnConnectReusesConnection(t *testing.T) {

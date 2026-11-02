@@ -10,10 +10,10 @@ import (
 	"github.com/deepnoodle-ai/wonton/tty"
 	"github.com/urfave/cli/v3"
 
+	"github.com/foohq/foojank/clients/daemon"
+	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/cmd/foojank/flags"
 	"github.com/foohq/foojank/internal/authdir"
-	"github.com/foohq/foojank/internal/clients/daemon"
-	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/configdir"
 	"github.com/foohq/foojank/internal/log"

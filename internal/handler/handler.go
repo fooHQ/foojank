@@ -13,8 +13,8 @@ import (
 	"github.com/nats-io/nkeys"
 	"github.com/nats-io/nuid"
 
+	"github.com/foohq/foojank/clients/gateway"
 	"github.com/foohq/foojank/internal/auth"
-	"github.com/foohq/foojank/internal/clients/gateway"
 	"github.com/foohq/foojank/internal/directory"
 	"github.com/foohq/foojank/internal/log"
 	"github.com/foohq/foojank/internal/privilege"

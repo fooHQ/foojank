@@ -11,10 +11,10 @@ import (
 	"github.com/nats-io/nkeys"
 	"github.com/urfave/cli/v3"
 
+	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/cmd/foojankd/flags"
 	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/authdir"
-	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/log"
 )

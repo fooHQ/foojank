@@ -7,7 +7,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nuid"
 
-	"github.com/foohq/foojank/internal/clients/server"
+	"github.com/foohq/foojank/clients/server"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 

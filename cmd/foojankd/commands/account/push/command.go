@@ -8,10 +8,10 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/foohq/foojank/clients/resolver"
 	"github.com/foohq/foojank/cmd/foojankd/actions"
 	"github.com/foohq/foojank/cmd/foojankd/flags"
 	"github.com/foohq/foojank/internal/authdir"
-	"github.com/foohq/foojank/internal/clients/resolver"
 	"github.com/foohq/foojank/internal/config"
 )
 

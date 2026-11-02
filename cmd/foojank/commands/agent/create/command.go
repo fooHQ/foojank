@@ -11,9 +11,9 @@ import (
 	petname "github.com/dustinkirkland/golang-petname"
 	"github.com/urfave/cli/v3"
 
+	"github.com/foohq/foojank/clients/daemon"
 	"github.com/foohq/foojank/cmd/foojank/actions"
 	"github.com/foohq/foojank/cmd/foojank/flags"
-	"github.com/foohq/foojank/internal/clients/daemon"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/profile"
 	protodaemon "github.com/foohq/foojank/proto/daemon"

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/foohq/foojank/internal/clients/server"
+	"github.com/foohq/foojank/clients/server"
 )
 
 const updateAccountClaimsSubject = "$SYS.REQ.CLAIMS.UPDATE"

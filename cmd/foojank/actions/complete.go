@@ -12,10 +12,10 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/foohq/foojank/clients/daemon"
+	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/cmd/foojank/flags"
 	"github.com/foohq/foojank/internal/authdir"
-	"github.com/foohq/foojank/internal/clients/daemon"
-	"github.com/foohq/foojank/internal/clients/server"
 	"github.com/foohq/foojank/internal/formatter"
 	"github.com/foohq/foojank/internal/profile"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
