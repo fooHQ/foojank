@@ -14,8 +14,6 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nats-io/nkeys"
-
-	"github.com/foohq/foojank/internal/auth"
 )
 
 // OnConnectFunc is called once the client is connected with the credentials
@@ -66,10 +64,6 @@ func New(ctx context.Context, servers []string, userJWT, userSeed, serverCert st
 	userClaims, err := jwt.DecodeUserClaims(userJWT)
 	if err != nil {
 		return nil, err
-	}
-
-	if auth.IsDummyUserJWT(userClaims) {
-		return nil, fmt.Errorf("credential %q has not been activated", userClaims.Name)
 	}
 
 	userID := userClaims.Subject
