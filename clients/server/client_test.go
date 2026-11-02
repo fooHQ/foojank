@@ -3,6 +3,7 @@ package server_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/foohq/foojank/clients/server"
-	"github.com/foohq/foojank/internal/auth"
 )
 
 func TestOnConnectReusesConnection(t *testing.T) {
@@ -24,11 +24,11 @@ func TestOnConnectReusesConnection(t *testing.T) {
 
 	limited, limitedSeed := env.userCreds(t, userKP, jwt.Permissions{
 		Pub: jwt.Permission{Allow: []string{"issue.jwt"}},
-		Sub: jwt.Permission{Allow: []string{auth.InboxPrefix(userPub) + ".>"}},
+		Sub: jwt.Permission{Allow: []string{inboxPrefix(userPub) + ".>"}},
 	})
 	upgraded, _ := env.userCreds(t, userKP, jwt.Permissions{
 		Pub: jwt.Permission{Allow: []string{"upgraded.subject"}},
-		Sub: jwt.Permission{Allow: []string{auth.InboxPrefix(userPub) + ".>"}},
+		Sub: jwt.Permission{Allow: []string{inboxPrefix(userPub) + ".>"}},
 	})
 	upgradedClaims, err := jwt.DecodeUserClaims(upgraded)
 	require.NoError(t, err)
@@ -56,6 +56,7 @@ func TestOnConnectReusesConnection(t *testing.T) {
 		limited,
 		limitedSeed,
 		"",
+		server.WithInboxPrefix(inboxPrefix(userPub)),
 		server.WithOnConnect(func(_ context.Context, nc *nats.Conn) (string, error) {
 			calls++
 			connected = nc
@@ -235,6 +236,47 @@ func TestNewWithoutOnConnect(t *testing.T) {
 	require.Equal(t, publicKey(t, userKP), client.UserID())
 }
 
+func TestWithInboxPrefix(t *testing.T) {
+	env := startOperatorServer(t)
+	userKP := mustUserKey(t)
+	prefix := "_INBOX.custom"
+	token, seed := env.userCreds(t, userKP, jwt.Permissions{
+		Pub: jwt.Permission{Allow: []string{"echo"}},
+		Sub: jwt.Permission{Allow: []string{prefix + ".>"}},
+	})
+
+	replies := make(chan string, 1)
+	daemonNC := env.connect(t, jwt.Permissions{})
+	_, err := daemonNC.Subscribe("echo", func(msg *nats.Msg) {
+		replies <- msg.Reply
+		_ = msg.Respond([]byte("pong"))
+	})
+	require.NoError(t, err)
+	require.NoError(t, daemonNC.Flush())
+
+	client, err := server.New(
+		context.Background(),
+		[]string{env.srv.ClientURL()},
+		token,
+		seed,
+		"",
+		server.WithInboxPrefix(prefix),
+	)
+	require.NoError(t, err)
+	t.Cleanup(func() { client.Conn().Close() })
+
+	msg, err := client.Conn().Request("echo", []byte("ping"), 2*time.Second)
+	require.NoError(t, err)
+	require.Equal(t, "pong", string(msg.Data))
+
+	select {
+	case reply := <-replies:
+		require.True(t, strings.HasPrefix(reply, prefix+"."))
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for the request inbox")
+	}
+}
+
 type operatorEnv struct {
 	srv     *natssrv.Server
 	account nkeys.KeyPair
@@ -315,4 +357,8 @@ func publicKey(t *testing.T, kp nkeys.KeyPair) string {
 	pub, err := kp.PublicKey()
 	require.NoError(t, err)
 	return pub
+}
+
+func inboxPrefix(name string) string {
+	return "_INBOX." + name
 }

@@ -33,13 +33,22 @@ type OnConnectFunc func(ctx context.Context, nc *nats.Conn) (string, error)
 type Option func(*clientOptions)
 
 type clientOptions struct {
-	onConnect OnConnectFunc
+	onConnect   OnConnectFunc
+	inboxPrefix string
 }
 
 // WithOnConnect sets the function called after the initial connection succeeds.
 func WithOnConnect(fn OnConnectFunc) Option {
 	return func(o *clientOptions) {
 		o.onConnect = fn
+	}
+}
+
+// WithInboxPrefix sets the NATS inbox prefix for request and reply subjects.
+// An empty prefix keeps the default.
+func WithInboxPrefix(prefix string) Option {
+	return func(o *clientOptions) {
+		o.inboxPrefix = prefix
 	}
 }
 
@@ -72,8 +81,12 @@ func New(ctx context.Context, servers []string, userJWT, userSeed, serverCert st
 
 	natsOpts := []nats.Option{
 		nats.MaxReconnects(-1),
-		nats.CustomInboxPrefix(auth.InboxPrefix(userID)),
 	}
+
+	if o.inboxPrefix != "" {
+		natsOpts = append(natsOpts, nats.CustomInboxPrefix(o.inboxPrefix))
+	}
+
 	if userJWT != "" && userSeed != "" {
 		natsOpts = append(natsOpts, nats.UserJWT(creds.userJWT, creds.sign))
 	}
