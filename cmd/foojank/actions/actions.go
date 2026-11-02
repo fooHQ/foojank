@@ -13,6 +13,7 @@ import (
 	"github.com/foohq/foojank/clients/daemon"
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/authdir"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/configdir"
@@ -241,6 +242,12 @@ func SetupServer(_ io.Writer) cli.BeforeFunc {
 				err = fmt.Errorf("%q not found", credsName)
 			}
 			logger.ErrorContext(ctx, "Cannot read credential: %v", err)
+			return ctx, err
+		}
+
+		if auth.IsDummyUserJWT(user.Claims()) {
+			err := fmt.Errorf("%q has not been activated", user.Claims().Name)
+			logger.ErrorContext(ctx, "Cannot use credential: %v", err)
 			return ctx, err
 		}
 

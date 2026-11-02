@@ -15,6 +15,7 @@ import (
 	"github.com/foohq/foojank/clients/daemon"
 	"github.com/foohq/foojank/clients/server"
 	"github.com/foohq/foojank/cmd/foojank/flags"
+	"github.com/foohq/foojank/internal/auth"
 	"github.com/foohq/foojank/internal/authdir"
 	"github.com/foohq/foojank/internal/formatter"
 	"github.com/foohq/foojank/internal/profile"
@@ -563,6 +564,11 @@ func daemonClient(ctx context.Context) (*daemon.Client, error) {
 		if errors.Is(err, authdir.ErrUserNotFound) {
 			err = fmt.Errorf("%q not found", credsName)
 		}
+		return nil, err
+	}
+
+	if auth.IsDummyUserJWT(user.Claims()) {
+		err := fmt.Errorf("%q has not been activated", user.Claims().Name)
 		return nil, err
 	}
 
