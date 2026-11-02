@@ -124,30 +124,6 @@ func New(ctx context.Context, servers []string, userJWT, userSeed, serverCert st
 	}, nil
 }
 
-func NewWithCredsFile(ctx context.Context, servers []string, credsFile string, serverCert string, opts ...Option) (*Client, error) {
-	b, err := os.ReadFile(credsFile)
-	if err != nil {
-		return nil, err
-	}
-
-	userJWT, err := jwt.ParseDecoratedJWT(b)
-	if err != nil {
-		return nil, err
-	}
-
-	userKey, err := jwt.ParseDecoratedUserNKey(b)
-	if err != nil {
-		return nil, err
-	}
-
-	userSeed, err := userKey.Seed()
-	if err != nil {
-		return nil, err
-	}
-
-	return New(ctx, servers, userJWT, string(userSeed), serverCert, opts...)
-}
-
 func (c *Client) UserID() string {
 	return c.userID
 }

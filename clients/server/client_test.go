@@ -3,8 +3,6 @@ package server_test
 import (
 	"context"
 	"errors"
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -225,34 +223,6 @@ func TestOnConnectAuthFailure(t *testing.T) {
 	}, 2*time.Second, 10*time.Millisecond)
 }
 
-func TestNewWithCredsFileOnConnect(t *testing.T) {
-	env := startOperatorServer(t)
-	userKP := mustUserKey(t)
-	userPub := publicKey(t, userKP)
-	token, seed := env.userCreds(t, userKP, jwt.Permissions{})
-
-	dir := t.TempDir()
-	path := filepath.Join(dir, "user.creds")
-	require.NoError(t, os.WriteFile(path, decorateCreds(t, token, []byte(seed)), 0o600))
-
-	called := false
-	client, err := server.NewWithCredsFile(
-		context.Background(),
-		[]string{env.srv.ClientURL()},
-		path,
-		"",
-		server.WithOnConnect(func(_ context.Context, nc *nats.Conn) (string, error) {
-			called = true
-			require.True(t, nc.IsConnected())
-			return token, nil
-		}),
-	)
-	require.NoError(t, err)
-	t.Cleanup(func() { client.Conn().Close() })
-	require.True(t, called)
-	require.Equal(t, userPub, client.UserID())
-}
-
 func TestNewWithoutOnConnect(t *testing.T) {
 	env := startOperatorServer(t)
 	userKP := mustUserKey(t)
@@ -345,13 +315,4 @@ func publicKey(t *testing.T, kp nkeys.KeyPair) string {
 	pub, err := kp.PublicKey()
 	require.NoError(t, err)
 	return pub
-}
-
-func decorateCreds(t *testing.T, token string, seed []byte) []byte {
-	t.Helper()
-	data, err := jwt.DecorateJWT(token)
-	require.NoError(t, err)
-	decorated, err := jwt.DecorateSeed(seed)
-	require.NoError(t, err)
-	return append(data, decorated...)
 }
