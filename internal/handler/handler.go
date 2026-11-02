@@ -22,6 +22,7 @@ import (
 
 	"github.com/foohq/foojank/internal/message"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
+	protoinbox "github.com/foohq/foojank/proto/inbox"
 )
 
 type Config struct {
@@ -160,7 +161,7 @@ func (h *Handler) GetUser(ctx context.Context, params map[string]string, req pro
 		}
 	}
 
-	userPerms, err := auth.NewRefreshTokenPermissions(user.ID)
+	userPerms, err := newRefreshTokenPermissions(user.ID)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot create client permissions: %v", err)
 		return protodaemon.GetUserResponse{
@@ -425,7 +426,7 @@ func (h *Handler) IssueJWT(ctx context.Context, params map[string]string, req pr
 		}
 	}
 
-	userPerms, err := auth.NewClientPermissions(user.ID, userPrivs.Permissions())
+	userPerms, err := newClientPermissions(user.ID, userPrivs.Permissions())
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot create client permissions: %v", err)
 		return protodaemon.IssueJWTResponse{
@@ -790,7 +791,7 @@ func (h *Handler) CreateGateway(ctx context.Context, params map[string]string, r
 		}
 	}
 
-	user.Claims().Permissions = auth.NewGatewayPermissions(gatewayID)
+	user.Claims().Permissions = newGatewayPermissions(gatewayID)
 
 	gatewayJWT, err := user.Claims().Encode(h.conf.AccountKey)
 	if err != nil {
@@ -1346,4 +1347,63 @@ func copyDirectoryCommands(in map[string]directory.AgentCommand) map[string]prot
 		}
 	}
 	return out
+}
+
+func newClientPermissions(clientID string, pubPerms []string) (jwt.Permissions, error) {
+	return jwt.Permissions{
+		Pub: jwt.Permission{
+			Allow: append([]string{
+				protoinbox.Prefix("*") + ".>",
+			}, pubPerms...),
+		},
+		Sub: jwt.Permission{
+			Allow: []string{
+				protoinbox.Prefix(clientID) + ".>",
+			},
+		},
+	}, nil
+}
+
+func newRefreshTokenPermissions(clientID string) (jwt.Permissions, error) {
+	return jwt.Permissions{
+		Pub: jwt.Permission{
+			Allow: []string{
+				protodaemon.IssueJWTSubject(clientID),
+				protoinbox.Prefix("*") + ".>",
+			},
+		},
+		Sub: jwt.Permission{
+			Allow: []string{
+				protoinbox.Prefix(clientID) + ".>",
+			},
+		},
+	}, nil
+}
+
+func newGatewayPermissions(gatewayID string) jwt.Permissions {
+	return jwt.Permissions{
+		Pub: jwt.Permission{
+			Allow: []string{
+				/*"$JS.API.STREAM.INFO." + gatewayID,
+				"$JS.API.STREAM.INFO.OBJ_" + gatewayID,
+				"$JS.API.STREAM.PURGE.OBJ_" + gatewayID,*/
+				fmt.Sprintf("$JS.API.CONSUMER.INFO.%s.%s", gatewayID, gatewayID),
+				fmt.Sprintf("$JS.API.CONSUMER.MSG.NEXT.%s.%s", gatewayID, gatewayID),
+				fmt.Sprintf("$JS.ACK.%s.%s.>", gatewayID, gatewayID),
+				protoinbox.Prefix("*") + ".>",
+				/*fmt.Sprintf("$JS.API.CONSUMER.CREATE.OBJ_%s.>", gatewayID),
+				fmt.Sprintf("$JS.API.CONSUMER.DELETE.OBJ_%s.*", gatewayID),
+				fmt.Sprintf("$JS.API.DIRECT.GET.OBJ_%s.>", gatewayID),*/
+				/*fmt.Sprintf("$O.%s.M.*", gatewayID),
+				fmt.Sprintf("$O.%s.C.*", gatewayID),*/
+			},
+		},
+		Sub: jwt.Permission{
+			Allow: []string{
+				protoinbox.Prefix(gatewayID) + ".>",
+				protogw.RegisterAgentSubject(gatewayID),
+				protogw.UnregisterAgentSubject(gatewayID),
+			},
+		},
+	}
 }
