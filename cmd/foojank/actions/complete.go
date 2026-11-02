@@ -583,7 +583,7 @@ func daemonClient(ctx context.Context) (*daemon.Client, error) {
 		[]string{serverURL},
 		userJWT,
 		string(userSeed),
-		serverCert,
+		server.WithServerCert(serverCert),
 		server.WithOnConnect(daemon.IssueUserJWT),
 	)
 	if err != nil {

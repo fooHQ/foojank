@@ -33,6 +33,7 @@ type Option func(*clientOptions)
 type clientOptions struct {
 	onConnect   OnConnectFunc
 	inboxPrefix string
+	serverCert  string
 }
 
 // WithOnConnect sets the function called after the initial connection succeeds.
@@ -50,12 +51,20 @@ func WithInboxPrefix(prefix string) Option {
 	}
 }
 
+// WithServerCert sets the path to a PEM file of certificates used to verify
+// the server. An empty path leaves TLS verification unchanged.
+func WithServerCert(path string) Option {
+	return func(o *clientOptions) {
+		o.serverCert = path
+	}
+}
+
 type Client struct {
 	jetstream.JetStream
 	userID string
 }
 
-func New(ctx context.Context, servers []string, userJWT, userSeed, serverCert string, opts ...Option) (*Client, error) {
+func New(ctx context.Context, servers []string, userJWT, userSeed string, opts ...Option) (*Client, error) {
 	var o clientOptions
 	for _, opt := range opts {
 		opt(&o)
@@ -85,9 +94,9 @@ func New(ctx context.Context, servers []string, userJWT, userSeed, serverCert st
 		natsOpts = append(natsOpts, nats.UserJWT(creds.userJWT, creds.sign))
 	}
 
-	if serverCert != "" {
+	if o.serverCert != "" {
 		natsOpts = append(natsOpts, nats.TLSHandshakeFirst())
-		b, err := os.ReadFile(serverCert)
+		b, err := os.ReadFile(o.serverCert)
 		if err != nil {
 			return nil, err
 		}

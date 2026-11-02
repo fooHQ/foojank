@@ -3,6 +3,8 @@ package server_test
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -55,7 +57,6 @@ func TestOnConnectReusesConnection(t *testing.T) {
 		[]string{env.srv.ClientURL()},
 		limited,
 		limitedSeed,
-		"",
 		server.WithInboxPrefix(inboxPrefix(userPub)),
 		server.WithOnConnect(func(_ context.Context, nc *nats.Conn) (string, error) {
 			calls++
@@ -113,7 +114,6 @@ func TestOnConnectRejectsEmptyJWT(t *testing.T) {
 		[]string{env.srv.ClientURL()},
 		token,
 		seed,
-		"",
 		server.WithOnConnect(func(context.Context, *nats.Conn) (string, error) {
 			return "", nil
 		}),
@@ -131,7 +131,6 @@ func TestOnConnectCallbackError(t *testing.T) {
 		[]string{env.srv.ClientURL()},
 		token,
 		seed,
-		"",
 		server.WithOnConnect(func(context.Context, *nats.Conn) (string, error) {
 			return "", errors.New("boom")
 		}),
@@ -182,7 +181,6 @@ func TestOnConnectRejectsInvalidJWT(t *testing.T) {
 				[]string{env.srv.ClientURL()},
 				token,
 				seed,
-				"",
 				server.WithOnConnect(func(context.Context, *nats.Conn) (string, error) {
 					return tt.jwt, nil
 				}),
@@ -213,7 +211,6 @@ func TestOnConnectAuthFailure(t *testing.T) {
 		[]string{env.srv.ClientURL()},
 		token,
 		seed,
-		"",
 		server.WithOnConnect(func(context.Context, *nats.Conn) (string, error) {
 			return badJWT, nil
 		}),
@@ -229,11 +226,26 @@ func TestNewWithoutOnConnect(t *testing.T) {
 	userKP := mustUserKey(t)
 	token, seed := env.userCreds(t, userKP, jwt.Permissions{})
 
-	client, err := server.New(context.Background(), []string{env.srv.ClientURL()}, token, seed, "")
+	client, err := server.New(context.Background(), []string{env.srv.ClientURL()}, token, seed)
 	require.NoError(t, err)
 	t.Cleanup(func() { client.Conn().Close() })
 	require.True(t, client.Conn().IsConnected())
 	require.Equal(t, publicKey(t, userKP), client.UserID())
+}
+
+func TestWithServerCert(t *testing.T) {
+	env := startOperatorServer(t)
+	userKP := mustUserKey(t)
+	token, seed := env.userCreds(t, userKP, jwt.Permissions{})
+
+	_, err := server.New(
+		context.Background(),
+		[]string{env.srv.ClientURL()},
+		token,
+		seed,
+		server.WithServerCert(filepath.Join(t.TempDir(), "missing.pem")),
+	)
+	require.ErrorIs(t, err, os.ErrNotExist)
 }
 
 func TestWithInboxPrefix(t *testing.T) {
@@ -259,7 +271,6 @@ func TestWithInboxPrefix(t *testing.T) {
 		[]string{env.srv.ClientURL()},
 		token,
 		seed,
-		"",
 		server.WithInboxPrefix(prefix),
 	)
 	require.NoError(t, err)

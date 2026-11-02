@@ -135,7 +135,7 @@ func SetupServer(_ io.Writer) cli.BeforeFunc {
 			return ctx, err
 		}
 
-		srv, err := server.New(ctx, []string{serverURL}, userJWT, userKey, serverCert)
+		srv, err := server.New(ctx, []string{serverURL}, userJWT, userKey, server.WithServerCert(serverCert))
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot connect to the server: %v", err)
 			return ctx, err

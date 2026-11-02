@@ -263,7 +263,7 @@ func SetupServer(_ io.Writer) cli.BeforeFunc {
 			[]string{serverURL},
 			userJWT,
 			string(userSeed),
-			serverCert,
+			server.WithServerCert(serverCert),
 			server.WithOnConnect(daemon.IssueUserJWT),
 		)
 		if err != nil {
