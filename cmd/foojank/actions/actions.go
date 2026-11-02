@@ -235,7 +235,7 @@ func SetupServer(_ io.Writer) cli.BeforeFunc {
 		serverCert, _ := conf.String(flags.ServerCertificate)
 		credsName, _ := conf.String(flags.Credential)
 
-		credsFile, err := authdir.GetUserPath(credsName)
+		user, err := authdir.GetUser(credsName)
 		if err != nil {
 			if errors.Is(err, authdir.ErrUserNotFound) {
 				err = fmt.Errorf("%q not found", credsName)
@@ -244,10 +244,18 @@ func SetupServer(_ io.Writer) cli.BeforeFunc {
 			return ctx, err
 		}
 
-		srv, err := server.NewWithCredsFile(
+		userJWT := user.JWT()
+		userSeed, err := user.KeyPair().Seed()
+		if err != nil {
+			logger.ErrorContext(ctx, "Cannot get credential seed: %v", err)
+			return ctx, err
+		}
+
+		srv, err := server.New(
 			ctx,
 			[]string{serverURL},
-			credsFile,
+			userJWT,
+			string(userSeed),
 			serverCert,
 			server.WithOnConnect(daemon.IssueUserJWT),
 		)
