@@ -771,7 +771,7 @@ func (h *Handler) CreateGateway(ctx context.Context, params map[string]string, r
 		}
 	}
 
-	gatewayID := req.ID
+	gatewayID := req.PublicKey
 	gatewayName := req.Name
 	gatewayDesc := req.Description
 	gatewayConf := req.Config

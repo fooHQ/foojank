@@ -344,13 +344,13 @@ func TestValidateCreateGatewayRequest(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			req:  protodaemon.CreateGatewayRequest{ID: id, Name: "gw1"},
+			req:  protodaemon.CreateGatewayRequest{PublicKey: id, Name: "gw1"},
 		},
 		{
 			name: "invalid gateway id",
 			req: protodaemon.CreateGatewayRequest{
-				ID:   "gw1",
-				Name: "gw1",
+				PublicKey: "gw1",
+				Name:      "gw1",
 			},
 			wantErr: "invalid gateway id",
 		},
@@ -363,14 +363,14 @@ func TestValidateCreateGatewayRequest(t *testing.T) {
 		},
 		{
 			name:    "empty name",
-			req:     protodaemon.CreateGatewayRequest{ID: id},
+			req:     protodaemon.CreateGatewayRequest{PublicKey: id},
 			wantErr: "name is required",
 		},
 		{
 			name: "invalid name",
 			req: protodaemon.CreateGatewayRequest{
-				ID:   id,
-				Name: "bad name",
+				PublicKey: id,
+				Name:      "bad name",
 			},
 			wantIs: directory.ErrNameInvalid,
 		},
