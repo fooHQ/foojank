@@ -25,7 +25,7 @@ func validateRef(ref string) error {
 
 func ValidateCreateUserRequest(req protodaemon.CreateUserRequest) error {
 	if !nkeys.IsValidPublicUserKey(req.PublicKey) {
-		return errors.New("invalid user id")
+		return errors.New("invalid public key")
 	}
 	return validateName(req.Name)
 }
@@ -82,7 +82,7 @@ func ValidateListCommandsRequest(req protodaemon.ListCommandsRequest) error {
 
 func ValidateCreateGatewayRequest(req protodaemon.CreateGatewayRequest) error {
 	if !nkeys.IsValidPublicUserKey(req.PublicKey) {
-		return errors.New("invalid gateway id")
+		return errors.New("invalid public key")
 	}
 	return validateName(req.Name)
 }
