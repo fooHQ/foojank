@@ -26,6 +26,10 @@ func NewCommand() *cli.Command {
 				Usage: "set gateway name",
 			},
 			&cli.StringFlag{
+				Name:  flags.PublicKey,
+				Usage: "set gateway's public key",
+			},
+			&cli.StringFlag{
 				Name:  flags.Description,
 				Usage: "set gateway description",
 			},
@@ -84,12 +88,14 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	srv := actions.GetServerFromContext(ctx)
 
 	gatewayName, _ := conf.String(flags.Name)
+	gatewayPubKey, _ := conf.String(flags.PublicKey)
 	gatewayDesc, _ := conf.String(flags.Description)
 	setVars, _ := conf.StringSlice(flags.Variable)
 
 	client := daemon.New(srv)
 
 	_, err = client.CreateGateway(ctx, protodaemon.CreateGatewayRequest{
+		ID:          gatewayPubKey,
 		Name:        gatewayName,
 		Description: gatewayDesc,
 		Config: protodaemon.GatewayConfig{
@@ -122,6 +128,7 @@ func parseKVPairs(pairs []string) map[string]string {
 func validateConfiguration(conf *config.Config) error {
 	for _, opt := range []string{
 		flags.Name,
+		flags.PublicKey,
 		flags.ServerURL,
 		flags.Credential,
 	} {
@@ -130,6 +137,11 @@ func validateConfiguration(conf *config.Config) error {
 			v, ok := conf.String(opt)
 			if !ok || v == "" {
 				return errors.New("gateway name not configured")
+			}
+		case flags.PublicKey:
+			v, ok := conf.String(opt)
+			if !ok || v == "" {
+				return errors.New("public key not configured")
 			}
 		case flags.ServerURL:
 			v, ok := conf.String(opt)
