@@ -81,6 +81,9 @@ func ValidateListCommandsRequest(req protodaemon.ListCommandsRequest) error {
 }
 
 func ValidateCreateGatewayRequest(req protodaemon.CreateGatewayRequest) error {
+	if !nkeys.IsValidPublicUserKey(req.ID) {
+		return errors.New("invalid gateway id")
+	}
 	return validateName(req.Name)
 }
 
