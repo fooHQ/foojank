@@ -42,14 +42,14 @@ func TestValidateCreateUserRequest(t *testing.T) {
 				PublicKey: "alice",
 				Name:      "alice",
 			},
-			wantErr: "invalid user id",
+			wantErr: "invalid public key",
 		},
 		{
 			name: "empty user id",
 			req: protodaemon.CreateUserRequest{
 				Name: "alice",
 			},
-			wantErr: "invalid user id",
+			wantErr: "invalid public key",
 		},
 		{
 			name: "empty name",
@@ -350,14 +350,14 @@ func TestValidateCreateGatewayRequest(t *testing.T) {
 				PublicKey: "gw1",
 				Name:      "gw1",
 			},
-			wantErr: "invalid gateway id",
+			wantErr: "invalid public key",
 		},
 		{
 			name: "empty gateway id",
 			req: protodaemon.CreateGatewayRequest{
 				Name: "gw1",
 			},
-			wantErr: "invalid gateway id",
+			wantErr: "invalid public key",
 		},
 		{
 			name:    "empty name",
