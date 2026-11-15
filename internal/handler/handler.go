@@ -139,7 +139,7 @@ func (h *Handler) CreateUser(ctx context.Context, params map[string]string, req 
 		}
 	}
 
-	_, err = h.conf.UserDirectory.Create(ctx, directory.UserDirectoryEntry{
+	user, err := h.conf.UserDirectory.Create(ctx, directory.UserDirectoryEntry{
 		ID:          userID,
 		Name:        userName,
 		Description: userDesc,
@@ -158,7 +158,9 @@ func (h *Handler) CreateUser(ctx context.Context, params map[string]string, req 
 		}
 	}
 
-	return protodaemon.CreateUserResponse{}
+	return protodaemon.CreateUserResponse{
+		ID: user.ID,
+	}
 }
 
 func (h *Handler) GetUser(ctx context.Context, params map[string]string, req protodaemon.GetUserRequest) protodaemon.GetUserResponse {
