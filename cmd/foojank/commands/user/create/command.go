@@ -123,9 +123,9 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	}
 
 	_, err = client.CreateUser(ctx, protodaemon.CreateUserRequest{
-		ID:          userPubKey,
 		Name:        userName,
 		Description: userDesc,
+		PublicKey:   userPubKey,
 		Privileges:  setPrivileges,
 	})
 	if err != nil {
