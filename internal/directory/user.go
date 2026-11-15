@@ -98,6 +98,7 @@ type UserDirectoryEntry struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
+	JWT         string    `json:"jwt"`
 	Privileges  []string  `json:"privileges"`
 	CreatedAt   time.Time `json:"created_at"`
 	ExpiresAt   time.Time `json:"expires_at"`
