@@ -62,7 +62,6 @@ func TestMarshalUnmarshal(t *testing.T) {
 		Description: "edge gateway",
 		Config: daemon.GatewayConfig{
 			JWT:   "header.payload.sig",
-			Key:   "SUDUMMYGATEWAYSEED",
 			Extra: map[string]string{"key1": "val1", "key2": "val2"},
 		},
 	}
@@ -312,7 +311,6 @@ func TestMarshalUnmarshal(t *testing.T) {
 				PublicKey:   "UDUMMYGATEWAYPUBLICKEY",
 				Config: daemon.GatewayConfig{
 					JWT:   "header.payload.sig",
-					Key:   "SUDUMMYGATEWAYSEED",
 					Extra: map[string]string{"key1": "val1", "key2": "val2"},
 				},
 			},
@@ -322,7 +320,6 @@ func TestMarshalUnmarshal(t *testing.T) {
 				PublicKey:   "UDUMMYGATEWAYPUBLICKEY",
 				Config: daemon.GatewayConfig{
 					JWT:   "header.payload.sig",
-					Key:   "SUDUMMYGATEWAYSEED",
 					Extra: map[string]string{"key1": "val1", "key2": "val2"},
 				},
 			},
