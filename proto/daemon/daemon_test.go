@@ -338,9 +338,13 @@ func TestMarshalUnmarshal(t *testing.T) {
 			},
 		},
 		{
-			name:  "CreateGatewayResponse",
-			input: daemon.CreateGatewayResponse{},
-			want:  daemon.CreateGatewayResponse{},
+			name: "CreateGatewayResponse",
+			input: daemon.CreateGatewayResponse{
+				ID: "UDUMMYGATEWAYPUBLICKEY",
+			},
+			want: daemon.CreateGatewayResponse{
+				ID: "UDUMMYGATEWAYPUBLICKEY",
+			},
 		},
 		{
 			name:  "CreateGatewayResponse with error",
