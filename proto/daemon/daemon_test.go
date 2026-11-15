@@ -26,13 +26,11 @@ func TestMarshalUnmarshal(t *testing.T) {
 		Description: "web agent",
 		GatewayID:   "UDUMMYGATEWAYPUBLICKEY",
 		GatewayName: "gw1",
-		Config: daemon.AgentConfig{
-			OS:    "linux",
-			Arch:  "amd64",
-			JWT:   "header.payload.sig",
-			Key:   "SUDUMMYAGENTSEED",
-			Extra: map[string]string{"key1": "val1", "key2": "val2"},
-		},
+		OS:          "linux",
+		Arch:        "amd64",
+		JWT:         "header.payload.sig",
+		Key:         "SUDUMMYAGENTSEED",
+		Extra:       map[string]string{"key1": "val1", "key2": "val2"},
 		Commands: map[string]daemon.AgentCommand{
 			"ls": {
 				Description: "List a directory",
@@ -207,42 +205,28 @@ func TestMarshalUnmarshal(t *testing.T) {
 				Name:        "web",
 				Description: "web agent",
 				GatewayRef:  "gw1",
-				Config: daemon.AgentConfig{
-					OS:    "linux",
-					Arch:  "amd64",
-					JWT:   "header.payload.sig",
-					Key:   "SUDUMMYAGENTSEED",
-					Extra: map[string]string{"key1": "val1", "key2": "val2"},
-				},
-				Commands: testAgent.Commands,
+				OS:          "linux",
+				Arch:        "amd64",
+				Extra:       map[string]string{"key1": "val1", "key2": "val2"},
+				Commands:    testAgent.Commands,
 			},
 			want: daemon.CreateAgentRequest{
 				Name:        "web",
 				Description: "web agent",
 				GatewayRef:  "gw1",
-				Config: daemon.AgentConfig{
-					OS:    "linux",
-					Arch:  "amd64",
-					JWT:   "header.payload.sig",
-					Key:   "SUDUMMYAGENTSEED",
-					Extra: map[string]string{"key1": "val1", "key2": "val2"},
-				},
-				Commands: testAgent.Commands,
+				OS:          "linux",
+				Arch:        "amd64",
+				Extra:       map[string]string{"key1": "val1", "key2": "val2"},
+				Commands:    testAgent.Commands,
 			},
 		},
 		{
 			name: "CreateAgentRequest with empty fields",
 			input: daemon.CreateAgentRequest{
-				Config: daemon.AgentConfig{
-					Extra: map[string]string{},
-				},
+				Extra:    map[string]string{},
 				Commands: map[string]daemon.AgentCommand{},
 			},
-			want: daemon.CreateAgentRequest{
-				Config: daemon.AgentConfig{
-					Extra: nil,
-				},
-			},
+			want: daemon.CreateAgentRequest{},
 		},
 		{
 			name:  "CreateAgentResponse",

@@ -110,8 +110,8 @@ func action(ctx context.Context, _ *cli.Command) error {
 		table.AddRow([]formatter.Cell{
 			formatter.NewStringCell(agent.Name),
 			formatter.NewStringCell(gatewayName),
-			formatter.NewStringCell(agent.Config.OS),
-			formatter.NewStringCell(agent.Config.Arch),
+			formatter.NewStringCell(agent.OS),
+			formatter.NewStringCell(agent.Arch),
 			formatter.NewTimeCell(time.Unix(agent.CreatedAt, 0)).WithFormat("relative"),
 		})
 	}

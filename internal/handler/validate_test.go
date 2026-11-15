@@ -135,10 +135,8 @@ func TestValidateCreateAgentRequest(t *testing.T) {
 	valid := protodaemon.CreateAgentRequest{
 		Name:       "agent",
 		GatewayRef: "gw",
-		Config: protodaemon.AgentConfig{
-			OS:   "linux",
-			Arch: "amd64",
-		},
+		OS:         "linux",
+		Arch:       "amd64",
 	}
 
 	tests := []struct {
@@ -191,7 +189,7 @@ func TestValidateCreateAgentRequest(t *testing.T) {
 			name: "empty os",
 			req: func() protodaemon.CreateAgentRequest {
 				req := valid
-				req.Config.OS = ""
+				req.OS = ""
 				return req
 			}(),
 			wantErr: "os is required",
@@ -200,7 +198,7 @@ func TestValidateCreateAgentRequest(t *testing.T) {
 			name: "empty arch",
 			req: func() protodaemon.CreateAgentRequest {
 				req := valid
-				req.Config.Arch = ""
+				req.Arch = ""
 				return req
 			}(),
 			wantErr: "arch is required",
