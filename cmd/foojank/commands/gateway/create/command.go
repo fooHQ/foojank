@@ -95,9 +95,9 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 	client := daemon.New(srv)
 
 	_, err = client.CreateGateway(ctx, protodaemon.CreateGatewayRequest{
-		ID:          gatewayPubKey,
 		Name:        gatewayName,
 		Description: gatewayDesc,
+		PublicKey:   gatewayPubKey,
 		Config: protodaemon.GatewayConfig{
 			Extra: parseKVPairs(setVars),
 		},
