@@ -824,7 +824,9 @@ func (h *Handler) CreateGateway(ctx context.Context, params map[string]string, r
 		}
 	}
 
-	return protodaemon.CreateGatewayResponse{}
+	return protodaemon.CreateGatewayResponse{
+		ID: gateway.ID,
+	}
 }
 
 func (h *Handler) GetGateway(ctx context.Context, params map[string]string, req protodaemon.GetGatewayRequest) protodaemon.GetGatewayResponse {
