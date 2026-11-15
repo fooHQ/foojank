@@ -9,6 +9,7 @@ import (
 
 	"github.com/foohq/foojank/cmd/foojankd/actions"
 	"github.com/foohq/foojank/cmd/foojankd/flags"
+	"github.com/foohq/foojank/internal/authdir"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/directory"
 	"github.com/foohq/foojank/internal/handler"
@@ -94,12 +95,19 @@ func action(ctx context.Context, _ *cli.Command) error {
 	logger := actions.GetLoggerFromContext(ctx)
 	srv := actions.GetServerFromContext(ctx)
 
+	accountName, _ := conf.String(flags.Account)
 	userName, _ := conf.String(flags.Name)
 	userPubKey, _ := conf.String(flags.PublicKey)
 	userDesc, _ := conf.String(flags.Description)
 	setPrivileges, _ := conf.StringSlice(flags.Privilege)
 	unsetPrivileges, _ := conf.StringSlice(flags.WithoutPrivilege)
 	roleName, _ := conf.String(flags.Role)
+
+	accountKey, err := authdir.GetAccountKey(accountName)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot read account key: %v", err)
+		return err
+	}
 
 	var rolePrivileges []string
 	if roleName != "" {
@@ -122,7 +130,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 		rolePrivileges = resp.Role.Privileges
 	}
 
-	setPrivileges, err := privilege.UpdatePrivileges(rolePrivileges, setPrivileges, unsetPrivileges)
+	setPrivileges, err = privilege.UpdatePrivileges(rolePrivileges, setPrivileges, unsetPrivileges)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create user: %v", err)
 		return err
@@ -136,6 +144,7 @@ func action(ctx context.Context, _ *cli.Command) error {
 
 	resp := handler.New(logger, handler.Config{
 		UserDirectory: userDir,
+		AccountKey:    accountKey,
 	}).CreateUser(ctx, nil, protodaemon.CreateUserRequest{
 		Name:        userName,
 		Description: userDesc,
