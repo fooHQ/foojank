@@ -12,17 +12,19 @@ type CreateUserRequest struct {
 	ID          string
 	Name        string
 	Description string
+	PublicKey   string
 	Privileges  []string
 }
 
-// MarshalCbor encodes the request as a CBOR array: [id, name, description, privileges].
+// MarshalCbor encodes the request as a CBOR array:
+// [id, name, description, publicKey, privileges].
 func (m *CreateUserRequest) MarshalCbor(w io.Writer) error {
-	err := cboring.WriteArrayLength(4, w)
+	err := cboring.WriteArrayLength(5, w)
 	if err != nil {
 		return err
 	}
 
-	for _, s := range []string{m.ID, m.Name, m.Description} {
+	for _, s := range []string{m.ID, m.Name, m.Description, m.PublicKey} {
 		err := cboring.WriteTextString(s, w)
 		if err != nil {
 			return err
@@ -38,11 +40,11 @@ func (m *CreateUserRequest) UnmarshalCbor(r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	if l != 4 {
+	if l != 5 {
 		return errors.New("invalid message array length")
 	}
 
-	for _, f := range []*string{&m.ID, &m.Name, &m.Description} {
+	for _, f := range []*string{&m.ID, &m.Name, &m.Description, &m.PublicKey} {
 		s, err := cboring.ReadTextString(r)
 		if err != nil {
 			return err
