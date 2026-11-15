@@ -771,39 +771,18 @@ func (h *Handler) CreateGateway(ctx context.Context, params map[string]string, r
 		}
 	}
 
+	gatewayID := req.ID
 	gatewayName := req.Name
 	gatewayDesc := req.Description
 	gatewayConf := req.Config
 
-	user, err := auth.GenerateUser(gatewayName)
-	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot generate a user: %v", err)
-		return protodaemon.CreateGatewayResponse{
-			Error: err,
-		}
-	}
+	claims := jwt.NewUserClaims(gatewayID)
+	claims.Name = gatewayName
+	claims.Permissions = newGatewayPermissions(gatewayID)
 
-	gatewayID, err := user.KeyPair().PublicKey()
-	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot create gateway ID: %v", err)
-		return protodaemon.CreateGatewayResponse{
-			Error: err,
-		}
-	}
-
-	user.Claims().Permissions = newGatewayPermissions(gatewayID)
-
-	gatewayJWT, err := user.Claims().Encode(h.conf.AccountKey)
+	gatewayJWT, err := claims.Encode(h.conf.AccountKey)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
-		return protodaemon.CreateGatewayResponse{
-			Error: err,
-		}
-	}
-
-	gatewaySeed, err := user.KeyPair().Seed()
-	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot encode user seed: %v", err)
 		return protodaemon.CreateGatewayResponse{
 			Error: err,
 		}
@@ -815,7 +794,6 @@ func (h *Handler) CreateGateway(ctx context.Context, params map[string]string, r
 		Description: gatewayDesc,
 		Config: directory.GatewayConfig{
 			UserJWT: gatewayJWT,
-			UserKey: string(gatewaySeed),
 			Extra:   gatewayConf.Extra,
 		},
 	})

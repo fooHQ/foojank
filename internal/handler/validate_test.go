@@ -334,6 +334,8 @@ func TestValidateDeleteGatewayRequest(t *testing.T) {
 }
 
 func TestValidateCreateGatewayRequest(t *testing.T) {
+	id := testUserID(t)
+
 	tests := []struct {
 		name    string
 		req     protodaemon.CreateGatewayRequest
@@ -342,16 +344,34 @@ func TestValidateCreateGatewayRequest(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			req:  protodaemon.CreateGatewayRequest{Name: "gw1"},
+			req:  protodaemon.CreateGatewayRequest{ID: id, Name: "gw1"},
+		},
+		{
+			name: "invalid gateway id",
+			req: protodaemon.CreateGatewayRequest{
+				ID:   "gw1",
+				Name: "gw1",
+			},
+			wantErr: "invalid gateway id",
+		},
+		{
+			name: "empty gateway id",
+			req: protodaemon.CreateGatewayRequest{
+				Name: "gw1",
+			},
+			wantErr: "invalid gateway id",
 		},
 		{
 			name:    "empty name",
-			req:     protodaemon.CreateGatewayRequest{},
+			req:     protodaemon.CreateGatewayRequest{ID: id},
 			wantErr: "name is required",
 		},
 		{
-			name:   "invalid name",
-			req:    protodaemon.CreateGatewayRequest{Name: "bad name"},
+			name: "invalid name",
+			req: protodaemon.CreateGatewayRequest{
+				ID:   id,
+				Name: "bad name",
+			},
 			wantIs: directory.ErrNameInvalid,
 		},
 	}
