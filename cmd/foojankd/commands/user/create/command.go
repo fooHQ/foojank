@@ -137,9 +137,9 @@ func action(ctx context.Context, _ *cli.Command) error {
 	resp := handler.New(logger, handler.Config{
 		UserDirectory: userDir,
 	}).CreateUser(ctx, nil, protodaemon.CreateUserRequest{
-		ID:          userPubKey,
 		Name:        userName,
 		Description: userDesc,
+		PublicKey:   userPubKey,
 		Privileges:  setPrivileges,
 	})
 	if resp.Error != nil {
