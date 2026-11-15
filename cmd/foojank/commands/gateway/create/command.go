@@ -98,9 +98,7 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		Name:        gatewayName,
 		Description: gatewayDesc,
 		PublicKey:   gatewayPubKey,
-		Config: protodaemon.GatewayConfig{
-			Extra: parseKVPairs(setVars),
-		},
+		Extra:       parseKVPairs(setVars),
 	})
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create gateway: %v", err)

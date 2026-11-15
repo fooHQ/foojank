@@ -12,11 +12,11 @@ type CreateGatewayRequest struct {
 	Name        string
 	Description string
 	PublicKey   string
-	Config      GatewayConfig
+	Extra       map[string]string
 }
 
 // MarshalCbor encodes the request as a CBOR array:
-// [name, description, publicKey, config].
+// [name, description, publicKey, extra].
 func (m *CreateGatewayRequest) MarshalCbor(w io.Writer) error {
 	err := cboring.WriteArrayLength(4, w)
 	if err != nil {
@@ -30,7 +30,7 @@ func (m *CreateGatewayRequest) MarshalCbor(w io.Writer) error {
 		}
 	}
 
-	return m.Config.MarshalCbor(w)
+	return writeStringMap(m.Extra, w)
 }
 
 // UnmarshalCbor decodes the request from its CBOR representation.
@@ -50,53 +50,6 @@ func (m *CreateGatewayRequest) UnmarshalCbor(r io.Reader) error {
 		}
 		*f = s
 	}
-
-	var config GatewayConfig
-	err = config.UnmarshalCbor(r)
-	if err != nil {
-		return err
-	}
-	m.Config = config
-
-	return nil
-}
-
-// GatewayConfig is the configuration for a gateway.
-type GatewayConfig struct {
-	JWT   string
-	Extra map[string]string
-}
-
-// MarshalCbor encodes the config as a CBOR array: [jwt, extra].
-func (m *GatewayConfig) MarshalCbor(w io.Writer) error {
-	err := cboring.WriteArrayLength(2, w)
-	if err != nil {
-		return err
-	}
-
-	err = cboring.WriteTextString(m.JWT, w)
-	if err != nil {
-		return err
-	}
-
-	return writeStringMap(m.Extra, w)
-}
-
-// UnmarshalCbor decodes the config from its CBOR representation.
-func (m *GatewayConfig) UnmarshalCbor(r io.Reader) error {
-	l, err := cboring.ReadArrayLength(r)
-	if err != nil {
-		return err
-	}
-	if l != 2 {
-		return errors.New("invalid message array length")
-	}
-
-	jwt, err := cboring.ReadTextString(r)
-	if err != nil {
-		return err
-	}
-	m.JWT = jwt
 
 	extra, err := readStringMap(r)
 	if err != nil {
