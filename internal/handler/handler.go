@@ -109,7 +109,7 @@ func (h *Handler) CreateUser(ctx context.Context, params map[string]string, req 
 		}
 	}
 
-	userID := req.ID
+	userID := req.PublicKey
 	userName := req.Name
 	userDesc := req.Description
 
