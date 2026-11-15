@@ -107,7 +107,6 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell("NAME").WithBold(),
 		formatter.NewStringCell("DESCRIPTION").WithBold(),
 		formatter.NewStringCell("JWT").WithBold(),
-		formatter.NewStringCell("KEY").WithBold(),
 		formatter.NewStringCell("CONFIG").WithBold(),
 	})
 	table.AddRow([]formatter.Cell{
@@ -115,7 +114,6 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell(gateway.Name),
 		formatter.NewStringCell(gateway.Description),
 		formatter.NewStringCell(gateway.Config.JWT),
-		formatter.NewStringCell(gateway.Config.Key),
 		formatter.NewStringMapCell(gateway.Config.Extra).WithKeyValueSeparator(" = ").WithSeparator("\n"),
 	})
 
