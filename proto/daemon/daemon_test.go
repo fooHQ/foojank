@@ -60,10 +60,8 @@ func TestMarshalUnmarshal(t *testing.T) {
 		ID:          "UDUMMYGATEWAYPUBLICKEY",
 		Name:        "gw1",
 		Description: "edge gateway",
-		Config: daemon.GatewayConfig{
-			JWT:   "header.payload.sig",
-			Extra: map[string]string{"key1": "val1", "key2": "val2"},
-		},
+		JWT:         "header.payload.sig",
+		Extra:       map[string]string{"key1": "val1", "key2": "val2"},
 	}
 	testRole := daemon.Role{
 		Name:        "operator",
@@ -313,33 +311,21 @@ func TestMarshalUnmarshal(t *testing.T) {
 				Name:        "gw1",
 				Description: "edge gateway",
 				PublicKey:   "UDUMMYGATEWAYPUBLICKEY",
-				Config: daemon.GatewayConfig{
-					JWT:   "header.payload.sig",
-					Extra: map[string]string{"key1": "val1", "key2": "val2"},
-				},
+				Extra:       map[string]string{"key1": "val1", "key2": "val2"},
 			},
 			want: daemon.CreateGatewayRequest{
 				Name:        "gw1",
 				Description: "edge gateway",
 				PublicKey:   "UDUMMYGATEWAYPUBLICKEY",
-				Config: daemon.GatewayConfig{
-					JWT:   "header.payload.sig",
-					Extra: map[string]string{"key1": "val1", "key2": "val2"},
-				},
+				Extra:       map[string]string{"key1": "val1", "key2": "val2"},
 			},
 		},
 		{
 			name: "CreateGatewayRequest with empty fields",
 			input: daemon.CreateGatewayRequest{
-				Config: daemon.GatewayConfig{
-					Extra: map[string]string{},
-				},
+				Extra: map[string]string{},
 			},
-			want: daemon.CreateGatewayRequest{
-				Config: daemon.GatewayConfig{
-					Extra: nil,
-				},
-			},
+			want: daemon.CreateGatewayRequest{},
 		},
 		{
 			name: "CreateGatewayResponse",

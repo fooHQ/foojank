@@ -113,8 +113,8 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell(gateway.ID),
 		formatter.NewStringCell(gateway.Name),
 		formatter.NewStringCell(gateway.Description),
-		formatter.NewStringCell(gateway.Config.JWT),
-		formatter.NewStringMapCell(gateway.Config.Extra).WithKeyValueSeparator(" = ").WithSeparator("\n"),
+		formatter.NewStringCell(gateway.JWT),
+		formatter.NewStringMapCell(gateway.Extra).WithKeyValueSeparator(" = ").WithSeparator("\n"),
 	})
 
 	err := formatter.NewFormatter(

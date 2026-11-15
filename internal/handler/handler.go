@@ -774,7 +774,7 @@ func (h *Handler) CreateGateway(ctx context.Context, params map[string]string, r
 	gatewayID := req.PublicKey
 	gatewayName := req.Name
 	gatewayDesc := req.Description
-	gatewayConf := req.Config
+	gatewayExtra := req.Extra
 
 	claims := jwt.NewUserClaims(gatewayID)
 	claims.Name = gatewayName
@@ -793,7 +793,7 @@ func (h *Handler) CreateGateway(ctx context.Context, params map[string]string, r
 		Name:        gatewayName,
 		Description: gatewayDesc,
 		JWT:         gatewayJWT,
-		Extra:       gatewayConf.Extra,
+		Extra:       gatewayExtra,
 	})
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyExists) {
@@ -854,10 +854,8 @@ func (h *Handler) GetGateway(ctx context.Context, params map[string]string, req 
 			ID:          gateway.ID,
 			Name:        gateway.Name,
 			Description: gateway.Description,
-			Config: protodaemon.GatewayConfig{
-				JWT:   gateway.JWT,
-				Extra: gateway.Extra,
-			},
+			JWT:         gateway.JWT,
+			Extra:       gateway.Extra,
 		},
 	}
 }
