@@ -15,27 +15,31 @@ type Agent struct {
 	Description string
 	GatewayID   string
 	GatewayName string
-	Config      AgentConfig
+	OS          string
+	Arch        string
+	JWT         string
+	Key         string
+	Extra       map[string]string
 	Commands    map[string]AgentCommand
 	CreatedAt   int64
 }
 
 // MarshalCbor encodes the agent as a CBOR array:
-// [id, name, description, gatewayID, gatewayName, config, commands, createdAt].
+// [id, name, description, gatewayID, gatewayName, os, arch, jwt, key, extra, commands, createdAt].
 func (m *Agent) MarshalCbor(w io.Writer) error {
-	err := cboring.WriteArrayLength(8, w)
+	err := cboring.WriteArrayLength(12, w)
 	if err != nil {
 		return err
 	}
 
-	for _, s := range []string{m.ID, m.Name, m.Description, m.GatewayID, m.GatewayName} {
+	for _, s := range []string{m.ID, m.Name, m.Description, m.GatewayID, m.GatewayName, m.OS, m.Arch, m.JWT, m.Key} {
 		err := cboring.WriteTextString(s, w)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = m.Config.MarshalCbor(w)
+	err = writeStringMap(m.Extra, w)
 	if err != nil {
 		return err
 	}
@@ -54,11 +58,11 @@ func (m *Agent) UnmarshalCbor(r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	if l != 8 {
+	if l != 12 {
 		return errors.New("invalid message array length")
 	}
 
-	for _, f := range []*string{&m.ID, &m.Name, &m.Description, &m.GatewayID, &m.GatewayName} {
+	for _, f := range []*string{&m.ID, &m.Name, &m.Description, &m.GatewayID, &m.GatewayName, &m.OS, &m.Arch, &m.JWT, &m.Key} {
 		s, err := cboring.ReadTextString(r)
 		if err != nil {
 			return err
@@ -66,8 +70,7 @@ func (m *Agent) UnmarshalCbor(r io.Reader) error {
 		*f = s
 	}
 
-	var config AgentConfig
-	err = config.UnmarshalCbor(r)
+	extra, err := readStringMap(r)
 	if err != nil {
 		return err
 	}
@@ -82,7 +85,7 @@ func (m *Agent) UnmarshalCbor(r io.Reader) error {
 		return err
 	}
 
-	m.Config = config
+	m.Extra = extra
 	m.Commands = commands
 	m.CreatedAt = createdAt
 

@@ -125,13 +125,13 @@ func action(ctx context.Context, c *cli.Command) error {
 		formatter.NewStringCell(agent.ID),
 		formatter.NewStringCell(agent.Name),
 		formatter.NewStringCell(agent.Description),
-		formatter.NewStringCell(agent.Config.OS),
-		formatter.NewStringCell(agent.Config.Arch),
+		formatter.NewStringCell(agent.OS),
+		formatter.NewStringCell(agent.Arch),
 		formatter.NewStringCell(gatewayName),
-		formatter.NewStringCell(agent.Config.JWT),
-		formatter.NewStringCell(agent.Config.Key),
+		formatter.NewStringCell(agent.JWT),
+		formatter.NewStringCell(agent.Key),
 		formatter.NewTimeCell(time.Unix(agent.CreatedAt, 0)),
-		formatter.NewStringMapCell(agent.Config.Extra).WithKeyValueSeparator(" = ").WithSeparator("\n"),
+		formatter.NewStringMapCell(agent.Extra).WithKeyValueSeparator(" = ").WithSeparator("\n"),
 	})
 
 	err := formatter.NewFormatter(

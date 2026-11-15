@@ -111,22 +111,22 @@ func action(ctx context.Context, c *cli.Command) (err error) {
 	if outputName == "" {
 		outputName = agent.Name
 	}
-	outputPath := createTargetPath(agent.Config.OS, outputName)
+	outputPath := createTargetPath(agent.OS, outputName)
 
 	// Prepare builder environment.
 	// IMPORTANT: make sure mandatory variables such as OS, Arch, etc. are copied as last to prevent being overwritten
 	// by variables from .Extra.
 	env := make(map[string]string)
-	maps.Copy(env, agent.Config.Extra)
+	maps.Copy(env, agent.Extra)
 	maps.Copy(env, map[string]string{
-		builder.OS:        agent.Config.OS,
-		builder.Arch:      agent.Config.Arch,
+		builder.OS:        agent.OS,
+		builder.Arch:      agent.Arch,
 		builder.Target:    outputPath,
 		builder.AgentID:   agent.ID,
 		builder.AgentName: agent.Name,
 		builder.GatewayID: agent.GatewayID,
-		builder.UserJWT:   agent.Config.JWT,
-		builder.UserKey:   agent.Config.Key,
+		builder.UserJWT:   agent.JWT,
+		builder.UserKey:   agent.Key,
 	})
 
 	output, err := builder.Run(ctx, sourceDir, env)

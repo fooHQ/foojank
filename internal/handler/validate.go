@@ -51,10 +51,10 @@ func ValidateCreateAgentRequest(req protodaemon.CreateAgentRequest) error {
 	if err != nil {
 		return err
 	}
-	if req.Config.OS == "" {
+	if req.OS == "" {
 		return errors.New("os is required")
 	}
-	if req.Config.Arch == "" {
+	if req.Arch == "" {
 		return errors.New("arch is required")
 	}
 	return nil

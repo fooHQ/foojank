@@ -462,7 +462,6 @@ func (h *Handler) CreateAgent(ctx context.Context, params map[string]string, req
 	agentName := req.Name
 	agentDesc := req.Description
 	gatewayRef := req.GatewayRef
-	agentConf := req.Config
 
 	gateway, err := h.conf.GatewayDirectory.Get(ctx, gatewayRef)
 	if err != nil {
@@ -475,10 +474,9 @@ func (h *Handler) CreateAgent(ctx context.Context, params map[string]string, req
 		}
 	}
 
-	extra := make(map[string]string, len(gateway.Extra)+len(agentConf.Extra))
+	extra := make(map[string]string, len(gateway.Extra)+len(req.Extra))
 	maps.Copy(extra, gateway.Extra)
-	maps.Copy(extra, agentConf.Extra)
-	agentConf.Extra = extra
+	maps.Copy(extra, req.Extra)
 
 	user, err := auth.GenerateUser(agentName)
 	if err != nil {
@@ -518,11 +516,11 @@ func (h *Handler) CreateAgent(ctx context.Context, params map[string]string, req
 		Description: agentDesc,
 		GatewayID:   gateway.ID,
 		Config: directory.AgentBuildConfig{
-			OS:      agentConf.OS,
-			Arch:    agentConf.Arch,
+			OS:      req.OS,
+			Arch:    req.Arch,
 			UserJWT: agentJWT,
 			UserKey: string(agentSeed),
-			Extra:   agentConf.Extra,
+			Extra:   extra,
 		},
 		Commands:  copyProtoCommands(req.Commands),
 		CreatedAt: time.Now().UTC(),
@@ -615,15 +613,13 @@ func (h *Handler) GetAgent(ctx context.Context, params map[string]string, req pr
 			Description: agent.Description,
 			GatewayID:   agent.GatewayID,
 			GatewayName: gatewayName,
-			Config: protodaemon.AgentConfig{
-				OS:    agent.Config.OS,
-				Arch:  agent.Config.Arch,
-				JWT:   agent.Config.UserJWT,
-				Key:   agent.Config.UserKey,
-				Extra: agent.Config.Extra,
-			},
-			Commands:  copyDirectoryCommands(agent.Commands),
-			CreatedAt: agent.CreatedAt.Unix(),
+			OS:          agent.Config.OS,
+			Arch:        agent.Config.Arch,
+			JWT:         agent.Config.UserJWT,
+			Key:         agent.Config.UserKey,
+			Extra:       agent.Config.Extra,
+			Commands:    copyDirectoryCommands(agent.Commands),
+			CreatedAt:   agent.CreatedAt.Unix(),
 		},
 	}
 }
@@ -654,11 +650,9 @@ func (h *Handler) ListAgents(ctx context.Context, params map[string]string, req 
 			Description: entry.Description,
 			GatewayID:   entry.GatewayID,
 			GatewayName: names[entry.GatewayID],
-			Config: protodaemon.AgentConfig{
-				OS:   entry.Config.OS,
-				Arch: entry.Config.Arch,
-			},
-			CreatedAt: entry.CreatedAt.Unix(),
+			OS:          entry.Config.OS,
+			Arch:        entry.Config.Arch,
+			CreatedAt:   entry.CreatedAt.Unix(),
 		}
 	}
 

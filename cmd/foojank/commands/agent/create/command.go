@@ -127,10 +127,13 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 		agentName = petname.Generate(2, "-")
 	}
 
-	agentConf := protodaemon.AgentConfig{
-		OS:    runtime.GOOS,
-		Arch:  runtime.GOARCH,
-		Extra: make(map[string]string),
+	req := protodaemon.CreateAgentRequest{
+		Name:        agentName,
+		Description: agentDesc,
+		GatewayRef:  gatewayName,
+		OS:          runtime.GOOS,
+		Arch:        runtime.GOARCH,
+		Extra:       make(map[string]string),
 	}
 
 	agentCmds := make(map[string]protodaemon.AgentCommand)
@@ -145,41 +148,37 @@ func action(ctx context.Context, _ *cli.Command) (err error) {
 
 		v := prof.OS()
 		if v != "" {
-			agentConf.OS = v
+			req.OS = v
 		}
 
 		v = prof.Arch()
 		if v != "" {
-			agentConf.Arch = v
+			req.Arch = v
 		}
 
-		maps.Copy(agentConf.Extra, prof.Env())
+		maps.Copy(req.Extra, prof.Env())
 
 		agentCmds = copyProfileCommands(prof.Commands())
 	}
 
 	// Parse command line flags.
 	if targetOS != "" {
-		agentConf.OS = targetOS
+		req.OS = targetOS
 	}
 
 	if targetArch != "" {
-		agentConf.Arch = targetArch
+		req.Arch = targetArch
 	}
 
-	maps.Copy(agentConf.Extra, parseKVPairs(setVars))
+	maps.Copy(req.Extra, parseKVPairs(setVars))
 
 	for _, v := range unsetVars {
-		delete(agentConf.Extra, v)
+		delete(req.Extra, v)
 	}
 
-	_, err = client.CreateAgent(ctx, protodaemon.CreateAgentRequest{
-		Name:        agentName,
-		Description: agentDesc,
-		GatewayRef:  gatewayName,
-		Config:      agentConf,
-		Commands:    agentCmds,
-	})
+	req.Commands = agentCmds
+
+	_, err = client.CreateAgent(ctx, req)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot create agent: %v", err)
 		return err
