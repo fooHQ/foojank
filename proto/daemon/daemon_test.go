@@ -99,14 +99,12 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "CreateUserRequest",
 			input: daemon.CreateUserRequest{
-				ID:          "UDUMMYUSERPUBLICKEY",
 				Name:        "ops",
 				Description: "operations user",
 				PublicKey:   "UDUMMYUSERPUBLICKEY",
 				Privileges:  []string{"pub", "sub"},
 			},
 			want: daemon.CreateUserRequest{
-				ID:          "UDUMMYUSERPUBLICKEY",
 				Name:        "ops",
 				Description: "operations user",
 				PublicKey:   "UDUMMYUSERPUBLICKEY",
