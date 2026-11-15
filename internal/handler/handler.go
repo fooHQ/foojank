@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/nats-io/jwt/v2"
-	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nats-io/nkeys"
 	"github.com/nats-io/nuid"
 
@@ -810,14 +809,6 @@ func (h *Handler) CreateGateway(ctx context.Context, params map[string]string, r
 		cancel()
 	}()
 
-	err = h.conf.Gateway.RegisterGateway(ctx, gateway.ID)
-	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot register gateway: %v", err)
-		return protodaemon.CreateGatewayResponse{
-			Error: err,
-		}
-	}
-
 	return protodaemon.CreateGatewayResponse{
 		ID: gateway.ID,
 	}
@@ -889,14 +880,6 @@ func (h *Handler) DeleteGateway(ctx context.Context, params map[string]string, r
 		if errors.Is(err, directory.ErrKeyNotFound) {
 			err = fmt.Errorf("%q not found", req.GatewayRef)
 		}
-		return protodaemon.DeleteGatewayResponse{
-			Error: err,
-		}
-	}
-
-	err = h.conf.Gateway.UnregisterGateway(ctx, gateway.ID)
-	if err != nil && !errors.Is(err, jetstream.ErrConsumerNotFound) {
-		h.logger.ErrorContext(ctx, "Cannot unregister gateway: %v", err)
 		return protodaemon.DeleteGatewayResponse{
 			Error: err,
 		}
