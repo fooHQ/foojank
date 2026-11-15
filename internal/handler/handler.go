@@ -120,10 +120,30 @@ func (h *Handler) CreateUser(ctx context.Context, params map[string]string, req 
 		}
 	}
 
+	userPerms, err := newRefreshTokenPermissions(userID)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot create client permissions: %v", err)
+		return protodaemon.CreateUserResponse{
+			Error: err,
+		}
+	}
+
+	userClaims := jwt.NewUserClaims(userID)
+	userClaims.Permissions = userPerms
+
+	userJWT, err := userClaims.Encode(h.conf.AccountKey)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
+		return protodaemon.CreateUserResponse{
+			Error: err,
+		}
+	}
+
 	_, err = h.conf.UserDirectory.Create(ctx, directory.UserDirectoryEntry{
 		ID:          userID,
 		Name:        userName,
 		Description: userDesc,
+		JWT:         userJWT,
 		Privileges:  privilege.FormatPrivileges(userPrivs.Privileges()),
 		CreatedAt:   time.Now().UTC(),
 		ExpiresAt:   time.Time{}, // TODO
@@ -161,34 +181,12 @@ func (h *Handler) GetUser(ctx context.Context, params map[string]string, req pro
 		}
 	}
 
-	userPerms, err := newRefreshTokenPermissions(user.ID)
-	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot create client permissions: %v", err)
-		return protodaemon.GetUserResponse{
-			Error: err,
-		}
-	}
-
-	userClaims := jwt.NewUserClaims(user.ID)
-	userClaims.Permissions = userPerms
-	if !user.ExpiresAt.IsZero() {
-		userClaims.Expires = user.ExpiresAt.Unix()
-	}
-
-	userJWT, err := userClaims.Encode(h.conf.AccountKey)
-	if err != nil {
-		h.logger.ErrorContext(ctx, "Cannot encode user JWT: %v", err)
-		return protodaemon.GetUserResponse{
-			Error: err,
-		}
-	}
-
 	return protodaemon.GetUserResponse{
 		User: protodaemon.User{
 			ID:          user.ID,
 			Name:        user.Name,
 			Description: user.Description,
-			JWT:         userJWT,
+			JWT:         user.JWT,
 			Privileges:  user.Privileges,
 			CreatedAt:   user.CreatedAt.Unix(),
 			ExpiresAt:   user.ExpiresAt.Unix(),
