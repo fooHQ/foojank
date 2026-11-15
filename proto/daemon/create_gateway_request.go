@@ -9,7 +9,6 @@ import (
 
 // CreateGatewayRequest is a request to create a gateway.
 type CreateGatewayRequest struct {
-	ID          string
 	Name        string
 	Description string
 	PublicKey   string
@@ -17,14 +16,14 @@ type CreateGatewayRequest struct {
 }
 
 // MarshalCbor encodes the request as a CBOR array:
-// [id, name, description, publicKey, config].
+// [name, description, publicKey, config].
 func (m *CreateGatewayRequest) MarshalCbor(w io.Writer) error {
-	err := cboring.WriteArrayLength(5, w)
+	err := cboring.WriteArrayLength(4, w)
 	if err != nil {
 		return err
 	}
 
-	for _, s := range []string{m.ID, m.Name, m.Description, m.PublicKey} {
+	for _, s := range []string{m.Name, m.Description, m.PublicKey} {
 		err := cboring.WriteTextString(s, w)
 		if err != nil {
 			return err
@@ -40,11 +39,11 @@ func (m *CreateGatewayRequest) UnmarshalCbor(r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	if l != 5 {
+	if l != 4 {
 		return errors.New("invalid message array length")
 	}
 
-	for _, f := range []*string{&m.ID, &m.Name, &m.Description, &m.PublicKey} {
+	for _, f := range []*string{&m.Name, &m.Description, &m.PublicKey} {
 		s, err := cboring.ReadTextString(r)
 		if err != nil {
 			return err

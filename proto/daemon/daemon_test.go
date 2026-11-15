@@ -309,7 +309,6 @@ func TestMarshalUnmarshal(t *testing.T) {
 		{
 			name: "CreateGatewayRequest",
 			input: daemon.CreateGatewayRequest{
-				ID:          "UDUMMYGATEWAYPUBLICKEY",
 				Name:        "gw1",
 				Description: "edge gateway",
 				PublicKey:   "UDUMMYGATEWAYPUBLICKEY",
@@ -320,7 +319,6 @@ func TestMarshalUnmarshal(t *testing.T) {
 				},
 			},
 			want: daemon.CreateGatewayRequest{
-				ID:          "UDUMMYGATEWAYPUBLICKEY",
 				Name:        "gw1",
 				Description: "edge gateway",
 				PublicKey:   "UDUMMYGATEWAYPUBLICKEY",
