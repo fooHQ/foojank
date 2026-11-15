@@ -20,6 +20,7 @@ import (
 	"github.com/foohq/foojank/internal/formatter"
 	"github.com/foohq/foojank/internal/profile"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
+	protoinbox "github.com/foohq/foojank/proto/inbox"
 )
 
 const generateShellCompletionFlag = "--generate-shell-completion"
@@ -585,6 +586,7 @@ func daemonClient(ctx context.Context) (*daemon.Client, error) {
 		string(userSeed),
 		server.WithServerCert(serverCert),
 		server.WithOnConnect(daemon.IssueUserJWT),
+		server.WithInboxPrefix(protoinbox.Prefix(user.PublicKey())),
 	)
 	if err != nil {
 		return nil, err
