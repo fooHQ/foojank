@@ -10,7 +10,6 @@ import (
 
 	"github.com/foohq/foojank/cmd/foojankd/actions"
 	"github.com/foohq/foojank/cmd/foojankd/flags"
-	"github.com/foohq/foojank/internal/authdir"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/directory"
 	"github.com/foohq/foojank/internal/formatter"
@@ -79,7 +78,6 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	format, _ := conf.String(flags.Format)
 	noColor, _ := conf.Bool(flags.NoColor)
-	accountName, _ := conf.String(flags.Account)
 
 	if c.Args().Len() != 1 {
 		logger.ErrorContext(ctx, "Command expects the following arguments: %s", c.ArgsUsage)
@@ -87,12 +85,6 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	userName := c.Args().First()
-
-	accountKey, err := authdir.GetAccountKey(accountName)
-	if err != nil {
-		logger.ErrorContext(ctx, "Cannot read account key: %v", err)
-		return err
-	}
 
 	userDir, err := directory.OpenUserDirectory(ctx, srv)
 	if err != nil {
@@ -102,7 +94,6 @@ func action(ctx context.Context, c *cli.Command) error {
 
 	resp := handler.New(logger, handler.Config{
 		UserDirectory: userDir,
-		AccountKey:    accountKey,
 	}).GetUser(ctx, nil, protodaemon.GetUserRequest{
 		UserRef: userName,
 	})
