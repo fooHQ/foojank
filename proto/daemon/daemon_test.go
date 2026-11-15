@@ -120,9 +120,13 @@ func TestMarshalUnmarshal(t *testing.T) {
 			},
 		},
 		{
-			name:  "CreateUserResponse",
-			input: daemon.CreateUserResponse{},
-			want:  daemon.CreateUserResponse{},
+			name: "CreateUserResponse",
+			input: daemon.CreateUserResponse{
+				ID: "UDUMMYUSERPUBLICKEY",
+			},
+			want: daemon.CreateUserResponse{
+				ID: "UDUMMYUSERPUBLICKEY",
+			},
 		},
 		{
 			name:  "CreateUserResponse with error",
