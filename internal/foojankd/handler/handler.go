@@ -1375,6 +1375,10 @@ func newGatewayPermissions(gatewayID string) jwt.Permissions {
 				protoinbox.Prefix(gatewayID) + ".>",
 				protogw.RegisterAgentSubject(gatewayID),
 				protogw.UnregisterAgentSubject(gatewayID),
+				protogw.CreateJobSubject(gatewayID),
+				protogw.CancelJobSubject(gatewayID),
+				protogw.JobOutputSubject(gatewayID),
+				protogw.JobInputSubject(gatewayID),
 			},
 		},
 	}
