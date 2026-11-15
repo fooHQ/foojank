@@ -19,6 +19,7 @@ import (
 	"github.com/foohq/foojank/internal/configdir"
 	"github.com/foohq/foojank/internal/log"
 	"github.com/foohq/foojank/internal/profile"
+	protoinbox "github.com/foohq/foojank/proto/inbox"
 )
 
 func LoadConfig(w io.Writer, validateFn func(conf *config.Config) error) cli.BeforeFunc {
@@ -265,6 +266,7 @@ func SetupServer(_ io.Writer) cli.BeforeFunc {
 			string(userSeed),
 			server.WithServerCert(serverCert),
 			server.WithOnConnect(daemon.IssueUserJWT),
+			server.WithInboxPrefix(protoinbox.Prefix(user.PublicKey())),
 		)
 		if err != nil {
 			logger.ErrorContext(ctx, "Cannot connect to the server: %v", err)
