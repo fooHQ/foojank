@@ -94,15 +94,10 @@ func (d *GatewayDirectory) Delete(ctx context.Context, gateway GatewayDirectoryE
 }
 
 type GatewayDirectoryEntry struct {
-	ID          string        `json:"id"`
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
-	Config      GatewayConfig `json:"config"`
-	Revision    uint64        `json:"-"`
-}
-
-type GatewayConfig struct {
-	UserJWT string            `json:"user_jwt"`
-	UserKey string            `json:"user_key"`
-	Extra   map[string]string `json:"extra"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	JWT         string            `json:"jwt"`
+	Extra       map[string]string `json:"extra"`
+	Revision    uint64            `json:"-"`
 }
