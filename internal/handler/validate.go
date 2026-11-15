@@ -24,7 +24,7 @@ func validateRef(ref string) error {
 }
 
 func ValidateCreateUserRequest(req protodaemon.CreateUserRequest) error {
-	if !nkeys.IsValidPublicUserKey(req.ID) {
+	if !nkeys.IsValidPublicUserKey(req.PublicKey) {
 		return errors.New("invalid user id")
 	}
 	return validateName(req.Name)

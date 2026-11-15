@@ -32,15 +32,15 @@ func TestValidateCreateUserRequest(t *testing.T) {
 		{
 			name: "valid",
 			req: protodaemon.CreateUserRequest{
-				ID:   id,
-				Name: "alice",
+				PublicKey: id,
+				Name:      "alice",
 			},
 		},
 		{
 			name: "invalid user id",
 			req: protodaemon.CreateUserRequest{
-				ID:   "alice",
-				Name: "alice",
+				PublicKey: "alice",
+				Name:      "alice",
 			},
 			wantErr: "invalid user id",
 		},
@@ -54,15 +54,15 @@ func TestValidateCreateUserRequest(t *testing.T) {
 		{
 			name: "empty name",
 			req: protodaemon.CreateUserRequest{
-				ID: id,
+				PublicKey: id,
 			},
 			wantErr: "name is required",
 		},
 		{
 			name: "invalid name",
 			req: protodaemon.CreateUserRequest{
-				ID:   id,
-				Name: "alice bob",
+				PublicKey: id,
+				Name:      "alice bob",
 			},
 			wantIs: directory.ErrNameInvalid,
 		},
