@@ -473,8 +473,8 @@ func (h *Handler) CreateAgent(ctx context.Context, params map[string]string, req
 		}
 	}
 
-	extra := make(map[string]string, len(gateway.Config.Extra)+len(agentConf.Extra))
-	maps.Copy(extra, gateway.Config.Extra)
+	extra := make(map[string]string, len(gateway.Extra)+len(agentConf.Extra))
+	maps.Copy(extra, gateway.Extra)
 	maps.Copy(extra, agentConf.Extra)
 	agentConf.Extra = extra
 
@@ -790,10 +790,8 @@ func (h *Handler) CreateGateway(ctx context.Context, params map[string]string, r
 		ID:          gatewayID,
 		Name:        gatewayName,
 		Description: gatewayDesc,
-		Config: directory.GatewayConfig{
-			UserJWT: gatewayJWT,
-			Extra:   gatewayConf.Extra,
-		},
+		JWT:         gatewayJWT,
+		Extra:       gatewayConf.Extra,
 	})
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyExists) {
@@ -853,9 +851,8 @@ func (h *Handler) GetGateway(ctx context.Context, params map[string]string, req 
 			Name:        gateway.Name,
 			Description: gateway.Description,
 			Config: protodaemon.GatewayConfig{
-				JWT:   gateway.Config.UserJWT,
-				Key:   gateway.Config.UserKey,
-				Extra: gateway.Config.Extra,
+				JWT:   gateway.JWT,
+				Extra: gateway.Extra,
 			},
 		},
 	}
