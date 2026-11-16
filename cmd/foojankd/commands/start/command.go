@@ -13,11 +13,11 @@ import (
 	"github.com/foohq/foojank/cmd/foojankd/flags"
 	"github.com/foohq/foojank/internal/authdir"
 	"github.com/foohq/foojank/internal/config"
-	"github.com/foohq/foojank/internal/consumer"
 	"github.com/foohq/foojank/internal/directory"
 	"github.com/foohq/foojank/internal/foojankd"
-	"github.com/foohq/foojank/internal/handler"
-	"github.com/foohq/foojank/internal/publisher"
+	"github.com/foohq/foojank/internal/foojankd/consumer"
+	"github.com/foohq/foojank/internal/foojankd/handler"
+	"github.com/foohq/foojank/internal/foojankd/publisher"
 )
 
 func NewCommand() *cli.Command {
