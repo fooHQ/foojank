@@ -82,7 +82,10 @@ func (s *Service) Start(ctx context.Context) error {
 	case <-ctx.Done():
 		for _, cancel := range cancels {
 			cancel()
-			<-termCh
+			err2 := <-termCh
+			if err2 != nil && err == nil {
+				err = err2
+			}
 		}
 	case err = <-termCh:
 		// If an error occurs in one of the services, cancel all services without waiting for them to finish.
