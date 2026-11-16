@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/foohq/foojank/internal/directory"
-	"github.com/foohq/foojank/internal/handler"
+	"github.com/foohq/foojank/internal/foojankd/handler"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
 

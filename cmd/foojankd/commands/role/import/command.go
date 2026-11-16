@@ -12,7 +12,7 @@ import (
 	"github.com/foohq/foojank/cmd/foojankd/flags"
 	"github.com/foohq/foojank/internal/config"
 	"github.com/foohq/foojank/internal/directory"
-	"github.com/foohq/foojank/internal/handler"
+	"github.com/foohq/foojank/internal/foojankd/handler"
 	"github.com/foohq/foojank/internal/role"
 	protodaemon "github.com/foohq/foojank/proto/daemon"
 )
