@@ -905,6 +905,9 @@ func (h *Handler) CreateJob(ctx context.Context, params map[string]string, req p
 	}
 
 	agentRef := req.AgentRef
+	cmd := req.Command
+	cmdArgs := req.Args
+	cmdEnv := req.Env
 
 	agent, err := h.conf.AgentDirectory.Get(ctx, agentRef)
 	if err != nil {
@@ -917,12 +920,10 @@ func (h *Handler) CreateJob(ctx context.Context, params map[string]string, req p
 		}
 	}
 
-	jobID := nuid.Next()
-
 	job, err := h.conf.JobDirectory.Create(ctx, directory.JobDirectoryEntry{
-		ID:        jobID,
+		ID:        nuid.Next(),
 		AgentID:   agent.ID,
-		WorkerID:  "",
+		WorkerID:  "", // Intentionally empty.
 		GatewayID: agent.GatewayID,
 		Config: directory.JobConfig{
 			Command: req.Command,
@@ -933,7 +934,7 @@ func (h *Handler) CreateJob(ctx context.Context, params map[string]string, req p
 	})
 	if err != nil {
 		if errors.Is(err, directory.ErrKeyExists) {
-			err = fmt.Errorf("%q already exists", jobID)
+			err = fmt.Errorf("%q already exists", job.ID)
 		}
 		h.logger.ErrorContext(ctx, "Cannot create job: %v", err)
 		return protodaemon.CreateJobResponse{
@@ -952,8 +953,27 @@ func (h *Handler) CreateJob(ctx context.Context, params map[string]string, req p
 		cancel()
 	}()
 
-	// TODO: create job with the gateway!
-	// TODO: update job directory entry!
+	resp, err := h.conf.Gateway.CreateJob(ctx, agent.GatewayID, protogw.CreateJobRequest{
+		AgentID: agent.ID,
+		Command: cmd,
+		Args:    cmdArgs,
+		Env:     cmdEnv,
+	})
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot create job: %v", err)
+		return protodaemon.CreateJobResponse{
+			Error: err,
+		}
+	}
+
+	job.WorkerID = resp.JobID
+	_, err = h.conf.JobDirectory.Update(ctx, job)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "Cannot update job: %v", err)
+		return protodaemon.CreateJobResponse{
+			Error: err,
+		}
+	}
 
 	return protodaemon.CreateJobResponse{
 		JobID: job.ID,
