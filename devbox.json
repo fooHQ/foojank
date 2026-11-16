@@ -1,12 +1,12 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.13.6/.schema/devbox.schema.json",
   "packages": [
-    "go@1.26",
-    "golangci-lint@2.11"
+    "go@1.27",
+    "golangci-lint@2.15"
   ],
   "env": {
-    "GOROOT":      "",
-    "GOPATH":      ""
+    "GOROOT": "",
+    "GOPATH": ""
   },
   "shell": {
     "init_hook": [

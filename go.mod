@@ -1,6 +1,6 @@
 module github.com/foohq/foojank
 
-go 1.26
+go 1.27
 
 require (
 	github.com/deepnoodle-ai/wonton v0.0.32
@@ -15,8 +15,6 @@ require (
 	github.com/nats-io/nuid v1.0.1
 	github.com/olekukonko/tablewriter v1.1.4
 	github.com/stretchr/testify v1.11.1
-	github.com/tidwall/gjson v1.18.0
-	github.com/tidwall/sjson v1.2.5
 	github.com/urfave/cli/v3 v3.11.0
 )
 
@@ -41,8 +39,6 @@ require (
 	github.com/olekukonko/errors v1.2.0 // indirect
 	github.com/olekukonko/ll v0.1.6 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/tidwall/match v1.1.1 // indirect
-	github.com/tidwall/pretty v1.2.0 // indirect
 	golang.org/x/crypto v0.54.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
