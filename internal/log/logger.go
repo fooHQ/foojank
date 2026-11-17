@@ -44,7 +44,7 @@ func (l *Logger) ErrorContext(ctx context.Context, format string, a ...any) {
 func NewLogger(level string, noColor bool) *Logger {
 	l := parseLevel(level)
 	return &Logger{
-		log: slog.New(tint.NewHandler(os.Stderr, &tint.Options{
+		log: slog.New(tint.NewTextHandler(os.Stderr, &tint.Options{
 			Level:     l,
 			NoColor:   noColor,
 			AddSource: l == slog.LevelDebug,
