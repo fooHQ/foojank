@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/deepnoodle-ai/wonton/tty"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank/clients/daemon"
@@ -126,13 +125,6 @@ func mergeConfig(configDir string, confFile, confFlags *config.Config) *config.C
 		config.NewWithOptions(defs),
 		confFile,
 		confFlags,
-	}
-
-	// If the output is not a TTY, disable color output.
-	if !tty.IsTerminal(os.Stdout) {
-		confs = append(confs, config.NewWithOptions(map[string]string{
-			flags.NoColor: "true",
-		}))
 	}
 
 	return config.Merge(confs...)
