@@ -50,7 +50,7 @@ func (c StringCell) Value() string {
 
 func (c StringCell) Color() color.Color {
 	if c.color == nil {
-		return color.NoColor
+		return color.Default
 	}
 	return *c.color
 }
