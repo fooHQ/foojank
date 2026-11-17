@@ -3,7 +3,6 @@ package formatter
 import (
 	"io"
 
-	"github.com/deepnoodle-ai/wonton/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
 )
@@ -107,9 +106,9 @@ func (f *ASCIIFormatter) formatCell(cell Cell) string {
 		return v
 	}
 
-	v = color.Colorize(cell.Color(), v)
+	v = cell.Color().Apply(v)
 	if cell.Bold() {
-		v = color.ApplyBold(v)
+		v = cell.Color().ApplyBold(v)
 	}
 
 	return v
