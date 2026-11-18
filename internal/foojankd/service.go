@@ -189,26 +189,24 @@ func handler(ctx context.Context, logger *log.Logger, handler Handler, inputCh <
 	defer logger.InfoContext(ctx, "Service %q stopped", "foojankd.handler")
 
 	for {
-		for {
-			select {
-			case msg := <-inputCh:
-				fn, ok := handler.Match(msg)
-				if !ok {
-					_ = msg.Ack()
-					continue
-				}
-
-				resp := callWithTimeout(ctx, 5*time.Second, fn)
-
-				err := forwardMessage(outputCh, resp)
-				if err != nil {
-					logger.WarnContext(ctx, "Cannot forward a message: %v", err)
-					continue
-				}
-
-			case <-ctx.Done():
-				return nil
+		select {
+		case msg := <-inputCh:
+			fn, ok := handler.Match(msg)
+			if !ok {
+				_ = msg.Ack()
+				continue
 			}
+
+			resp := callWithTimeout(ctx, 5*time.Second, fn)
+
+			err := forwardMessage(outputCh, resp)
+			if err != nil {
+				logger.WarnContext(ctx, "Cannot forward a message: %v", err)
+				continue
+			}
+
+		case <-ctx.Done():
+			return nil
 		}
 	}
 }

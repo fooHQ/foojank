@@ -1,0 +1,28 @@
+package credential
+
+import (
+	"github.com/urfave/cli/v3"
+
+	"github.com/foohq/foojank/cmd/foojankgw/actions"
+	"github.com/foohq/foojank/cmd/foojankgw/commands/credential/activate"
+	"github.com/foohq/foojank/cmd/foojankgw/commands/credential/describe"
+
+	"github.com/foohq/foojank/cmd/foojankgw/commands/credential/create"
+	"github.com/foohq/foojank/cmd/foojankgw/commands/credential/list"
+)
+
+func NewCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "credential",
+		Usage: "Manage credentials",
+		Commands: []*cli.Command{
+			create.NewCommand(),
+			describe.NewCommand(),
+			list.NewCommand(),
+			activate.NewCommand(),
+		},
+		CommandNotFound: actions.CommandNotFound,
+		OnUsageError:    actions.UsageError,
+		HideHelpCommand: true,
+	}
+}
