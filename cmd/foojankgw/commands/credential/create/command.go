@@ -1,0 +1,114 @@
+package create
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os"
+
+	"github.com/urfave/cli/v3"
+
+	"github.com/foohq/foojank/cmd/foojankgw/flags"
+
+	"github.com/foohq/foojank/internal/authdir"
+
+	"github.com/foohq/foojank/internal/config"
+
+	"github.com/foohq/foojank/cmd/foojankgw/actions"
+
+	"github.com/foohq/foojank/internal/auth"
+)
+
+func NewCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "create",
+		Usage: "Create credential",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  flags.Name,
+				Usage: "set credential name",
+			},
+		},
+		Before: before,
+		Action: action,
+		// TODO: shell completion
+		OnUsageError:    actions.UsageError,
+		HideHelpCommand: true,
+	}
+}
+
+func before(ctx context.Context, c *cli.Command) (context.Context, error) {
+	ctx, err := actions.LoadConfig(os.Stderr, validateConfiguration)(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
+	ctx, err = actions.SetupLogger(os.Stderr)(ctx, c)
+	if err != nil {
+		return ctx, err
+	}
+
+	return ctx, nil
+}
+
+func action(ctx context.Context, _ *cli.Command) (err error) {
+	conf := actions.GetConfigFromContext(ctx)
+	logger := actions.GetLoggerFromContext(ctx)
+
+	name, _ := conf.String(flags.Name)
+
+	account, err := auth.GenerateAccount(name)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot generate an account key: %v", err)
+		return err
+	}
+
+	user, err := auth.GenerateUser(name)
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot generate a credential key: %v", err)
+		return err
+	}
+
+	// Mark the initial user JWT as a dummy. The JWT must be replaced by a JWT signed with a real account key.
+	auth.SetDummyUserJWT(user.Claims())
+
+	userJWT, err := user.Claims().Encode(account.KeyPair())
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot encode a credential JWT: %v", err)
+		return err
+	}
+
+	userKey, err := user.KeyPair().Seed()
+	if err != nil {
+		logger.ErrorContext(ctx, "Cannot encode a credential seed: %v", err)
+		return err
+	}
+
+	err = authdir.CreateUser(name, userJWT, userKey)
+	if err != nil {
+		if errors.Is(err, authdir.ErrUserExists) {
+			err = fmt.Errorf("%q already exists", name)
+		}
+		logger.ErrorContext(ctx, "Cannot create a credential: %v", err)
+		return err
+	}
+
+	logger.InfoContext(ctx, "Credential %q has been created!", name)
+
+	return nil
+}
+
+func validateConfiguration(conf *config.Config) error {
+	for _, opt := range []string{
+		flags.Name,
+	} {
+		switch opt {
+		case flags.Name:
+			v, ok := conf.String(opt)
+			if !ok || v == "" {
+				return errors.New("credential name not configured")
+			}
+		}
+	}
+	return nil
+}
