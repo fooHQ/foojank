@@ -4,13 +4,15 @@ import (
 	"context"
 	"errors"
 	"os"
+	"os/exec"
 
+	"github.com/hashicorp/go-plugin"
 	"github.com/nutsdb/nutsdb"
 	"github.com/urfave/cli/v3"
 
 	"github.com/foohq/foojank"
+	"github.com/foohq/foojank/adapter"
 	"github.com/foohq/foojank/clients/gateway"
-
 	"github.com/foohq/foojank/internal/foojankgw"
 
 	"github.com/foohq/foojank/cmd/foojankgw/flags"
@@ -122,6 +124,7 @@ func action(ctx context.Context, c *cli.Command) error {
 		Publisher: publisher.New(logger, publisher.Config{
 			Connection: srv.Conn(),
 		}),
+		// TODO: pass adapters
 	}).Start(ctx)
 	if err != nil {
 		logger.ErrorContext(ctx, "Cannot start daemon: %v", err)
@@ -129,6 +132,20 @@ func action(ctx context.Context, c *cli.Command) error {
 	}
 
 	return nil
+}
+
+func initPlugins(cmds []string) ([]*plugin.Client, error) {
+	clis := make([]*plugin.Client, len(cmds))
+	for _, cmd := range cmds {
+		clis = append(clis, plugin.NewClient(&plugin.ClientConfig{
+			HandshakeConfig: adapter.HandshakeConfig,
+			Plugins: map[string]plugin.Plugin{
+				"plugin": &adapter.Plugin{},
+			},
+			Cmd: exec.Command(cmd),
+		}))
+	}
+	return clis, nil
 }
 
 func validateConfiguration(conf *config.Config) error {
