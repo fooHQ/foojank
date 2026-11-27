@@ -7,14 +7,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-plugin"
+
 	"github.com/foohq/foojank/internal/log"
 	"github.com/foohq/foojank/internal/message"
+	"github.com/foohq/foojank/internal/supervisor"
 )
 
 type Config struct {
 	Consumer  Consumer
 	Handler   Handler
 	Publisher Publisher
+	Adapters  []Adapter
 }
 
 type Service struct {
@@ -72,6 +76,19 @@ func (s *Service) Start(ctx context.Context) error {
 			err := publisher(publisherCtx, s.logger, s.args.Publisher, publisherInCh)
 			if err != nil {
 				s.logger.ErrorContext(ctx, "NATS publisher error: %v", err)
+			}
+			termCh <- err
+		})
+	}
+
+	supervisorCtx, supervisorCancel := context.WithCancel(context.Background())
+	cancels = append(cancels, supervisorCancel)
+
+	{
+		wg.Go(func() {
+			err := adapter(supervisorCtx, s.logger, s.args.Adapters)
+			if err != nil {
+				s.logger.ErrorContext(ctx, "Adapter error: %v", err)
 			}
 			termCh <- err
 		})
@@ -206,6 +223,41 @@ func handler(ctx context.Context, logger *log.Logger, handler Handler, inputCh <
 			return nil
 		}
 	}
+}
+
+type Adapter interface {
+	Name() string
+	ClientConfig() plugin.ClientConfig
+	Started() func(any) error
+	Stopped() func(any, error) error
+	RestartDelay() time.Duration
+}
+
+func adapter(ctx context.Context, logger *log.Logger, adapters []Adapter) error {
+	logger.InfoContext(ctx, "Service %q started", "foojankgw.adapter")
+	defer logger.InfoContext(ctx, "Service %q stopped", "foojankgw.adapter")
+
+	var wg sync.WaitGroup
+
+	for _, p := range adapters {
+		wg.Go(func() {
+			err := supervisor.Run(ctx, supervisor.Plugin{
+				Name:         p.Name(),
+				Client:       p.ClientConfig(),
+				Started:      p.Started(),
+				Stopped:      p.Stopped(),
+				RestartDelay: p.RestartDelay(),
+			})
+			if err != nil && !errors.Is(err, context.Canceled) {
+				logger.WarnContext(ctx, "Adapter failed with an error: %v", err)
+				return
+			}
+		})
+	}
+
+	wg.Wait()
+
+	return nil
 }
 
 func callWithTimeout(ctx context.Context, timeout time.Duration, fn func(context.Context) message.Msg) message.Msg {
