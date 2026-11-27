@@ -12,22 +12,18 @@ import (
 	"github.com/hashicorp/go-plugin"
 )
 
-// Config controls one plugin process.
-type Config struct {
-	// Client is the go-plugin configuration. Cmd is cloned for every start and
-	// the Cmd in this config is not started itself.
+type Plugin struct {
+	Name string
+
 	Client plugin.ClientConfig
 
-	// Plugin is the name passed to Dispense.
-	Plugin string
-
 	// Started runs after every successful dispense, including each restart.
-	// Returning an error kills the process.
+	// Returning an error kills this process and does not start it again.
 	Started func(dispensed any) error
 
-	// Stopped runs before the process is killed or after the process died. err is set when the plugin
-	// process has already exited. Returning an error stops the supervisor
-	// instead of restarting.
+	// Stopped runs before the process is killed or after the process died.
+	// err is set when the plugin process has already exited. Returning an
+	// error stops this plugin instead of restarting it.
 	Stopped func(dispensed any, err error) error
 
 	// RestartDelay is how long to wait before launching again after the process
@@ -38,7 +34,7 @@ type Config struct {
 // Run launches the plugin and blocks until ctx is cancelled. An unexpected
 // exit starts a new process. An error from starting the client, dispensing,
 // or Started is returned and is not retried. Client.Cmd must be set.
-func Run(ctx context.Context, cfg Config) error {
+func Run(ctx context.Context, cfg Plugin) error {
 	delay := cfg.RestartDelay
 	if delay <= 0 {
 		delay = time.Second
@@ -59,7 +55,7 @@ func Run(ctx context.Context, cfg Config) error {
 	}
 }
 
-func run(ctx context.Context, cfg Config) error {
+func run(ctx context.Context, cfg Plugin) error {
 	clientCfg := cfg.Client
 	clientCfg.Cmd = cloneCmd(clientCfg.Cmd)
 
@@ -71,7 +67,7 @@ func run(ctx context.Context, cfg Config) error {
 		return err
 	}
 
-	dispensed, err := proto.Dispense(cfg.Plugin)
+	dispensed, err := proto.Dispense(cfg.Name)
 	if err != nil {
 		return err
 	}
